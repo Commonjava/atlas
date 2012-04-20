@@ -1,0 +1,241 @@
+options {
+  DEBUG_PARSER = true;
+  DEBUG_LOOKAHEAD = true;
+  DEBUG_TOKEN_MANAGER = true;
+  LOOKAHEAD=20;
+  FORCE_LA_CHECK=true;
+  STATIC = false;
+}
+
+PARSER_BEGIN(VersionParser)
+package org.apache.maven.pgraph.version.parse;
+
+import org.apache.maven.pgraph.version.*;
+import org.apache.maven.pgraph.version.part.*;
+import java.util.*;
+import java.io.*;
+
+public class VersionParser
+{
+    public static void main( String[] args )
+        throws Exception
+    {
+        BufferedReader reader = new BufferedReader( new InputStreamReader( System.in ) );
+        while( true )
+        {
+        try
+        {
+            System.out.print( "Enter version specification: " );
+            String expr = reader.readLine();
+            VersionParser parser = new VersionParser( expr );
+            VersionSpec version = parser.parse();
+            System.out.println( version );
+        }
+        catch ( ParseException e )
+        {
+            e.printStackTrace();
+        }
+        }
+    }
+    
+    public VersionParser( String expression )
+    {
+        this( (Reader)(new StringReader( expression ) ) );
+    }
+    
+    private RangeVersionSpec getRangeVersionSpec( SingleVersion lower, SingleVersion upper, boolean lowerInclusive, boolean upperInclusive )
+    {
+      return new RangeVersionSpec( lower, upper, lowerInclusive, upperInclusive );
+    }
+    
+    private CompoundVersionSpec getCompoundVersionSpec( List<VersionSpec> specs )
+    {
+      return new CompoundVersionSpec( specs );
+    }
+}
+
+PARSER_END(VersionParser)
+
+SKIP :
+{
+  " "
+}
+
+TOKEN:
+{
+  <COMMA: ",">
+| <LPAREN: "(">
+| <RPAREN: ")">
+| <LBRAK: "[">
+| <RBRAK: "]">
+| <DASH: "-">
+| <USCORE: "_">
+| <DOT: ".">
+| <RSNAPSHOT: (<DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DOT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DASH> (<DIGIT>)+) >
+| <STRING: (["A"-"Z", "a"-"z"])+ >
+| <NUMBER: (["0"-"9"])+ >
+| <DIGIT: (["0"-"9"])>
+}
+
+VersionSpec parse() :
+{VersionSpec version = null;}
+{
+  version=anySpec()
+  {
+    return version;
+  }
+}
+
+VersionSpec anySpec() :
+{
+List<VersionSpec> versions=new ArrayList<VersionSpec>();
+VersionSpec version=null;
+}
+{
+  (
+    (version=anySingleSpec())
+    {versions.add( version );}
+  )*
+  {
+    if ( versions.isEmpty() )
+    {
+        return null;
+    }
+    else if ( versions.size() == 1 )
+    {
+        return versions.iterator().next();
+    }
+    else
+    {
+        return getCompoundVersionSpec( versions );
+    }
+  }
+}
+
+VersionSpec anySingleSpec() :
+{
+VersionSpec version = null;
+}
+{
+(
+  version=range()
+| version=single()
+)
+  {
+    return version;
+  }
+}
+
+RangeVersionSpec range() :
+{
+RangeVersionSpec spec=null;
+}
+{
+(
+  spec=pinnedRange()
+| spec=trueRange()
+)
+  {
+      return spec;
+  }
+}
+
+RangeVersionSpec trueRange() :
+{
+SingleVersion lower=null;
+boolean lowerInclusive=true;
+SingleVersion upper=null;
+boolean upperInclusive=true;
+}
+{
+  (
+    <LPAREN>
+    {lowerInclusive=false;}
+  | <LBRAK>
+    {lowerInclusive=true;}
+  )
+  (lower=single())?
+  <COMMA>
+  (upper=single())?
+  (
+    <RPAREN>
+    {upperInclusive=false;}
+  | <RBRAK>
+    {upperInclusive=true;}
+  )
+  {
+    return getRangeVersionSpec( lower, upper, lowerInclusive, upperInclusive );
+  }
+  
+}
+
+RangeVersionSpec pinnedRange() :
+{
+SingleVersion version=null;
+}
+{
+(
+  <LBRAK>
+  version=single()
+  <RBRAK>
+)
+  {
+    return getRangeVersionSpec( version, version, true, true );
+  }
+}
+
+SingleVersion single() :
+{
+List<VersionPart<?>> parts = new ArrayList<VersionPart<?>>();
+VersionPart<?> seg=null;
+}
+{
+  (seg=segment())
+  {parts.add( seg );}
+  (
+    (
+      seg=separator()
+      {parts.add( seg );}
+    )?
+    seg=segment()
+    {parts.add(seg);}
+  )*
+  {
+    return new SingleVersion( parts );
+  }
+}
+
+VersionPart<?> segment() :
+{
+VersionPart<?> part = null;
+Token val=null;
+}
+{
+(
+  (val=<NUMBER>)
+  {part = new NumericPart(val.image);}
+| (val=<RSNAPSHOT>)
+  {part = new SnapshotPart(val.image);}
+| (val=<STRING>)
+  {part = "SNAPSHOT".equals( val.image ) ? new SnapshotPart(null) : new StringPart(val.image);}
+)
+{return part;}
+
+}
+
+SeparatorPart separator() :
+{
+VersionPartSeparator sep = null;
+}
+{
+(
+  <DOT>
+  {sep = VersionPartSeparator.DOT;}
+| <DASH>
+  {sep = VersionPartSeparator.DASH;}
+| <USCORE>
+  {sep = VersionPartSeparator.UNDERSCORE;}
+)
+  {return new SeparatorPart( sep );}  
+}
+
