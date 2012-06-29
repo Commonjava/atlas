@@ -14,9 +14,12 @@ public class RangeVersionSpec
 
     private final boolean snapshotsAllowed;
 
-    public RangeVersionSpec( final SingleVersion lower, final SingleVersion upper, final boolean lowerInclusive,
-                             final boolean upperInclusive )
+    private final String rawExpression;
+
+    public RangeVersionSpec( final String rawExpression, final SingleVersion lower, final SingleVersion upper,
+                             final boolean lowerInclusive, final boolean upperInclusive )
     {
+        this.rawExpression = rawExpression;
         if ( lower == null && upper == null )
         {
             throw new IllegalArgumentException(
@@ -43,41 +46,7 @@ public class RangeVersionSpec
 
     public String renderStandard()
     {
-        final StringBuilder sb = new StringBuilder();
-        if ( lowerInclusive )
-        {
-            sb.append( '[' );
-        }
-        else
-        {
-            sb.append( '(' );
-        }
-
-        if ( lower != null )
-        {
-            sb.append( lower.renderStandard() );
-        }
-
-        if ( lower == null || !lower.equals( upper ) )
-        {
-            sb.append( ',' );
-
-            if ( upper != null )
-            {
-                sb.append( upper.renderStandard() );
-            }
-        }
-
-        if ( upperInclusive )
-        {
-            sb.append( ']' );
-        }
-        else
-        {
-            sb.append( ')' );
-        }
-
-        return sb.toString();
+        return rawExpression;
     }
 
     public boolean contains( final VersionSpec version )
@@ -153,6 +122,11 @@ public class RangeVersionSpec
     {
         if ( lower != null )
         {
+            if ( lowerInclusive && !lower.isRelease() && !version.isRelease() )
+            {
+                return true;
+            }
+
             final int comp = VersionSpecComparisons.compareTo( lower, version );
             if ( comp > 0 || ( comp == 0 && !lowerInclusive ) )
             {
@@ -162,6 +136,11 @@ public class RangeVersionSpec
 
         if ( upper != null )
         {
+            if ( upperInclusive && !upper.isRelease() && !version.isRelease() )
+            {
+                return true;
+            }
+
             final int comp = VersionSpecComparisons.compareTo( upper, version );
             if ( comp < 0 || ( comp == 0 && !upperInclusive ) )
             {

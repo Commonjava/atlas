@@ -9,7 +9,7 @@ public class Artifact
     implements Versioned<Artifact>
 {
 
-    private final ProjectVersion projectVersion;
+    private final VersionedProjectId projectId;
 
     private final String type;
 
@@ -18,59 +18,54 @@ public class Artifact
     public Artifact( final String groupId, final String artifactId, final VersionSpec version, final String type,
                      final String classifier )
     {
-        this( new ProjectVersion( groupId, artifactId, version ), type, classifier );
+        this( new VersionedProjectId( groupId, artifactId, version ), type, classifier );
     }
 
-    public Artifact( final ProjectVersion projectVersion, final String type, final String classifier )
+    public Artifact( final VersionedProjectId projectVersion, final String type, final String classifier )
     {
-        this.projectVersion = projectVersion;
+        this.projectId = projectVersion;
         this.type = type == null ? "jar" : type;
         this.classifier = isEmpty( classifier ) ? null : classifier;
     }
 
-    public ProjectVersion getProjectVersion()
+    public final VersionedProjectId getProjectId()
     {
-        return projectVersion;
-    }
-
-    public final ProjectId getProjectId()
-    {
-        return projectVersion.getProjectId();
+        return projectId;
     }
 
     public boolean isSpecificVersion()
     {
-        return projectVersion.isSpecificVersion();
+        return projectId.isSpecificVersion();
     }
 
     public boolean isRelease()
     {
-        return projectVersion.isRelease();
+        return projectId.isRelease();
     }
 
     public final String getGroupId()
     {
-        return projectVersion.getGroupId();
+        return projectId.getGroupId();
     }
 
     public final String getArtifactId()
     {
-        return projectVersion.getArtifactId();
+        return projectId.getArtifactId();
     }
 
     public boolean matchesVersion( final SingleVersion version )
     {
-        return projectVersion.matchesVersion( version );
+        return projectId.matchesVersion( version );
     }
 
     public Artifact selectVersion( final SingleVersion version )
     {
-        return new Artifact( projectVersion.selectVersion( version ), type, classifier );
+        return new Artifact( projectId.selectVersion( version ), type, classifier );
     }
 
     public VersionSpec getVersionSpec()
     {
-        return projectVersion.getVersionSpec();
+        return projectId.getVersionSpec();
     }
 
     public String getType()
@@ -151,12 +146,12 @@ public class Artifact
 
     public boolean isSnapshot()
     {
-        return projectVersion.isSnapshot();
+        return projectId.isSnapshot();
     }
 
     public boolean isCompound()
     {
-        return projectVersion.isCompound();
+        return projectId.isCompound();
     }
 
 }

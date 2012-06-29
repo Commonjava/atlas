@@ -11,8 +11,11 @@ public class CompoundVersionSpec
 
     private final List<VersionSpec> specs;
 
-    public CompoundVersionSpec( final VersionSpec... specs )
+    private final String rawExpression;
+
+    public CompoundVersionSpec( final String rawExpression, final VersionSpec... specs )
     {
+        this.rawExpression = rawExpression;
         final List<VersionSpec> s = new ArrayList<VersionSpec>();
         for ( final VersionSpec spec : specs )
         {
@@ -29,8 +32,9 @@ public class CompoundVersionSpec
         this.specs = Collections.unmodifiableList( s );
     }
 
-    public CompoundVersionSpec( final List<VersionSpec> specs )
+    public CompoundVersionSpec( final String rawExpression, final List<VersionSpec> specs )
     {
+        this.rawExpression = rawExpression;
         final List<VersionSpec> s = new ArrayList<VersionSpec>();
         for ( final VersionSpec spec : specs )
         {
@@ -49,13 +53,7 @@ public class CompoundVersionSpec
 
     public String renderStandard()
     {
-        final StringBuilder sb = new StringBuilder();
-        for ( final VersionSpec spec : specs )
-        {
-            sb.append( spec.renderStandard() );
-        }
-
-        return sb.toString();
+        return rawExpression;
     }
 
     public boolean contains( final VersionSpec version )
@@ -83,16 +81,20 @@ public class CompoundVersionSpec
         sb.append( "CompoundVersion: [" );
         for ( final VersionSpec spec : specs )
         {
-            sb.append( "\n  " ).append( spec );
+            sb.append( "\n  " )
+              .append( spec );
         }
-        sb.append( "\n]\n(" ).append( renderStandard() ).append( ")" );
+        sb.append( "\n]\n(" )
+          .append( renderStandard() )
+          .append( ")" );
 
         return sb.toString();
     }
 
     public boolean isConcrete()
     {
-        return ( specs.size() == 1 && specs.get( 0 ).isConcrete() );
+        return ( specs.size() == 1 && specs.get( 0 )
+                                           .isConcrete() );
     }
 
     public Iterator<VersionSpec> iterator()
@@ -112,17 +114,20 @@ public class CompoundVersionSpec
 
     public boolean isSingle()
     {
-        return specs.size() == 1 && specs.get( 0 ).isSingle();
+        return specs.size() == 1 && specs.get( 0 )
+                                         .isSingle();
     }
 
     public SingleVersion getConcreteVersion()
     {
-        return specs.size() != 1 ? null : specs.get( 0 ).getConcreteVersion();
+        return specs.size() != 1 ? null : specs.get( 0 )
+                                               .getConcreteVersion();
     }
 
     public SingleVersion getSingleVersion()
     {
-        return specs.size() != 1 ? null : specs.get( 0 ).getSingleVersion();
+        return specs.size() != 1 ? null : specs.get( 0 )
+                                               .getSingleVersion();
     }
 
 }

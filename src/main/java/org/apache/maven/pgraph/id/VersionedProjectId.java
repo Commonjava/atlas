@@ -3,43 +3,27 @@ package org.apache.maven.pgraph.id;
 import org.apache.maven.pgraph.version.SingleVersion;
 import org.apache.maven.pgraph.version.VersionSpec;
 
-public class ProjectVersion
-    implements Versioned<ProjectVersion>
+public class VersionedProjectId
+    extends ProjectId
+    implements Versioned<VersionedProjectId>
 {
-    
-    private final ProjectId projectId;
 
     private final VersionSpec versionSpec;
-    
-    public ProjectVersion( final String groupId, final String artifactId, final VersionSpec versionSpec )
+
+    public VersionedProjectId( final String groupId, final String artifactId, final VersionSpec versionSpec )
     {
-        projectId = new ProjectId( groupId, artifactId );
+        super( groupId, artifactId );
         this.versionSpec = versionSpec;
-    }
-    
-    public final ProjectId getProjectId()
-    {
-        return projectId;
     }
 
     public boolean isRelease()
     {
-        return ( versionSpec instanceof SingleVersion ) && ( (SingleVersion) versionSpec ).isRelease();
+        return versionSpec != null && versionSpec.isConcrete();
     }
 
     public boolean isSpecificVersion()
     {
-        return ( versionSpec instanceof SingleVersion );
-    }
-
-    public final String getGroupId()
-    {
-        return projectId.getGroupId();
-    }
-
-    public final String getArtifactId()
-    {
-        return projectId.getArtifactId();
+        return versionSpec != null && versionSpec.isSingle();
     }
 
     public boolean matchesVersion( final SingleVersion version )
@@ -47,7 +31,7 @@ public class ProjectVersion
         return versionSpec.contains( version );
     }
 
-    public ProjectVersion selectVersion( final SingleVersion version )
+    public VersionedProjectId selectVersion( final SingleVersion version )
     {
         if ( versionSpec.equals( version ) )
         {
@@ -60,7 +44,7 @@ public class ProjectVersion
                 + " is not contained in spec: " + versionSpec.renderStandard() );
         }
 
-        return new ProjectVersion( getGroupId(), getArtifactId(), version );
+        return new VersionedProjectId( getGroupId(), getArtifactId(), version );
     }
 
     public VersionSpec getVersionSpec()
@@ -92,7 +76,7 @@ public class ProjectVersion
         {
             return false;
         }
-        final ProjectVersion other = (ProjectVersion) obj;
+        final VersionedProjectId other = (VersionedProjectId) obj;
         if ( getVersionSpec() == null )
         {
             if ( other.getVersionSpec() != null )
@@ -110,12 +94,13 @@ public class ProjectVersion
     @Override
     public String toString()
     {
-        return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getVersionSpec().renderStandard() );
+        return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getVersionSpec() == null ? "-NONE-"
+                        : getVersionSpec().renderStandard() );
     }
 
     public boolean isCompound()
     {
-        return !( versionSpec instanceof SingleVersion );
+        return versionSpec != null && !versionSpec.isSingle();
     }
 
     public boolean isSnapshot()

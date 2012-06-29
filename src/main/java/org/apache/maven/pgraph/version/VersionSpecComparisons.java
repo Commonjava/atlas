@@ -7,7 +7,6 @@ import java.util.List;
 import org.apache.maven.pgraph.version.part.NumericPart;
 import org.apache.maven.pgraph.version.part.SeparatorPart;
 import org.apache.maven.pgraph.version.part.VersionPart;
-import org.apache.maven.pgraph.version.part.VersionPartSeparator;
 
 public final class VersionSpecComparisons
 {
@@ -161,22 +160,138 @@ public final class VersionSpecComparisons
 
     private static int compareRangeToRange( final RangeVersionSpec first, final RangeVersionSpec second )
     {
-        // TODO Auto-generated method stub
+        final SingleVersion flb = first.getLowerBound();
+        final SingleVersion slb = second.getLowerBound();
+        if ( flb == null && slb == null )
+        {
+            return 0;
+        }
+        else if ( flb == null && slb != null )
+        {
+            return -1;
+        }
+        else if ( slb == null && flb != null )
+        {
+            return 1;
+        }
+        else if ( flb != null && slb != null )
+        {
+            final int comp = compareSingleToSingle( flb, slb );
+            if ( comp != 0 )
+            {
+                return comp;
+            }
+
+            final boolean flbi = first.isLowerBoundInclusive();
+            final boolean slbi = second.isLowerBoundInclusive();
+            if ( !flbi && slbi )
+            {
+                return -1;
+            }
+            else if ( flbi && !slbi )
+            {
+                return 1;
+            }
+
+            return 0;
+        }
+        else
+        {
+            final SingleVersion fub = first.getUpperBound();
+            final SingleVersion sub = second.getUpperBound();
+            if ( fub != null && sub == null )
+            {
+                return -1;
+            }
+            else if ( sub != null && fub == null )
+            {
+                return 1;
+            }
+            else if ( fub != null && sub != null )
+            {
+                final int comp = compareSingleToSingle( fub, sub );
+                if ( comp != 0 )
+                {
+                    return comp;
+                }
+
+                final boolean fubi = first.isUpperBoundInclusive();
+                final boolean subi = second.isUpperBoundInclusive();
+                if ( !fubi && subi )
+                {
+                    return -1;
+                }
+                else if ( fubi && !subi )
+                {
+                    return 1;
+                }
+
+                return 0;
+            }
+        }
+
+        // punt.
+        // How do we get here?
+        // 1. lower bounds are equal, and neither has upper bound specified.
+        // ...... For sorting DOWN, it's not clear how these two compare.
         return 0;
     }
 
     private static int compareSingleToRange( final SingleVersion first, final RangeVersionSpec second )
     {
-        // TODO Auto-generated method stub
-        return 0;
+        final SingleVersion lb = second.getLowerBound();
+        if ( lb == null )
+        {
+            final SingleVersion ub = second.getUpperBound();
+            if ( ub == null )
+            {
+                // SHOULD NEVER HAPPEN. THIS IS NOT A VALID RANGE, IT WOULD BE
+                // THE EQUIV OF 'ANY'
+                return 0;
+            }
+            else
+            {
+                final int comp = compareSingleToSingle( first, ub );
+                if ( comp != 0 )
+                {
+                    // FIXME: If upper bound is non-inclusive, the MAY be wrong!
+                    return comp;
+                }
+
+                if ( second.isUpperBoundInclusive() )
+                {
+                    return 0;
+                }
+                else
+                {
+                    return 1;
+                }
+            }
+        }
+        else
+        {
+            final int comp = compareSingleToSingle( first, lb );
+            if ( comp != 0 )
+            {
+                // FIXME: If lower bound is non-inclusive, the MAY be wrong!
+                return comp;
+            }
+
+            if ( second.isLowerBoundInclusive() )
+            {
+                return 0;
+            }
+            else
+            {
+                return -1;
+            }
+        }
     }
 
     private static int compareSingleToSingle( final SingleVersion first, final SingleVersion second )
     {
-        final SingleVersion firstBase = first.getBaseVersion();
-        final SingleVersion secondBase = second.getBaseVersion();
+        final int comp = comparePartsToParts( first.getVersionParts(), second.getVersionParts() );
 
-        final int comp = compareTo( firstBase.getVersionParts(), secondBase.getVersionParts() );
         if ( comp == 0 )
         {
             if ( first.isRelease() && !second.isRelease() )
@@ -192,33 +307,44 @@ public final class VersionSpecComparisons
         return comp;
     }
 
-    private static int compareTo( final List<VersionPart<?>> first, final List<VersionPart<?>> second )
+    private static int comparePartsToParts( final List<VersionPart> first, final List<VersionPart> second )
     {
-        final List<VersionPart<?>> fp = new ArrayList<VersionPart<?>>( first );
-        final List<VersionPart<?>> sp = new ArrayList<VersionPart<?>>( second );
+        final List<VersionPart> fp = new ArrayList<VersionPart>( first );
+        final List<VersionPart> sp = new ArrayList<VersionPart>( second );
 
-        final int fLast = first.size() - 1;
-        final int sLast = second.size() - 1;
         for ( int i = Math.min( first.size() - 1, second.size() - 1 ); i < Math.max( first.size(), second.size() ); i++ )
         {
-            if ( i > fLast )
+            final VersionPart f = i < first.size() ? first.get( i ) : null;
+            final VersionPart s = i < second.size() ? second.get( i ) : null;
+            if ( f == null )
             {
-                fp.add( new SeparatorPart( VersionPartSeparator.BLANK ) );
-                fp.add( NumericPart.ZERO );
+                if ( s instanceof SeparatorPart )
+                {
+                    fp.add( s );
+                }
+                else
+                {
+                    fp.add( NumericPart.ZERO );
+                }
             }
-
-            if ( i > sLast )
+            else if ( s == null )
             {
-                sp.add( new SeparatorPart( VersionPartSeparator.BLANK ) );
-                sp.add( NumericPart.ZERO );
+                if ( f instanceof SeparatorPart )
+                {
+                    sp.add( f );
+                }
+                else
+                {
+                    sp.add( NumericPart.ZERO );
+                }
             }
         }
 
         // the two lists should be of equal length now.
         for ( int i = 0; i < fp.size(); i++ )
         {
-            final VersionPart<?> fPart = fp.get( i );
-            final VersionPart<?> sPart = sp.get( i );
+            final VersionPart fPart = fp.get( i );
+            final VersionPart sPart = sp.get( i );
             final int comp = fPart.compareTo( sPart );
             if ( comp != 0 )
             {

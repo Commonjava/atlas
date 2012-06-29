@@ -1,8 +1,8 @@
 options {
-  DEBUG_PARSER = true;
-  DEBUG_LOOKAHEAD = true;
-  DEBUG_TOKEN_MANAGER = true;
-  LOOKAHEAD=20;
+  DEBUG_PARSER = false;
+  DEBUG_LOOKAHEAD = false;
+  DEBUG_TOKEN_MANAGER = false;
+  LOOKAHEAD=3;
   FORCE_LA_CHECK=true;
   STATIC = false;
 }
@@ -12,11 +12,15 @@ package org.apache.maven.pgraph.version.parse;
 
 import org.apache.maven.pgraph.version.*;
 import org.apache.maven.pgraph.version.part.*;
+import org.apache.maven.pgraph.version.transform.*;
 import java.util.*;
+import java.text.*;
 import java.io.*;
 
 public class VersionParser
 {
+    private String rawSpec;
+    
     public static void main( String[] args )
         throws Exception
     {
@@ -41,16 +45,53 @@ public class VersionParser
     public VersionParser( String expression )
     {
         this( (Reader)(new StringReader( expression ) ) );
+        this.rawSpec = expression;
     }
     
     private RangeVersionSpec getRangeVersionSpec( SingleVersion lower, SingleVersion upper, boolean lowerInclusive, boolean upperInclusive )
     {
-      return new RangeVersionSpec( lower, upper, lowerInclusive, upperInclusive );
+      return new RangeVersionSpec( rawSpec, lower, upper, lowerInclusive, upperInclusive );
     }
     
     private CompoundVersionSpec getCompoundVersionSpec( List<VersionSpec> specs )
     {
-      return new CompoundVersionSpec( specs );
+      return new CompoundVersionSpec( rawSpec, specs );
+    }
+    
+    private SnapshotPart newSnapshotPart( String date, String buildnum )
+      throws ParseException
+    {
+      try
+      {
+        return new SnapshotPart( SnapshotSupport.parseSnapshotTimestamp( date ), Integer.parseInt( buildnum ), date + "-" + buildnum );
+      }
+      catch ( java.text.ParseException e )
+      {
+        ParseException pe = new ParseException( "Failed to parse snapshot timestamp: '" + date + "'. Error: " + e.getMessage() );
+        pe.initCause( e );
+        
+        throw pe;
+      }
+      catch ( NumberFormatException e )
+      {
+        ParseException pe = new ParseException( "Failed to parse snapshot build number: '" + buildnum + "'. Error: " + e.getMessage() );
+        pe.initCause( e );
+        
+        throw pe;
+      }
+    }
+    
+    private void addPart( List<VersionPart> parts, VersionPart current, VersionPart last )
+    {
+      if ( last != null )
+      {
+        if ( !(last instanceof SeparatorPart) && !(current instanceof SeparatorPart))
+        {
+          parts.add( new SeparatorPart( VersionPartSeparator.BLANK ) );
+        }
+      }
+      
+      parts.add( current );
     }
 }
 
@@ -71,9 +112,9 @@ TOKEN:
 | <DASH: "-">
 | <USCORE: "_">
 | <DOT: ".">
-| <RSNAPSHOT: (<DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DOT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DASH> (<DIGIT>)+) >
+| <LSNAP: (["S","s"] ["N","n"] ["A","a"] ["P","p"] ["S","s"] ["H","h"] ["O","o"] ["T","t"]) >
+| <SNAPDATE: (<DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DOT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT>) >
 | <STRING: (["A"-"Z", "a"-"z"])+ >
-| <NUMBER: (["0"-"9"])+ >
 | <DIGIT: (["0"-"9"])>
 }
 
@@ -186,41 +227,93 @@ SingleVersion version=null;
 
 SingleVersion single() :
 {
-List<VersionPart<?>> parts = new ArrayList<VersionPart<?>>();
-VersionPart<?> seg=null;
+List<VersionPart> parts = new ArrayList<VersionPart>();
+VersionPart seg=null;
+VersionPart last = null;
 }
 {
   (seg=segment())
-  {parts.add( seg );}
+  {
+    addPart( parts, seg, last );
+    last = seg;
+  }
   (
     (
       seg=separator()
-      {parts.add( seg );}
+      {
+        addPart( parts, seg, last );
+        last = seg;
+      }
     )?
-    seg=segment()
-    {parts.add(seg);}
+    (
+      (
+        seg=snapshot()
+        {
+          addPart( parts, seg, last );
+          last = seg;
+        }
+      )
+  |   (
+        seg=segment()
+        {
+          addPart( parts, seg, last );
+          last = seg;
+        }
+      )
+    )
   )*
   {
-    return new SingleVersion( parts );
+    return new SingleVersion( rawSpec, parts );
   }
 }
 
-VersionPart<?> segment() :
+VersionPart segment() :
 {
-VersionPart<?> part = null;
+VersionPart part = null;
+StringBuilder num = new StringBuilder();
 Token val=null;
 }
 {
 (
-  (val=<NUMBER>)
-  {part = new NumericPart(val.image);}
-| (val=<RSNAPSHOT>)
-  {part = new SnapshotPart(val.image);}
-| (val=<STRING>)
-  {part = "SNAPSHOT".equals( val.image ) ? new SnapshotPart(null) : new StringPart(val.image);}
+  (
+    val=<DIGIT>
+    {num.append(val.image);}
+  )+
+| (
+    val=<STRING>
+    {part = new StringPart(val.image);}
+  )
 )
-{return part;}
+{return part == null ? new NumericPart( num.toString() ) : part;}
 
+}
+
+VersionPart snapshot() :
+{
+SnapshotPart part = null;
+String ts = null;
+StringBuilder bn = new StringBuilder();
+Token token = null;
+}
+{
+(
+  (
+    (
+      token=<SNAPDATE>
+      {ts = token.image;}
+    )
+    <DASH>
+    (
+      token=<DIGIT>
+      {bn.append(token.image);}
+    )+
+  )
+| (
+    token=<LSNAP>
+    {part = new SnapshotPart(token.image);}
+  )
+)
+{return part == null ? newSnapshotPart( ts, bn.toString() ) : part;}
 }
 
 SeparatorPart separator() :

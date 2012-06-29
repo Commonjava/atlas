@@ -1,11 +1,21 @@
 package org.apache.maven.pgraph.version.part;
 
-public interface VersionPart<T>
-    extends Comparable<VersionPart<?>>
+public abstract class VersionPart
+    implements Comparable<VersionPart>
 {
 
-    String renderStandard();
+    private boolean silent = false;
 
-    T getValue();
+    public abstract String renderStandard();
+
+    final boolean isSilent()
+    {
+        return silent;
+    }
+
+    final void setSilent( final boolean silent )
+    {
+        this.silent = silent;
+    }
 
 }

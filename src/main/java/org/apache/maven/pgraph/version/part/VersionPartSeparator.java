@@ -3,7 +3,7 @@ package org.apache.maven.pgraph.version.part;
 public enum VersionPartSeparator
 {
 
-    DOT( "." ), DASH( "-" ), UNDERSCORE( "_" ), BLANK( "" );
+    BLANK( "" ), DASH( "-" ), UNDERSCORE( "_" ), DOT( "." );
 
     private String rendered;
 
