@@ -30,12 +30,6 @@ public class SeparatorPart
 
     public int compareTo( final VersionPart o )
     {
-        if ( o instanceof SeparatorPart )
-        {
-            return 0;
-        }
-
-        // TODO: punting...shouldn't happen, but not sure what the "right" thing is.
         return 0;
     }
 

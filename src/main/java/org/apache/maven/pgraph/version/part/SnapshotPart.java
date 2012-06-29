@@ -88,6 +88,10 @@ public class SnapshotPart
 
             return 0;
         }
+        else if ( o instanceof StringPart )
+        {
+            return -1 * o.compareTo( this );
+        }
         else
         {
             return -1;

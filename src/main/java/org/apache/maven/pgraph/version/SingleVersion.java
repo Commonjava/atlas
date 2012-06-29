@@ -2,26 +2,26 @@ package org.apache.maven.pgraph.version;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
-import org.apache.maven.pgraph.version.part.NumericPart;
 import org.apache.maven.pgraph.version.part.SeparatorPart;
 import org.apache.maven.pgraph.version.part.SnapshotPart;
 import org.apache.maven.pgraph.version.part.StringPart;
 import org.apache.maven.pgraph.version.part.VersionPart;
+import org.apache.maven.pgraph.version.part.VersionPartSeparator;
+import org.apache.maven.pgraph.version.part.VersionPhrase;
 
 public class SingleVersion
     implements VersionSpec
 {
 
-    private final List<VersionPart> parts;
+    private final List<VersionPhrase> phrases;
 
     private final String rawExpression;
 
     private SingleVersion()
     {
-        parts = new ArrayList<VersionPart>();
+        phrases = new ArrayList<VersionPhrase>();
         this.rawExpression = "";
     }
 
@@ -33,47 +33,119 @@ public class SingleVersion
     public SingleVersion( final String rawExpression, final List<VersionPart> parts )
     {
         this.rawExpression = rawExpression;
-        this.parts = parts;
-        normalize( this.parts );
-        validate( this.parts );
+        phrases = parsePhrases( parts );
+        validatePhrases();
     }
 
-    public static boolean isSilentPart( final VersionPart part )
+    private void validatePhrases()
     {
-        if ( NumericPart.ZERO.equals( part ) )
+        if ( phrases.get( 0 )
+                    .isSilent() )
         {
-            return true;
+            throw new IllegalArgumentException( "This version: " + toString()
+                + " is effectively empty! All parts are 'silent'." );
         }
-        else if ( part instanceof SeparatorPart )
-        {
-            return true;
-        }
-        else if ( ( part instanceof StringPart )
-            && ( (StringPart) part ).getZeroCompareIndex() == StringPart.ADJ_ZERO_EQUIV_INDEX )
-        {
-            return true;
-        }
-
-        return false;
     }
 
-    private void normalize( final List<VersionPart> parts )
+    private List<VersionPhrase> parsePhrases( final List<VersionPart> p )
     {
-        for ( int i = parts.size() - 1; i > -1; i-- )
+        final List<VersionPart> parts = normalize( p );
+        validate( parts );
+
+        final List<VersionPhrase> phrases = new ArrayList<VersionPhrase>();
+        VersionPartSeparator currentPhraseSep = VersionPartSeparator.BLANK;
+        List<VersionPart> current = new ArrayList<VersionPart>();
+
+        for ( int i = 0; i < parts.size(); i++ )
         {
+            final VersionPart prev = i == 0 ? null : parts.get( i - 1 );
             final VersionPart part = parts.get( i );
-            if ( isSilentPart( part ) )
+            final VersionPart next = i >= parts.size() - 1 ? null : parts.get( i + 1 );
+
+            if ( ( part instanceof SeparatorPart )
+                && ( VersionPartSeparator.DASH == ( (SeparatorPart) part ).getValue() ) )
             {
-                parts.remove( i );
+                if ( prev != null && !( prev instanceof StringPart ) )
+                {
+                    phrases.add( new VersionPhrase( currentPhraseSep, current ) );
+
+                    current = new ArrayList<VersionPart>();
+
+                    currentPhraseSep = VersionPartSeparator.DASH;
+                }
+                else
+                {
+                    current.add( part );
+                }
+
+                if ( next != null )
+                {
+                    current.add( next );
+                    i++;
+                }
+            }
+            else if ( ( ( part instanceof SnapshotPart ) || ( part instanceof StringPart ) )
+                && prev != null
+                && ( !( prev instanceof SeparatorPart ) || ( ( (SeparatorPart) prev ).getValue() != VersionPartSeparator.DASH ) ) )
+            {
+                VersionPartSeparator sep = null;
+                if ( prev instanceof SeparatorPart )
+                {
+                    sep = ( (SeparatorPart) current.remove( current.size() - 1 ) ).getValue();
+                }
+                else
+                {
+                    sep = VersionPartSeparator.BLANK;
+                }
+
+                phrases.add( new VersionPhrase( currentPhraseSep, current ) );
+
+                current = new ArrayList<VersionPart>();
+                current.add( part );
+
+                currentPhraseSep = sep;
+            }
+            else
+            {
+                current.add( part );
             }
         }
 
-        if ( parts.get( parts.size() - 1 ) instanceof SeparatorPart )
+        if ( !current.isEmpty() )
         {
-            parts.remove( parts.size() - 1 );
+            phrases.add( new VersionPhrase( currentPhraseSep, current ) );
         }
 
-        // return result;
+        return phrases;
+    }
+
+    private List<VersionPart> normalize( final List<VersionPart> parts )
+    {
+        VersionPart prev = null;
+        final List<VersionPart> result = new ArrayList<VersionPart>( parts.size() );
+        for ( int i = 0; i < parts.size(); i++ )
+        {
+            final VersionPart part = parts.get( i );
+            if ( prev != null && !( prev instanceof SeparatorPart ) && !( part instanceof SeparatorPart ) )
+            {
+                final SeparatorPart sep = new SeparatorPart( VersionPartSeparator.BLANK );
+                result.add( sep );
+                prev = sep;
+                i--;
+            }
+            else
+            {
+                result.add( part );
+                prev = part;
+            }
+        }
+
+        if ( result.get( result.size() - 1 ) instanceof SeparatorPart )
+        {
+            result.remove( result.size() - 1 );
+        }
+
+        return result;
     }
 
     private void validate( final List<VersionPart> parts )
@@ -98,11 +170,6 @@ public class SingleVersion
         }
     }
 
-    public List<VersionPart> getVersionParts()
-    {
-        return parts;
-    }
-
     public SingleVersion getBaseVersion()
     {
         if ( isRelease() )
@@ -111,7 +178,7 @@ public class SingleVersion
         }
 
         final SingleVersion v = new SingleVersion();
-        v.parts.addAll( parts.subList( 0, parts.size() - 2 ) );
+        v.phrases.addAll( phrases.subList( 0, phrases.size() - 1 ) );
 
         return v;
     }
@@ -133,8 +200,8 @@ public class SingleVersion
 
     public boolean isRelease()
     {
-        final VersionPart last = parts.get( parts.size() - 1 );
-        return !( last instanceof SnapshotPart );
+        final VersionPhrase last = phrases.get( phrases.size() - 1 );
+        return !last.isSnapshot();
     }
 
     @Override
@@ -142,21 +209,15 @@ public class SingleVersion
     {
         final StringBuilder sb = new StringBuilder();
         sb.append( "SingleVersion: [" );
-        sb.append( renderStandard( parts ) );
+        for ( final VersionPhrase phrase : phrases )
+        {
+            sb.append( phrase )
+              .append( ", " );
+        }
+        sb.setLength( sb.length() - 2 );
         sb.append( "] (" )
           .append( renderStandard() )
           .append( ")" );
-
-        return sb.toString();
-    }
-
-    private String renderStandard( final List<VersionPart> parts )
-    {
-        final StringBuilder sb = new StringBuilder();
-        for ( final VersionPart part : parts )
-        {
-            sb.append( part.renderStandard() );
-        }
 
         return sb.toString();
     }
@@ -181,16 +242,24 @@ public class SingleVersion
         return isSingle() ? this : null;
     }
 
+    public List<VersionPhrase> getVersionPhrases()
+    {
+        return phrases;
+    }
+
     @Override
     public int hashCode()
     {
         final int prime = 31;
         int result = 1;
-        if ( parts != null )
+        if ( phrases != null )
         {
-            for ( final VersionPart part : parts )
+            for ( final VersionPhrase phrase : phrases )
             {
-                result += part.hashCode();
+                if ( !phrase.isSilent() )
+                {
+                    result += phrase.hashCode();
+                }
             }
         }
 
@@ -213,47 +282,54 @@ public class SingleVersion
             return false;
         }
         final SingleVersion other = (SingleVersion) obj;
-        if ( parts == null )
+        if ( phrases == null )
         {
-            if ( other.parts != null )
+            if ( other.phrases != null )
             {
                 return false;
             }
         }
         else
         {
-            final List<VersionPart> myParts = new ArrayList<VersionPart>( parts );
-            for ( final Iterator<VersionPart> it = myParts.iterator(); it.hasNext(); )
+            int i = 0;
+            for ( ; i < Math.min( phrases.size(), other.phrases.size() ); i++ )
             {
-                final VersionPart part = it.next();
-                if ( part instanceof SeparatorPart )
-                {
-                    it.remove();
-                }
-            }
-
-            final List<VersionPart> theirParts = new ArrayList<VersionPart>( other.parts );
-            for ( final Iterator<VersionPart> it = theirParts.iterator(); it.hasNext(); )
-            {
-                final VersionPart part = it.next();
-                if ( part instanceof SeparatorPart )
-                {
-                    it.remove();
-                }
-            }
-
-            if ( myParts.size() != theirParts.size() )
-            {
-                return false;
-            }
-
-            for ( int i = 0; i < myParts.size(); i++ )
-            {
-                final VersionPart mine = myParts.get( i );
-                final VersionPart theirs = theirParts.get( i );
-                if ( !mine.equals( theirs ) )
+                final VersionPhrase mine = phrases.get( i );
+                final VersionPhrase theirs = other.phrases.get( i );
+                if ( mine.isSilent() != theirs.isSilent() )
                 {
                     return false;
+                }
+                else if ( !mine.isSilent() && !theirs.isSilent() )
+                {
+                    if ( !mine.equals( theirs ) )
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            if ( i < phrases.size() )
+            {
+                for ( int j = i; j < phrases.size(); j++ )
+                {
+                    final VersionPhrase mine = phrases.get( j );
+                    if ( !mine.isSilent() )
+                    {
+                        return false;
+                    }
+                }
+            }
+
+            if ( i < other.phrases.size() )
+            {
+                for ( int j = i; j < other.phrases.size(); j++ )
+                {
+                    final VersionPhrase theirs = other.phrases.get( j );
+                    if ( !theirs.isSilent() )
+                    {
+                        return false;
+                    }
                 }
             }
         }

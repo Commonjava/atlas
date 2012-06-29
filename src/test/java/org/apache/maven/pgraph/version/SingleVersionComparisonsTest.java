@@ -19,8 +19,15 @@ package org.apache.maven.pgraph.version;
  * under the License.
  */
 
+import static org.apache.commons.lang.StringUtils.join;
+import static org.junit.Assert.fail;
+
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Locale;
 
+import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -35,7 +42,10 @@ public class SingleVersionComparisonsTest
     private SingleVersion newVersion( final String version )
         throws InvalidVersionSpecificationException
     {
-        return VersionUtils.createSingleVersion( version );
+        final SingleVersion v = VersionUtils.createSingleVersion( version );
+        System.out.println( "Parsed version: " + version + " to: " + v.getVersionPhrases() );
+
+        return v;
     }
 
     // ************************************************************************
@@ -67,38 +77,38 @@ public class SingleVersionComparisonsTest
     @Rule
     public TestName name = new TestName();
 
-    // private final List<String> failed = new ArrayList<String>();
-    //
-    // private final List<String> okay = new ArrayList<String>();
+    private final List<String> failed = new ArrayList<String>();
 
-    // @After
-    // public void checkErrors()
-    // {
-    // if ( !failed.isEmpty() )
-    // {
-    // final NumberFormat fmt = NumberFormat.getPercentInstance();
-    // fmt.setMaximumFractionDigits( 2 );
-    //
-    // final String message =
-    // name.getMethodName() + ": "
-    // + ( fmt.format( failed.size() / ( (double) failed.size() + (double) okay.size() ) ) ) + " ("
-    // + failed.size() + "/" + ( failed.size() + okay.size() ) + ") of version comparisons FAILED.";
-    //
-    // System.out.println( message );
-    //
-    // if ( !okay.isEmpty() )
-    // {
-    // System.out.println( "OKAY " + join( okay, "\nOKAY " ) );
-    // }
-    //
-    // System.out.println( "FAIL " + join( failed, "\nFAIL " ) );
-    // fail( message );
-    // }
-    // else
-    // {
-    // System.out.println( name.getMethodName() + ": All tests OKAY" );
-    // }
-    // }
+    private final List<String> okay = new ArrayList<String>();
+
+    @After
+    public void checkErrors()
+    {
+        if ( !failed.isEmpty() )
+        {
+            final NumberFormat fmt = NumberFormat.getPercentInstance();
+            fmt.setMaximumFractionDigits( 2 );
+
+            final String message =
+                name.getMethodName() + ": "
+                    + ( fmt.format( failed.size() / ( (double) failed.size() + (double) okay.size() ) ) ) + " ("
+                    + failed.size() + "/" + ( failed.size() + okay.size() ) + ") of version comparisons FAILED.";
+
+            System.out.println( message );
+
+            if ( !okay.isEmpty() )
+            {
+                System.out.println( "OKAY " + join( okay, "\nOKAY " ) );
+            }
+
+            System.out.println( "FAIL " + join( failed, "\nFAIL " ) );
+            fail( message );
+        }
+        else
+        {
+            System.out.println( name.getMethodName() + ": All tests OKAY" );
+        }
+    }
 
     private void checkVersionsOrder( final String[] versions )
         throws InvalidVersionSpecificationException
@@ -129,14 +139,14 @@ public class SingleVersionComparisonsTest
 
     private void checkTrue( final String message, final boolean check )
     {
-        // if ( check )
-        // {
-        // okay.add( message );
-        // }
-        // else
-        // {
-        // failed.add( message );
-        // }
+        if ( check )
+        {
+            okay.add( message );
+        }
+        else
+        {
+            failed.add( message );
+        }
     }
 
     private void checkVersionsEqual( final String v1, final String v2 )
@@ -165,9 +175,9 @@ public class SingleVersionComparisonsTest
         final SingleVersion c1 = newVersion( v1 );
         final SingleVersion c2 = newVersion( v2 );
 
-        // System.out.println( "first version: '" + v1 + "' parsed to: " + c1 );
-        // System.out.println( "second version: '" + v2 + "' parsed to: " + c2 );
-        // System.out.println();
+        System.out.println( "first version: '" + v1 + "' parsed to: " + c1 );
+        System.out.println( "second version: '" + v2 + "' parsed to: " + c2 );
+        System.out.println();
 
         int comp = c1.compareTo( c2 );
         checkTrue( "expected < 0: " + v1 + " < " + v2 + " (got: " + comp + ")", comp < 0 );
@@ -308,162 +318,176 @@ public class SingleVersionComparisonsTest
         }
     }
 
-    // @Test
-    // public void dashSeparatorSortsAfterDotSeparator()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "2.0", "2-1" );
-    // }
-    //
-    // @Test
-    // public void dontIgnoreIntermediateZeros()
-    // throws InvalidVersionSpecificationException
-    // {
-    // markIncompatibility();
-    // checkVersionsEqual( "2.0.a", "2.0.0.a" );
-    // }
-    //
-    // @Test
-    // public void milestoneMarkerSortsBeforeAlphaMarker()
-    // throws InvalidVersionSpecificationException
-    // {
-    // markIncompatibility();
-    // checkVersionsOrder( "11.m2", "11.a2" );
-    // }
-    //
-    // @Test
-    // public void alphaMarkerSortsBeforeBetaMarker()
-    // throws InvalidVersionSpecificationException
-    // {
-    // markIncompatibility();
-    // checkVersionsOrder( "11.alpha2", "11.beta1" );
-    // checkVersionsOrder( "11.a2", "11.b1" );
-    // }
-    //
-    // @Test
-    // public void alphaMarkerSortsBeforeFinalRelease()
-    // throws InvalidVersionSpecificationException
-    // {
-    // markIncompatibility();
-    // checkVersionsOrder( "11.alpha2", "11" );
-    // checkVersionsOrder( "11.a2", "11" );
-    // }
-    //
-    // @Test
-    // public void randomStringSortsAfterRelease()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1.0", "1.0.z" );
-    // }
-    //
-    // @Test
-    // public void randomStringSortsAfterAlpha()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1.0.a", "1.0.z" );
-    // }
-    //
-    // @Test
-    // public void randomStringSortsAfterRelease_2()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1.0", "1.0z" );
-    // }
-    //
-    // @Test
-    // public void randomStringSortsAfterAlpha_2()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1.0.a", "1.0z" );
-    // }
-    //
-    // @Test
-    // public void servicePackSortsBeforeRandomString()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1.sp", "1.abc" );
-    // }
-    //
-    // @Test
-    // public void rebuildSortsAfterServicePack()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1.sp", "1-1" );
-    // }
-    //
-    // @Test
-    // public void rebuildSortsAfterRandomString()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1-abc", "1-1" );
-    // }
-    //
-    // @Test
-    // public void rebuildSnapshotSortsAfterRandomString()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1-abc", "1-1-SNAPSHOT" );
-    // }
-    //
-    // @Test
-    // public void snapshotSortsBeforeServicePack()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1-SNAPSHOT", "1-sp" );
-    // }
-    //
-    // @Test
-    // public void snapshotSortsAfterBeta()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1-beta", "1-SNAPSHOT" );
-    // }
-    //
-    // @Test
-    // public void snapshotSortsBeforeRelease()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1-SNAPSHOT", "1" );
-    // }
-    //
-    // @Test
-    // public void servicePackSortsAfterRelease()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsOrder( "1", "1-sp1" );
-    // }
-    //
-    // @Test
-    // public void equalsIgnoresTrailingZeros()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsEqual( "1", "1.0.0" );
-    // }
-    //
-    // @Test
-    // public void equalsIgnoresTrailingZerosInComplexVersion()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsEqual( "1-1", "1-1.0.0" );
-    // }
-    //
-    // @Test
-    // public void disregardSeparatorForEquality()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsEqual( "1a", "1.a" );
-    // }
-    //
-    // @Test
-    // public void randomStringsComparedCaseInsensitively()
-    // throws InvalidVersionSpecificationException
-    // {
-    // checkVersionsEqual( "1X", "1x" );
-    // }
-    //
-    // private void markIncompatibility()
-    // {
-    // System.out.println( name.getMethodName() + ": This is an INCOMPATIBILITY with maven-artifact" );
-    // }
+    @Test
+    public void dashSeparatorSortsAfterDotSeparator()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "2.0", "2-1" );
+    }
+
+    @Test
+    public void dontIgnoreIntermediateZeros()
+        throws InvalidVersionSpecificationException
+    {
+        markIncompatibility();
+        checkVersionsEqual( "2.0.a", "2.0.0.a" );
+    }
+
+    @Test
+    public void milestoneMarkerSortsBeforeAlphaMarker()
+        throws InvalidVersionSpecificationException
+    {
+        markIncompatibility();
+        checkVersionsOrder( "11.m2", "11.a2" );
+    }
+
+    @Test
+    public void alphaMarkerSortsBeforeBetaMarker()
+        throws InvalidVersionSpecificationException
+    {
+        markIncompatibility();
+        checkVersionsOrder( "11.alpha2", "11.beta1" );
+        checkVersionsOrder( "11.a2", "11.b1" );
+    }
+
+    @Test
+    public void alphaMarkerSortsBeforeFinalRelease()
+        throws InvalidVersionSpecificationException
+    {
+        markIncompatibility();
+        checkVersionsOrder( "11.alpha2", "11" );
+        checkVersionsOrder( "11.a2", "11" );
+    }
+
+    @Test
+    public void randomStringSortsAfterRelease()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1.0", "1.0.z" );
+    }
+
+    @Test
+    public void randomStringSortsAfterAlpha()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1.0.a", "1.0.z" );
+    }
+
+    @Test
+    public void randomStringSortsAfterRelease_2()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1.0", "1.0z" );
+    }
+
+    @Test
+    public void randomStringSortsAfterAlpha_2()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1.0.a", "1.0z" );
+    }
+
+    @Test
+    public void servicePackSortsBeforeRandomString()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1.sp", "1.abc" );
+    }
+
+    @Test
+    public void rebuildSortsAfterServicePack()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1.sp", "1-1" );
+    }
+
+    @Test
+    public void rebuildSortsAfterRandomString()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1-abc", "1-1" );
+    }
+
+    @Test
+    public void rebuildSnapshotSortsAfterRandomString()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1-abc", "1-1-SNAPSHOT" );
+    }
+
+    @Test
+    public void snapshotSortsBeforeServicePack()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1-SNAPSHOT", "1-sp" );
+    }
+
+    @Test
+    public void snapshotSortsAfterBeta()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1-beta", "1-SNAPSHOT" );
+    }
+
+    @Test
+    public void snapshotSortsBeforeRelease()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1-SNAPSHOT", "1" );
+    }
+
+    @Test
+    public void servicePackSortsAfterRelease()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsOrder( "1", "1-sp1" );
+    }
+
+    @Test
+    public void equalsIgnoresTrailingZeros()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsEqual( "1", "1.0.0" );
+    }
+
+    @Test
+    public void equalsIgnoresTrailingZerosInComplexVersion()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsEqual( "1-1", "1-1.0.0" );
+    }
+
+    @Test
+    public void disregardSeparatorForEquality()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsEqual( "1a", "1.a" );
+    }
+
+    @Test
+    public void randomStringsComparedCaseInsensitively()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsEqual( "1X", "1x" );
+    }
+
+    @Test
+    public void disregardSeparatorForEquality2()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsEqual( "1.0a", "1.0.a" );
+    }
+
+    @Test
+    public void disregardSeparatorForEquality3()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsEqual( "1a", "1.0-a" );
+    }
+
+    private void markIncompatibility()
+    {
+        System.out.println( name.getMethodName() + ": This is an INCOMPATIBILITY with maven-artifact" );
+    }
 
 }

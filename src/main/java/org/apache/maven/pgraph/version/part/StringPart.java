@@ -86,6 +86,11 @@ public class StringPart
         zeroCompareIndex = idx;
     }
 
+    public boolean isMarker()
+    {
+        return zeroCompareIndex != ADJ_RANDOM_STRING_EQUIV_INDEX;
+    }
+
     public Integer getZeroCompareIndex()
     {
         return zeroCompareIndex;
@@ -113,6 +118,8 @@ public class StringPart
         if ( part instanceof SnapshotPart )
         {
             final Integer idx = zeroCompareIndex == null ? 1 : zeroCompareIndex;
+
+            System.out.println( "my zIndex: " + idx + "\nadjusted zero-equiv. index: " + ADJ_ZERO_EQUIV_INDEX );
 
             return idx.compareTo( ADJ_ZERO_EQUIV_INDEX );
         }

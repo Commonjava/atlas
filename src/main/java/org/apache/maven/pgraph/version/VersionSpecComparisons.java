@@ -7,6 +7,7 @@ import java.util.List;
 import org.apache.maven.pgraph.version.part.NumericPart;
 import org.apache.maven.pgraph.version.part.SeparatorPart;
 import org.apache.maven.pgraph.version.part.VersionPart;
+import org.apache.maven.pgraph.version.part.VersionPhrase;
 
 public final class VersionSpecComparisons
 {
@@ -290,7 +291,83 @@ public final class VersionSpecComparisons
 
     private static int compareSingleToSingle( final SingleVersion first, final SingleVersion second )
     {
-        final int comp = comparePartsToParts( first.getVersionParts(), second.getVersionParts() );
+        final int comp = comparePhrasesToPhrases( first.getVersionPhrases(), second.getVersionPhrases() );
+
+        if ( comp == 0 )
+        {
+            if ( first.isRelease() && !second.isRelease() )
+            {
+                return 1;
+            }
+            else if ( second.isRelease() && !first.isRelease() )
+            {
+                return -1;
+            }
+        }
+
+        return comp;
+    }
+
+    private static int comparePhrasesToPhrases( final List<VersionPhrase> firstPhrases,
+                                                final List<VersionPhrase> secondPhrases )
+    {
+        final List<VersionPhrase> fp = new ArrayList<VersionPhrase>( firstPhrases );
+        final List<VersionPhrase> sp = new ArrayList<VersionPhrase>( secondPhrases );
+
+        int comp = 0;
+        for ( int i = Math.min( firstPhrases.size() - 1, secondPhrases.size() - 1 ); i < Math.max( firstPhrases.size(),
+                                                                                                   secondPhrases.size() ); i++ )
+        {
+            final VersionPhrase f = i < firstPhrases.size() ? firstPhrases.get( i ) : null;
+            final VersionPhrase s = i < secondPhrases.size() ? secondPhrases.get( i ) : null;
+
+            if ( f == null )
+            {
+                fp.add( new VersionPhrase( s.getSeparator(), NumericPart.ZERO ) );
+            }
+            else if ( s == null )
+            {
+                sp.add( new VersionPhrase( f.getSeparator(), NumericPart.ZERO ) );
+            }
+        }
+
+        for ( int i = 0; i < fp.size(); i++ )
+        {
+            final VersionPhrase f = fp.get( i );
+            final VersionPhrase s = sp.get( i );
+
+            comp = comparePhraseToPhrase( f, s );
+            if ( comp != 0 )
+            {
+                return comp;
+            }
+        }
+
+        return 0;
+    }
+
+    public static int comparePhraseToPhrase( final VersionPhrase first, final VersionPhrase second )
+    {
+        Integer fmi = first.getMarkerIndex();
+        Integer smi = second.getMarkerIndex();
+
+        if ( fmi == null )
+        {
+            fmi = 0;
+        }
+
+        if ( smi == null )
+        {
+            smi = 0;
+        }
+
+        int comp = fmi.compareTo( smi );
+
+        if ( comp != 0 )
+        {
+            return comp;
+        }
+        comp = comparePartsToParts( first.getVersionParts(), second.getVersionParts() );
 
         if ( comp == 0 )
         {
