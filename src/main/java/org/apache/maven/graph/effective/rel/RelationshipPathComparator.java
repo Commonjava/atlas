@@ -7,7 +7,7 @@ public class RelationshipPathComparator
     implements Comparator<List<ProjectRelationship<?>>>
 {
 
-    private RelationshipComparator comp;
+    private final RelationshipComparator comp = new RelationshipComparator();
 
     public int compare( final List<ProjectRelationship<?>> one, final List<ProjectRelationship<?>> two )
     {

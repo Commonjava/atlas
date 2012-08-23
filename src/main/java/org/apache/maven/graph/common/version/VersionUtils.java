@@ -1,7 +1,7 @@
 package org.apache.maven.graph.common.version;
 
-import org.apache.maven.pgraph.version.parse.ParseException;
-import org.apache.maven.pgraph.version.parse.VersionParser;
+import org.apache.maven.graph.common.version.parse.ParseException;
+import org.apache.maven.graph.common.version.parse.VersionParser;
 
 public final class VersionUtils
 {
