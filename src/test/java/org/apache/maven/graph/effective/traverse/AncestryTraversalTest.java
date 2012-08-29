@@ -6,7 +6,7 @@ import static org.junit.Assert.assertThat;
 import java.util.List;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.EProjectRelationships;
@@ -24,11 +24,11 @@ public class AncestryTraversalTest
         throws InvalidVersionSpecificationException
     {
         final EProjectGraph.Builder pgBuilder =
-            new EProjectGraph.Builder( new VersionedProjectRef( "my.group", "my-artifact", "1.0" ) );
-        final VersionedProjectRef parentRef = new VersionedProjectRef( "my.group", "my-dad", "1" );
+            new EProjectGraph.Builder( new ProjectVersionRef( "my.group", "my-artifact", "1.0" ) );
+        final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
         pgBuilder.withParent( parentRef );
 
-        final VersionedProjectRef grandRef = new VersionedProjectRef( "other.group", "grandpa", "20120821" );
+        final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
         final EProjectRelationships parentRels =
             new EProjectRelationships.Builder( parentRef ).withParent( grandRef )
                                                                .build();
@@ -40,12 +40,12 @@ public class AncestryTraversalTest
         final AncestryTraversal ancestry = new AncestryTraversal( graph.getRoot() );
         graph.traverse( ancestry );
 
-        final List<VersionedProjectRef> ancestorRefs = ancestry.getAncestry();
+        final List<ProjectVersionRef> ancestorRefs = ancestry.getAncestry();
 
         assertThat( ancestorRefs.size(), equalTo( 3 ) );
 
         int idx = 0;
-        VersionedProjectRef ref = ancestorRefs.get( idx++ );
+        ProjectVersionRef ref = ancestorRefs.get( idx++ );
 
         assertThat( ref.getGroupId(), equalTo( "my.group" ) );
         assertThat( ref.getArtifactId(), equalTo( "my-artifact" ) );
@@ -66,46 +66,46 @@ public class AncestryTraversalTest
     public void traverseTwoAncestors_IgnoreNonParentRelationships()
         throws InvalidVersionSpecificationException
     {
-        final VersionedProjectRef myRef = new VersionedProjectRef( "my.group", "my-artifact", "1.0" );
+        final ProjectVersionRef myRef = new ProjectVersionRef( "my.group", "my-artifact", "1.0" );
 
         final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( myRef );
 
-        final VersionedProjectRef parentRef = new VersionedProjectRef( "my.group", "my-dad", "1" );
+        final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
         pgBuilder.withParent( parentRef );
 
         pgBuilder.withDependencies( new DependencyRelationship(
                                                                 myRef,
                                                                 new ArtifactRef(
-                                                                                 new VersionedProjectRef( "some.group",
+                                                                                 new ProjectVersionRef( "some.group",
                                                                                                           "foo", "1.0" ),
                                                                                  null, null, false ), null, 0, false ),
                                     new DependencyRelationship( myRef,
-                                                                new ArtifactRef( new VersionedProjectRef( "some.group",
+                                                                new ArtifactRef( new ProjectVersionRef( "some.group",
                                                                                                           "bar",
                                                                                                           "1.2.1" ),
                                                                                  null, null, false ), null, 1, false ) );
 
         pgBuilder.withPlugins( new PluginRelationship( myRef,
-                                                       new VersionedProjectRef( "org.apache.maven.plugins",
+                                                       new ProjectVersionRef( "org.apache.maven.plugins",
                                                                                 "maven-compiler-plugin", "2.5.1" ), 0,
                                                        false ),
-                               new PluginRelationship( myRef, new VersionedProjectRef( "org.apache.maven.plugins",
+                               new PluginRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins",
                                                                                        "maven-jar-plugin", "2.2" ), 1,
                                                        false ) );
 
         pgBuilder.withExtensions( new ExtensionRelationship(
                                                              myRef,
-                                                             new VersionedProjectRef( "org.apache.maven.plugins",
+                                                             new ProjectVersionRef( "org.apache.maven.plugins",
                                                                                       "maven-compiler-plugin", "2.5.1" ),
                                                              0 ) );
 
-        final VersionedProjectRef grandRef = new VersionedProjectRef( "other.group", "grandpa", "20120821" );
+        final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
         final EProjectRelationships parentRels =
             new EProjectRelationships.Builder( parentRef ).withParent( grandRef )
                                                                .withDependencies( new DependencyRelationship(
                                                                                                               parentRef,
                                                                                                               new ArtifactRef(
-                                                                                                                               new VersionedProjectRef(
+                                                                                                                               new ProjectVersionRef(
                                                                                                                                                         "other.group",
                                                                                                                                                         "utils",
                                                                                                                                                         "3-1" ),
@@ -123,12 +123,12 @@ public class AncestryTraversalTest
         final AncestryTraversal ancestry = new AncestryTraversal( graph.getRoot() );
         graph.traverse( ancestry );
 
-        final List<VersionedProjectRef> ancestorRefs = ancestry.getAncestry();
+        final List<ProjectVersionRef> ancestorRefs = ancestry.getAncestry();
 
         assertThat( ancestorRefs.size(), equalTo( 3 ) );
 
         int idx = 0;
-        VersionedProjectRef ref = ancestorRefs.get( idx++ );
+        ProjectVersionRef ref = ancestorRefs.get( idx++ );
 
         assertThat( ref.getGroupId(), equalTo( "my.group" ) );
         assertThat( ref.getArtifactId(), equalTo( "my-artifact" ) );

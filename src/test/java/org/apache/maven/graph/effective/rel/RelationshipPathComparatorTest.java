@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -27,9 +27,9 @@ public class RelationshipPathComparatorTest
 
         List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
 
-        final VersionedProjectRef root = projectVersion( "group.id", "my-artifact", "1.0" );
+        final ProjectVersionRef root = projectVersion( "group.id", "my-artifact", "1.0" );
 
-        final VersionedProjectRef dep = projectVersion( "org.group", "dep-1", "1.0" );
+        final ProjectVersionRef dep = projectVersion( "org.group", "dep-1", "1.0" );
         rels.add( dependency( root, dep, 0 ) );
         rels.add( dependency( dep, projectVersion( "org.foo", "bar", "1.0" ), 0 ) );
 
@@ -37,7 +37,7 @@ public class RelationshipPathComparatorTest
 
         rels = new ArrayList<ProjectRelationship<?>>();
 
-        final VersionedProjectRef parent = projectVersion( "group.id", "parent", "1" );
+        final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
 
         rels.add( new ParentRelationship( root, parent ) );
         rels.add( dependency( parent, "org.foo", "bar", "1.1.1", 0 ) );

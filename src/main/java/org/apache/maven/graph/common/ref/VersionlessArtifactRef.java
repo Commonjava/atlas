@@ -18,7 +18,7 @@ public class VersionlessArtifactRef
     public VersionlessArtifactRef( final ArtifactRef ref )
     {
         super(
-               new VersionedProjectRef( ref.getGroupId(), ref.getArtifactId(), new SingleVersion( "1",
+               new ProjectVersionRef( ref.getGroupId(), ref.getArtifactId(), new SingleVersion( "1",
                                                                                                   new NumericPart( 1 ) ) ),
                ref.getType(), ref.getClassifier(), ref.isOptional() );
 

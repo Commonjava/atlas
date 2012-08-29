@@ -8,7 +8,7 @@ import static org.junit.Assert.assertThat;
 import java.util.List;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.EProjectRelationships;
@@ -23,18 +23,18 @@ public class TransitiveDependencyTraversalTest
     public void collectDependencyOfDependency()
         throws InvalidVersionSpecificationException
     {
-        final VersionedProjectRef root = projectVersion( "group.id", "my-project", "1.0" );
+        final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
         final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( root );
 
         final DependencyRelationship depL1 = dependency( root, "other.group", "dep-L1", "1.0.1", 0 );
         final DependencyRelationship depL2 = dependency( depL1.getTarget()
-                                                              .asVersionedProjectRef(), "foo", "dep-L2", "1.1.1", 0 );
+                                                              .asProjectVersionRef(), "foo", "dep-L2", "1.1.1", 0 );
 
         pgBuilder.withDependencies( depL1 );
 
         final EProjectRelationships depL1Rels =
             new EProjectRelationships.Builder( depL1.getTarget()
-                                                         .asVersionedProjectRef() ).withDependencies( depL2 )
+                                                         .asProjectVersionRef() ).withDependencies( depL2 )
                                                                                    .build();
         pgBuilder.withDirectProjectRelationships( depL1Rels );
 
@@ -60,19 +60,19 @@ public class TransitiveDependencyTraversalTest
     public void preferDirectDependency()
         throws InvalidVersionSpecificationException
     {
-        final VersionedProjectRef root = projectVersion( "group.id", "my-project", "1.0" );
+        final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
         final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( root );
 
         final DependencyRelationship depL1A = dependency( root, "other.group", "dep-L1", "1.0.1", 0 );
         final DependencyRelationship depL1B = dependency( root, "foo", "dep-L2", "1.1.1", 1 );
         final DependencyRelationship depL2 = dependency( depL1A.getTarget()
-                                                               .asVersionedProjectRef(), "foo", "dep-L2", "1.0", 0 );
+                                                               .asProjectVersionRef(), "foo", "dep-L2", "1.0", 0 );
 
         pgBuilder.withDependencies( depL1A, depL1B );
 
         final EProjectRelationships depL1Rels =
             new EProjectRelationships.Builder( depL1A.getTarget()
-                                                          .asVersionedProjectRef() ).withDependencies( depL2 )
+                                                          .asProjectVersionRef() ).withDependencies( depL2 )
                                                                                     .build();
         pgBuilder.withDirectProjectRelationships( depL1Rels );
 
@@ -100,21 +100,21 @@ public class TransitiveDependencyTraversalTest
     public void preferDirectDependencyInParent()
         throws InvalidVersionSpecificationException
     {
-        final VersionedProjectRef root = projectVersion( "group.id", "my-project", "1.0" );
+        final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
         final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( root );
 
         final DependencyRelationship depL1A = dependency( root, "other.group", "dep-L1", "1.0.1", 0 );
         final DependencyRelationship depL2 = dependency( depL1A.getTarget()
-                                                               .asVersionedProjectRef(), "foo", "dep-L2", "1.0", 0 );
+                                                               .asProjectVersionRef(), "foo", "dep-L2", "1.0", 0 );
 
-        final VersionedProjectRef parent = projectVersion( "group.id", "parent", "1" );
+        final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
 
         pgBuilder.withDependencies( depL1A );
         pgBuilder.withParent( parent );
 
         final EProjectRelationships depL1Rels =
             new EProjectRelationships.Builder( depL1A.getTarget()
-                                                          .asVersionedProjectRef() ).withDependencies( depL2 )
+                                                          .asProjectVersionRef() ).withDependencies( depL2 )
                                                                                     .build();
 
         final DependencyRelationship depL1B = dependency( parent, "foo", "dep-L2", "1.1.1", 1 );
@@ -149,12 +149,12 @@ public class TransitiveDependencyTraversalTest
     public void preferLocalDirectDepOverDirectDepInParent()
         throws InvalidVersionSpecificationException
     {
-        final VersionedProjectRef root = projectVersion( "group.id", "my-project", "1.0" );
+        final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
         final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( root );
 
         final DependencyRelationship depL1A = dependency( root, "other.group", "dep-L1", "1.1.1", 0 );
 
-        final VersionedProjectRef parent = projectVersion( "group.id", "parent", "1" );
+        final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
 
         pgBuilder.withDependencies( depL1A );
         pgBuilder.withParent( parent );

@@ -7,7 +7,7 @@ import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.VersionSpec;
 
 public class ArtifactRef
-    extends VersionedProjectRef
+    extends ProjectVersionRef
 {
 
     private final String type;
@@ -25,8 +25,7 @@ public class ArtifactRef
         this.classifier = isEmpty( classifier ) ? null : classifier;
     }
 
-    public ArtifactRef( final VersionedProjectRef ref, final String type, final String classifier,
-                        final boolean optional )
+    public ArtifactRef( final ProjectVersionRef ref, final String type, final String classifier, final boolean optional )
     {
         super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpec() );
         this.optional = optional;
@@ -45,7 +44,7 @@ public class ArtifactRef
     }
 
     @Override
-    protected VersionedProjectRef newRef( final String groupId, final String artifactId, final SingleVersion version )
+    protected ProjectVersionRef newRef( final String groupId, final String artifactId, final SingleVersion version )
     {
         return new ArtifactRef( groupId, artifactId, version, type, classifier, optional );
     }
@@ -140,7 +139,7 @@ public class ArtifactRef
     }
 
     @Override
-    public boolean versionlessEquals( final VersionedProjectRef other )
+    public boolean versionlessEquals( final ProjectVersionRef other )
     {
         if ( !super.versionlessEquals( other ) )
         {
@@ -156,9 +155,9 @@ public class ArtifactRef
         return artifactFieldsEqual( (ArtifactRef) other );
     }
 
-    public VersionedProjectRef asVersionedProjectRef()
+    public ProjectVersionRef asProjectVersionRef()
     {
-        return new VersionedProjectRef( getGroupId(), getArtifactId(), getVersionSpec() );
+        return new ProjectVersionRef( getGroupId(), getArtifactId(), getVersionSpec() );
     }
 
 }

@@ -13,7 +13,7 @@ import java.util.Set;
 import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.ref.EProjectFacts;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
@@ -79,7 +79,7 @@ public class EProjectRelationships
         return key.getFacts();
     }
 
-    public final VersionedProjectRef getProjectRef()
+    public final ProjectVersionRef getProjectRef()
     {
         return key.getProject();
     }
@@ -119,7 +119,7 @@ public class EProjectRelationships
         return pluginDependencies;
     }
 
-    public final List<PluginDependencyRelationship> getPluginDependencies( final VersionedProjectRef plugin,
+    public final List<PluginDependencyRelationship> getPluginDependencies( final ProjectVersionRef plugin,
                                                                            final boolean managed )
     {
         final PluginRelationship pr = new PluginRelationship( getProjectRef(), plugin, 0, managed );
@@ -167,7 +167,7 @@ public class EProjectRelationships
         private final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies =
             new HashMap<PluginRelationship, List<PluginDependencyRelationship>>();
 
-        public Builder( final VersionedProjectRef projectRef, final String... activeProfiles )
+        public Builder( final ProjectVersionRef projectRef, final String... activeProfiles )
         {
             this.key = new EProjectKey( projectRef, new EProjectFacts( activeProfiles ) );
         }
@@ -178,7 +178,7 @@ public class EProjectRelationships
                                               extensions, pluginDependencies );
         }
 
-        public Builder withParent( final VersionedProjectRef parent )
+        public Builder withParent( final ProjectVersionRef parent )
         {
             this.parent = new ParentRelationship( key.getProject(), parent );
             return this;
@@ -251,7 +251,7 @@ public class EProjectRelationships
                 }
                 else
                 {
-                    if ( !plugins.contains( plugin ) )
+                    if ( !this.plugins.contains( plugin ) )
                     {
                         this.plugins.add( plugin );
                     }
@@ -390,7 +390,7 @@ public class EProjectRelationships
             return managed ? managedPlugins.size() : plugins.size();
         }
 
-        public int getNextPluginDependencyIndex( final VersionedProjectRef plugin, final boolean managed )
+        public int getNextPluginDependencyIndex( final ProjectVersionRef plugin, final boolean managed )
         {
             final List<PluginDependencyRelationship> list =
                 pluginDependencies.get( new PluginRelationship( key.getProject(), plugin, 0, managed ) );
@@ -407,7 +407,7 @@ public class EProjectRelationships
             return extensions.size();
         }
 
-        public Builder withDependency( final VersionedProjectRef ref, final String type, final String classifier,
+        public Builder withDependency( final ProjectVersionRef ref, final String type, final String classifier,
                                        final DependencyScope scope, final boolean managed )
         {
             withDependencies( new DependencyRelationship( key.getProject(), new ArtifactRef( ref, type, classifier,
@@ -417,14 +417,14 @@ public class EProjectRelationships
             return this;
         }
 
-        public Builder withPlugin( final VersionedProjectRef ref, final boolean managed )
+        public Builder withPlugin( final ProjectVersionRef ref, final boolean managed )
         {
             withPlugins( new PluginRelationship( key.getProject(), ref, getNextPluginIndex( managed ), managed ) );
 
             return this;
         }
 
-        public Builder withExtension( final VersionedProjectRef ref )
+        public Builder withExtension( final ProjectVersionRef ref )
         {
             withExtensions( new ExtensionRelationship( key.getProject(), ref, getNextExtensionIndex() ) );
             return this;

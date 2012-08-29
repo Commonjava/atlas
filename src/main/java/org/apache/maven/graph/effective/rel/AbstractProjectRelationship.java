@@ -4,15 +4,15 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.maven.graph.common.RelationshipType;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
-public class AbstractProjectRelationship<T extends VersionedProjectRef>
+public class AbstractProjectRelationship<T extends ProjectVersionRef>
     implements ProjectRelationship<T>
 {
 
     private final RelationshipType type;
 
-    private final VersionedProjectRef declaring;
+    private final ProjectVersionRef declaring;
 
     private final T target;
 
@@ -21,7 +21,7 @@ public class AbstractProjectRelationship<T extends VersionedProjectRef>
     @SuppressWarnings( "rawtypes" )
     private Constructor<? extends AbstractProjectRelationship> cloneCtor;
 
-    protected AbstractProjectRelationship( final RelationshipType type, final VersionedProjectRef declaring,
+    protected AbstractProjectRelationship( final RelationshipType type, final ProjectVersionRef declaring,
                                            final T target, final int index )
     {
         this.type = type;
@@ -40,7 +40,7 @@ public class AbstractProjectRelationship<T extends VersionedProjectRef>
         return type;
     }
 
-    public final VersionedProjectRef getDeclaring()
+    public final ProjectVersionRef getDeclaring()
     {
         return declaring;
     }
@@ -51,13 +51,13 @@ public class AbstractProjectRelationship<T extends VersionedProjectRef>
     }
 
     @SuppressWarnings( "unchecked" )
-    public synchronized ProjectRelationship<T> cloneFor( final VersionedProjectRef projectRef )
+    public synchronized ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef )
     {
         if ( cloneCtor == null )
         {
             try
             {
-                cloneCtor = getClass().getConstructor( VersionedProjectRef.class, target.getClass() );
+                cloneCtor = getClass().getConstructor( ProjectVersionRef.class, target.getClass() );
             }
             catch ( final NoSuchMethodException e )
             {

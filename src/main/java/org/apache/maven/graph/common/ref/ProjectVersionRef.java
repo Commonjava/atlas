@@ -5,34 +5,46 @@ import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.VersionSpec;
 import org.apache.maven.graph.common.version.VersionUtils;
 
-public class VersionedProjectRef
+public class ProjectVersionRef
     extends ProjectRef
-    implements VersionedRef<VersionedProjectRef>
+    implements VersionedRef<ProjectVersionRef>
 {
 
+    // NEVER null
     private final VersionSpec versionSpec;
 
-    public VersionedProjectRef( final String groupId, final String artifactId, final VersionSpec versionSpec )
+    public ProjectVersionRef( final String groupId, final String artifactId, final VersionSpec versionSpec )
     {
         super( groupId, artifactId );
+        if ( versionSpec == null )
+        {
+            throw new IllegalArgumentException( "Version cannot be null." );
+        }
+
         this.versionSpec = versionSpec;
     }
 
-    public VersionedProjectRef( final String groupId, final String artifactId, final String versionSpec )
+    public ProjectVersionRef( final String groupId, final String artifactId, final String versionSpec )
         throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId );
+        if ( versionSpec == null || versionSpec.trim()
+                                               .length() < 1 )
+        {
+            throw new IllegalArgumentException( "Version ('" + versionSpec + "') cannot be null or empty." );
+        }
+
         this.versionSpec = VersionUtils.createFromSpec( versionSpec );
     }
 
     public boolean isRelease()
     {
-        return versionSpec != null && versionSpec.isConcrete();
+        return versionSpec.isConcrete();
     }
 
     public boolean isSpecificVersion()
     {
-        return versionSpec != null && versionSpec.isSingle();
+        return versionSpec.isSingle();
     }
 
     public boolean matchesVersion( final SingleVersion version )
@@ -40,7 +52,7 @@ public class VersionedProjectRef
         return versionSpec.contains( version );
     }
 
-    public VersionedProjectRef selectVersion( final SingleVersion version )
+    public ProjectVersionRef selectVersion( final SingleVersion version )
     {
         if ( versionSpec.equals( version ) )
         {
@@ -56,9 +68,9 @@ public class VersionedProjectRef
         return newRef( getGroupId(), getArtifactId(), version );
     }
 
-    protected VersionedProjectRef newRef( final String groupId, final String artifactId, final SingleVersion version )
+    protected ProjectVersionRef newRef( final String groupId, final String artifactId, final SingleVersion version )
     {
-        return new VersionedProjectRef( groupId, artifactId, version );
+        return new ProjectVersionRef( groupId, artifactId, version );
     }
 
     public VersionSpec getVersionSpec()
@@ -75,7 +87,7 @@ public class VersionedProjectRef
         return result;
     }
 
-    public boolean versionlessEquals( final VersionedProjectRef other )
+    public boolean versionlessEquals( final ProjectVersionRef other )
     {
         if ( this == other )
         {
@@ -100,7 +112,7 @@ public class VersionedProjectRef
         {
             return false;
         }
-        final VersionedProjectRef other = (VersionedProjectRef) obj;
+        final ProjectVersionRef other = (ProjectVersionRef) obj;
         if ( getVersionSpec() == null )
         {
             if ( other.getVersionSpec() != null )
@@ -118,13 +130,12 @@ public class VersionedProjectRef
     @Override
     public String toString()
     {
-        return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getVersionSpec() == null ? "-NONE-"
-                        : getVersionSpec().renderStandard() );
+        return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getVersionSpec().renderStandard() );
     }
 
     public boolean isCompound()
     {
-        return versionSpec != null && !versionSpec.isSingle();
+        return !versionSpec.isSingle();
     }
 
     public boolean isSnapshot()

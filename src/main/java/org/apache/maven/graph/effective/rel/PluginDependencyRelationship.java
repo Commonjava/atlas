@@ -3,7 +3,7 @@ package org.apache.maven.graph.effective.rel;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public final class PluginDependencyRelationship
     extends AbstractProjectRelationship<ArtifactRef>
@@ -13,7 +13,7 @@ public final class PluginDependencyRelationship
 
     private final boolean managed;
 
-    public PluginDependencyRelationship( final VersionedProjectRef declaring, final ProjectRef plugin,
+    public PluginDependencyRelationship( final ProjectVersionRef declaring, final ProjectRef plugin,
                                          final ArtifactRef target, final int index, final boolean managed )
     {
         super( RelationshipType.PLUGIN_DEP, declaring, target, index );
@@ -32,7 +32,7 @@ public final class PluginDependencyRelationship
     }
 
     @Override
-    public synchronized ProjectRelationship<ArtifactRef> cloneFor( final VersionedProjectRef projectRef )
+    public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
         return new PluginDependencyRelationship( projectRef, plugin, getTarget(), getIndex(), managed );
     }
@@ -79,6 +79,13 @@ public final class PluginDependencyRelationship
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format( "PluginDependencyRelationship [%s(%s) => %s (managed=%s, index=%s)]", getDeclaring(),
+                              plugin, getTarget(), managed, getIndex() );
     }
 
 }

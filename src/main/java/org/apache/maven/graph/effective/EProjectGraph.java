@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.VersionSpec;
 import org.apache.maven.graph.effective.ref.EProjectFacts;
 import org.apache.maven.graph.effective.ref.EProjectKey;
@@ -35,12 +35,12 @@ public class EProjectGraph
 
     private final EProjectKey key;
 
-    private transient final Set<VersionedProjectRef> incompleteSubgraphs = new HashSet<VersionedProjectRef>();
+    private transient final Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private transient final Set<VersionedProjectRef> variableSubgraphs = new HashSet<VersionedProjectRef>();
+    private transient final Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private final DirectedGraph<VersionedProjectRef, ProjectRelationship<?>> graph =
-        new DirectedSparseMultigraph<VersionedProjectRef, ProjectRelationship<?>>();
+    private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
+        new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
 
     public EProjectGraph( final EProjectRelationships relationships )
     {
@@ -48,7 +48,7 @@ public class EProjectGraph
         add( relationships );
     }
 
-    public EProjectGraph( final EProjectKey key, final ProjectRelationship<VersionedProjectRef> parent,
+    public EProjectGraph( final EProjectKey key, final ProjectRelationship<ProjectVersionRef> parent,
                           final Collection<DependencyRelationship> dependencies,
                           final Collection<PluginRelationship> plugins,
                           final Collection<PluginDependencyRelationship> pluginLevelDeps,
@@ -97,7 +97,7 @@ public class EProjectGraph
         return new HashSet<ProjectRelationship<?>>( graph.getEdges() );
     }
 
-    public DirectedGraph<VersionedProjectRef, ProjectRelationship<?>> getRawGraph()
+    public DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> getRawGraph()
     {
         return Graphs.unmodifiableDirectedGraph( graph );
     }
@@ -112,12 +112,12 @@ public class EProjectGraph
         return variableSubgraphs.isEmpty();
     }
 
-    public Set<VersionedProjectRef> getIncompleteSubgraphs()
+    public Set<ProjectVersionRef> getIncompleteSubgraphs()
     {
         return Collections.unmodifiableSet( incompleteSubgraphs );
     }
 
-    public Set<VersionedProjectRef> getVariableSubgraphs()
+    public Set<ProjectVersionRef> getVariableSubgraphs()
     {
         return Collections.unmodifiableSet( variableSubgraphs );
     }
@@ -126,7 +126,7 @@ public class EProjectGraph
     {
         private final EProjectKey key;
 
-        private ProjectRelationship<VersionedProjectRef> parent;
+        private ProjectRelationship<ProjectVersionRef> parent;
 
         private final Set<DependencyRelationship> dependencies = new HashSet<DependencyRelationship>();
 
@@ -144,18 +144,18 @@ public class EProjectGraph
             addFromDirectRelationships( rels );
         }
 
-        public Builder( final VersionedProjectRef projectRef, final String... activeProfiles )
+        public Builder( final ProjectVersionRef projectRef, final String... activeProfiles )
         {
             this.key = new EProjectKey( projectRef, new EProjectFacts( activeProfiles ) );
         }
 
-        public Builder withParent( final VersionedProjectRef parent )
+        public Builder withParent( final ProjectVersionRef parent )
         {
             this.parent = new ParentRelationship( key.getProject(), parent );
             return this;
         }
 
-        public Builder withParent( final ProjectRelationship<VersionedProjectRef> parent )
+        public Builder withParent( final ProjectRelationship<ProjectVersionRef> parent )
         {
             if ( parent.getDeclaring()
                        .equals( key.getProject() ) )
@@ -292,10 +292,10 @@ public class EProjectGraph
             return;
         }
 
-        VersionedProjectRef target = rel.getTarget();
+        ProjectVersionRef target = rel.getTarget();
         if ( rel instanceof DependencyRelationship )
         {
-            target = ( (ArtifactRef) target ).asVersionedProjectRef();
+            target = ( (ArtifactRef) target ).asProjectVersionRef();
         }
 
         if ( !graph.containsVertex( rel.getTarget() ) )
@@ -330,7 +330,7 @@ public class EProjectGraph
         }
     }
 
-    public VersionedProjectRef getRoot()
+    public ProjectVersionRef getRoot()
     {
         return key.getProject();
     }
@@ -366,7 +366,7 @@ public class EProjectGraph
         dfsIterate( getRoot(), traversal, new LinkedList<ProjectRelationship<?>>(), pass );
     }
 
-    private void dfsIterate( final VersionedProjectRef node, final ProjectGraphTraversal traversal,
+    private void dfsIterate( final ProjectVersionRef node, final ProjectGraphTraversal traversal,
                              final LinkedList<ProjectRelationship<?>> path, final int pass )
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( node );
@@ -384,7 +384,7 @@ public class EProjectGraph
         }
     }
 
-    private List<ProjectRelationship<?>> getSortedOutEdges( final VersionedProjectRef node )
+    private List<ProjectRelationship<?>> getSortedOutEdges( final ProjectVersionRef node )
     {
         final Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node );
         if ( unsorted != null )
@@ -414,11 +414,11 @@ public class EProjectGraph
 
         for ( final List<ProjectRelationship<?>> path : thisLayer )
         {
-            VersionedProjectRef node = path.get( path.size() - 1 )
-                                           .getTarget();
+            ProjectVersionRef node = path.get( path.size() - 1 )
+                                         .getTarget();
             if ( node instanceof ArtifactRef )
             {
-                node = ( (ArtifactRef) node ).asVersionedProjectRef();
+                node = ( (ArtifactRef) node ).asProjectVersionRef();
             }
 
             if ( !path.isEmpty() && ( path.get( 0 ) instanceof SelfEdge ) )
@@ -450,10 +450,10 @@ public class EProjectGraph
     }
 
     private static final class SelfEdge
-        extends AbstractProjectRelationship<VersionedProjectRef>
+        extends AbstractProjectRelationship<ProjectVersionRef>
     {
 
-        SelfEdge( final VersionedProjectRef ref )
+        SelfEdge( final ProjectVersionRef ref )
         {
             super( null, ref, ref, 0 );
         }

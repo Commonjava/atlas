@@ -1,21 +1,21 @@
 package org.apache.maven.graph.effective.ref;
 
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public class EProjectKey
 {
 
-    private final VersionedProjectRef project;
+    private final ProjectVersionRef project;
 
     private final EProjectFacts facts;
 
-    public EProjectKey( final VersionedProjectRef project, final EProjectFacts facts )
+    public EProjectKey( final ProjectVersionRef project, final EProjectFacts facts )
     {
         this.project = project;
         this.facts = facts;
     }
 
-    public final VersionedProjectRef getProject()
+    public final ProjectVersionRef getProject()
     {
         return project;
     }
@@ -23,6 +23,11 @@ public class EProjectKey
     public final EProjectFacts getFacts()
     {
         return facts;
+    }
+
+    public String renderKey()
+    {
+        return project.toString() + facts.renderKeyPart();
     }
 
     @Override

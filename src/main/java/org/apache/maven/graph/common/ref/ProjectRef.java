@@ -5,8 +5,10 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 public class ProjectRef
 {
 
+    // NEVER null
     private final String groupId;
 
+    // NEVER null
     private final String artifactId;
 
     public ProjectRef( final String groupId, final String artifactId )
@@ -42,8 +44,8 @@ public class ProjectRef
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + ( ( artifactId == null ) ? 0 : artifactId.hashCode() );
-        result = prime * result + ( ( groupId == null ) ? 0 : groupId.hashCode() );
+        result = prime * result + artifactId.hashCode();
+        result = prime * result + groupId.hashCode();
         return result;
     }
 
@@ -63,25 +65,11 @@ public class ProjectRef
             return false;
         }
         final ProjectRef other = (ProjectRef) obj;
-        if ( artifactId == null )
-        {
-            if ( other.artifactId != null )
-            {
-                return false;
-            }
-        }
-        else if ( !artifactId.equals( other.artifactId ) )
+        if ( !artifactId.equals( other.artifactId ) )
         {
             return false;
         }
-        if ( groupId == null )
-        {
-            if ( other.groupId != null )
-            {
-                return false;
-            }
-        }
-        else if ( !groupId.equals( other.groupId ) )
+        if ( !groupId.equals( other.groupId ) )
         {
             return false;
         }

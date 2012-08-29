@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -17,11 +17,11 @@ public class DependencyPathFinder
 
     private final ArtifactRef target;
 
-    private final DirectedGraph<VersionedProjectRef, ProjectRelationship<?>> graph;
+    private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph;
 
     private final List<List<DependencyRelationship>> paths = new ArrayList<List<DependencyRelationship>>();
 
-    private final VersionedProjectRef root;
+    private final ProjectVersionRef root;
 
     public DependencyPathFinder( final EProjectGraph graph, final ArtifactRef target )
     {
@@ -39,14 +39,14 @@ public class DependencyPathFinder
         return paths;
     }
 
-    private void recurseToRoot( final VersionedProjectRef declaring, final List<DependencyRelationship> inPath )
+    private void recurseToRoot( final ProjectVersionRef declaring, final List<DependencyRelationship> inPath )
     {
-        final Collection<ProjectRelationship<?>> edges = graph.getInEdges( target.asVersionedProjectRef() );
+        final Collection<ProjectRelationship<?>> edges = graph.getInEdges( target.asProjectVersionRef() );
         for ( final ProjectRelationship<?> rel : edges )
         {
             if ( rel instanceof DependencyRelationship )
             {
-                final VersionedProjectRef decl = rel.getDeclaring();
+                final ProjectVersionRef decl = rel.getDeclaring();
 
                 final List<DependencyRelationship> currentPath = new ArrayList<DependencyRelationship>( inPath );
                 currentPath.add( (DependencyRelationship) rel );

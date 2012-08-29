@@ -1,19 +1,19 @@
 package org.apache.maven.graph.effective.rel;
 
 import org.apache.maven.graph.common.RelationshipType;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
-public interface ProjectRelationship<T extends VersionedProjectRef>
+public interface ProjectRelationship<T extends ProjectVersionRef>
 {
 
     int getIndex();
 
     RelationshipType getType();
 
-    VersionedProjectRef getDeclaring();
+    ProjectVersionRef getDeclaring();
 
     T getTarget();
 
-    ProjectRelationship<T> cloneFor( final VersionedProjectRef projectRef );
+    ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef );
 
 }

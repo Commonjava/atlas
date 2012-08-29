@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -13,9 +13,9 @@ public class AncestryTraversal
     implements ProjectGraphTraversal
 {
 
-    private final List<VersionedProjectRef> ancestry = new ArrayList<VersionedProjectRef>();
+    private final List<ProjectVersionRef> ancestry = new ArrayList<ProjectVersionRef>();
 
-    public AncestryTraversal( final VersionedProjectRef startingFrom )
+    public AncestryTraversal( final ProjectVersionRef startingFrom )
     {
         ancestry.add( startingFrom );
     }
@@ -24,7 +24,7 @@ public class AncestryTraversal
     {
     }
 
-    public List<VersionedProjectRef> getAncestry()
+    public List<ProjectVersionRef> getAncestry()
     {
         return Collections.unmodifiableList( ancestry );
     }
@@ -42,7 +42,7 @@ public class AncestryTraversal
         return false;
     }
 
-    public boolean isInAncestry( final VersionedProjectRef ref )
+    public boolean isInAncestry( final ProjectVersionRef ref )
     {
         return ancestry.contains( ref );
     }

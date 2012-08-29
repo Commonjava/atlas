@@ -1,5 +1,7 @@
 package org.apache.maven.graph.effective.ref;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -68,6 +70,11 @@ public class EProjectFacts
     public String toString()
     {
         return String.format( "(active profiles=%s)", activeProfiles );
+    }
+
+    public String renderKeyPart()
+    {
+        return " " + join( activeProfiles, "," );
     }
 
 }

@@ -3,7 +3,7 @@ package org.apache.maven.graph.effective.rel;
 import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.VersionedProjectRef;
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public final class DependencyRelationship
     extends AbstractProjectRelationship<ArtifactRef>
@@ -13,7 +13,7 @@ public final class DependencyRelationship
 
     private final DependencyScope scope;
 
-    public DependencyRelationship( final VersionedProjectRef declaring, final ArtifactRef target,
+    public DependencyRelationship( final ProjectVersionRef declaring, final ArtifactRef target,
                                    final DependencyScope scope, final int index, final boolean managed )
     {
         super( RelationshipType.DEPENDENCY, declaring, target, index );
@@ -32,7 +32,7 @@ public final class DependencyRelationship
     }
 
     @Override
-    public synchronized ProjectRelationship<ArtifactRef> cloneFor( final VersionedProjectRef projectRef )
+    public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
         return new DependencyRelationship( projectRef, getTarget(), scope, getIndex(), managed );
     }
@@ -67,6 +67,13 @@ public final class DependencyRelationship
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s)]", getDeclaring(),
+                              getTarget(), managed, scope, getIndex() );
     }
 
 }
