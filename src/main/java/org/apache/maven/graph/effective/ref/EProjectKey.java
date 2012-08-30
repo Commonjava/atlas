@@ -15,6 +15,11 @@ public class EProjectKey
         this.facts = facts;
     }
 
+    public EProjectKey( final ProjectVersionRef project )
+    {
+        this( project, new EProjectFacts() );
+    }
+
     public final ProjectVersionRef getProject()
     {
         return project;

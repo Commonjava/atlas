@@ -3,9 +3,11 @@ package org.apache.maven.graph.effective.util;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.common.DependencyScope;
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
@@ -21,6 +23,33 @@ public final class EGraphUtils
 
     private EGraphUtils()
     {
+    }
+
+    public static Set<ProjectRelationship<?>> filter( final Set<ProjectRelationship<?>> set,
+                                                      final RelationshipType... types )
+    {
+        if ( set == null || set.isEmpty() )
+        {
+            return set;
+        }
+
+        if ( types == null || types.length < 1 )
+        {
+            return set;
+        }
+
+        Arrays.sort( types );
+        final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>( set );
+        for ( final Iterator<ProjectRelationship<?>> iterator = result.iterator(); iterator.hasNext(); )
+        {
+            final ProjectRelationship<?> rel = iterator.next();
+            if ( Arrays.binarySearch( types, rel.getType() ) < 0 )
+            {
+                iterator.remove();
+            }
+        }
+
+        return result;
     }
 
     public static Set<ProjectVersionRef> declarers( final ProjectRelationship<?>... relationships )

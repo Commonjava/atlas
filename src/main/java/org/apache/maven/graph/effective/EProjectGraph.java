@@ -37,6 +37,8 @@ public class EProjectGraph
 
     private transient final Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
 
+    private transient final Set<ProjectVersionRef> connectedProjects = new HashSet<ProjectVersionRef>();
+
     private transient final Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
     private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
@@ -282,6 +284,8 @@ public class EProjectGraph
             incompleteSubgraphs.remove( rels.getProjectRef() );
         }
 
+        connectedProjects.add( rels.getProjectRef() );
+
         addAll( rels.getAll() );
     }
 
@@ -298,22 +302,21 @@ public class EProjectGraph
             target = ( (ArtifactRef) target ).asProjectVersionRef();
         }
 
-        if ( !graph.containsVertex( rel.getTarget() ) )
+        if ( !graph.containsVertex( target ) )
         {
-            graph.addVertex( rel.getTarget() );
+            graph.addVertex( target );
         }
 
-        graph.addEdge( rel, rel.getDeclaring(), rel.getTarget() );
+        graph.addEdge( rel, rel.getDeclaring(), target );
 
-        if ( !rel.getTarget()
-                 .getVersionSpec()
-                 .isSingle() )
+        if ( !target.getVersionSpec()
+                    .isSingle() )
         {
-            variableSubgraphs.add( rel.getTarget() );
+            variableSubgraphs.add( target );
         }
-        else
+        else if ( !connectedProjects.contains( target ) )
         {
-            incompleteSubgraphs.add( rel.getTarget() );
+            incompleteSubgraphs.add( target );
         }
     }
 
@@ -458,6 +461,19 @@ public class EProjectGraph
             super( null, ref, ref, 0 );
         }
 
+    }
+
+    public void connect( final EProjectGraph subGraph )
+    {
+        if ( incompleteSubgraphs.contains( subGraph.getRoot() ) )
+        {
+            incompleteSubgraphs.remove( subGraph.getRoot() );
+        }
+
+        connectedProjects.add( subGraph.getRoot() );
+
+        this.connectedProjects.addAll( subGraph.connectedProjects );
+        addAll( subGraph.getAllRelationships() );
     }
 
 }
