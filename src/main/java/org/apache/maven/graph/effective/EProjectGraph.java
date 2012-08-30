@@ -333,6 +333,19 @@ public class EProjectGraph
         }
     }
 
+    public void connect( final EProjectGraph subGraph )
+    {
+        if ( incompleteSubgraphs.contains( subGraph.getRoot() ) )
+        {
+            incompleteSubgraphs.remove( subGraph.getRoot() );
+        }
+
+        connectedProjects.add( subGraph.getRoot() );
+
+        this.connectedProjects.addAll( subGraph.connectedProjects );
+        addAll( subGraph.getAllRelationships() );
+    }
+
     public ProjectVersionRef getRoot()
     {
         return key.getProject();
@@ -380,25 +393,18 @@ public class EProjectGraph
                 if ( traversal.traverseEdge( edge, path, pass ) )
                 {
                     path.addLast( edge );
-                    dfsIterate( edge.getTarget(), traversal, path, pass );
+
+                    ProjectVersionRef target = edge.getTarget();
+                    if ( target instanceof ArtifactRef )
+                    {
+                        target = ( (ArtifactRef) target ).asProjectVersionRef();
+                    }
+
+                    dfsIterate( target, traversal, path, pass );
                     path.removeLast();
                 }
             }
         }
-    }
-
-    private List<ProjectRelationship<?>> getSortedOutEdges( final ProjectVersionRef node )
-    {
-        final Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node );
-        if ( unsorted != null )
-        {
-            final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
-            Collections.sort( sorted, new RelationshipComparator() );
-
-            return sorted;
-        }
-
-        return null;
     }
 
     // TODO: Implement without recursion.
@@ -452,6 +458,20 @@ public class EProjectGraph
         }
     }
 
+    private List<ProjectRelationship<?>> getSortedOutEdges( final ProjectVersionRef node )
+    {
+        final Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node );
+        if ( unsorted != null )
+        {
+            final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
+            Collections.sort( sorted, new RelationshipComparator() );
+
+            return sorted;
+        }
+
+        return null;
+    }
+
     private static final class SelfEdge
         extends AbstractProjectRelationship<ProjectVersionRef>
     {
@@ -461,19 +481,6 @@ public class EProjectGraph
             super( null, ref, ref, 0 );
         }
 
-    }
-
-    public void connect( final EProjectGraph subGraph )
-    {
-        if ( incompleteSubgraphs.contains( subGraph.getRoot() ) )
-        {
-            incompleteSubgraphs.remove( subGraph.getRoot() );
-        }
-
-        connectedProjects.add( subGraph.getRoot() );
-
-        this.connectedProjects.addAll( subGraph.connectedProjects );
-        addAll( subGraph.getAllRelationships() );
     }
 
 }
