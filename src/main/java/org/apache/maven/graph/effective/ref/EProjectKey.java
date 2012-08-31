@@ -7,9 +7,9 @@ public class EProjectKey
 
     private final ProjectVersionRef project;
 
-    private final EProjectFacts facts;
+    private final EGraphFacts facts;
 
-    public EProjectKey( final ProjectVersionRef project, final EProjectFacts facts )
+    public EProjectKey( final ProjectVersionRef project, final EGraphFacts facts )
     {
         this.project = project;
         this.facts = facts;
@@ -17,7 +17,7 @@ public class EProjectKey
 
     public EProjectKey( final ProjectVersionRef project )
     {
-        this( project, new EProjectFacts() );
+        this( project, new EGraphFacts() );
     }
 
     public final ProjectVersionRef getProject()
@@ -25,7 +25,7 @@ public class EProjectKey
         return project;
     }
 
-    public final EProjectFacts getFacts()
+    public final EGraphFacts getFacts()
     {
         return facts;
     }

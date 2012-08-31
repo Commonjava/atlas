@@ -13,7 +13,7 @@ import java.util.Set;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.VersionSpec;
-import org.apache.maven.graph.effective.ref.EProjectFacts;
+import org.apache.maven.graph.effective.ref.EGraphFacts;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.AbstractProjectRelationship;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
@@ -84,7 +84,7 @@ public class EProjectGraph
         return key;
     }
 
-    public EProjectFacts getFacts()
+    public EGraphFacts getFacts()
     {
         return key.getFacts();
     }
@@ -148,7 +148,7 @@ public class EProjectGraph
 
         public Builder( final ProjectVersionRef projectRef, final String... activeProfiles )
         {
-            this.key = new EProjectKey( projectRef, new EProjectFacts( activeProfiles ) );
+            this.key = new EProjectKey( projectRef, new EGraphFacts( activeProfiles ) );
         }
 
         public Builder withParent( final ProjectVersionRef parent )

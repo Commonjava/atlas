@@ -7,17 +7,17 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
-public class EProjectFacts
+public class EGraphFacts
 {
 
     private final Set<String> activeProfiles = new HashSet<String>();
 
-    public EProjectFacts( final Collection<String> activeProfiles )
+    public EGraphFacts( final Collection<String> activeProfiles )
     {
         this.activeProfiles.addAll( activeProfiles );
     }
 
-    public EProjectFacts( final String... activeProfiles )
+    public EGraphFacts( final String... activeProfiles )
     {
         this.activeProfiles.addAll( Arrays.asList( activeProfiles ) );
     }
@@ -51,7 +51,7 @@ public class EProjectFacts
         {
             return false;
         }
-        final EProjectFacts other = (EProjectFacts) obj;
+        final EGraphFacts other = (EGraphFacts) obj;
         if ( activeProfiles == null )
         {
             if ( other.activeProfiles != null )

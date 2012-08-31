@@ -14,7 +14,7 @@ import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.ref.EProjectFacts;
+import org.apache.maven.graph.effective.ref.EGraphFacts;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
@@ -74,7 +74,7 @@ public class EProjectRelationships
         return key;
     }
 
-    public final EProjectFacts getFacts()
+    public final EGraphFacts getFacts()
     {
         return key.getFacts();
     }
@@ -169,7 +169,7 @@ public class EProjectRelationships
 
         public Builder( final ProjectVersionRef projectRef, final String... activeProfiles )
         {
-            this.key = new EProjectKey( projectRef, new EProjectFacts( activeProfiles ) );
+            this.key = new EProjectKey( projectRef, new EGraphFacts( activeProfiles ) );
         }
 
         public EProjectRelationships build()
