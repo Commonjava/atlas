@@ -20,4 +20,9 @@ public enum DependencyScope
         return implied.contains( scope );
     }
 
+    public static DependencyScope getScope( final String scope )
+    {
+        return scope == null ? compile : valueOf( scope );
+    }
+
 }
