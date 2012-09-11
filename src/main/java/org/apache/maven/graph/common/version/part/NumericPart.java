@@ -1,30 +1,32 @@
 package org.apache.maven.graph.common.version.part;
 
+import java.math.BigInteger;
+
 public class NumericPart
     extends VersionPart
 {
 
     public static final NumericPart ZERO = new NumericPart( 0 );
 
-    private final int value;
+    private final BigInteger value;
 
     public NumericPart( final String value )
     {
-        this.value = Integer.parseInt( value );
+        this.value = BigInteger.valueOf( Long.parseLong( value ) );
     }
 
-    public NumericPart( final int value )
+    public NumericPart( final long value )
     {
-        this.value = value;
+        this.value = BigInteger.valueOf( value );
     }
 
     @Override
     public String renderStandard()
     {
-        return Integer.toString( value );
+        return value.toString();
     }
 
-    public Integer getValue()
+    public BigInteger getValue()
     {
         return value;
     }
@@ -50,19 +52,8 @@ public class NumericPart
         }
         else if ( part instanceof NumericPart )
         {
-            final int other = ( (NumericPart) part ).getValue();
-            if ( value < other )
-            {
-                return -1;
-            }
-            else if ( value > other )
-            {
-                return 1;
-            }
-            else
-            {
-                return 0;
-            }
+            final BigInteger other = ( (NumericPart) part ).getValue();
+            return value.compareTo( other );
         }
 
         // punt...shouldn't happen.
@@ -74,7 +65,7 @@ public class NumericPart
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + value;
+        result = prime * result + value.hashCode();
         return result;
     }
 
