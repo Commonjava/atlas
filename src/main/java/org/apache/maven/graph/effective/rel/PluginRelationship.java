@@ -9,11 +9,25 @@ public final class PluginRelationship
 
     private final boolean managed;
 
+    private final boolean reporting;
+
     public PluginRelationship( final ProjectVersionRef declaring, final ProjectVersionRef target, final int index,
                                final boolean managed )
     {
+        this( declaring, target, index, managed, false );
+    }
+
+    public PluginRelationship( final ProjectVersionRef declaring, final ProjectVersionRef target, final int index,
+                               final boolean managed, final boolean reporting )
+    {
         super( RelationshipType.PLUGIN, declaring, target, index );
         this.managed = managed;
+        this.reporting = reporting;
+    }
+
+    public final boolean isReporting()
+    {
+        return reporting;
     }
 
     public final boolean isManaged()
@@ -24,7 +38,7 @@ public final class PluginRelationship
     @Override
     public synchronized ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new PluginRelationship( projectRef, getTarget(), getIndex(), managed );
+        return new PluginRelationship( projectRef, getTarget(), getIndex(), managed, reporting );
     }
 
     @Override
