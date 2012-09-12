@@ -1,6 +1,7 @@
 package org.apache.maven.graph.common.version;
 
 import org.apache.maven.graph.common.version.parse.ParseException;
+import org.apache.maven.graph.common.version.parse.TokenMgrError;
 import org.apache.maven.graph.common.version.parse.VersionParser;
 
 public final class VersionUtils
@@ -18,6 +19,10 @@ public final class VersionUtils
             return new VersionParser( version ).parse();
         }
         catch ( final ParseException e )
+        {
+            throw new InvalidVersionSpecificationException( version, "Failed to parse version: %s", e, e.getMessage() );
+        }
+        catch ( final TokenMgrError e )
         {
             throw new InvalidVersionSpecificationException( version, "Failed to parse version: %s", e, e.getMessage() );
         }
