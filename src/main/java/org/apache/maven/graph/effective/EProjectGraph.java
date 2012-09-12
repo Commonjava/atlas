@@ -24,13 +24,14 @@ import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.rel.RelationshipComparator;
 import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
-import org.apache.maven.graph.effective.traverse.ProjectGraphTraversal;
+import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Graphs;
 
 public class EProjectGraph
+    implements EProjectNet
 {
 
     private final EProjectKey key;
@@ -351,7 +352,7 @@ public class EProjectGraph
         return key.getProject();
     }
 
-    public void traverse( final ProjectGraphTraversal traversal )
+    public void traverse( final ProjectNetTraversal traversal )
     {
         final int passes = traversal.getRequiredPasses();
         for ( int i = 0; i < passes; i++ )
@@ -377,12 +378,12 @@ public class EProjectGraph
     }
 
     // TODO: Implement without recursion.
-    private void dfsTraverse( final ProjectGraphTraversal traversal, final int pass )
+    private void dfsTraverse( final ProjectNetTraversal traversal, final int pass )
     {
         dfsIterate( getRoot(), traversal, new LinkedList<ProjectRelationship<?>>(), pass );
     }
 
-    private void dfsIterate( final ProjectVersionRef node, final ProjectGraphTraversal traversal,
+    private void dfsIterate( final ProjectVersionRef node, final ProjectNetTraversal traversal,
                              final LinkedList<ProjectRelationship<?>> path, final int pass )
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( node );
@@ -408,7 +409,7 @@ public class EProjectGraph
     }
 
     // TODO: Implement without recursion.
-    private void bfsTraverse( final ProjectGraphTraversal traversal, final int pass )
+    private void bfsTraverse( final ProjectNetTraversal traversal, final int pass )
     {
         final List<ProjectRelationship<?>> path = new ArrayList<ProjectRelationship<?>>();
         path.add( new SelfEdge( getRoot() ) );
@@ -416,7 +417,7 @@ public class EProjectGraph
         bfsIterate( Collections.singletonList( path ), traversal, pass );
     }
 
-    private void bfsIterate( final List<List<ProjectRelationship<?>>> thisLayer, final ProjectGraphTraversal traversal,
+    private void bfsIterate( final List<List<ProjectRelationship<?>>> thisLayer, final ProjectNetTraversal traversal,
                              final int pass )
     {
         final List<List<ProjectRelationship<?>>> nextLayer = new ArrayList<List<ProjectRelationship<?>>>();

@@ -7,11 +7,11 @@ import java.util.List;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class BuildOrderTraversal
-    implements ProjectGraphTraversal
+    implements ProjectNetTraversal
 {
 
     private final List<ProjectVersionRef> order = new ArrayList<ProjectVersionRef>();
@@ -39,11 +39,11 @@ public class BuildOrderTraversal
         return 1;
     }
 
-    public void startTraverse( final int pass, final EProjectGraph graph )
+    public void startTraverse( final int pass, final EProjectNet network )
     {
     }
 
-    public void endTraverse( final int pass, final EProjectGraph graph )
+    public void endTraverse( final int pass, final EProjectNet network )
     {
     }
 

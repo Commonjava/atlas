@@ -9,7 +9,7 @@ import java.util.Set;
 import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.VersionlessArtifactRef;
-import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -83,11 +83,11 @@ public class TransitiveDependencyTraversal
     }
 
     @Override
-    public void startTraverse( final int pass, final EProjectGraph graph )
+    public void startTraverse( final int pass, final EProjectNet network )
     {
         if ( pass == 0 )
         {
-            super.startTraverse( pass, graph );
+            super.startTraverse( pass, network );
         }
     }
 

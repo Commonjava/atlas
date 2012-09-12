@@ -5,12 +5,12 @@ import java.util.Collections;
 import java.util.List;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class AncestryTraversal
-    implements ProjectGraphTraversal
+    implements ProjectNetTraversal
 {
 
     private final List<ProjectVersionRef> ancestry = new ArrayList<ProjectVersionRef>();
@@ -32,11 +32,20 @@ public class AncestryTraversal
     public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {
-        if ( ancestry.get( ancestry.size() - 1 )
-                     .equals( relationship.getDeclaring() ) && ( relationship instanceof ParentRelationship ) )
+        if ( relationship instanceof ParentRelationship )
         {
-            ancestry.add( relationship.getTarget() );
-            return true;
+            if ( ancestry.isEmpty() )
+            {
+                ancestry.add( relationship.getDeclaring() );
+                ancestry.add( relationship.getTarget() );
+                return true;
+            }
+            else if ( ancestry.get( ancestry.size() - 1 )
+                              .equals( relationship.getDeclaring() ) )
+            {
+                ancestry.add( relationship.getTarget() );
+                return true;
+            }
         }
 
         return false;
@@ -52,12 +61,8 @@ public class AncestryTraversal
         return TraversalType.depth_first;
     }
 
-    public void startTraverse( final int pass, final EProjectGraph graph )
+    public void startTraverse( final int pass, final EProjectNet network )
     {
-        if ( ancestry.isEmpty() )
-        {
-            ancestry.add( graph.getRoot() );
-        }
     }
 
     public int getRequiredPasses()
@@ -65,7 +70,7 @@ public class AncestryTraversal
         return 1;
     }
 
-    public void endTraverse( final int pass, final EProjectGraph graph )
+    public void endTraverse( final int pass, final EProjectNet network )
     {
     }
 
