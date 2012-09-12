@@ -27,9 +27,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
-import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
-import org.apache.maven.graph.common.version.SingleVersion;
-import org.apache.maven.graph.common.version.VersionUtils;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -214,6 +211,13 @@ public class SingleVersionComparisonsTest
         final SingleVersion v2 = newVersion( s2 );
 
         checkTrue( "Expected: " + s1 + " < " + s2, v1.compareTo( v2 ) < 0 );
+    }
+
+    @Test
+    public void largeNumericVersionsEqual()
+        throws InvalidVersionSpecificationException
+    {
+        checkVersionsEqual( "20050331", "20050331" );
     }
 
     @Test

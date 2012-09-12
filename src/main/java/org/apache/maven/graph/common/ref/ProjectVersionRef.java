@@ -18,7 +18,7 @@ public class ProjectVersionRef
         super( groupId, artifactId );
         if ( versionSpec == null )
         {
-            throw new IllegalArgumentException( "Version cannot be null." );
+            throw new IllegalArgumentException( "Version cannot be null for '" + groupId + ":" + artifactId + "'" );
         }
 
         this.versionSpec = versionSpec;
@@ -31,7 +31,8 @@ public class ProjectVersionRef
         if ( versionSpec == null || versionSpec.trim()
                                                .length() < 1 )
         {
-            throw new IllegalArgumentException( "Version ('" + versionSpec + "') cannot be null or empty." );
+            throw new IllegalArgumentException( "Version ('" + versionSpec + "') cannot be null or empty for '"
+                + groupId + ":" + artifactId + "'" );
         }
 
         this.versionSpec = VersionUtils.createFromSpec( versionSpec );

@@ -85,11 +85,7 @@ public class NumericPart
             return false;
         }
         final NumericPart other = (NumericPart) obj;
-        if ( value != other.value )
-        {
-            return false;
-        }
-        return true;
+        return value.equals( other.value );
     }
 
 }
