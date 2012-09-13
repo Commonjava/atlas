@@ -2,7 +2,7 @@ options {
   DEBUG_PARSER = false;
   DEBUG_LOOKAHEAD = false;
   DEBUG_TOKEN_MANAGER = false;
-  LOOKAHEAD=3;
+  LOOKAHEAD=20;
   FORCE_LA_CHECK=true;
   STATIC = false;
 }
@@ -173,8 +173,8 @@ RangeVersionSpec spec=null;
 }
 {
 (
-  spec=pinnedRange()
-| spec=trueRange()
+  spec=trueRange()
+| spec=pinnedRange()
 )
   {
       return spec;
@@ -191,18 +191,26 @@ boolean upperInclusive=true;
 {
   (
     <LPAREN>
-    {lowerInclusive=false;}
+    {
+      lowerInclusive=false;
+    }
   | <LBRAK>
-    {lowerInclusive=true;}
+    {
+      lowerInclusive=true;
+    }
   )
   (lower=single())?
   <COMMA>
   (upper=single())?
   (
     <RPAREN>
-    {upperInclusive=false;}
+    {
+      upperInclusive=false;
+    }
   | <RBRAK>
-    {upperInclusive=true;}
+    {
+      upperInclusive=true;
+    }
   )
   {
     return getRangeVersionSpec( lower, upper, lowerInclusive, upperInclusive );

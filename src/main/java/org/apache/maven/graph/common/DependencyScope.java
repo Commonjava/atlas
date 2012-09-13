@@ -6,12 +6,22 @@ import java.util.Set;
 
 public enum DependencyScope
 {
-    provided, compile( provided ), runtime( compile ), system, test( provided, compile, runtime, system );
+    _import( "import" ), provided, compile( provided ), runtime( compile ), system, test( provided, compile, runtime,
+        system );
 
     private final Set<DependencyScope> implied;
 
+    private String realName;
+
+    private DependencyScope( final String realName, final DependencyScope... implied )
+    {
+        this.realName = realName;
+        this.implied = new HashSet<DependencyScope>( Arrays.asList( implied ) );
+    }
+
     private DependencyScope( final DependencyScope... implied )
     {
+        realName = name();
         this.implied = new HashSet<DependencyScope>( Arrays.asList( implied ) );
     }
 
@@ -20,9 +30,30 @@ public enum DependencyScope
         return implied.contains( scope );
     }
 
-    public static DependencyScope getScope( final String scope )
+    public String realName()
     {
-        return scope == null ? compile : valueOf( scope );
+        return realName;
+    }
+
+    public static DependencyScope getScope( String scope )
+    {
+        if ( scope == null )
+        {
+            return null;
+        }
+
+        scope = scope.trim()
+                     .toLowerCase();
+
+        for ( final DependencyScope ds : values() )
+        {
+            if ( ds.realName.equals( scope ) )
+            {
+                return ds;
+            }
+        }
+
+        return null;
     }
 
 }
