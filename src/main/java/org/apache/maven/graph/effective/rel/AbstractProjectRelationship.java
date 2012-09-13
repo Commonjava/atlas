@@ -24,6 +24,12 @@ public class AbstractProjectRelationship<T extends ProjectVersionRef>
     protected AbstractProjectRelationship( final RelationshipType type, final ProjectVersionRef declaring,
                                            final T target, final int index )
     {
+        if ( declaring == null || target == null )
+        {
+            throw new NullPointerException( "Neither declaring ref (" + declaring + ") nor target ref (" + target
+                + ") can be null!" );
+        }
+
         this.type = type;
         this.declaring = declaring;
         this.target = target;
