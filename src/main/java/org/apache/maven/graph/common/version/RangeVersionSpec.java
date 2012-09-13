@@ -203,4 +203,70 @@ public class RangeVersionSpec
         return isSingle() ? lower.getSingleVersion() : null;
     }
 
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ( ( lower == null ) ? 0 : lower.hashCode() );
+        result = prime * result + ( lowerInclusive ? 1231 : 1237 );
+        result = prime * result + ( snapshotsAllowed ? 1231 : 1237 );
+        result = prime * result + ( ( upper == null ) ? 0 : upper.hashCode() );
+        result = prime * result + ( upperInclusive ? 1231 : 1237 );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( obj == null )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final RangeVersionSpec other = (RangeVersionSpec) obj;
+        if ( lower == null )
+        {
+            if ( other.lower != null )
+            {
+                return false;
+            }
+        }
+        else if ( !lower.equals( other.lower ) )
+        {
+            return false;
+        }
+        if ( lowerInclusive != other.lowerInclusive )
+        {
+            return false;
+        }
+        if ( snapshotsAllowed != other.snapshotsAllowed )
+        {
+            return false;
+        }
+        if ( upper == null )
+        {
+            if ( other.upper != null )
+            {
+                return false;
+            }
+        }
+        else if ( !upper.equals( other.upper ) )
+        {
+            return false;
+        }
+        if ( upperInclusive != other.upperInclusive )
+        {
+            return false;
+        }
+        return true;
+    }
+
 }

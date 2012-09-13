@@ -357,14 +357,24 @@ public class EProjectWeb
 
     }
 
-    public Set<ProjectRelationship<?>> getUserRelationships( final ProjectVersionRef seen )
+    public Set<ProjectRelationship<?>> getUserRelationships( final ProjectVersionRef ref )
     {
-        if ( !graph.containsVertex( seen ) )
+        if ( !graph.containsVertex( ref ) )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( graph.getInEdges( seen ) );
+        return new HashSet<ProjectRelationship<?>>( graph.getInEdges( ref ) );
+    }
+
+    public Set<ProjectRelationship<?>> getDirectRelationships( final ProjectVersionRef ref )
+    {
+        if ( !graph.containsVertex( ref ) )
+        {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<ProjectRelationship<?>>( graph.getOutEdges( ref ) );
     }
 
 }
