@@ -26,11 +26,13 @@ public class SingleVersion
     }
 
     public SingleVersion( final String rawExpression, final VersionPart... parts )
+        throws InvalidVersionSpecificationException
     {
         this( rawExpression, Arrays.asList( parts ) );
     }
 
     public SingleVersion( final String rawExpression, final List<VersionPart> parts )
+        throws InvalidVersionSpecificationException
     {
         this.rawExpression = rawExpression;
         phrases = parsePhrases( parts );
@@ -38,16 +40,18 @@ public class SingleVersion
     }
 
     private void validatePhrases()
+        throws InvalidVersionSpecificationException
     {
         if ( phrases.get( 0 )
                     .isSilent() )
         {
-            throw new IllegalArgumentException( "This version: " + toString()
+            throw new InvalidVersionSpecificationException( rawExpression, "This version: " + toString()
                 + " is effectively empty! All parts are 'silent'." );
         }
     }
 
     private List<VersionPhrase> parsePhrases( final List<VersionPart> p )
+        throws InvalidVersionSpecificationException
     {
         final List<VersionPart> parts = normalize( p );
         validate( parts );
@@ -149,23 +153,25 @@ public class SingleVersion
     }
 
     private void validate( final List<VersionPart> parts )
+        throws InvalidVersionSpecificationException
     {
         if ( parts.isEmpty() )
         {
-            throw new IllegalArgumentException( "Empty versions are not allowed" );
+            throw new InvalidVersionSpecificationException( rawExpression, "Empty versions are not allowed" );
         }
 
         if ( parts.size() == 1 && parts.get( 0 ) instanceof SnapshotPart )
         {
-            throw new IllegalArgumentException(
-                                                "Cannot have a version of 'SNAPSHOT'; version must be releasable by dropping the snapshot marker!" );
+            throw new InvalidVersionSpecificationException( rawExpression,
+                                                            "Cannot have a version of 'SNAPSHOT'; version must be releasable by dropping the snapshot marker!" );
         }
 
         for ( final VersionPart part : parts )
         {
             if ( part != parts.get( parts.size() - 1 ) && part instanceof SnapshotPart )
             {
-                throw new IllegalArgumentException( "Snapshot marker MUST appear at the end of the version" );
+                throw new InvalidVersionSpecificationException( rawExpression,
+                                                                "Snapshot marker MUST appear at the end of the version" );
             }
         }
     }

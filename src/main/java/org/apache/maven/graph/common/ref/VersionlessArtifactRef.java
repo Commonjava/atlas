@@ -1,5 +1,6 @@
 package org.apache.maven.graph.common.ref;
 
+import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.part.NumericPart;
 
@@ -13,14 +14,26 @@ public class VersionlessArtifactRef
     extends ArtifactRef
 {
 
+    private static SingleVersion DUMMY_VERSION;
+
+    static
+    {
+        try
+        {
+            DUMMY_VERSION = new SingleVersion( "1", new NumericPart( 1 ) );
+        }
+        catch ( final InvalidVersionSpecificationException e )
+        {
+            // TODO: What do I do with this? It should NEVER happen.
+        }
+    }
+
     private ArtifactRef realRef;
 
     public VersionlessArtifactRef( final ArtifactRef ref )
     {
-        super(
-               new ProjectVersionRef( ref.getGroupId(), ref.getArtifactId(), new SingleVersion( "1",
-                                                                                                  new NumericPart( 1 ) ) ),
-               ref.getType(), ref.getClassifier(), ref.isOptional() );
+        super( new ProjectVersionRef( ref.getGroupId(), ref.getArtifactId(), DUMMY_VERSION ), ref.getType(),
+               ref.getClassifier(), ref.isOptional() );
 
         this.realRef = ref;
     }

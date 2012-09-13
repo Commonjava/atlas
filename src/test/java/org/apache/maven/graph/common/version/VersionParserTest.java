@@ -9,7 +9,7 @@ public class VersionParserTest
 
     @Test
     public void parseRangeWithoutStrings()
-        throws ParseException
+        throws ParseException, InvalidVersionSpecificationException
     {
         final String range = "[2.0.12,2.0.13]";
         final VersionSpec parsed = new VersionParser( range ).parse();
@@ -19,7 +19,7 @@ public class VersionParserTest
 
     @Test
     public void parseRangeWithStrings()
-        throws ParseException
+        throws ParseException, InvalidVersionSpecificationException
     {
         final String range = "[2.0.12-redhat-1,2.0.12-redhat-2]";
         final VersionSpec parsed = new VersionParser( range ).parse();

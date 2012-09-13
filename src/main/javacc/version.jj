@@ -118,7 +118,7 @@ TOKEN:
 | <DIGIT: (["0"-"9"])>
 }
 
-VersionSpec parse() :
+VersionSpec parse() throws InvalidVersionSpecificationException :
 {VersionSpec version = null;}
 {
   version=anySpec()
@@ -127,7 +127,7 @@ VersionSpec parse() :
   }
 }
 
-VersionSpec anySpec() :
+VersionSpec anySpec() throws InvalidVersionSpecificationException :
 {
 List<VersionSpec> versions=new ArrayList<VersionSpec>();
 VersionSpec version=null;
@@ -153,7 +153,7 @@ VersionSpec version=null;
   }
 }
 
-VersionSpec anySingleSpec() :
+VersionSpec anySingleSpec() throws InvalidVersionSpecificationException :
 {
 VersionSpec version = null;
 }
@@ -167,7 +167,7 @@ VersionSpec version = null;
   }
 }
 
-RangeVersionSpec range() :
+RangeVersionSpec range() throws InvalidVersionSpecificationException :
 {
 RangeVersionSpec spec=null;
 }
@@ -181,7 +181,7 @@ RangeVersionSpec spec=null;
   }
 }
 
-RangeVersionSpec trueRange() :
+RangeVersionSpec trueRange() throws InvalidVersionSpecificationException :
 {
 SingleVersion lower=null;
 boolean lowerInclusive=true;
@@ -218,7 +218,7 @@ boolean upperInclusive=true;
   
 }
 
-RangeVersionSpec pinnedRange() :
+RangeVersionSpec pinnedRange() throws InvalidVersionSpecificationException :
 {
 SingleVersion version=null;
 }
@@ -233,7 +233,7 @@ SingleVersion version=null;
   }
 }
 
-SingleVersion single() :
+SingleVersion single() throws InvalidVersionSpecificationException :
 {
 List<VersionPart> parts = new ArrayList<VersionPart>();
 VersionPart seg=null;
