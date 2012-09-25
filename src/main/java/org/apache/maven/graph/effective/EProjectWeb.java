@@ -377,4 +377,19 @@ public class EProjectWeb
         return new HashSet<ProjectRelationship<?>>( graph.getOutEdges( ref ) );
     }
 
+    public Set<ProjectVersionRef> getRoots()
+    {
+        final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
+        for ( final ProjectVersionRef ref : graph.getVertices() )
+        {
+            final Collection<ProjectRelationship<?>> inEdges = graph.getInEdges( ref );
+            if ( inEdges == null || inEdges.isEmpty() )
+            {
+                result.add( ref );
+            }
+        }
+
+        return result;
+    }
+
 }
