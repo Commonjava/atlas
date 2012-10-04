@@ -26,7 +26,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Graphs;
 
 public class EProjectWeb
-    implements EProjectNet
+    implements EProjectNet, EProjectRelationshipCollection
 {
 
     private transient final Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
@@ -120,7 +120,7 @@ public class EProjectWeb
 
         connectedProjects.add( rels.getProjectRef() );
 
-        addAll( rels.getAll() );
+        addAll( rels.getAllRelationships() );
     }
 
     public <T extends ProjectRelationship<?>> void add( final T rel )

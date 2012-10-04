@@ -13,7 +13,6 @@ import org.apache.maven.graph.common.version.InvalidVersionSpecificationExceptio
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.EProjectRelationships;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.traverse.TransitiveDependencyTraversal;
 import org.junit.Test;
 
 public class TransitiveDependencyTraversalTest
@@ -34,8 +33,8 @@ public class TransitiveDependencyTraversalTest
 
         final EProjectRelationships depL1Rels =
             new EProjectRelationships.Builder( depL1.getTarget()
-                                                         .asProjectVersionRef() ).withDependencies( depL2 )
-                                                                                   .build();
+                                                    .asProjectVersionRef() ).withDependencies( depL2 )
+                                                                            .build();
         pgBuilder.withDirectProjectRelationships( depL1Rels );
 
         final EProjectGraph graph = pgBuilder.build();
@@ -72,8 +71,8 @@ public class TransitiveDependencyTraversalTest
 
         final EProjectRelationships depL1Rels =
             new EProjectRelationships.Builder( depL1A.getTarget()
-                                                          .asProjectVersionRef() ).withDependencies( depL2 )
-                                                                                    .build();
+                                                     .asProjectVersionRef() ).withDependencies( depL2 )
+                                                                             .build();
         pgBuilder.withDirectProjectRelationships( depL1Rels );
 
         final EProjectGraph graph = pgBuilder.build();
@@ -114,14 +113,13 @@ public class TransitiveDependencyTraversalTest
 
         final EProjectRelationships depL1Rels =
             new EProjectRelationships.Builder( depL1A.getTarget()
-                                                          .asProjectVersionRef() ).withDependencies( depL2 )
-                                                                                    .build();
+                                                     .asProjectVersionRef() ).withDependencies( depL2 )
+                                                                             .build();
 
         final DependencyRelationship depL1B = dependency( parent, "foo", "dep-L2", "1.1.1", 1 );
 
-        final EProjectRelationships parentRels =
-            new EProjectRelationships.Builder( parent ).withDependencies( depL1B )
-                                                            .build();
+        final EProjectRelationships parentRels = new EProjectRelationships.Builder( parent ).withDependencies( depL1B )
+                                                                                            .build();
 
         pgBuilder.withDirectProjectRelationships( parentRels, depL1Rels );
 
@@ -161,9 +159,8 @@ public class TransitiveDependencyTraversalTest
 
         final DependencyRelationship depL1B = dependency( parent, "other.group", "dep-L1", "1.0", 1 );
 
-        final EProjectRelationships parentRels =
-            new EProjectRelationships.Builder( parent ).withDependencies( depL1B )
-                                                            .build();
+        final EProjectRelationships parentRels = new EProjectRelationships.Builder( parent ).withDependencies( depL1B )
+                                                                                            .build();
 
         pgBuilder.withDirectProjectRelationships( parentRels );
 

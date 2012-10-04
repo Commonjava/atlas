@@ -31,7 +31,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Graphs;
 
 public class EProjectGraph
-    implements EProjectNet
+    implements EProjectNet, EProjectRelationshipCollection
 {
 
     private final EProjectKey key;
@@ -150,6 +150,11 @@ public class EProjectGraph
         public Builder( final ProjectVersionRef projectRef, final String... activeProfiles )
         {
             this.key = new EProjectKey( projectRef, new EGraphFacts( activeProfiles ) );
+        }
+
+        public Builder( final EProjectKey key )
+        {
+            this.key = key;
         }
 
         public Builder withParent( final ProjectVersionRef parent )
@@ -271,6 +276,51 @@ public class EProjectGraph
             return this;
         }
 
+        public Builder withRelationships( final Collection<ProjectRelationship<?>> relationships )
+        {
+            final Set<PluginDependencyRelationship> pluginDepRels = new HashSet<PluginDependencyRelationship>();
+            for ( final ProjectRelationship<?> rel : relationships )
+            {
+                switch ( rel.getType() )
+                {
+                    case DEPENDENCY:
+                    {
+                        final DependencyRelationship dr = (DependencyRelationship) rel;
+                        withDependencies( dr );
+
+                        break;
+                    }
+                    case PLUGIN:
+                    {
+                        final PluginRelationship pr = (PluginRelationship) rel;
+                        withPlugins( pr );
+
+                        break;
+                    }
+                    case EXTENSION:
+                    {
+                        withExtensions( (ExtensionRelationship) rel );
+                        break;
+                    }
+                    case PLUGIN_DEP:
+                    {
+                        // load all plugin relationships first.
+                        pluginDepRels.add( (PluginDependencyRelationship) rel );
+                        break;
+                    }
+                    case PARENT:
+                    {
+                        withParent( (ParentRelationship) rel );
+                        break;
+                    }
+                }
+            }
+
+            withPluginLevelDependencies( pluginDepRels );
+
+            return this;
+        }
+
         public EProjectGraph build()
         {
             return new EProjectGraph( key, parent, dependencies, plugins, pluginLevelDeps, extensions, projects );
@@ -287,7 +337,7 @@ public class EProjectGraph
 
         connectedProjects.add( rels.getProjectRef() );
 
-        addAll( rels.getAll() );
+        addAll( rels.getAllRelationships() );
     }
 
     private <T extends ProjectRelationship<?>> void add( final T rel )

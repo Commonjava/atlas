@@ -24,6 +24,7 @@ import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class EProjectRelationships
+    implements EProjectRelationshipCollection
 {
 
     private final EProjectKey key;
@@ -126,7 +127,7 @@ public class EProjectRelationships
         return pluginDependencies.get( pr );
     }
 
-    public Set<ProjectRelationship<?>> getAll()
+    public Set<ProjectRelationship<?>> getAllRelationships()
     {
         final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
         if ( parent != null )
@@ -170,6 +171,11 @@ public class EProjectRelationships
         public Builder( final ProjectVersionRef projectRef, final String... activeProfiles )
         {
             this.key = new EProjectKey( projectRef, new EGraphFacts( activeProfiles ) );
+        }
+
+        public Builder( final EProjectKey key )
+        {
+            this.key = key;
         }
 
         public EProjectRelationships build()
