@@ -12,7 +12,6 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.VersionSpec;
 import org.apache.maven.graph.effective.ref.EGraphFacts;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.AbstractProjectRelationship;
@@ -58,14 +57,16 @@ public class EProjectGraph
                           final Collection<ExtensionRelationship> extensions,
                           final Collection<EProjectRelationships> projectRelationships )
     {
-        final VersionSpec version = key.getProject()
-                                       .getVersionSpec();
-        if ( !version.isConcrete() )
-        {
-            throw new IllegalArgumentException(
-                                                "Cannot build project graph rooted on non-concrete version of a project! Version is: "
-                                                    + version );
-        }
+        // NOTE: It does make sense to allow analysis of snapshots...it just requires different standards for mutability.
+        //        final VersionSpec version = key.getProject()
+        //                        .getVersionSpec();
+        //
+        //        if ( !version.isConcrete() )
+        //        {
+        //            throw new IllegalArgumentException(
+        //                                                "Cannot build project graph rooted on non-concrete version of a project! Version is: "
+        //                                                    + version );
+        //        }
 
         this.key = key;
 
