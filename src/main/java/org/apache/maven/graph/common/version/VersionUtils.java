@@ -14,6 +14,8 @@ public final class VersionUtils
     public static VersionSpec createFromSpec( final String version )
         throws InvalidVersionSpecificationException
     {
+        checkEmpty( version );
+
         try
         {
             return new VersionParser( version ).parse();
@@ -28,9 +30,22 @@ public final class VersionUtils
         }
     }
 
+    private static void checkEmpty( final String version )
+        throws InvalidVersionSpecificationException
+    {
+        if ( version == null || version.trim()
+                                       .length() < 1 )
+        {
+            throw new InvalidVersionSpecificationException( version, "Valid versions cannot be null or empty" );
+        }
+
+    }
+
     public static RangeVersionSpec createRange( final String version )
         throws InvalidVersionSpecificationException
     {
+        checkEmpty( version );
+
         try
         {
             return new VersionParser( version ).range();
@@ -45,6 +60,8 @@ public final class VersionUtils
     public static SingleVersion createSingleVersion( final String version )
         throws InvalidVersionSpecificationException
     {
+        checkEmpty( version );
+
         try
         {
             return new VersionParser( version ).single();
