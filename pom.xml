@@ -25,15 +25,15 @@
   </parent> -->
 
   <groupId>org.commonjava.maven</groupId>
-  <artifactId>maven-atlas</artifactId>
+  <artifactId>atlas</artifactId>
   <version>0.1.0-SNAPSHOT</version>
 
-  <name>Maven Atlas :: Project-Graph API</name>
+  <name>Atlas :: Maven Project-Graph API</name>
   
   <scm>
-    <connection>scm:git:http://jdcasey@github.com/jdcasey/maven-atlas.git</connection>
-    <developerConnection>scm:git:git@github.com:jdcasey/maven-atlas.git</developerConnection>
-    <url>http://github.com/jdcasey/maven-atlas</url>
+    <connection>scm:git:http://jdcasey@github.com/jdcasey/atlas.git</connection>
+    <developerConnection>scm:git:git@github.com:jdcasey/atlas.git</developerConnection>
+    <url>http://github.com/jdcasey/atlas</url>
   </scm>
 
   <dependencies>
