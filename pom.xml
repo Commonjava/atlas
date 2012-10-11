@@ -26,7 +26,7 @@
 
   <groupId>org.commonjava.maven</groupId>
   <artifactId>atlas</artifactId>
-  <version>0.1.0-SNAPSHOT</version>
+  <version>0.1.0</version>
 
   <name>Atlas :: Maven Project-Graph API</name>
   
