@@ -2,8 +2,13 @@ package org.apache.maven.graph.common.ref;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
+import java.io.Serializable;
+
 public class ProjectRef
+    implements Serializable
 {
+
+    private static final long serialVersionUID = 1L;
 
     // NEVER null
     private final String groupId;

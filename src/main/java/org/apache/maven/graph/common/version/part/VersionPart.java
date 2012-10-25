@@ -1,8 +1,12 @@
 package org.apache.maven.graph.common.version.part;
 
+import java.io.Serializable;
+
 public abstract class VersionPart
-    implements Comparable<VersionPart>
+    implements Comparable<VersionPart>, Serializable
 {
+
+    private static final long serialVersionUID = 1L;
 
     private boolean silent = false;
 

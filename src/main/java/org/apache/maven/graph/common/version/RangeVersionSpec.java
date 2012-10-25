@@ -4,6 +4,8 @@ public class RangeVersionSpec
     implements VersionSpec
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final SingleVersion lower;
 
     private final SingleVersion upper;

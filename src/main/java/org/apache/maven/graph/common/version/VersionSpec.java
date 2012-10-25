@@ -1,7 +1,9 @@
 package org.apache.maven.graph.common.version;
 
+import java.io.Serializable;
+
 public interface VersionSpec
-    extends Comparable<VersionSpec>
+    extends Comparable<VersionSpec>, Serializable
 {
 
     /**

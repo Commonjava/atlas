@@ -1,11 +1,14 @@
 package org.apache.maven.graph.effective.rel;
 
 import org.apache.maven.graph.common.RelationshipType;
+import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public final class PluginRelationship
     extends AbstractProjectRelationship<ProjectVersionRef>
 {
+
+    private static final long serialVersionUID = 1L;
 
     private final boolean managed;
 
@@ -78,6 +81,12 @@ public final class PluginRelationship
     {
         return String.format( "PluginRelationship [%s => %s (managed=%s, index=%s)]", getDeclaring(), getTarget(),
                               managed, getIndex() );
+    }
+
+    @Override
+    public ArtifactRef getTargetArtifact()
+    {
+        return new ArtifactRef( getTarget(), "maven-plugin", null, false );
     }
 
 }

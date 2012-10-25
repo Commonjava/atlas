@@ -11,9 +11,6 @@ import java.util.List;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
 import org.junit.Test;
 
 public class RelationshipPathComparatorTest

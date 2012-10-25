@@ -10,6 +10,8 @@ public class StringPart
     extends VersionPart
 {
 
+    private static final long serialVersionUID = 1L;
+
     private static final String ZERO_EQUIV = "";
 
     private static final String RANDOM_STRING_EQUIV = "_random";

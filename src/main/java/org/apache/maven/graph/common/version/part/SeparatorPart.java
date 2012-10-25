@@ -4,6 +4,8 @@ public class SeparatorPart
     extends VersionPart
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final VersionPartSeparator type;
 
     public SeparatorPart( final VersionPartSeparator type )

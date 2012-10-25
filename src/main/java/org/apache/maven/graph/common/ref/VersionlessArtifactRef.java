@@ -14,6 +14,8 @@ public class VersionlessArtifactRef
     extends ArtifactRef
 {
 
+    private static final long serialVersionUID = 1L;
+
     private static SingleVersion DUMMY_VERSION;
 
     static

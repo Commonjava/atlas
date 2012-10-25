@@ -10,6 +10,8 @@ public class ProjectVersionRef
     implements VersionedRef<ProjectVersionRef>
 {
 
+    private static final long serialVersionUID = 1L;
+
     // NEVER null
     private final VersionSpec versionSpec;
 

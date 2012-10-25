@@ -9,6 +9,8 @@ public final class DependencyRelationship
     extends AbstractProjectRelationship<ArtifactRef>
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final boolean managed;
 
     private final DependencyScope scope;
@@ -74,6 +76,12 @@ public final class DependencyRelationship
     {
         return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s)]", getDeclaring(),
                               getTarget(), managed, scope, getIndex() );
+    }
+
+    @Override
+    public ArtifactRef getTargetArtifact()
+    {
+        return getTarget();
     }
 
 }

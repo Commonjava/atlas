@@ -6,6 +6,8 @@ public class SnapshotPart
     extends VersionPart
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final Date timestamp;
 
     private final Integer buildNumber;

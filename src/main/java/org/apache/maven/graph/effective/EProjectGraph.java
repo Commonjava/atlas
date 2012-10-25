@@ -33,6 +33,8 @@ public class EProjectGraph
     implements EProjectNet, EProjectRelationshipCollection
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final EProjectKey key;
 
     private transient final Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
@@ -528,9 +530,17 @@ public class EProjectGraph
         extends AbstractProjectRelationship<ProjectVersionRef>
     {
 
+        private static final long serialVersionUID = 1L;
+
         SelfEdge( final ProjectVersionRef ref )
         {
             super( null, ref, ref, 0 );
+        }
+
+        @Override
+        public ArtifactRef getTargetArtifact()
+        {
+            return new ArtifactRef( getTarget(), "pom", null, false );
         }
 
     }

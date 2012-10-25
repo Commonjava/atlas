@@ -29,6 +29,8 @@ public class EProjectWeb
     implements EProjectNet, EProjectRelationshipCollection
 {
 
+    private static final long serialVersionUID = 1L;
+
     private transient final Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
 
     private transient final Set<ProjectVersionRef> connectedProjects = new HashSet<ProjectVersionRef>();
@@ -350,9 +352,17 @@ public class EProjectWeb
         extends AbstractProjectRelationship<ProjectVersionRef>
     {
 
+        private static final long serialVersionUID = 1L;
+
         SelfEdge( final ProjectVersionRef ref )
         {
             super( null, ref, ref, 0 );
+        }
+
+        @Override
+        public ArtifactRef getTargetArtifact()
+        {
+            return new ArtifactRef( getTarget(), "pom", null, false );
         }
 
     }

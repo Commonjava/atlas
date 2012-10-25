@@ -4,11 +4,14 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import org.apache.maven.graph.common.RelationshipType;
+import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
-public class AbstractProjectRelationship<T extends ProjectVersionRef>
+public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
     implements ProjectRelationship<T>
 {
+
+    private static final long serialVersionUID = 1L;
 
     private final RelationshipType type;
 
@@ -55,6 +58,8 @@ public class AbstractProjectRelationship<T extends ProjectVersionRef>
     {
         return target;
     }
+
+    public abstract ArtifactRef getTargetArtifact();
 
     @SuppressWarnings( "unchecked" )
     public synchronized ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef )

@@ -6,6 +6,8 @@ public class NumericPart
     extends VersionPart
 {
 
+    private static final long serialVersionUID = 1L;
+
     public static final NumericPart ZERO = new NumericPart( 0 );
 
     private final BigInteger value;

@@ -15,6 +15,8 @@ public class SingleVersion
     implements VersionSpec
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final List<VersionPhrase> phrases;
 
     private final String rawExpression;

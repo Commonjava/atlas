@@ -10,6 +10,8 @@ public class ArtifactRef
     extends ProjectVersionRef
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final String type;
 
     private final String classifier;

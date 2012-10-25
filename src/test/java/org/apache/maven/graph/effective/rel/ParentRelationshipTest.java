@@ -6,7 +6,6 @@ import static org.junit.Assert.assertThat;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.common.version.VersionUtils;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.junit.Test;
 
 public class ParentRelationshipTest

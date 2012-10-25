@@ -9,6 +9,8 @@ public class CompoundVersionSpec
     implements VersionSpec, Iterable<VersionSpec>
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final List<VersionSpec> specs;
 
     private final String rawExpression;

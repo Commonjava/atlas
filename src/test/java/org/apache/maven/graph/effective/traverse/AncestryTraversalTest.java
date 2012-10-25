@@ -13,7 +13,6 @@ import org.apache.maven.graph.effective.EProjectRelationships;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.junit.Test;
 
 public class AncestryTraversalTest

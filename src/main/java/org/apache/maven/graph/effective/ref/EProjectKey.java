@@ -1,9 +1,14 @@
 package org.apache.maven.graph.effective.ref;
 
+import java.io.Serializable;
+
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public class EProjectKey
+    implements Serializable
 {
+
+    private static final long serialVersionUID = 1L;
 
     private final ProjectVersionRef project;
 

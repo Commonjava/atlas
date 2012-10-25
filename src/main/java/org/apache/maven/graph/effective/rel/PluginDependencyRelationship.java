@@ -9,6 +9,8 @@ public final class PluginDependencyRelationship
     extends AbstractProjectRelationship<ArtifactRef>
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final ProjectRef plugin;
 
     private final boolean managed;
@@ -86,6 +88,12 @@ public final class PluginDependencyRelationship
     {
         return String.format( "PluginDependencyRelationship [%s(%s) => %s (managed=%s, index=%s)]", getDeclaring(),
                               plugin, getTarget(), managed, getIndex() );
+    }
+
+    @Override
+    public ArtifactRef getTargetArtifact()
+    {
+        return getTarget();
     }
 
 }

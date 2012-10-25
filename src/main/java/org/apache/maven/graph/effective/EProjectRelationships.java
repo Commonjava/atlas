@@ -27,6 +27,8 @@ public class EProjectRelationships
     implements EProjectRelationshipCollection
 {
 
+    private static final long serialVersionUID = 1L;
+
     private final EProjectKey key;
 
     private final List<DependencyRelationship> dependencies;
