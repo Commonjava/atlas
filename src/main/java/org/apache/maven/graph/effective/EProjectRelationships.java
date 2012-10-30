@@ -1,5 +1,6 @@
 package org.apache.maven.graph.effective;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,7 +25,7 @@ import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class EProjectRelationships
-    implements EProjectRelationshipCollection
+    implements EProjectRelationshipCollection, Serializable
 {
 
     private static final long serialVersionUID = 1L;

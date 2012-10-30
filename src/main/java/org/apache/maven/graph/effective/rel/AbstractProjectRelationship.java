@@ -1,5 +1,6 @@
 package org.apache.maven.graph.effective.rel;
 
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
@@ -8,7 +9,7 @@ import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
-    implements ProjectRelationship<T>
+    implements ProjectRelationship<T>, Serializable
 {
 
     private static final long serialVersionUID = 1L;

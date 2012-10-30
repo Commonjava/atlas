@@ -2,12 +2,15 @@ package org.apache.maven.graph.common.ref;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
+import java.io.Serializable;
+
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.VersionSpec;
 
 public class ArtifactRef
     extends ProjectVersionRef
+    implements Serializable
 {
 
     private static final long serialVersionUID = 1L;

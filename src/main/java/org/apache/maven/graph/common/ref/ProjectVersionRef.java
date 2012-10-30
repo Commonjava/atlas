@@ -1,5 +1,7 @@
 package org.apache.maven.graph.common.ref;
 
+import java.io.Serializable;
+
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.VersionSpec;
@@ -7,7 +9,7 @@ import org.apache.maven.graph.common.version.VersionUtils;
 
 public class ProjectVersionRef
     extends ProjectRef
-    implements VersionedRef<ProjectVersionRef>
+    implements VersionedRef<ProjectVersionRef>, Serializable
 {
 
     private static final long serialVersionUID = 1L;

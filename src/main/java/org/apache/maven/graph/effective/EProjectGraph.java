@@ -1,5 +1,6 @@
 package org.apache.maven.graph.effective;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,7 +31,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Graphs;
 
 public class EProjectGraph
-    implements EProjectNet, EProjectRelationshipCollection
+    implements EProjectNet, EProjectRelationshipCollection, Serializable
 {
 
     private static final long serialVersionUID = 1L;

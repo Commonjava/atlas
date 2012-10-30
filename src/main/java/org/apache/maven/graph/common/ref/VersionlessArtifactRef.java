@@ -1,5 +1,7 @@
 package org.apache.maven.graph.common.ref;
 
+import java.io.Serializable;
+
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.part.NumericPart;
@@ -12,6 +14,7 @@ import org.apache.maven.graph.common.version.part.NumericPart;
  */
 public class VersionlessArtifactRef
     extends ArtifactRef
+    implements Serializable
 {
 
     private static final long serialVersionUID = 1L;

@@ -1,5 +1,7 @@
 package org.apache.maven.graph.effective.rel;
 
+import java.io.Serializable;
+
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
@@ -7,6 +9,7 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public final class PluginDependencyRelationship
     extends AbstractProjectRelationship<ArtifactRef>
+    implements Serializable
 {
 
     private static final long serialVersionUID = 1L;
