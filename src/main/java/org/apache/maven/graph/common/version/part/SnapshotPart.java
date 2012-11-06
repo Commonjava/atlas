@@ -1,9 +1,11 @@
 package org.apache.maven.graph.common.version.part;
 
+import java.io.Serializable;
 import java.util.Date;
 
 public class SnapshotPart
     extends VersionPart
+    implements Serializable
 {
 
     private static final long serialVersionUID = 1L;

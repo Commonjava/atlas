@@ -31,7 +31,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Graphs;
 
 public class EProjectGraph
-    implements EProjectNet, EProjectRelationshipCollection, Serializable
+    implements EProjectNet, KeyedProjectRelationshipCollection, Serializable
 {
 
     private static final long serialVersionUID = 1L;

@@ -5,7 +5,7 @@ import static org.apache.commons.lang.StringUtils.join;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public class EGraphFacts
@@ -14,7 +14,7 @@ public class EGraphFacts
 
     private static final long serialVersionUID = 1L;
 
-    private final Set<String> activeProfiles = new HashSet<String>();
+    private final Set<String> activeProfiles = new LinkedHashSet<String>();
 
     public EGraphFacts( final Collection<String> activeProfiles )
     {

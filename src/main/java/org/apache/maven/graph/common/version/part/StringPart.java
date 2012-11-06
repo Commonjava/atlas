@@ -1,5 +1,6 @@
 package org.apache.maven.graph.common.version.part;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Map;
 
 public class StringPart
     extends VersionPart
+    implements Serializable
 {
 
     private static final long serialVersionUID = 1L;

@@ -8,9 +8,8 @@ import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import edu.uci.ics.jung.graph.DirectedGraph;
 
 public interface EProjectNet
+    extends EProjectRelationshipCollection
 {
-
-    Set<ProjectRelationship<?>> getAllRelationships();
 
     DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> getRawGraph();
 

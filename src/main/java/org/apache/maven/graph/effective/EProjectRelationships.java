@@ -25,7 +25,7 @@ import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class EProjectRelationships
-    implements EProjectRelationshipCollection, Serializable
+    implements EProjectRelationshipCollection, KeyedProjectRelationshipCollection, Serializable
 {
 
     private static final long serialVersionUID = 1L;

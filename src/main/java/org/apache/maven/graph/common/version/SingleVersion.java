@@ -1,5 +1,6 @@
 package org.apache.maven.graph.common.version;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -12,7 +13,7 @@ import org.apache.maven.graph.common.version.part.VersionPartSeparator;
 import org.apache.maven.graph.common.version.part.VersionPhrase;
 
 public class SingleVersion
-    implements VersionSpec
+    implements VersionSpec, Serializable
 {
 
     private static final long serialVersionUID = 1L;

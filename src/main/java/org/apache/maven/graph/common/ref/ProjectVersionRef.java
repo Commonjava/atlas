@@ -17,6 +17,17 @@ public class ProjectVersionRef
     // NEVER null
     private final VersionSpec versionSpec;
 
+    public ProjectVersionRef( final ProjectRef ref, final VersionSpec versionSpec )
+    {
+        this( ref.getGroupId(), ref.getArtifactId(), versionSpec );
+    }
+
+    public ProjectVersionRef( final ProjectRef ref, final String versionSpec )
+        throws InvalidVersionSpecificationException
+    {
+        this( ref.getGroupId(), ref.getArtifactId(), versionSpec );
+    }
+
     public ProjectVersionRef( final String groupId, final String artifactId, final VersionSpec versionSpec )
     {
         super( groupId, artifactId );

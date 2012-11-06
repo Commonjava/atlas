@@ -1,5 +1,6 @@
 package org.apache.maven.graph.common.version.part;
 
+
 public enum VersionPartSeparator
 {
 

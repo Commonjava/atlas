@@ -27,7 +27,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 import edu.uci.ics.jung.graph.util.Graphs;
 
 public class EProjectWeb
-    implements EProjectNet, EProjectRelationshipCollection, Serializable
+    implements EProjectNet, Serializable
 {
 
     private static final long serialVersionUID = 1L;
@@ -61,6 +61,11 @@ public class EProjectWeb
         {
             add( project );
         }
+    }
+
+    public EProjectWeb( final Set<ProjectRelationship<?>> relationships )
+    {
+        addAll( relationships );
     }
 
     /* (non-Javadoc)

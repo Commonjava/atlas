@@ -1,7 +1,10 @@
 package org.apache.maven.graph.common.version.part;
 
+import java.io.Serializable;
+
 public class SeparatorPart
     extends VersionPart
+    implements Serializable
 {
 
     private static final long serialVersionUID = 1L;

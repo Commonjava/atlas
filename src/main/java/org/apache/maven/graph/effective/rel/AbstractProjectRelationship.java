@@ -23,7 +23,7 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
     private final int index;
 
     @SuppressWarnings( "rawtypes" )
-    private Constructor<? extends AbstractProjectRelationship> cloneCtor;
+    private transient Constructor<? extends AbstractProjectRelationship> cloneCtor;
 
     protected AbstractProjectRelationship( final RelationshipType type, final ProjectVersionRef declaring,
                                            final T target, final int index )

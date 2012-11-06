@@ -1,7 +1,9 @@
 package org.apache.maven.graph.common.version;
 
+import java.io.Serializable;
+
 public class RangeVersionSpec
-    implements VersionSpec
+    implements VersionSpec, Serializable
 {
 
     private static final long serialVersionUID = 1L;

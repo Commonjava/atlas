@@ -1,12 +1,13 @@
 package org.apache.maven.graph.common.version;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
 public class CompoundVersionSpec
-    implements VersionSpec, Iterable<VersionSpec>
+    implements VersionSpec, Iterable<VersionSpec>, Serializable
 {
 
     private static final long serialVersionUID = 1L;
@@ -130,6 +131,11 @@ public class CompoundVersionSpec
     {
         return specs.size() != 1 ? null : specs.get( 0 )
                                                .getSingleVersion();
+    }
+
+    public int getComponentCount()
+    {
+        return specs.size();
     }
 
 }

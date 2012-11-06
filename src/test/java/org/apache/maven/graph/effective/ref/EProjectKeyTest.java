@@ -7,6 +7,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.junit.Test;
@@ -18,6 +19,10 @@ public class EProjectKeyTest
     public void serializability()
         throws Exception
     {
+        assertThat( Serializable.class.isAssignableFrom( EProjectKey.class ), equalTo( true ) );
+        assertThat( Serializable.class.isAssignableFrom( EGraphFacts.class ), equalTo( true ) );
+        assertThat( Serializable.class.isAssignableFrom( ProjectVersionRef.class ), equalTo( true ) );
+
         final EProjectKey key =
             new EProjectKey( new ProjectVersionRef( "org.foo", "bar", "1.0" ), new EGraphFacts( "profile1" ) );
 
