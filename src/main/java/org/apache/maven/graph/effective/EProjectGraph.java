@@ -1,5 +1,6 @@
 package org.apache.maven.graph.effective;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,11 +39,11 @@ public class EProjectGraph
 
     private final EProjectKey key;
 
-    private transient final Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
+    private transient Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private transient final Set<ProjectVersionRef> connectedProjects = new HashSet<ProjectVersionRef>();
+    private transient Set<ProjectVersionRef> connectedProjects = new HashSet<ProjectVersionRef>();
 
-    private transient final Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
+    private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
     private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
@@ -546,4 +547,12 @@ public class EProjectGraph
 
     }
 
+    private void readObject( final java.io.ObjectInputStream in )
+        throws IOException, ClassNotFoundException
+    {
+        in.defaultReadObject();
+        incompleteSubgraphs = new HashSet<ProjectVersionRef>();
+        connectedProjects = new HashSet<ProjectVersionRef>();
+        variableSubgraphs = new HashSet<ProjectVersionRef>();
+    }
 }
