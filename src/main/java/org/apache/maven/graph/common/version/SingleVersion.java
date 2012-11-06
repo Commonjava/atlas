@@ -74,7 +74,14 @@ public class SingleVersion
             {
                 if ( prev != null && !( prev instanceof StringPart ) )
                 {
-                    phrases.add( new VersionPhrase( currentPhraseSep, current ) );
+                    try
+                    {
+                        phrases.add( new VersionPhrase( currentPhraseSep, current ) );
+                    }
+                    catch ( final InvalidVersionSpecificationException e )
+                    {
+                        // FIXME: Need some way to handle this...
+                    }
 
                     current = new ArrayList<VersionPart>();
 
@@ -105,7 +112,14 @@ public class SingleVersion
                     sep = VersionPartSeparator.BLANK;
                 }
 
-                phrases.add( new VersionPhrase( currentPhraseSep, current ) );
+                try
+                {
+                    phrases.add( new VersionPhrase( currentPhraseSep, current ) );
+                }
+                catch ( final InvalidVersionSpecificationException e )
+                {
+                    // FIXME: Need some way to handle this...
+                }
 
                 current = new ArrayList<VersionPart>();
                 current.add( part );

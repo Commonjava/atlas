@@ -33,6 +33,8 @@ public class InvalidVersionSpecificationException
 
     private final Object[] params;
 
+    private String version;
+
     public InvalidVersionSpecificationException( final String version, final String message, final Throwable cause,
                                                  final Object... params )
     {
@@ -43,7 +45,13 @@ public class InvalidVersionSpecificationException
     public InvalidVersionSpecificationException( final String version, final String message, final Object... params )
     {
         super( "'" + version + "': " + message );
+        this.version = version;
         this.params = params;
+    }
+
+    public String getVersion()
+    {
+        return version;
     }
 
     @Override

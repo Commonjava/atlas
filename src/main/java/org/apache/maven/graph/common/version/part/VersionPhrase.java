@@ -6,6 +6,7 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.common.version.VersionSpecComparisons;
 
 public class VersionPhrase
@@ -23,11 +24,13 @@ public class VersionPhrase
     private boolean silent = false;
 
     public VersionPhrase( final VersionPartSeparator separator, final VersionPart... parts )
+        throws InvalidVersionSpecificationException
     {
         this( separator, Arrays.asList( parts ) );
     }
 
     public VersionPhrase( final VersionPartSeparator separator, final List<VersionPart> p )
+        throws InvalidVersionSpecificationException
     {
         this.separator = separator;
         List<VersionPart> parts = new ArrayList<VersionPart>( p );
@@ -132,38 +135,54 @@ public class VersionPhrase
             }
         }
 
-        if ( result.get( result.size() - 1 ) instanceof SeparatorPart )
+        if ( !result.isEmpty() )
         {
-            result.remove( result.size() - 1 );
+            if ( result.get( result.size() - 1 ) instanceof SeparatorPart )
+            {
+                result.remove( result.size() - 1 );
+            }
         }
 
         return result;
     }
 
     private void validate( final List<VersionPart> parts )
+        throws InvalidVersionSpecificationException
     {
         if ( parts.isEmpty() )
         {
-            throw new IllegalArgumentException( "Empty versions are not allowed" );
+            throw new InvalidVersionSpecificationException( renderStandard( parts ), "Empty versions are not allowed" );
         }
 
         for ( final VersionPart part : parts )
         {
             if ( part != parts.get( parts.size() - 1 ) && part instanceof SnapshotPart )
             {
-                throw new IllegalArgumentException( "Snapshot marker MUST appear at the end of the version" );
+                throw new InvalidVersionSpecificationException( renderStandard( parts ),
+                                                                "Snapshot marker MUST appear at the end of the version" );
             }
         }
     }
 
     public VersionPhrase getBaseVersion()
+        throws InvalidVersionSpecificationException
     {
         if ( isRelease() )
         {
             return this;
         }
 
-        return new VersionPhrase( separator, parts.subList( 0, parts.size() - 2 ) );
+        try
+        {
+            return new VersionPhrase( separator, parts.subList( 0, parts.size() - 2 ) );
+        }
+        catch ( final InvalidVersionSpecificationException e )
+        {
+            throw new InvalidVersionSpecificationException(
+                                                            e.getVersion(),
+                                                            "Cannot create base version for non-release: %s. Reason: %s",
+                                                            e, e.getVersion(), e.getMessage() );
+        }
     }
 
     public String renderStandard()

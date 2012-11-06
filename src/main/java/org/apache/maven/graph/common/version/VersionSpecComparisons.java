@@ -321,13 +321,20 @@ public final class VersionSpecComparisons
             final VersionPhrase f = i < firstPhrases.size() ? firstPhrases.get( i ) : null;
             final VersionPhrase s = i < secondPhrases.size() ? secondPhrases.get( i ) : null;
 
-            if ( f == null )
+            try
             {
-                fp.add( new VersionPhrase( s.getSeparator(), NumericPart.ZERO ) );
+                if ( f == null )
+                {
+                    fp.add( new VersionPhrase( s.getSeparator(), NumericPart.ZERO ) );
+                }
+                else if ( s == null )
+                {
+                    sp.add( new VersionPhrase( f.getSeparator(), NumericPart.ZERO ) );
+                }
             }
-            else if ( s == null )
+            catch ( final InvalidVersionSpecificationException e )
             {
-                sp.add( new VersionPhrase( f.getSeparator(), NumericPart.ZERO ) );
+                // FIXME: Some sort of handling...should never happen, but still.
             }
         }
 
