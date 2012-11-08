@@ -18,7 +18,13 @@ public final class VersionUtils
 
         try
         {
-            return new VersionParser( version ).parse();
+            final VersionSpec spec = new VersionParser( version ).parse();
+            if ( spec == null )
+            {
+                throw new InvalidVersionSpecificationException( version, "Parsed VersionSpec is null." );
+            }
+
+            return spec;
         }
         catch ( final ParseException e )
         {
