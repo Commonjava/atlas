@@ -140,7 +140,7 @@ VersionSpec version=null;
   {
     if ( versions.isEmpty() )
     {
-        return null;
+        throw new InvalidVersionSpecificationException( rawSpec, "Cannot parse; no version specs found!");
     }
     else if ( versions.size() == 1 )
     {
@@ -242,8 +242,28 @@ VersionPart last = null;
 {
   (seg=segment())
   {
-    addPart( parts, seg, last );
-    last = seg;
+    if ( ( seg instanceof StringPart ) && ((StringPart)seg).getValue().indexOf(".") > -1 )
+    {
+        String[] subParts = ((StringPart)seg).getValue().split("\\.");
+        for( int subIdx=0; subIdx<subParts.length; subIdx++ )
+        {
+            NumericPart subSeg = new NumericPart( subParts[subIdx] );
+            addPart( parts, subSeg, last );
+            last = subSeg;
+            
+            if ( subIdx+1 < subParts.length )
+            {
+                SeparatorPart sepPart = new SeparatorPart( VersionPartSeparator.DOT );
+                addPart( parts, sepPart, last );
+                last = sepPart;
+            }
+        }
+    }
+    else
+    {
+        addPart( parts, seg, last );
+        last = seg;
+    }
   }
   (
     (
@@ -264,8 +284,28 @@ VersionPart last = null;
   |   (
         seg=segment()
         {
-          addPart( parts, seg, last );
-          last = seg;
+          if ( ( seg instanceof StringPart ) && ((StringPart)seg).getValue().indexOf(".") > -1 )
+          {
+              String[] subParts = ((StringPart)seg).getValue().split("\\.");
+              for( int subIdx=0; subIdx<subParts.length; subIdx++ )
+              {
+                  NumericPart subSeg = new NumericPart( subParts[subIdx] );
+                  addPart( parts, subSeg, last );
+                  last = subSeg;
+
+                  if ( subIdx+1 < subParts.length )
+                  {
+                      SeparatorPart sepPart = new SeparatorPart( VersionPartSeparator.DOT );
+                      addPart( parts, sepPart, last );
+                      last = sepPart;
+                  }
+              }
+          }
+          else
+          {
+              addPart( parts, seg, last );
+              last = seg;
+          }
         }
       )
     )
@@ -284,6 +324,10 @@ Token val=null;
 {
 (
   (
+    val=<SNAPDATE>
+    {part = new StringPart(val.image);}
+  )
+| (
     val=<DIGIT>
     {num.append(val.image);}
   )+
