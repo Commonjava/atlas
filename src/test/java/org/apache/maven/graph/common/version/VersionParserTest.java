@@ -36,4 +36,24 @@ public class VersionParserTest
         System.out.println( parsed );
     }
 
+    @Test
+    public void parseSingleVersionWithModifiedDateTimeFormat()
+        throws Exception
+    {
+        final String version = "20031129.200437j";
+        final VersionSpec parsed = new VersionParser( version ).parse();
+
+        System.out.println( parsed );
+    }
+
+    @Test
+    public void parseSingleVersionWithExtendedDateTimeFormat()
+        throws Exception
+    {
+        final String version = "20031129.200437-600";
+        final VersionSpec parsed = new VersionParser( version ).parse();
+
+        System.out.println( parsed );
+    }
+
 }
