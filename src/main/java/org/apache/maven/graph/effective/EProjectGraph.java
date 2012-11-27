@@ -551,7 +551,11 @@ public class EProjectGraph
     {
         for ( final ProjectVersionRef vertex : graph.getVertices() )
         {
-            incompleteSubgraphs.remove( vertex );
+            final Collection<ProjectRelationship<?>> outEdges = graph.getOutEdges( vertex );
+            if ( outEdges != null && !outEdges.isEmpty() )
+            {
+                incompleteSubgraphs.remove( vertex );
+            }
         }
     }
 }
