@@ -21,4 +21,6 @@ public interface EProjectNet
 
     Set<ProjectVersionRef> getVariableSubgraphs();
 
+    void recomputeIncompleteSubgraphs();
+
 }

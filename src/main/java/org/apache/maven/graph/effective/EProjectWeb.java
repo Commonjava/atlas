@@ -14,10 +14,6 @@ import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.rel.AbstractProjectRelationship;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.rel.ExtensionRelationship;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
-import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.rel.RelationshipComparator;
 import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
@@ -46,18 +42,10 @@ public class EProjectWeb
     {
     }
 
-    public EProjectWeb( final Collection<ParentRelationship> parents,
-                        final Collection<DependencyRelationship> dependencies,
-                        final Collection<PluginRelationship> plugins,
-                        final Collection<PluginDependencyRelationship> pluginLevelDeps,
-                        final Collection<ExtensionRelationship> extensions,
+    public EProjectWeb( final Collection<ProjectRelationship<?>> relationships,
                         final Collection<EProjectRelationships> projectRelationships )
     {
-        addAll( parents );
-        addAll( dependencies );
-        addAll( plugins );
-        addAll( pluginLevelDeps );
-        addAll( extensions );
+        addAll( relationships );
         for ( final EProjectRelationships project : projectRelationships )
         {
             add( project );
@@ -139,6 +127,8 @@ public class EProjectWeb
             return;
         }
 
+        incompleteSubgraphs.remove( rel.getDeclaring() );
+
         ProjectVersionRef target = rel.getTarget();
         if ( rel instanceof DependencyRelationship )
         {
@@ -174,6 +164,8 @@ public class EProjectWeb
         {
             add( rel );
         }
+
+        recomputeIncompleteSubgraphs();
     }
 
     public <T extends ProjectRelationship<?>> void addAll( final T... rels )
@@ -187,6 +179,8 @@ public class EProjectWeb
         {
             add( rel );
         }
+
+        recomputeIncompleteSubgraphs();
     }
 
     /* (non-Javadoc)
@@ -416,5 +410,13 @@ public class EProjectWeb
         incompleteSubgraphs = new HashSet<ProjectVersionRef>();
         connectedProjects = new HashSet<ProjectVersionRef>();
         variableSubgraphs = new HashSet<ProjectVersionRef>();
+    }
+
+    public void recomputeIncompleteSubgraphs()
+    {
+        for ( final ProjectVersionRef vertex : graph.getVertices() )
+        {
+            incompleteSubgraphs.remove( vertex );
+        }
     }
 }

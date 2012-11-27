@@ -54,11 +54,7 @@ public class EProjectGraph
         add( relationships );
     }
 
-    public EProjectGraph( final EProjectKey key, final ProjectRelationship<ProjectVersionRef> parent,
-                          final Collection<DependencyRelationship> dependencies,
-                          final Collection<PluginRelationship> plugins,
-                          final Collection<PluginDependencyRelationship> pluginLevelDeps,
-                          final Collection<ExtensionRelationship> extensions,
+    public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship<?>> relationships,
                           final Collection<EProjectRelationships> projectRelationships )
     {
         // NOTE: It does make sense to allow analysis of snapshots...it just requires different standards for mutability.
@@ -74,11 +70,7 @@ public class EProjectGraph
 
         this.key = key;
 
-        add( parent );
-        addAll( dependencies );
-        addAll( plugins );
-        addAll( pluginLevelDeps );
-        addAll( extensions );
+        addAll( relationships );
         for ( final EProjectRelationships project : projectRelationships )
         {
             add( project );
@@ -134,17 +126,9 @@ public class EProjectGraph
     {
         private final EProjectKey key;
 
-        private ProjectRelationship<ProjectVersionRef> parent;
-
-        private final Set<DependencyRelationship> dependencies = new HashSet<DependencyRelationship>();
-
-        private final Set<PluginRelationship> plugins = new HashSet<PluginRelationship>();
-
-        private final Set<PluginDependencyRelationship> pluginLevelDeps = new HashSet<PluginDependencyRelationship>();
+        private final Set<ProjectRelationship<?>> relationships = new HashSet<ProjectRelationship<?>>();
 
         private final Set<EProjectRelationships> projects = new HashSet<EProjectRelationships>();
-
-        private final Set<ExtensionRelationship> extensions = new HashSet<ExtensionRelationship>();
 
         public Builder( final EProjectRelationships rels )
         {
@@ -164,7 +148,7 @@ public class EProjectGraph
 
         public Builder withParent( final ProjectVersionRef parent )
         {
-            this.parent = new ParentRelationship( key.getProject(), parent );
+            relationships.add( new ParentRelationship( key.getProject(), parent ) );
             return this;
         }
 
@@ -173,11 +157,11 @@ public class EProjectGraph
             if ( parent.getDeclaring()
                        .equals( key.getProject() ) )
             {
-                this.parent = parent;
+                relationships.add( parent );
             }
             else
             {
-                this.parent = parent.cloneFor( key.getProject() );
+                relationships.add( parent.cloneFor( key.getProject() ) );
             }
             return this;
         }
@@ -207,19 +191,16 @@ public class EProjectGraph
 
         private void addFromDirectRelationships( final EProjectRelationships relationships )
         {
-            this.parent = relationships.getParent();
-            this.dependencies.clear();
-            this.dependencies.addAll( relationships.getDependencies() );
-            this.dependencies.addAll( relationships.getManagedDependencies() );
+            this.relationships.clear();
+            this.relationships.add( relationships.getParent() );
+            this.relationships.addAll( relationships.getDependencies() );
+            this.relationships.addAll( relationships.getManagedDependencies() );
 
-            this.plugins.clear();
-            this.plugins.addAll( relationships.getPlugins() );
-            this.plugins.addAll( relationships.getManagedPlugins() );
+            this.relationships.addAll( relationships.getPlugins() );
+            this.relationships.addAll( relationships.getManagedPlugins() );
 
-            this.extensions.clear();
-            this.extensions.addAll( relationships.getExtensions() );
+            this.relationships.addAll( relationships.getExtensions() );
 
-            this.pluginLevelDeps.clear();
             if ( relationships.getPluginDependencies() != null )
             {
                 for ( final Map.Entry<PluginRelationship, List<PluginDependencyRelationship>> entry : relationships.getPluginDependencies()
@@ -227,7 +208,7 @@ public class EProjectGraph
                 {
                     if ( entry.getValue() != null )
                     {
-                        this.pluginLevelDeps.addAll( entry.getValue() );
+                        this.relationships.addAll( entry.getValue() );
                     }
                 }
             }
@@ -235,49 +216,55 @@ public class EProjectGraph
 
         public Builder withDependencies( final List<DependencyRelationship> rels )
         {
-            this.dependencies.addAll( rels );
+            this.relationships.addAll( rels );
             return this;
         }
 
         public Builder withDependencies( final DependencyRelationship... rels )
         {
-            this.dependencies.addAll( Arrays.asList( rels ) );
+            this.relationships.addAll( Arrays.asList( rels ) );
             return this;
         }
 
         public Builder withPlugins( final Collection<PluginRelationship> rels )
         {
-            this.plugins.addAll( rels );
+            this.relationships.addAll( rels );
             return this;
         }
 
         public Builder withPlugins( final PluginRelationship... rels )
         {
-            this.plugins.addAll( Arrays.asList( rels ) );
+            this.relationships.addAll( Arrays.asList( rels ) );
             return this;
         }
 
         public Builder withPluginLevelDependencies( final Collection<PluginDependencyRelationship> rels )
         {
-            this.pluginLevelDeps.addAll( rels );
+            this.relationships.addAll( rels );
             return this;
         }
 
         public Builder withPluginLevelDependencies( final PluginDependencyRelationship... rels )
         {
-            this.pluginLevelDeps.addAll( Arrays.asList( rels ) );
+            this.relationships.addAll( Arrays.asList( rels ) );
             return this;
         }
 
         public Builder withExtensions( final Collection<ExtensionRelationship> rels )
         {
-            this.extensions.addAll( rels );
+            this.relationships.addAll( rels );
             return this;
         }
 
         public Builder withExtensions( final ExtensionRelationship... rels )
         {
-            this.extensions.addAll( Arrays.asList( rels ) );
+            this.relationships.addAll( Arrays.asList( rels ) );
+            return this;
+        }
+
+        public Builder withExactRelationships( final Collection<ProjectRelationship<?>> relationships )
+        {
+            this.relationships.addAll( relationships );
             return this;
         }
 
@@ -328,7 +315,7 @@ public class EProjectGraph
 
         public EProjectGraph build()
         {
-            return new EProjectGraph( key, parent, dependencies, plugins, pluginLevelDeps, extensions, projects );
+            return new EProjectGraph( key, relationships, projects );
         }
 
     }
@@ -351,6 +338,8 @@ public class EProjectGraph
         {
             return;
         }
+
+        incompleteSubgraphs.remove( rel.getDeclaring() );
 
         ProjectVersionRef target = rel.getTarget();
         if ( rel instanceof DependencyRelationship )
@@ -387,6 +376,8 @@ public class EProjectGraph
         {
             add( rel );
         }
+
+        recomputeIncompleteSubgraphs();
     }
 
     public void connect( final EProjectGraph subGraph )
@@ -554,5 +545,13 @@ public class EProjectGraph
         incompleteSubgraphs = new HashSet<ProjectVersionRef>();
         connectedProjects = new HashSet<ProjectVersionRef>();
         variableSubgraphs = new HashSet<ProjectVersionRef>();
+    }
+
+    public void recomputeIncompleteSubgraphs()
+    {
+        for ( final ProjectVersionRef vertex : graph.getVertices() )
+        {
+            incompleteSubgraphs.remove( vertex );
+        }
     }
 }
