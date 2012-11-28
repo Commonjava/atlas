@@ -1,5 +1,7 @@
 package org.apache.maven.graph.effective;
 
+import static org.apache.maven.graph.effective.util.EGraphUtils.filterTerminalParents;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -132,6 +134,11 @@ public class EProjectRelationships
 
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
+        return filterTerminalParents( getExactAllRelationships() );
+    }
+
+    public Set<ProjectRelationship<?>> getExactAllRelationships()
+    {
         final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
         if ( parent != null )
         {
@@ -183,6 +190,11 @@ public class EProjectRelationships
 
         public EProjectRelationships build()
         {
+            if ( parent == null )
+            {
+                parent = new ParentRelationship( key.getProject(), key.getProject() );
+            }
+
             return new EProjectRelationships( key, parent, dependencies, plugins, managedDependencies, managedPlugins,
                                               extensions, pluginDependencies );
         }

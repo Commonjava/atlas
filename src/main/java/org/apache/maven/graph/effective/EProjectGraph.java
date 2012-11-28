@@ -1,5 +1,7 @@
 package org.apache.maven.graph.effective;
 
+import static org.apache.maven.graph.effective.util.EGraphUtils.filterTerminalParents;
+
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -89,12 +91,22 @@ public class EProjectGraph
 
     public Set<ProjectRelationship<?>> getFirstOrderRelationships()
     {
+        return filterTerminalParents( graph.getOutEdges( getRoot() ) );
+    }
+
+    public Set<ProjectRelationship<?>> getExactFirstOrderRelationships()
+    {
         return new HashSet<ProjectRelationship<?>>( graph.getOutEdges( getRoot() ) );
+    }
+
+    public Set<ProjectRelationship<?>> getExactAllRelationships()
+    {
+        return new HashSet<ProjectRelationship<?>>( graph.getEdges() );
     }
 
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( graph.getEdges() );
+        return filterTerminalParents( graph.getEdges() );
     }
 
     public DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> getRawGraph()
@@ -315,6 +327,22 @@ public class EProjectGraph
 
         public EProjectGraph build()
         {
+            boolean foundParent = false;
+            for ( final ProjectRelationship<?> rel : relationships )
+            {
+                if ( rel instanceof ParentRelationship && rel.getDeclaring()
+                                                             .equals( key.getProject() ) )
+                {
+                    foundParent = true;
+                    break;
+                }
+            }
+
+            if ( !foundParent )
+            {
+                relationships.add( new ParentRelationship( key.getProject(), key.getProject() ) );
+            }
+
             return new EProjectGraph( key, relationships, projects );
         }
 
@@ -507,7 +535,7 @@ public class EProjectGraph
 
     private List<ProjectRelationship<?>> getSortedOutEdges( final ProjectVersionRef node )
     {
-        final Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node );
+        final Collection<ProjectRelationship<?>> unsorted = filterTerminalParents( graph.getOutEdges( node ) );
         if ( unsorted != null )
         {
             final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );

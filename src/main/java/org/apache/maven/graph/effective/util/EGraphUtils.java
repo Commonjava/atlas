@@ -14,6 +14,7 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
+import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -23,6 +24,22 @@ public final class EGraphUtils
 
     private EGraphUtils()
     {
+    }
+
+    public static Set<ProjectRelationship<?>> filterTerminalParents( final Collection<ProjectRelationship<?>> rels )
+    {
+        final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>( rels );
+        for ( final Iterator<ProjectRelationship<?>> it = result.iterator(); it.hasNext(); )
+        {
+            final ProjectRelationship<?> rel = it.next();
+            if ( ( rel instanceof ParentRelationship ) && rel.getDeclaring()
+                                                             .equals( rel.getTarget() ) )
+            {
+                it.remove();
+            }
+        }
+
+        return result;
     }
 
     public static Set<ProjectRelationship<?>> filter( final Set<ProjectRelationship<?>> set,

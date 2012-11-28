@@ -11,4 +11,6 @@ public interface EProjectRelationshipCollection
 
     Set<ProjectRelationship<?>> getAllRelationships();
 
+    Set<ProjectRelationship<?>> getExactAllRelationships();
+
 }

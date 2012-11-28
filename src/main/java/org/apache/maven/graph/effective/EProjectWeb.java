@@ -419,4 +419,9 @@ public class EProjectWeb
             incompleteSubgraphs.remove( vertex );
         }
     }
+
+    public Set<ProjectRelationship<?>> getExactAllRelationships()
+    {
+        return getAllRelationships();
+    }
 }

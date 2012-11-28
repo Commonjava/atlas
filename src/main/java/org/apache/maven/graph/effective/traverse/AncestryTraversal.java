@@ -34,6 +34,13 @@ public class AncestryTraversal
     {
         if ( relationship instanceof ParentRelationship )
         {
+            if ( relationship.getDeclaring()
+                             .equals( relationship.getTarget() ) )
+            {
+                // reached the end of the line. STOP.
+                return false;
+            }
+
             if ( ancestry.isEmpty() )
             {
                 ancestry.add( relationship.getDeclaring() );
