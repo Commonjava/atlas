@@ -357,7 +357,7 @@ public class EProjectGraph
 
         connectedProjects.add( rels.getProjectRef() );
 
-        addAll( rels.getAllRelationships() );
+        addAll( rels.getExactAllRelationships() );
     }
 
     private <T extends ProjectRelationship<?>> void add( final T rel )
