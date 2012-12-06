@@ -9,10 +9,8 @@ public interface EProjectRelationshipCollection
     extends Serializable
 {
 
-    @SuppressWarnings( "rawtypes" )
-    Set<ProjectRelationship> getAllRelationships();
+    Set<ProjectRelationship<?>> getAllRelationships();
 
-    @SuppressWarnings( "rawtypes" )
-    Set<ProjectRelationship> getExactAllRelationships();
+    Set<ProjectRelationship<?>> getExactAllRelationships();
 
 }

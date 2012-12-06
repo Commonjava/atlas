@@ -55,7 +55,7 @@ public class EProjectRelationshipsTest
 
         final EProjectRelationships rels = prb.build();
 
-        final Set<ProjectRelationship> all = rels.getAllRelationships();
+        final Set<ProjectRelationship<?>> all = rels.getAllRelationships();
 
         assertThat( all.size(), equalTo( 6 ) );
 

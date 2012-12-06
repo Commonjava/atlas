@@ -11,7 +11,7 @@ public interface EProjectNet
     extends EProjectRelationshipCollection
 {
 
-    DirectedGraph<ProjectVersionRef, ProjectRelationship> getRawGraph();
+    DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> getRawGraph();
 
     boolean isComplete();
 

@@ -4,12 +4,12 @@ import java.util.Comparator;
 import java.util.List;
 
 public class RelationshipPathComparator
-    implements Comparator<List<ProjectRelationship>>
+    implements Comparator<List<ProjectRelationship<?>>>
 {
 
     private final RelationshipComparator comp = new RelationshipComparator();
 
-    public int compare( final List<ProjectRelationship> one, final List<ProjectRelationship> two )
+    public int compare( final List<ProjectRelationship<?>> one, final List<ProjectRelationship<?>> two )
     {
         final int commonLen = Math.min( one.size(), two.size() );
 
@@ -43,12 +43,12 @@ public class RelationshipPathComparator
         return 0;
     }
 
-    private int compareRels( final ProjectRelationship one, final ProjectRelationship two )
+    private int compareRels( final ProjectRelationship<?> one, final ProjectRelationship<?> two )
     {
         return comp.compare( one, two );
     }
 
-    private int compareRelTypes( final ProjectRelationship one, final ProjectRelationship two )
+    private int compareRelTypes( final ProjectRelationship<?> one, final ProjectRelationship<?> two )
     {
         return one.getType()
                   .ordinal() - two.getType()

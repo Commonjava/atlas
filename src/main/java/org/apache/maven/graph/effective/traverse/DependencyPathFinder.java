@@ -17,7 +17,7 @@ public class DependencyPathFinder
 
     private final ArtifactRef target;
 
-    private final DirectedGraph<ProjectVersionRef, ProjectRelationship> graph;
+    private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph;
 
     private final List<List<DependencyRelationship>> paths = new ArrayList<List<DependencyRelationship>>();
 
@@ -41,8 +41,8 @@ public class DependencyPathFinder
 
     private void recurseToRoot( final ProjectVersionRef declaring, final List<DependencyRelationship> inPath )
     {
-        final Collection<ProjectRelationship> edges = graph.getInEdges( target.asProjectVersionRef() );
-        for ( final ProjectRelationship rel : edges )
+        final Collection<ProjectRelationship<?>> edges = graph.getInEdges( target.asProjectVersionRef() );
+        for ( final ProjectRelationship<?> rel : edges )
         {
             if ( rel instanceof DependencyRelationship )
             {

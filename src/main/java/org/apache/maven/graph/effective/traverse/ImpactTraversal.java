@@ -18,8 +18,8 @@ public class ImpactTraversal
     implements ProjectNetTraversal
 {
 
-    private final Map<ProjectVersionRef, Set<List<ProjectRelationship>>> impactedPaths =
-        new HashMap<ProjectVersionRef, Set<List<ProjectRelationship>>>();
+    private final Map<ProjectVersionRef, Set<List<ProjectRelationship<?>>>> impactedPaths =
+        new HashMap<ProjectVersionRef, Set<List<ProjectRelationship<?>>>>();
 
     private final boolean includeManagedInfo;
 
@@ -33,7 +33,7 @@ public class ImpactTraversal
         this.includeManagedInfo = includeManagedInfo;
         for ( final ProjectVersionRef target : targets )
         {
-            impactedPaths.put( target, new HashSet<List<ProjectRelationship>>() );
+            impactedPaths.put( target, new HashSet<List<ProjectRelationship<?>>>() );
         }
     }
 
@@ -47,11 +47,11 @@ public class ImpactTraversal
         this.includeManagedInfo = includeManagedInfo;
         for ( final ProjectVersionRef target : targets )
         {
-            impactedPaths.put( target, new HashSet<List<ProjectRelationship>>() );
+            impactedPaths.put( target, new HashSet<List<ProjectRelationship<?>>>() );
         }
     }
 
-    public Map<ProjectVersionRef, Set<List<ProjectRelationship>>> getImpactedPaths()
+    public Map<ProjectVersionRef, Set<List<ProjectRelationship<?>>>> getImpactedPaths()
     {
         return impactedPaths;
     }
@@ -74,7 +74,7 @@ public class ImpactTraversal
     {
     }
 
-    public boolean traverseEdge( final ProjectRelationship relationship, final List<ProjectRelationship> path,
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {
         if ( !includeManagedInfo )
@@ -97,12 +97,12 @@ public class ImpactTraversal
             target = ( (ArtifactRef) target ).asProjectVersionRef();
         }
 
-        final Set<List<ProjectRelationship>> paths = impactedPaths.get( target );
+        final Set<List<ProjectRelationship<?>>> paths = impactedPaths.get( target );
         if ( paths != null )
         {
             if ( !path.isEmpty() )
             {
-                paths.add( new ArrayList<ProjectRelationship>( path ) );
+                paths.add( new ArrayList<ProjectRelationship<?>>( path ) );
             }
 
             // we've seen an impact target, we don't need to go further.

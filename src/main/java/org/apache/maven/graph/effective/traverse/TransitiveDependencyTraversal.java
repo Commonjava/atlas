@@ -51,7 +51,7 @@ public class TransitiveDependencyTraversal
     }
 
     @Override
-    public boolean traverseEdge( final ProjectRelationship relationship, final List<ProjectRelationship> path,
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {
         if ( pass == 0 )
