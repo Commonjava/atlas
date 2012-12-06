@@ -47,8 +47,8 @@ public class EProjectGraph
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
-        new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
+    private final DirectedGraph<ProjectVersionRef, ProjectRelationship> graph =
+        new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship>();
 
     public EProjectGraph( final EProjectRelationships relationships )
     {
@@ -56,7 +56,14 @@ public class EProjectGraph
         add( relationships );
     }
 
-    public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship<?>> relationships,
+    public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship> relationships )
+    {
+        this.key = key;
+
+        addAll( relationships );
+    }
+
+    public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship> relationships,
                           final Collection<EProjectRelationships> projectRelationships )
     {
         // NOTE: It does make sense to allow analysis of snapshots...it just requires different standards for mutability.
@@ -89,27 +96,27 @@ public class EProjectGraph
         return key.getFacts();
     }
 
-    public Set<ProjectRelationship<?>> getFirstOrderRelationships()
+    public Set<ProjectRelationship> getFirstOrderRelationships()
     {
         return filterTerminalParents( graph.getOutEdges( getRoot() ) );
     }
 
-    public Set<ProjectRelationship<?>> getExactFirstOrderRelationships()
+    public Set<ProjectRelationship> getExactFirstOrderRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( graph.getOutEdges( getRoot() ) );
+        return new HashSet<ProjectRelationship>( graph.getOutEdges( getRoot() ) );
     }
 
-    public Set<ProjectRelationship<?>> getExactAllRelationships()
+    public Set<ProjectRelationship> getExactAllRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( graph.getEdges() );
+        return new HashSet<ProjectRelationship>( graph.getEdges() );
     }
 
-    public Set<ProjectRelationship<?>> getAllRelationships()
+    public Set<ProjectRelationship> getAllRelationships()
     {
         return filterTerminalParents( graph.getEdges() );
     }
 
-    public DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> getRawGraph()
+    public DirectedGraph<ProjectVersionRef, ProjectRelationship> getRawGraph()
     {
         return Graphs.unmodifiableDirectedGraph( graph );
     }
@@ -138,7 +145,7 @@ public class EProjectGraph
     {
         private final EProjectKey key;
 
-        private final Set<ProjectRelationship<?>> relationships = new HashSet<ProjectRelationship<?>>();
+        private final Set<ProjectRelationship> relationships = new HashSet<ProjectRelationship>();
 
         private final Set<EProjectRelationships> projects = new HashSet<EProjectRelationships>();
 
@@ -274,16 +281,16 @@ public class EProjectGraph
             return this;
         }
 
-        public Builder withExactRelationships( final Collection<ProjectRelationship<?>> relationships )
+        public Builder withExactRelationships( final Collection<ProjectRelationship> relationships )
         {
             this.relationships.addAll( relationships );
             return this;
         }
 
-        public Builder withRelationships( final Collection<ProjectRelationship<?>> relationships )
+        public Builder withRelationships( final Collection<ProjectRelationship> relationships )
         {
             final Set<PluginDependencyRelationship> pluginDepRels = new HashSet<PluginDependencyRelationship>();
-            for ( final ProjectRelationship<?> rel : relationships )
+            for ( final ProjectRelationship rel : relationships )
             {
                 switch ( rel.getType() )
                 {
@@ -314,7 +321,7 @@ public class EProjectGraph
                     }
                     case PARENT:
                     {
-                        withParent( (ParentRelationship) rel );
+                        withParent( rel );
                         break;
                     }
                 }
@@ -328,7 +335,7 @@ public class EProjectGraph
         public EProjectGraph build()
         {
             boolean foundParent = false;
-            for ( final ProjectRelationship<?> rel : relationships )
+            for ( final ProjectRelationship rel : relationships )
             {
                 if ( rel instanceof ParentRelationship && rel.getDeclaring()
                                                              .equals( key.getProject() ) )
@@ -454,16 +461,16 @@ public class EProjectGraph
     // TODO: Implement without recursion.
     private void dfsTraverse( final ProjectNetTraversal traversal, final int pass )
     {
-        dfsIterate( getRoot(), traversal, new LinkedList<ProjectRelationship<?>>(), pass );
+        dfsIterate( getRoot(), traversal, new LinkedList<ProjectRelationship>(), pass );
     }
 
     private void dfsIterate( final ProjectVersionRef node, final ProjectNetTraversal traversal,
-                             final LinkedList<ProjectRelationship<?>> path, final int pass )
+                             final LinkedList<ProjectRelationship> path, final int pass )
     {
-        final List<ProjectRelationship<?>> edges = getSortedOutEdges( node );
+        final List<ProjectRelationship> edges = getSortedOutEdges( node );
         if ( edges != null )
         {
-            for ( final ProjectRelationship<?> edge : edges )
+            for ( final ProjectRelationship edge : edges )
             {
                 if ( traversal.traverseEdge( edge, path, pass ) )
                 {
@@ -485,18 +492,18 @@ public class EProjectGraph
     // TODO: Implement without recursion.
     private void bfsTraverse( final ProjectNetTraversal traversal, final int pass )
     {
-        final List<ProjectRelationship<?>> path = new ArrayList<ProjectRelationship<?>>();
+        final List<ProjectRelationship> path = new ArrayList<ProjectRelationship>();
         path.add( new SelfEdge( getRoot() ) );
 
         bfsIterate( Collections.singletonList( path ), traversal, pass );
     }
 
-    private void bfsIterate( final List<List<ProjectRelationship<?>>> thisLayer, final ProjectNetTraversal traversal,
+    private void bfsIterate( final List<List<ProjectRelationship>> thisLayer, final ProjectNetTraversal traversal,
                              final int pass )
     {
-        final List<List<ProjectRelationship<?>>> nextLayer = new ArrayList<List<ProjectRelationship<?>>>();
+        final List<List<ProjectRelationship>> nextLayer = new ArrayList<List<ProjectRelationship>>();
 
-        for ( final List<ProjectRelationship<?>> path : thisLayer )
+        for ( final List<ProjectRelationship> path : thisLayer )
         {
             ProjectVersionRef node = path.get( path.size() - 1 )
                                          .getTarget();
@@ -510,14 +517,14 @@ public class EProjectGraph
                 path.remove( 0 );
             }
 
-            final List<ProjectRelationship<?>> edges = getSortedOutEdges( node );
+            final List<ProjectRelationship> edges = getSortedOutEdges( node );
             if ( edges != null )
             {
-                for ( final ProjectRelationship<?> edge : edges )
+                for ( final ProjectRelationship edge : edges )
                 {
                     if ( ( edge instanceof SelfEdge ) || traversal.traverseEdge( edge, path, pass ) )
                     {
-                        final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
+                        final List<ProjectRelationship> nextPath = new ArrayList<ProjectRelationship>( path );
 
                         nextPath.add( edge );
                         nextLayer.add( nextPath );
@@ -533,12 +540,12 @@ public class EProjectGraph
         }
     }
 
-    private List<ProjectRelationship<?>> getSortedOutEdges( final ProjectVersionRef node )
+    private List<ProjectRelationship> getSortedOutEdges( final ProjectVersionRef node )
     {
-        final Collection<ProjectRelationship<?>> unsorted = filterTerminalParents( graph.getOutEdges( node ) );
+        final Collection<ProjectRelationship> unsorted = filterTerminalParents( graph.getOutEdges( node ) );
         if ( unsorted != null )
         {
-            final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
+            final List<ProjectRelationship> sorted = new ArrayList<ProjectRelationship>( unsorted );
             Collections.sort( sorted, new RelationshipComparator() );
 
             return sorted;
@@ -579,7 +586,7 @@ public class EProjectGraph
     {
         for ( final ProjectVersionRef vertex : graph.getVertices() )
         {
-            final Collection<ProjectRelationship<?>> outEdges = graph.getOutEdges( vertex );
+            final Collection<ProjectRelationship> outEdges = graph.getOutEdges( vertex );
             if ( outEdges != null && !outEdges.isEmpty() )
             {
                 incompleteSubgraphs.remove( vertex );

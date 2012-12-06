@@ -49,19 +49,19 @@ public class BuildOrderTraversal
     {
     }
 
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+    public boolean traverseEdge( final ProjectRelationship relationship, final List<ProjectRelationship> path,
                                  final int pass )
     {
-        if ( relationship instanceof DependencyRelationship && ((DependencyRelationship)relationship).isManaged() )
+        if ( relationship instanceof DependencyRelationship && ( (DependencyRelationship) relationship ).isManaged() )
         {
             return false;
         }
-        
-        if ( relationship instanceof PluginRelationship && ((PluginRelationship)relationship).isManaged() )
+
+        if ( relationship instanceof PluginRelationship && ( (PluginRelationship) relationship ).isManaged() )
         {
             return false;
         }
-        
+
         if ( types != null && types.length > 0 && Arrays.binarySearch( types, relationship.getType() ) < 0 )
         {
             return false;

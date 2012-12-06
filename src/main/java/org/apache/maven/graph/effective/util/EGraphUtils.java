@@ -26,10 +26,11 @@ public final class EGraphUtils
     {
     }
 
-    public static Set<ProjectRelationship<?>> filterTerminalParents( final Collection<ProjectRelationship<?>> rels )
+    @SuppressWarnings( "rawtypes" )
+    public static Set<ProjectRelationship> filterTerminalParents( final Collection<ProjectRelationship> rels )
     {
-        final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>( rels );
-        for ( final Iterator<ProjectRelationship<?>> it = result.iterator(); it.hasNext(); )
+        final Set<ProjectRelationship> result = new HashSet<ProjectRelationship>( rels );
+        for ( final Iterator<ProjectRelationship> it = result.iterator(); it.hasNext(); )
         {
             final ProjectRelationship<?> rel = it.next();
             if ( ( rel instanceof ParentRelationship ) && rel.getDeclaring()
@@ -42,8 +43,7 @@ public final class EGraphUtils
         return result;
     }
 
-    public static Set<ProjectRelationship<?>> filter( final Set<ProjectRelationship<?>> set,
-                                                      final RelationshipType... types )
+    public static Set<ProjectRelationship> filter( final Set<ProjectRelationship> set, final RelationshipType... types )
     {
         if ( set == null || set.isEmpty() )
         {
@@ -56,10 +56,10 @@ public final class EGraphUtils
         }
 
         Arrays.sort( types );
-        final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>( set );
-        for ( final Iterator<ProjectRelationship<?>> iterator = result.iterator(); iterator.hasNext(); )
+        final Set<ProjectRelationship> result = new HashSet<ProjectRelationship>( set );
+        for ( final Iterator<ProjectRelationship> iterator = result.iterator(); iterator.hasNext(); )
         {
-            final ProjectRelationship<?> rel = iterator.next();
+            final ProjectRelationship rel = iterator.next();
             if ( Arrays.binarySearch( types, rel.getType() ) < 0 )
             {
                 iterator.remove();
@@ -85,15 +85,15 @@ public final class EGraphUtils
         return results;
     }
 
-    public static Set<ProjectRef> targets( final ProjectRelationship<?>... relationships )
+    public static Set<ProjectRef> targets( final ProjectRelationship... relationships )
     {
         return targets( Arrays.asList( relationships ) );
     }
 
-    public static Set<ProjectRef> targets( final Collection<ProjectRelationship<?>> relationships )
+    public static Set<ProjectRef> targets( final Collection<ProjectRelationship> relationships )
     {
         final Set<ProjectRef> results = new HashSet<ProjectRef>();
-        for ( final ProjectRelationship<?> rel : relationships )
+        for ( final ProjectRelationship rel : relationships )
         {
             results.add( rel.getTarget() );
         }

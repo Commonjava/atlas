@@ -48,6 +48,21 @@ public class EProjectRelationships
 
     private final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies;
 
+    @SuppressWarnings( "rawtypes" )
+    public EProjectRelationships( final EProjectKey key, final Collection<ProjectRelationship> rels )
+    {
+        final Builder builder = new Builder( key ).withRelationships( rels );
+        this.key = key;
+
+        this.dependencies = builder.dependencies;
+        this.managedDependencies = builder.managedDependencies;
+        this.plugins = builder.plugins;
+        this.managedPlugins = builder.managedPlugins;
+        this.extensions = builder.extensions;
+        this.parent = builder.parent;
+        this.pluginDependencies = builder.pluginDependencies;
+    }
+
     public EProjectRelationships( final EProjectKey key, final ParentRelationship parent,
                                   final List<DependencyRelationship> dependencies,
                                   final List<PluginRelationship> plugins,
@@ -132,14 +147,16 @@ public class EProjectRelationships
         return pluginDependencies.get( pr );
     }
 
-    public Set<ProjectRelationship<?>> getAllRelationships()
+    @SuppressWarnings( "rawtypes" )
+    public Set<ProjectRelationship> getAllRelationships()
     {
         return filterTerminalParents( getExactAllRelationships() );
     }
 
-    public Set<ProjectRelationship<?>> getExactAllRelationships()
+    @SuppressWarnings( "rawtypes" )
+    public Set<ProjectRelationship> getExactAllRelationships()
     {
-        final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
+        final Set<ProjectRelationship> result = new HashSet<ProjectRelationship>();
         if ( parent != null )
         {
             result.add( parent );
@@ -360,7 +377,8 @@ public class EProjectRelationships
             return this;
         }
 
-        public Builder withRelationships( final Collection<ProjectRelationship<?>> relationships )
+        @SuppressWarnings( "rawtypes" )
+        public Builder withRelationships( final Collection<ProjectRelationship> relationships )
         {
             final Set<PluginDependencyRelationship> pluginDepRels = new HashSet<PluginDependencyRelationship>();
             for ( ProjectRelationship<?> rel : relationships )

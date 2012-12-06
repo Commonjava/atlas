@@ -16,6 +16,6 @@ public interface ProjectNetTraversal
 
     void endTraverse( int pass, EProjectNet network );
 
-    boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
+    boolean traverseEdge( ProjectRelationship relationship, List<ProjectRelationship> path, int pass );
 
 }

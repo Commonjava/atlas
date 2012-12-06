@@ -35,14 +35,14 @@ public class EProjectWeb
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
-        new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
+    private final DirectedGraph<ProjectVersionRef, ProjectRelationship> graph =
+        new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship>();
 
     public EProjectWeb()
     {
     }
 
-    public EProjectWeb( final Collection<ProjectRelationship<?>> relationships,
+    public EProjectWeb( final Collection<ProjectRelationship> relationships,
                         final Collection<EProjectRelationships> projectRelationships )
     {
         addAll( relationships );
@@ -52,7 +52,7 @@ public class EProjectWeb
         }
     }
 
-    public EProjectWeb( final Set<ProjectRelationship<?>> relationships )
+    public EProjectWeb( final Set<ProjectRelationship> relationships )
     {
         addAll( relationships );
     }
@@ -60,15 +60,15 @@ public class EProjectWeb
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#getAllRelationships()
      */
-    public Set<ProjectRelationship<?>> getAllRelationships()
+    public Set<ProjectRelationship> getAllRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( graph.getEdges() );
+        return new HashSet<ProjectRelationship>( graph.getEdges() );
     }
 
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#getRawGraph()
      */
-    public DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> getRawGraph()
+    public DirectedGraph<ProjectVersionRef, ProjectRelationship> getRawGraph()
     {
         return Graphs.unmodifiableDirectedGraph( graph );
     }
@@ -188,11 +188,11 @@ public class EProjectWeb
      */
     public void connect( final EProjectWeb otherWeb )
     {
-        final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> otherGraph = otherWeb.getRawGraph();
+        final DirectedGraph<ProjectVersionRef, ProjectRelationship> otherGraph = otherWeb.getRawGraph();
         final Collection<ProjectVersionRef> otherNodes = otherGraph.getVertices();
         for ( final ProjectVersionRef node : otherNodes )
         {
-            final Collection<ProjectRelationship<?>> outEdges = otherGraph.getOutEdges( node );
+            final Collection<ProjectRelationship> outEdges = otherGraph.getOutEdges( node );
             if ( incompleteSubgraphs.contains( node ) && outEdges != null && !outEdges.isEmpty() )
             {
                 incompleteSubgraphs.remove( node );
@@ -209,7 +209,7 @@ public class EProjectWeb
 
             if ( graph.containsVertex( node ) )
             {
-                final Collection<ProjectRelationship<?>> outEdges = graph.getOutEdges( node );
+                final Collection<ProjectRelationship> outEdges = graph.getOutEdges( node );
                 if ( outEdges == null || outEdges.isEmpty() )
                 {
                     incompleteSubgraphs.add( node );
@@ -256,16 +256,16 @@ public class EProjectWeb
     // TODO: Implement without recursion.
     private void dfsTraverse( final ProjectVersionRef start, final ProjectNetTraversal traversal, final int pass )
     {
-        dfsIterate( start, traversal, new LinkedList<ProjectRelationship<?>>(), pass );
+        dfsIterate( start, traversal, new LinkedList<ProjectRelationship>(), pass );
     }
 
     private void dfsIterate( final ProjectVersionRef node, final ProjectNetTraversal traversal,
-                             final LinkedList<ProjectRelationship<?>> path, final int pass )
+                             final LinkedList<ProjectRelationship> path, final int pass )
     {
-        final List<ProjectRelationship<?>> edges = getSortedOutEdges( node );
+        final List<ProjectRelationship> edges = getSortedOutEdges( node );
         if ( edges != null )
         {
-            for ( final ProjectRelationship<?> edge : edges )
+            for ( final ProjectRelationship edge : edges )
             {
                 if ( traversal.traverseEdge( edge, path, pass ) )
                 {
@@ -287,18 +287,18 @@ public class EProjectWeb
     // TODO: Implement without recursion.
     private void bfsTraverse( final ProjectVersionRef start, final ProjectNetTraversal traversal, final int pass )
     {
-        final List<ProjectRelationship<?>> path = new ArrayList<ProjectRelationship<?>>();
+        final List<ProjectRelationship> path = new ArrayList<ProjectRelationship>();
         path.add( new SelfEdge( start ) );
 
         bfsIterate( Collections.singletonList( path ), traversal, pass );
     }
 
-    private void bfsIterate( final List<List<ProjectRelationship<?>>> thisLayer, final ProjectNetTraversal traversal,
+    private void bfsIterate( final List<List<ProjectRelationship>> thisLayer, final ProjectNetTraversal traversal,
                              final int pass )
     {
-        final List<List<ProjectRelationship<?>>> nextLayer = new ArrayList<List<ProjectRelationship<?>>>();
+        final List<List<ProjectRelationship>> nextLayer = new ArrayList<List<ProjectRelationship>>();
 
-        for ( final List<ProjectRelationship<?>> path : thisLayer )
+        for ( final List<ProjectRelationship> path : thisLayer )
         {
             ProjectVersionRef node = path.get( path.size() - 1 )
                                          .getTarget();
@@ -312,14 +312,14 @@ public class EProjectWeb
                 path.remove( 0 );
             }
 
-            final List<ProjectRelationship<?>> edges = getSortedOutEdges( node );
+            final List<ProjectRelationship> edges = getSortedOutEdges( node );
             if ( edges != null )
             {
-                for ( final ProjectRelationship<?> edge : edges )
+                for ( final ProjectRelationship edge : edges )
                 {
                     if ( ( edge instanceof SelfEdge ) || traversal.traverseEdge( edge, path, pass ) )
                     {
-                        final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
+                        final List<ProjectRelationship> nextPath = new ArrayList<ProjectRelationship>( path );
 
                         nextPath.add( edge );
                         nextLayer.add( nextPath );
@@ -335,12 +335,12 @@ public class EProjectWeb
         }
     }
 
-    private List<ProjectRelationship<?>> getSortedOutEdges( final ProjectVersionRef node )
+    private List<ProjectRelationship> getSortedOutEdges( final ProjectVersionRef node )
     {
-        final Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node );
+        final Collection<ProjectRelationship> unsorted = graph.getOutEdges( node );
         if ( unsorted != null )
         {
-            final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
+            final List<ProjectRelationship> sorted = new ArrayList<ProjectRelationship>( unsorted );
             Collections.sort( sorted, new RelationshipComparator() );
 
             return sorted;
@@ -368,24 +368,24 @@ public class EProjectWeb
 
     }
 
-    public Set<ProjectRelationship<?>> getUserRelationships( final ProjectVersionRef ref )
+    public Set<ProjectRelationship> getUserRelationships( final ProjectVersionRef ref )
     {
         if ( !graph.containsVertex( ref ) )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( graph.getInEdges( ref ) );
+        return new HashSet<ProjectRelationship>( graph.getInEdges( ref ) );
     }
 
-    public Set<ProjectRelationship<?>> getDirectRelationships( final ProjectVersionRef ref )
+    public Set<ProjectRelationship> getDirectRelationships( final ProjectVersionRef ref )
     {
         if ( !graph.containsVertex( ref ) )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( graph.getOutEdges( ref ) );
+        return new HashSet<ProjectRelationship>( graph.getOutEdges( ref ) );
     }
 
     public Set<ProjectVersionRef> getRoots()
@@ -393,7 +393,7 @@ public class EProjectWeb
         final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
         for ( final ProjectVersionRef ref : graph.getVertices() )
         {
-            final Collection<ProjectRelationship<?>> inEdges = graph.getInEdges( ref );
+            final Collection<ProjectRelationship> inEdges = graph.getInEdges( ref );
             if ( inEdges == null || inEdges.isEmpty() )
             {
                 result.add( ref );
@@ -420,7 +420,7 @@ public class EProjectWeb
         }
     }
 
-    public Set<ProjectRelationship<?>> getExactAllRelationships()
+    public Set<ProjectRelationship> getExactAllRelationships()
     {
         return getAllRelationships();
     }

@@ -29,7 +29,7 @@ public class AncestryTraversal
         return Collections.unmodifiableList( ancestry );
     }
 
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+    public boolean traverseEdge( final ProjectRelationship relationship, final List<ProjectRelationship> path,
                                  final int pass )
     {
         if ( relationship instanceof ParentRelationship )
