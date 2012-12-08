@@ -26,10 +26,9 @@ public final class EGraphUtils
     {
     }
 
-    public static Set<ProjectRelationship<?>> filterTerminalParents( final Collection<ProjectRelationship<?>> rels )
+    public static void filterTerminalParents( final Collection<ProjectRelationship<?>> rels )
     {
-        final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>( rels );
-        for ( final Iterator<ProjectRelationship<?>> it = result.iterator(); it.hasNext(); )
+        for ( final Iterator<ProjectRelationship<?>> it = rels.iterator(); it.hasNext(); )
         {
             final ProjectRelationship<?> rel = it.next();
             if ( ( rel instanceof ParentRelationship ) && rel.getDeclaring()
@@ -38,26 +37,22 @@ public final class EGraphUtils
                 it.remove();
             }
         }
-
-        return result;
     }
 
-    public static Set<ProjectRelationship<?>> filter( final Set<ProjectRelationship<?>> set,
-                                                      final RelationshipType... types )
+    public static void filter( final Set<ProjectRelationship<?>> rels, final RelationshipType... types )
     {
-        if ( set == null || set.isEmpty() )
+        if ( rels == null || rels.isEmpty() )
         {
-            return set;
+            return;
         }
 
         if ( types == null || types.length < 1 )
         {
-            return set;
+            return;
         }
 
         Arrays.sort( types );
-        final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>( set );
-        for ( final Iterator<ProjectRelationship<?>> iterator = result.iterator(); iterator.hasNext(); )
+        for ( final Iterator<ProjectRelationship<?>> iterator = rels.iterator(); iterator.hasNext(); )
         {
             final ProjectRelationship<?> rel = iterator.next();
             if ( Arrays.binarySearch( types, rel.getType() ) < 0 )
@@ -65,8 +60,6 @@ public final class EGraphUtils
                 iterator.remove();
             }
         }
-
-        return result;
     }
 
     public static Set<ProjectVersionRef> declarers( final ProjectRelationship<?>... relationships )

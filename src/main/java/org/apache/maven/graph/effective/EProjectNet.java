@@ -23,4 +23,14 @@ public interface EProjectNet
 
     void recomputeIncompleteSubgraphs();
 
+    Set<EProjectCycle> getCycles();
+
+    void addCycle( final EProjectCycle cycle );
+
+    boolean isCycleParticipant( final ProjectRelationship<?> rel );
+
+    boolean isCycleParticipant( final ProjectVersionRef ref );
+
+    public abstract Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref );
+
 }

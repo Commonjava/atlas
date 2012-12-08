@@ -47,6 +47,8 @@ public class EProjectGraph
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
+    private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+
     private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
 
@@ -57,7 +59,7 @@ public class EProjectGraph
     }
 
     public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship<?>> relationships,
-                          final Collection<EProjectRelationships> projectRelationships )
+                          final Collection<EProjectRelationships> projectRelationships, final Set<EProjectCycle> cycles )
     {
         // NOTE: It does make sense to allow analysis of snapshots...it just requires different standards for mutability.
         //        final VersionSpec version = key.getProject()
@@ -71,6 +73,10 @@ public class EProjectGraph
         //        }
 
         this.key = key;
+        if ( cycles != null )
+        {
+            this.cycles = cycles;
+        }
 
         addAll( relationships );
         for ( final EProjectRelationships project : projectRelationships )
@@ -91,7 +97,10 @@ public class EProjectGraph
 
     public Set<ProjectRelationship<?>> getFirstOrderRelationships()
     {
-        return filterTerminalParents( graph.getOutEdges( getRoot() ) );
+        final Set<ProjectRelationship<?>> rels = getExactFirstOrderRelationships();
+        filterTerminalParents( rels );
+
+        return rels;
     }
 
     public Set<ProjectRelationship<?>> getExactFirstOrderRelationships()
@@ -101,12 +110,21 @@ public class EProjectGraph
 
     public Set<ProjectRelationship<?>> getExactAllRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( graph.getEdges() );
+        final Collection<ProjectRelationship<?>> rels = graph.getEdges();
+        if ( rels == null )
+        {
+            return null;
+        }
+
+        return new HashSet<ProjectRelationship<?>>( rels );
     }
 
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
-        return filterTerminalParents( graph.getEdges() );
+        final Set<ProjectRelationship<?>> rels = getExactAllRelationships();
+        filterTerminalParents( rels );
+
+        return rels;
     }
 
     public DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> getRawGraph()
@@ -141,6 +159,8 @@ public class EProjectGraph
         private final Set<ProjectRelationship<?>> relationships = new HashSet<ProjectRelationship<?>>();
 
         private final Set<EProjectRelationships> projects = new HashSet<EProjectRelationships>();
+
+        private Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
         public Builder( final EProjectRelationships rels )
         {
@@ -343,7 +363,17 @@ public class EProjectGraph
                 relationships.add( new ParentRelationship( key.getProject(), key.getProject() ) );
             }
 
-            return new EProjectGraph( key, relationships, projects );
+            return new EProjectGraph( key, relationships, projects, cycles );
+        }
+
+        public Builder withCycles( final Set<EProjectCycle> cycles )
+        {
+            if ( cycles != null )
+            {
+                this.cycles = cycles;
+            }
+
+            return this;
         }
 
     }
@@ -467,16 +497,30 @@ public class EProjectGraph
             {
                 if ( traversal.traverseEdge( edge, path, pass ) )
                 {
-                    path.addLast( edge );
-
                     ProjectVersionRef target = edge.getTarget();
                     if ( target instanceof ArtifactRef )
                     {
                         target = ( (ArtifactRef) target ).asProjectVersionRef();
                     }
 
-                    dfsIterate( target, traversal, path, pass );
-                    path.removeLast();
+                    // FIXME: Are there cases where a traversal needs to see cycles??
+                    boolean cycle = false;
+                    for ( final ProjectRelationship<?> item : path )
+                    {
+                        if ( item.getDeclaring()
+                                 .equals( target ) )
+                        {
+                            cycle = true;
+                            break;
+                        }
+                    }
+
+                    if ( !cycle )
+                    {
+                        path.addLast( edge );
+                        dfsIterate( target, traversal, path, pass );
+                        path.removeLast();
+                    }
                 }
             }
         }
@@ -519,6 +563,7 @@ public class EProjectGraph
                     {
                         final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
 
+                        // FIXME: How do we avoid cycle traversal here??
                         nextPath.add( edge );
                         nextLayer.add( nextPath );
                     }
@@ -535,16 +580,20 @@ public class EProjectGraph
 
     private List<ProjectRelationship<?>> getSortedOutEdges( final ProjectVersionRef node )
     {
-        final Collection<ProjectRelationship<?>> unsorted = filterTerminalParents( graph.getOutEdges( node ) );
-        if ( unsorted != null )
+        Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node );
+        if ( unsorted == null )
         {
-            final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
-            Collections.sort( sorted, new RelationshipComparator() );
-
-            return sorted;
+            return null;
         }
 
-        return null;
+        unsorted = new ArrayList<ProjectRelationship<?>>( unsorted );
+
+        filterTerminalParents( unsorted );
+
+        final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
+        Collections.sort( sorted, new RelationshipComparator() );
+
+        return sorted;
     }
 
     private static final class SelfEdge
@@ -573,6 +622,7 @@ public class EProjectGraph
         incompleteSubgraphs = new HashSet<ProjectVersionRef>();
         connectedProjects = new HashSet<ProjectVersionRef>();
         variableSubgraphs = new HashSet<ProjectVersionRef>();
+        cycles = new HashSet<EProjectCycle>();
     }
 
     public void recomputeIncompleteSubgraphs()
@@ -585,5 +635,58 @@ public class EProjectGraph
                 incompleteSubgraphs.remove( vertex );
             }
         }
+    }
+
+    public boolean isCycleParticipant( final ProjectVersionRef ref )
+    {
+        for ( final EProjectCycle cycle : cycles )
+        {
+            if ( cycle.contains( ref ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isCycleParticipant( final ProjectRelationship<?> rel )
+    {
+        for ( final EProjectCycle cycle : cycles )
+        {
+            if ( cycle.contains( rel ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void addCycle( final EProjectCycle cycle )
+    {
+        this.cycles.add( cycle );
+
+        for ( final ProjectRelationship<?> rel : cycle )
+        {
+            incompleteSubgraphs.remove( rel.getDeclaring() );
+            connectedProjects.add( rel.getDeclaring() );
+        }
+    }
+
+    public Set<EProjectCycle> getCycles()
+    {
+        return new HashSet<EProjectCycle>( cycles );
+    }
+
+    public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
+    {
+        final Collection<ProjectRelationship<?>> rels = graph.getInEdges( ref );
+        if ( rels == null )
+        {
+            return null;
+        }
+
+        return new HashSet<ProjectRelationship<?>>( rels );
     }
 }

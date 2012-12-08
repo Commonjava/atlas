@@ -134,7 +134,10 @@ public class EProjectRelationships
 
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
-        return filterTerminalParents( getExactAllRelationships() );
+        final Set<ProjectRelationship<?>> rels = getExactAllRelationships();
+        filterTerminalParents( rels );
+
+        return rels;
     }
 
     public Set<ProjectRelationship<?>> getExactAllRelationships()

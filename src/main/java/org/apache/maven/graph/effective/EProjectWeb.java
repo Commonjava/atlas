@@ -35,6 +35,8 @@ public class EProjectWeb
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
+    private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+
     private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
 
@@ -423,5 +425,52 @@ public class EProjectWeb
     public Set<ProjectRelationship<?>> getExactAllRelationships()
     {
         return getAllRelationships();
+    }
+
+    public boolean isCycleParticipant( final ProjectVersionRef ref )
+    {
+        for ( final EProjectCycle cycle : cycles )
+        {
+            if ( cycle.contains( ref ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isCycleParticipant( final ProjectRelationship<?> rel )
+    {
+        for ( final EProjectCycle cycle : cycles )
+        {
+            if ( cycle.contains( rel ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void addCycle( final EProjectCycle cycle )
+    {
+        this.cycles.add( cycle );
+    }
+
+    public Set<EProjectCycle> getCycles()
+    {
+        return new HashSet<EProjectCycle>( cycles );
+    }
+
+    public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
+    {
+        final Collection<ProjectRelationship<?>> rels = graph.getInEdges( ref );
+        if ( rels == null )
+        {
+            return null;
+        }
+
+        return new HashSet<ProjectRelationship<?>>( rels );
     }
 }

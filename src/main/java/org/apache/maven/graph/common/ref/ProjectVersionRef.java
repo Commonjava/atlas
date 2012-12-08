@@ -53,6 +53,11 @@ public class ProjectVersionRef
         this.versionSpec = VersionUtils.createFromSpec( versionSpec );
     }
 
+    public ProjectRef asProjectRef()
+    {
+        return new ProjectRef( getGroupId(), getArtifactId() );
+    }
+
     public boolean isRelease()
     {
         return versionSpec.isConcrete();

@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
+import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.effective.EProjectGraph;
@@ -42,12 +43,12 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal( RelationshipType.DEPENDENCY );
         graph.traverse( bo );
 
-        final List<ProjectVersionRef> buildOrder = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = bo.getBuildOrder();
 
         int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
     }
 
     @Test
@@ -82,12 +83,12 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal( RelationshipType.DEPENDENCY );
         graph.traverse( bo );
 
-        final List<ProjectVersionRef> buildOrder = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = bo.getBuildOrder();
 
         int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
     }
 
     @Test
@@ -122,14 +123,14 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal();
         graph.traverse( bo );
 
-        final List<ProjectVersionRef> buildOrder = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = bo.getBuildOrder();
 
         int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( pa ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( pb ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( pa.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( pb.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
     }
 
 }
