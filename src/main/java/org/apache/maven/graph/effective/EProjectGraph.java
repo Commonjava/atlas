@@ -300,6 +300,12 @@ public class EProjectGraph
             return this;
         }
 
+        public Builder withExactRelationships( final ProjectRelationship<?>... relationships )
+        {
+            this.relationships.addAll( Arrays.asList( relationships ) );
+            return this;
+        }
+
         public Builder withRelationships( final Collection<ProjectRelationship<?>> relationships )
         {
             final Set<PluginDependencyRelationship> pluginDepRels = new HashSet<PluginDependencyRelationship>();
@@ -521,6 +527,8 @@ public class EProjectGraph
                         dfsIterate( target, traversal, path, pass );
                         path.removeLast();
                     }
+
+                    traversal.edgeTraversed( edge, path, pass );
                 }
             }
         }
@@ -566,6 +574,8 @@ public class EProjectGraph
                         // FIXME: How do we avoid cycle traversal here??
                         nextPath.add( edge );
                         nextLayer.add( nextPath );
+
+                        traversal.edgeTraversed( edge, path, pass );
                     }
                 }
             }

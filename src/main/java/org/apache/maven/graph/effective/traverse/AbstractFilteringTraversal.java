@@ -43,6 +43,8 @@ public abstract class AbstractFilteringTraversal
     public final void edgeTraversed( final ProjectRelationship<?> relationship,
                                      final List<ProjectRelationship<?>> path, final int pass )
     {
+        System.out.println( "POP: " + relationship );
+
         final EdgeId id = new EdgeId( relationship, path );
         final ProjectRelationshipFilter filter = filtersInReserve.get( id );
 
@@ -66,6 +68,8 @@ public abstract class AbstractFilteringTraversal
             {
                 final EdgeId id = new EdgeId( relationship, path );
                 filtersInReserve.put( id, currentFilter );
+
+                System.out.println( "PUSH: " + relationship );
 
                 currentFilter = currentFilter.getChildFilter( relationship );
             }

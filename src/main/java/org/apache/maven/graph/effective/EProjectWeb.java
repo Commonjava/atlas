@@ -281,6 +281,8 @@ public class EProjectWeb
 
                     dfsIterate( target, traversal, path, pass );
                     path.removeLast();
+
+                    traversal.edgeTraversed( edge, path, pass );
                 }
             }
         }
@@ -325,6 +327,8 @@ public class EProjectWeb
 
                         nextPath.add( edge );
                         nextLayer.add( nextPath );
+
+                        traversal.edgeTraversed( edge, path, pass );
                     }
                 }
             }

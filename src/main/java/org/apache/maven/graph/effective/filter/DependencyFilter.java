@@ -58,10 +58,13 @@ public class DependencyFilter
             excludes.addAll( parent.excludes );
         }
 
-        final Set<ProjectRef> excl = parentRel.getExcludes();
-        if ( excl != null && !excl.isEmpty() )
+        if ( parentRel != null )
         {
-            excludes.addAll( excl );
+            final Set<ProjectRef> excl = parentRel.getExcludes();
+            if ( excl != null && !excl.isEmpty() )
+            {
+                excludes.addAll( excl );
+            }
         }
     }
 
@@ -101,13 +104,13 @@ public class DependencyFilter
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        if ( !( parent instanceof DependencyRelationship ) )
+        DependencyRelationship dr = null;
+        if ( ( parent instanceof DependencyRelationship ) )
         {
-            throw new IllegalArgumentException(
-                                                "You can only create a child DependencyFilter if the parent relationship was a DependencyRelationship." );
+            dr = (DependencyRelationship) parent;
         }
 
-        return new DependencyFilter( this, (DependencyRelationship) parent );
+        return new DependencyFilter( this, dr );
     }
 
 }

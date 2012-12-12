@@ -13,6 +13,7 @@ import org.apache.maven.graph.common.version.InvalidVersionSpecificationExceptio
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
+import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.junit.Test;
 
@@ -47,6 +48,44 @@ public class BuildOrderTraversalTest
         final List<ProjectRef> buildOrder = bo.getBuildOrder();
 
         int idx = 0;
+        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
+        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
+    }
+
+    @Test
+    public void simpleDependencyBuildOrder_includeDepParent()
+        throws InvalidVersionSpecificationException
+    {
+        final ProjectVersionRef c = new ProjectVersionRef( "group.id", "c", "3" );
+        final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
+        final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
+        final ProjectVersionRef p = new ProjectVersionRef( "group.id", "b-parent", "1001" );
+
+        final EProjectGraph graph =
+            new EProjectGraph.Builder( c ).withDependencies( new DependencyRelationship( c, new ArtifactRef( b, null,
+                                                                                                             null,
+                                                                                                             false ),
+                                                                                         null, 0, false ),
+                                                             new DependencyRelationship( b, new ArtifactRef( a, null,
+                                                                                                             null,
+                                                                                                             false ),
+                                                                                         null, 0, false ) )
+                                          .withExactRelationships( new ParentRelationship( b, p ) )
+                                          .build();
+
+        assertThat( graph.getAllRelationships()
+                         .size(), equalTo( 3 ) );
+
+        final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
+        graph.traverse( bo );
+
+        final List<ProjectRef> buildOrder = bo.getBuildOrder();
+
+        assertThat( buildOrder.size(), equalTo( 4 ) );
+
+        int idx = 0;
+        assertThat( buildOrder.get( idx++ ), equalTo( p.asProjectRef() ) );
         assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
         assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
         assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );

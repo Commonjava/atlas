@@ -6,6 +6,8 @@ import java.util.List;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.filter.OrFilter;
+import org.apache.maven.graph.effective.filter.ParentFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
@@ -21,7 +23,7 @@ public class BuildOrderTraversal
 
     public BuildOrderTraversal( final ProjectRelationshipFilter filter )
     {
-        super( filter );
+        super( new OrFilter( filter, new ParentFilter() ) );
     }
 
     public List<ProjectRef> getBuildOrder()
