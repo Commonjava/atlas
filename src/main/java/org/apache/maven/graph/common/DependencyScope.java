@@ -27,7 +27,7 @@ public enum DependencyScope
 
     public boolean implies( final DependencyScope scope )
     {
-        return implied.contains( scope );
+        return scope == this || implied.contains( scope );
     }
 
     public String realName()

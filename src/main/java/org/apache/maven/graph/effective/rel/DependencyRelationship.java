@@ -1,10 +1,14 @@
 package org.apache.maven.graph.effective.rel;
 
 import java.io.Serializable;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
+import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 
 public final class DependencyRelationship
@@ -18,12 +22,16 @@ public final class DependencyRelationship
 
     private final DependencyScope scope;
 
+    private final Set<ProjectRef> excludes;
+
     public DependencyRelationship( final ProjectVersionRef declaring, final ArtifactRef target,
-                                   final DependencyScope scope, final int index, final boolean managed )
+                                   final DependencyScope scope, final int index, final boolean managed,
+                                   final ProjectRef... excludes )
     {
         super( RelationshipType.DEPENDENCY, declaring, target, index );
         this.scope = scope == null ? DependencyScope.compile : scope;
         this.managed = managed;
+        this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
     }
 
     public final boolean isManaged()
@@ -85,6 +93,11 @@ public final class DependencyRelationship
     public ArtifactRef getTargetArtifact()
     {
         return getTarget();
+    }
+
+    public Set<ProjectRef> getExcludes()
+    {
+        return excludes;
     }
 
 }

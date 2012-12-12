@@ -81,4 +81,9 @@ public class AncestryTraversal
     {
     }
 
+    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                               final int pass )
+    {
+    }
+
 }

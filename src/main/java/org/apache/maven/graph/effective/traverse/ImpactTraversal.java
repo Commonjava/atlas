@@ -9,13 +9,12 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class ImpactTraversal
-    implements ProjectNetTraversal
+    extends AbstractTraversal
 {
 
     private final Map<ProjectVersionRef, Set<List<ProjectRelationship<?>>>> impactedPaths =
@@ -56,24 +55,7 @@ public class ImpactTraversal
         return impactedPaths;
     }
 
-    public TraversalType getType( final int pass )
-    {
-        return TraversalType.depth_first;
-    }
-
-    public int getRequiredPasses()
-    {
-        return 1;
-    }
-
-    public void startTraverse( final int pass, final EProjectNet network )
-    {
-    }
-
-    public void endTraverse( final int pass, final EProjectNet network )
-    {
-    }
-
+    @Override
     public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {

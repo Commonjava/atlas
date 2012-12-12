@@ -18,4 +18,6 @@ public interface ProjectNetTraversal
 
     boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
 
+    void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
+
 }
