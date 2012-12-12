@@ -73,6 +73,7 @@ public class EProjectGraph
         add( relationships );
     }
 
+    // TODO: If we construct like this based on contents of another graph, will we lose that graph's list of variable subgraphs??
     public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship<?>> relationships,
                           final Collection<EProjectRelationships> projectRelationships, final Set<EProjectCycle> cycles )
     {
