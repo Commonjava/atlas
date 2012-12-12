@@ -43,6 +43,12 @@ The only common places to find ArtifactRef in Maven POMs are:
   - Dependency declaration
   - Plugin-level dependency declaration
 
+## Version Parsing
+
+Atlas also contains a javacc grammar for parsing versions. This is relatively stable for most mainstream version schemes, but some outliers may still cause problems.
+
+The associated version-sorting implementation tries to follow the conventions described in: https://cwiki.apache.org/confluence/display/MAVENOLD/Versioning with a few notable exceptions. Wherever two schemes clash and are unlikely to co-exist for a single project, their direct comparison may differ from that described in the wiki. This was done for the sake of simplicity, and seems like a reasonable compromise for now.
+
 ## Relationships
 
 Maven's POMs express at least five different types of relationships to other projects' artifacts:
