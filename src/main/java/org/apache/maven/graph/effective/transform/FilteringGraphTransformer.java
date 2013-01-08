@@ -17,7 +17,6 @@ package org.apache.maven.graph.effective.transform;
 
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -48,15 +47,14 @@ public class FilteringGraphTransformer
 
     public EProjectGraph getTransformedGraph()
     {
-        for ( final Iterator<EProjectCycle> iterator = cycles.iterator(); iterator.hasNext(); )
+        for ( EProjectCycle cycle : new HashSet<EProjectCycle>( cycles ) )
         {
-            final EProjectCycle cycle = iterator.next();
-
             for ( final ProjectRelationship<?> rel : cycle )
             {
                 if ( !relationships.contains( rel ) )
                 {
-                    iterator.remove();
+                    cycles.remove( cycle );
+                    break;
                 }
             }
         }
@@ -70,6 +68,16 @@ public class FilteringGraphTransformer
     {
         relationships.add( relationship );
         return true;
+    }
+
+    protected final boolean addRelationship( final ProjectRelationship<?> relationship )
+    {
+        return relationships.add( relationship );
+    }
+
+    protected final boolean removeRelationship( final ProjectRelationship<?> relationship )
+    {
+        return relationships.remove( relationship );
     }
 
     @Override

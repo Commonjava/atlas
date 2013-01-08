@@ -54,6 +54,11 @@ public abstract class AbstractFilteringTraversal
     {
     }
 
+    protected final ProjectRelationshipFilter getFilter()
+    {
+        return currentFilter;
+    }
+
     @Override
     public final void edgeTraversed( final ProjectRelationship<?> relationship,
                                      final List<ProjectRelationship<?>> path, final int pass )

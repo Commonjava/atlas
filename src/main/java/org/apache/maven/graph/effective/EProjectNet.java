@@ -46,6 +46,6 @@ public interface EProjectNet
 
     boolean isCycleParticipant( final ProjectVersionRef ref );
 
-    public abstract Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref );
+    Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref );
 
 }

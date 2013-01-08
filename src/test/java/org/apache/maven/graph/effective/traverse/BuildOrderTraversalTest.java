@@ -30,6 +30,7 @@ import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
+import org.apache.maven.graph.effective.traverse.model.BuildOrder;
 import org.junit.Test;
 
 public class BuildOrderTraversalTest
@@ -60,7 +61,8 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
         graph.traverse( bo );
 
-        final List<ProjectRef> buildOrder = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         int idx = 0;
         assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
@@ -95,7 +97,8 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
         graph.traverse( bo );
 
-        final List<ProjectRef> buildOrder = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         assertThat( buildOrder.size(), equalTo( 4 ) );
 
@@ -138,7 +141,8 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
         graph.traverse( bo );
 
-        final List<ProjectRef> buildOrder = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         int idx = 0;
         assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
@@ -190,7 +194,8 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.runtime ) );
         graph.traverse( bo );
 
-        final List<ProjectRef> buildOrder = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         assertThat( buildOrder.size(), equalTo( 3 ) );
 
@@ -233,7 +238,8 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.runtime ) );
         graph.traverse( bo );
 
-        final List<ProjectRef> buildOrder = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         assertThat( buildOrder.size(), equalTo( 3 ) );
 
@@ -275,7 +281,8 @@ public class BuildOrderTraversalTest
         final BuildOrderTraversal bo = new BuildOrderTraversal();
         graph.traverse( bo );
 
-        final List<ProjectRef> buildOrder = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         int idx = 0;
         assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );

@@ -16,21 +16,29 @@
 package org.apache.maven.graph.effective.traverse;
 
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.EProjectCycle;
+import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.filter.OrFilter;
 import org.apache.maven.graph.effective.filter.ParentFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.traverse.model.BuildOrder;
 
 public class BuildOrderTraversal
     extends AbstractFilteringTraversal
 {
 
     private final List<ProjectRef> order = new ArrayList<ProjectRef>();
+
+    private Set<EProjectCycle> cycles;
 
     public BuildOrderTraversal()
     {
@@ -41,9 +49,9 @@ public class BuildOrderTraversal
         super( new OrFilter( filter, new ParentFilter() ) );
     }
 
-    public List<ProjectRef> getBuildOrder()
+    public BuildOrder getBuildOrder()
     {
-        return order;
+        return new BuildOrder( order, cycles );
     }
 
     @Override
@@ -75,6 +83,38 @@ public class BuildOrderTraversal
         }
 
         return true;
+    }
+
+    @Override
+    public void endTraverse( final int pass, final EProjectNet network )
+    {
+        super.endTraverse( pass, network );
+
+        final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>( network.getCycles() );
+        for ( final Iterator<EProjectCycle> iterator = cycles.iterator(); iterator.hasNext(); )
+        {
+            final EProjectCycle eProjectCycle = iterator.next();
+            ProjectRelationshipFilter filter = getFilter();
+
+            boolean include = true;
+            for ( final ProjectRelationship<?> rel : eProjectCycle )
+            {
+                if ( !filter.accept( rel ) )
+                {
+                    include = false;
+                    break;
+                }
+
+                filter = filter.getChildFilter( rel );
+            }
+
+            if ( !include )
+            {
+                iterator.remove();
+            }
+        }
+
+        this.cycles = cycles;
     }
 
 }
