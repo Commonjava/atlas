@@ -420,6 +420,7 @@ public class EProjectGraph
         }
 
         incompleteSubgraphs.remove( rel.getDeclaring() );
+        connectedProjects.add( rel.getDeclaring() );
 
         ProjectVersionRef target = rel.getTarget();
         if ( rel instanceof DependencyRelationship )
