@@ -46,7 +46,7 @@ public class BuildOrderTraversal
 
     public BuildOrderTraversal( final ProjectRelationshipFilter filter )
     {
-        super( new OrFilter( filter, new ParentFilter() ) );
+        super( new OrFilter( filter, new ParentFilter( false ) ) );
     }
 
     public BuildOrder getBuildOrder()

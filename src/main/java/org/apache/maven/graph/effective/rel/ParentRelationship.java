@@ -28,6 +28,14 @@ public final class ParentRelationship
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Ancestry terminus. This is to signify that the declaring project has NO parent relationship.
+     */
+    public ParentRelationship( final ProjectVersionRef declaring )
+    {
+        super( RelationshipType.PARENT, declaring, declaring, 0 );
+    }
+
     public ParentRelationship( final ProjectVersionRef declaring, final ProjectVersionRef target )
     {
         super( RelationshipType.PARENT, declaring, target, 0 );
@@ -43,6 +51,11 @@ public final class ParentRelationship
     public ArtifactRef getTargetArtifact()
     {
         return new ArtifactRef( getTarget(), "pom", null, false );
+    }
+
+    public boolean isTerminus()
+    {
+        return getDeclaring().equals( getTarget() );
     }
 
 }

@@ -210,7 +210,7 @@ public class EProjectRelationships
         {
             if ( parent == null )
             {
-                parent = new ParentRelationship( key.getProject(), key.getProject() );
+                parent = new ParentRelationship( key.getProject() );
             }
 
             return new EProjectRelationships( key, parent, dependencies, plugins, managedDependencies, managedPlugins,

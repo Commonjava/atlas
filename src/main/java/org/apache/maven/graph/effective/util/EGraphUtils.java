@@ -46,8 +46,7 @@ public final class EGraphUtils
         for ( final Iterator<ProjectRelationship<?>> it = rels.iterator(); it.hasNext(); )
         {
             final ProjectRelationship<?> rel = it.next();
-            if ( ( rel instanceof ParentRelationship ) && rel.getDeclaring()
-                                                             .equals( rel.getTarget() ) )
+            if ( ( rel instanceof ParentRelationship ) && ( (ParentRelationship) rel ).isTerminus() )
             {
                 it.remove();
             }

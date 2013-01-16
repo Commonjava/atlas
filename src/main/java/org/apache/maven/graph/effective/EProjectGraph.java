@@ -471,7 +471,8 @@ public class EProjectGraph
         connectedProjects.add( subGraph.getRoot() );
 
         this.connectedProjects.addAll( subGraph.connectedProjects );
-        addAll( subGraph.getAllRelationships() );
+        this.incompleteSubgraphs.removeAll( subGraph.connectedProjects );
+        addAll( subGraph.getExactAllRelationships() );
     }
 
     public ProjectVersionRef getRoot()
@@ -520,29 +521,32 @@ public class EProjectGraph
             {
                 if ( traversal.traverseEdge( edge, path, pass ) )
                 {
-                    ProjectVersionRef target = edge.getTarget();
-                    if ( target instanceof ArtifactRef )
+                    if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
                     {
-                        target = ( (ArtifactRef) target ).asProjectVersionRef();
-                    }
-
-                    // FIXME: Are there cases where a traversal needs to see cycles??
-                    boolean cycle = false;
-                    for ( final ProjectRelationship<?> item : path )
-                    {
-                        if ( item.getDeclaring()
-                                 .equals( target ) )
+                        ProjectVersionRef target = edge.getTarget();
+                        if ( target instanceof ArtifactRef )
                         {
-                            cycle = true;
-                            break;
+                            target = ( (ArtifactRef) target ).asProjectVersionRef();
                         }
-                    }
 
-                    if ( !cycle )
-                    {
-                        path.addLast( edge );
-                        dfsIterate( target, traversal, path, pass );
-                        path.removeLast();
+                        // FIXME: Are there cases where a traversal needs to see cycles??
+                        boolean cycle = false;
+                        for ( final ProjectRelationship<?> item : path )
+                        {
+                            if ( item.getDeclaring()
+                                     .equals( target ) )
+                            {
+                                cycle = true;
+                                break;
+                            }
+                        }
+
+                        if ( !cycle )
+                        {
+                            path.addLast( edge );
+                            dfsIterate( target, traversal, path, pass );
+                            path.removeLast();
+                        }
                     }
 
                     traversal.edgeTraversed( edge, path, pass );
@@ -567,6 +571,11 @@ public class EProjectGraph
 
         for ( final List<ProjectRelationship<?>> path : thisLayer )
         {
+            if ( path.isEmpty() )
+            {
+                continue;
+            }
+
             ProjectVersionRef node = path.get( path.size() - 1 )
                                          .getTarget();
             if ( node instanceof ArtifactRef )
@@ -584,13 +593,18 @@ public class EProjectGraph
             {
                 for ( final ProjectRelationship<?> edge : edges )
                 {
-                    if ( ( edge instanceof SelfEdge ) || traversal.traverseEdge( edge, path, pass ) )
+                    // call traverseEdge no matter what, to allow traversal to "see" all relationships.
+                    if ( /*( edge instanceof SelfEdge ) ||*/traversal.traverseEdge( edge, path, pass ) )
                     {
-                        final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
+                        // Don't account for terminal parent relationship.
+                        if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
+                        {
+                            final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
 
-                        // FIXME: How do we avoid cycle traversal here??
-                        nextPath.add( edge );
-                        nextLayer.add( nextPath );
+                            // FIXME: How do we avoid cycle traversal here??
+                            nextPath.add( edge );
+                            nextLayer.add( nextPath );
+                        }
 
                         traversal.edgeTraversed( edge, path, pass );
                     }
@@ -615,31 +629,12 @@ public class EProjectGraph
 
         unsorted = new ArrayList<ProjectRelationship<?>>( unsorted );
 
-        filterTerminalParents( unsorted );
+        //        filterTerminalParents( unsorted );
 
         final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
         Collections.sort( sorted, new RelationshipComparator() );
 
         return sorted;
-    }
-
-    private static final class SelfEdge
-        extends AbstractProjectRelationship<ProjectVersionRef>
-    {
-
-        private static final long serialVersionUID = 1L;
-
-        SelfEdge( final ProjectVersionRef ref )
-        {
-            super( null, ref, ref, 0 );
-        }
-
-        @Override
-        public ArtifactRef getTargetArtifact()
-        {
-            return new ArtifactRef( getTarget(), "pom", null, false );
-        }
-
     }
 
     private void readObject( final java.io.ObjectInputStream in )
@@ -715,5 +710,24 @@ public class EProjectGraph
         }
 
         return new HashSet<ProjectRelationship<?>>( rels );
+    }
+
+    private static final class SelfEdge
+        extends AbstractProjectRelationship<ProjectVersionRef>
+    {
+
+        private static final long serialVersionUID = 1L;
+
+        SelfEdge( final ProjectVersionRef ref )
+        {
+            super( null, ref, ref, 0 );
+        }
+
+        @Override
+        public ArtifactRef getTargetArtifact()
+        {
+            return new ArtifactRef( getTarget(), "pom", null, false );
+        }
+
     }
 }

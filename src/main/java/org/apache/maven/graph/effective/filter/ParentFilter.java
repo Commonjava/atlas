@@ -22,9 +22,29 @@ public class ParentFilter
     implements ProjectRelationshipFilter
 {
 
+    private final boolean allowTerminalParent;
+
+    public ParentFilter()
+    {
+        this.allowTerminalParent = true;
+    }
+
+    public ParentFilter( final boolean allowTerminalParent )
+    {
+        this.allowTerminalParent = allowTerminalParent;
+    }
+
     public boolean accept( final ProjectRelationship<?> rel )
     {
-        return rel instanceof ParentRelationship;
+        if ( rel instanceof ParentRelationship )
+        {
+            if ( allowTerminalParent || !( (ParentRelationship) rel ).isTerminus() )
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
