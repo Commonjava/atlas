@@ -22,10 +22,22 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
+import org.apache.maven.graph.common.version.VersionSpec;
 import org.junit.Test;
 
 public class ProjectVersionRefTest
 {
+
+    @Test
+    public void constructWithStringVersionAndRenderStandardSpecMatches()
+        throws InvalidVersionSpecificationException
+    {
+        final String ver = "2.1.1.Final";
+        final ProjectVersionRef ref = new ProjectVersionRef( "g", "a", ver );
+        final VersionSpec spec = ref.getVersionSpec();
+
+        assertThat( spec.renderStandard(), equalTo( ver ) );
+    }
 
     @Test
     public void hashCodeEquality()

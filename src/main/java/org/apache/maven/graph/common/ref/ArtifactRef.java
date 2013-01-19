@@ -175,9 +175,4 @@ public class ArtifactRef
         return artifactFieldsEqual( (ArtifactRef) other );
     }
 
-    public ProjectVersionRef asProjectVersionRef()
-    {
-        return new ProjectVersionRef( getGroupId(), getArtifactId(), getVersionSpec() );
-    }
-
 }

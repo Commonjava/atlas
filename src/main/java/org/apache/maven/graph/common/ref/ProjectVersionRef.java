@@ -68,6 +68,13 @@ public class ProjectVersionRef
         this.versionSpec = VersionUtils.createFromSpec( versionSpec );
     }
 
+    public ProjectVersionRef asProjectVersionRef()
+    {
+        return getClass().equals( ProjectVersionRef.class ) ? this : new ProjectVersionRef( getGroupId(),
+                                                                                            getArtifactId(),
+                                                                                            getVersionSpec() );
+    }
+
     public ProjectRef asProjectRef()
     {
         return new ProjectRef( getGroupId(), getArtifactId() );
