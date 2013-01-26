@@ -24,4 +24,6 @@ public interface ProjectRelationshipFilter
 
     ProjectRelationshipFilter getChildFilter( ProjectRelationship<?> parent );
 
+    void render( StringBuilder sb );
+
 }

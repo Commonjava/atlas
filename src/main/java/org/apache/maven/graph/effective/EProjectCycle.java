@@ -165,6 +165,19 @@ public class EProjectCycle
         return new ArrayList<ProjectRelationship<?>>( participants );
     }
 
+    public Set<ProjectVersionRef> getAllParticipatingProjects()
+    {
+        final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>();
+        for ( final ProjectRelationship<?> rel : participants )
+        {
+            refs.add( rel.getDeclaring() );
+            refs.add( rel.getTarget()
+                         .asProjectVersionRef() );
+        }
+
+        return refs;
+    }
+
     @Override
     public String toString()
     {

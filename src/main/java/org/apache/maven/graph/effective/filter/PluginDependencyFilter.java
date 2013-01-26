@@ -50,4 +50,23 @@ public class PluginDependencyFilter
         return new DependencyFilter( DependencyScope.runtime );
     }
 
+    public void render( final StringBuilder sb )
+    {
+        if ( sb.length() > 0 )
+        {
+            sb.append( " " );
+        }
+        sb.append( "PLUGIN-DEPENDENCIES[for: " )
+          .append( plugin )
+          .append( "]" );
+    }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder();
+        render( sb );
+        return sb.toString();
+    }
+
 }

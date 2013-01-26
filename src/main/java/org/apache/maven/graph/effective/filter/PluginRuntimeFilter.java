@@ -41,4 +41,21 @@ public class PluginRuntimeFilter
         return child;
     }
 
+    public void render( final StringBuilder sb )
+    {
+        if ( sb.length() > 0 )
+        {
+            sb.append( " " );
+        }
+        sb.append( "PLUGIN-RUNTIME" );
+    }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder();
+        render( sb );
+        return sb.toString();
+    }
+
 }

@@ -128,4 +128,47 @@ public class DependencyFilter
         return new DependencyFilter( this, dr );
     }
 
+    public void render( final StringBuilder sb )
+    {
+        if ( sb.length() > 0 )
+        {
+            sb.append( " " );
+        }
+
+        sb.append( "DEPENDENCIES[scope: " );
+        sb.append( scope.realName() );
+        sb.append( ", transitivity: " )
+          .append( scopeTransitivity.name() );
+        sb.append( ", managed: " )
+          .append( includeManaged )
+          .append( ", concrete: " )
+          .append( includeConcrete );
+        if ( excludes != null && !excludes.isEmpty() )
+        {
+            sb.append( ", exclude: {" );
+            boolean first = true;
+            for ( final ProjectRef exclude : excludes )
+            {
+                if ( !first )
+                {
+                    sb.append( ", " );
+                }
+
+                first = false;
+                sb.append( exclude );
+            }
+
+            sb.append( "}" );
+        }
+        sb.append( "]" );
+    }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder();
+        render( sb );
+        return sb.toString();
+    }
+
 }

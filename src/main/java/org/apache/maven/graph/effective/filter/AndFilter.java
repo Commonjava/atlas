@@ -55,4 +55,37 @@ public class AndFilter
         return new AndFilter( childFilters );
     }
 
+    public void render( final StringBuilder sb )
+    {
+        final List<ProjectRelationshipFilter> filters = getFilters();
+        if ( sb.length() > 0 )
+        {
+            sb.append( " " );
+        }
+        sb.append( "[" );
+        boolean first = true;
+        for ( final ProjectRelationshipFilter filter : filters )
+        {
+            if ( first )
+            {
+                first = false;
+            }
+            else
+            {
+                sb.append( " && " );
+            }
+
+            filter.render( sb );
+        }
+        sb.append( "]" );
+    }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder();
+        render( sb );
+        return sb.toString();
+    }
+
 }

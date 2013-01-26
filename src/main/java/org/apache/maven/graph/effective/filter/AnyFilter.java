@@ -16,4 +16,21 @@ public class AnyFilter
         return this;
     }
 
+    public void render( final StringBuilder sb )
+    {
+        if ( sb.length() > 0 )
+        {
+            sb.append( " " );
+        }
+        sb.append( "ANY" );
+    }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder();
+        render( sb );
+        return sb.toString();
+    }
+
 }

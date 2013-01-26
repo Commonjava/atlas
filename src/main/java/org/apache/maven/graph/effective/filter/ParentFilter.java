@@ -52,4 +52,25 @@ public class ParentFilter
         return this;
     }
 
+    public void render( final StringBuilder sb )
+    {
+        if ( sb.length() > 0 )
+        {
+            sb.append( " " );
+        }
+        sb.append( "PARENTS" );
+        if ( allowTerminalParent )
+        {
+            sb.append( "[include logical terminal-parent]" );
+        }
+    }
+
+    @Override
+    public String toString()
+    {
+        final StringBuilder sb = new StringBuilder();
+        render( sb );
+        return sb.toString();
+    }
+
 }
