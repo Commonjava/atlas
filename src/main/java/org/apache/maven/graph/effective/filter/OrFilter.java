@@ -24,12 +24,12 @@ public class OrFilter
     extends AbstractAggregatingFilter
 {
 
-    public OrFilter( final Collection<ProjectRelationshipFilter> filters )
+    public OrFilter( final Collection<? extends ProjectRelationshipFilter> filters )
     {
         super( filters );
     }
 
-    public OrFilter( final ProjectRelationshipFilter... filters )
+    public <T extends ProjectRelationshipFilter> OrFilter( final T... filters )
     {
         super( filters );
     }
@@ -57,7 +57,7 @@ public class OrFilter
 
     public void render( final StringBuilder sb )
     {
-        final List<ProjectRelationshipFilter> filters = getFilters();
+        final List<? extends ProjectRelationshipFilter> filters = getFilters();
         if ( sb.length() > 0 )
         {
             sb.append( " " );

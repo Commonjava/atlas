@@ -15,69 +15,58 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.filter;
 
-import java.util.Collection;
-import java.util.List;
-
+import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
-public class AndFilter
-    extends AbstractAggregatingFilter
+// TODO: Do we need to consider excludes in the direct plugin-level dependency?
+public class PluginOnlyFilter
+    implements ProjectRelationshipFilter
 {
 
-    public AndFilter( final Collection<? extends ProjectRelationshipFilter> filters )
+    private boolean includeManaged = false;
+
+    private boolean includeConcrete = true;
+
+    public PluginOnlyFilter()
     {
-        super( filters );
     }
 
-    public <T extends ProjectRelationshipFilter> AndFilter( final T... filters )
+    public PluginOnlyFilter( final boolean includeManaged, final boolean includeConcrete )
     {
-        super( filters );
+        this.includeManaged = includeManaged;
+        this.includeConcrete = includeConcrete;
     }
 
     public boolean accept( final ProjectRelationship<?> rel )
     {
-        boolean accepted = true;
-        for ( final ProjectRelationshipFilter filter : getFilters() )
+        if ( rel instanceof PluginRelationship )
         {
-            accepted = accepted && filter.accept( rel );
-            if ( !accepted )
+            final PluginRelationship pr = (PluginRelationship) rel;
+            if ( includeManaged && pr.isManaged() )
             {
-                break;
+                return true;
+            }
+            else if ( includeConcrete && !pr.isManaged() )
+            {
+                return true;
             }
         }
 
-        return accepted;
+        return false;
     }
 
-    @Override
-    protected AbstractAggregatingFilter newChildFilter( final List<ProjectRelationshipFilter> childFilters )
+    public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        return new AndFilter( childFilters );
+        return new NoneFilter();
     }
 
     public void render( final StringBuilder sb )
     {
-        final List<? extends ProjectRelationshipFilter> filters = getFilters();
         if ( sb.length() > 0 )
         {
             sb.append( " " );
         }
-        sb.append( "[" );
-        boolean first = true;
-        for ( final ProjectRelationshipFilter filter : filters )
-        {
-            if ( first )
-            {
-                first = false;
-            }
-            else
-            {
-                sb.append( " && " );
-            }
-
-            filter.render( sb );
-        }
-        sb.append( "]" );
+        sb.append( "PLUGINS ONLY" );
     }
 
     @Override

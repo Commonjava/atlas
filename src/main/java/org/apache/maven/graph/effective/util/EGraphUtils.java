@@ -27,6 +27,8 @@ import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
+import org.apache.maven.graph.effective.filter.AnyFilter;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
@@ -70,6 +72,28 @@ public final class EGraphUtils
         {
             final ProjectRelationship<?> rel = iterator.next();
             if ( Arrays.binarySearch( types, rel.getType() ) < 0 )
+            {
+                iterator.remove();
+            }
+        }
+    }
+
+    public static void filter( final Set<ProjectRelationship<?>> rels, final ProjectRelationshipFilter filter )
+    {
+        if ( filter == null || filter instanceof AnyFilter )
+        {
+            return;
+        }
+
+        if ( rels == null || rels.isEmpty() )
+        {
+            return;
+        }
+
+        for ( final Iterator<ProjectRelationship<?>> iterator = rels.iterator(); iterator.hasNext(); )
+        {
+            final ProjectRelationship<?> rel = iterator.next();
+            if ( !filter.accept( rel ) )
             {
                 iterator.remove();
             }

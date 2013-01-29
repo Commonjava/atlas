@@ -16,53 +16,61 @@
 package org.apache.maven.graph.effective.filter;
 
 import org.apache.maven.graph.common.DependencyScope;
-import org.apache.maven.graph.common.ref.ProjectRef;
-import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
-import org.apache.maven.graph.effective.rel.PluginRelationship;
+import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
-// TODO: Do we need to consider excludes in the direct plugin-level dependency?
-public class PluginDependencyFilter
+public class DependencyOnlyFilter
     implements ProjectRelationshipFilter
 {
 
-    private final ProjectRef plugin;
+    // if unspecified, include all dependencies.
+    private DependencyScope scope = DependencyScope.test;
 
-    private boolean includeManaged;
+    private boolean includeManaged = false;
 
-    private boolean includeConcrete;
+    private boolean includeConcrete = true;
 
-    public PluginDependencyFilter( final PluginRelationship plugin )
+    private boolean useImpliedScope = true;
+
+    public DependencyOnlyFilter()
     {
-        this.plugin = plugin.getTarget()
-                            .asProjectRef();
     }
 
-    public PluginDependencyFilter( final PluginRelationship plugin, final boolean includeManaged,
-                                   final boolean includeConcrete )
+    public DependencyOnlyFilter( final DependencyScope scope )
     {
-        this.plugin = plugin.getTarget()
-                            .asProjectRef();
-        this.includeManaged = includeManaged;
+        if ( scope != null )
+        {
+            this.scope = scope;
+        }
+    }
+
+    public DependencyOnlyFilter( final DependencyScope scope, final boolean includeManaged,
+                                 final boolean includeConcrete, final boolean useImpliedScope )
+    {
+        if ( scope != null )
+        {
+            this.scope = scope;
+        }
         this.includeConcrete = includeConcrete;
+        this.includeManaged = includeManaged;
+        this.useImpliedScope = useImpliedScope;
     }
 
     public boolean accept( final ProjectRelationship<?> rel )
     {
-        if ( rel instanceof PluginDependencyRelationship )
+        if ( rel instanceof DependencyRelationship )
         {
-            final PluginDependencyRelationship pdr = (PluginDependencyRelationship) rel;
-            if ( plugin.equals( pdr.getPlugin() ) )
+            if ( this.scope == null )
             {
-                if ( includeManaged && pdr.isManaged() )
-                {
-                    return true;
-                }
-                else if ( includeConcrete && !pdr.isManaged() )
-                {
-                    return true;
-                }
+                return true;
             }
+
+            final DependencyScope scope = ( (DependencyRelationship) rel ).getScope();
+            if ( scope == this.scope || ( useImpliedScope && this.scope.implies( scope ) ) )
+            {
+                return true;
+            }
+
         }
 
         return false;
@@ -70,7 +78,7 @@ public class PluginDependencyFilter
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        return new DependencyFilter( DependencyScope.runtime );
+        return new NoneFilter();
     }
 
     public void render( final StringBuilder sb )
@@ -79,9 +87,14 @@ public class PluginDependencyFilter
         {
             sb.append( " " );
         }
-        sb.append( "PLUGIN-DEPENDENCIES[for: " )
-          .append( plugin )
-          .append( "]" );
+
+        sb.append( "DEPENDENCIES ONLY[scope: " );
+        sb.append( scope.realName() );
+        sb.append( ", managed: " )
+          .append( includeManaged )
+          .append( ", concrete: " )
+          .append( includeConcrete );
+        sb.append( "]" );
     }
 
     @Override

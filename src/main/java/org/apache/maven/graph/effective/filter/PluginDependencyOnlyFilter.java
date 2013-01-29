@@ -15,31 +15,30 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.filter;
 
-import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 // TODO: Do we need to consider excludes in the direct plugin-level dependency?
-public class PluginDependencyFilter
+public class PluginDependencyOnlyFilter
     implements ProjectRelationshipFilter
 {
 
+    private boolean includeManaged = false;
+
+    private boolean includeConcrete = true;
+
     private final ProjectRef plugin;
 
-    private boolean includeManaged;
-
-    private boolean includeConcrete;
-
-    public PluginDependencyFilter( final PluginRelationship plugin )
+    public PluginDependencyOnlyFilter( final PluginRelationship plugin )
     {
         this.plugin = plugin.getTarget()
                             .asProjectRef();
     }
 
-    public PluginDependencyFilter( final PluginRelationship plugin, final boolean includeManaged,
-                                   final boolean includeConcrete )
+    public PluginDependencyOnlyFilter( final PluginRelationship plugin, final boolean includeManaged,
+                                       final boolean includeConcrete )
     {
         this.plugin = plugin.getTarget()
                             .asProjectRef();
@@ -70,7 +69,7 @@ public class PluginDependencyFilter
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        return new DependencyFilter( DependencyScope.runtime );
+        return new NoneFilter();
     }
 
     public void render( final StringBuilder sb )
@@ -79,7 +78,7 @@ public class PluginDependencyFilter
         {
             sb.append( " " );
         }
-        sb.append( "PLUGIN-DEPENDENCIES[for: " )
+        sb.append( "PLUGIN-DEPENDENCIES ONLY[for: " )
           .append( plugin )
           .append( "]" );
     }

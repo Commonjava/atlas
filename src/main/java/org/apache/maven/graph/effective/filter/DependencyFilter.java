@@ -28,7 +28,7 @@ public class DependencyFilter
     implements ProjectRelationshipFilter
 {
 
-    private final DependencyScope scope;
+    private DependencyScope scope = DependencyScope.test;
 
     private ScopeTransitivity scopeTransitivity = ScopeTransitivity.maven;
 
@@ -40,18 +40,23 @@ public class DependencyFilter
 
     public DependencyFilter()
     {
-        this.scope = null;
     }
 
     public DependencyFilter( final DependencyScope scope )
     {
-        this.scope = scope;
+        if ( scope != null )
+        {
+            this.scope = scope;
+        }
     }
 
     public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity,
                              final boolean includeManaged, final boolean includeConcrete, final Set<ProjectRef> excludes )
     {
-        this.scope = scope;
+        if ( scope != null )
+        {
+            this.scope = scope;
+        }
         this.scopeTransitivity = scopeTransitivity;
         this.includeConcrete = includeConcrete;
         this.includeManaged = includeManaged;

@@ -25,9 +25,9 @@ import org.apache.maven.graph.effective.rel.ProjectRelationship;
 public abstract class AbstractAggregatingFilter
     implements ProjectRelationshipFilter
 {
-    private final List<ProjectRelationshipFilter> filters;
+    private final List<? extends ProjectRelationshipFilter> filters;
 
-    protected AbstractAggregatingFilter( final Collection<ProjectRelationshipFilter> filters )
+    protected AbstractAggregatingFilter( final Collection<? extends ProjectRelationshipFilter> filters )
     {
         this.filters = new ArrayList<ProjectRelationshipFilter>( filters );
     }
@@ -37,7 +37,7 @@ public abstract class AbstractAggregatingFilter
         this.filters = new ArrayList<ProjectRelationshipFilter>( Arrays.asList( filters ) );
     }
 
-    protected final List<ProjectRelationshipFilter> getFilters()
+    protected final List<? extends ProjectRelationshipFilter> getFilters()
     {
         return filters;
     }
