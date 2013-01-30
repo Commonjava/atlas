@@ -661,7 +661,7 @@ public class EProjectGraph
 
     public boolean isCycleParticipant( final ProjectVersionRef ref )
     {
-        for ( final EProjectCycle cycle : cycles )
+        for ( final EProjectCycle cycle : getCycles() )
         {
             if ( cycle.contains( ref ) )
             {
@@ -674,7 +674,7 @@ public class EProjectGraph
 
     public boolean isCycleParticipant( final ProjectRelationship<?> rel )
     {
-        for ( final EProjectCycle cycle : cycles )
+        for ( final EProjectCycle cycle : getCycles() )
         {
             if ( cycle.contains( rel ) )
             {
@@ -687,7 +687,10 @@ public class EProjectGraph
 
     public void addCycle( final EProjectCycle cycle )
     {
-        this.cycles.add( cycle );
+        synchronized ( this.cycles )
+        {
+            this.cycles.add( cycle );
+        }
 
         for ( final ProjectRelationship<?> rel : cycle )
         {
@@ -698,7 +701,10 @@ public class EProjectGraph
 
     public Set<EProjectCycle> getCycles()
     {
-        return new HashSet<EProjectCycle>( cycles );
+        synchronized ( cycles )
+        {
+            return new HashSet<EProjectCycle>( cycles );
+        }
     }
 
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )

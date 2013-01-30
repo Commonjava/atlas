@@ -36,6 +36,8 @@ public interface VersionedRef<T>
 
     VersionSpec getVersionSpec();
 
+    String getVersionString();
+
     T selectVersion( SingleVersion version );
 
 }

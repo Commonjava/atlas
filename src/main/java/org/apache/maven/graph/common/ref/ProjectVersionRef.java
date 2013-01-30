@@ -30,11 +30,13 @@ public class ProjectVersionRef
     private static final long serialVersionUID = 1L;
 
     // NEVER null
-    private final VersionSpec versionSpec;
+    private VersionSpec versionSpec;
+
+    private String versionString;
 
     public ProjectVersionRef( final ProjectRef ref, final VersionSpec versionSpec )
     {
-        this( ref.getGroupId(), ref.getArtifactId(), versionSpec );
+        this( ref.getGroupId(), ref.getArtifactId(), versionSpec, null );
     }
 
     public ProjectVersionRef( final ProjectRef ref, final String versionSpec )
@@ -43,36 +45,47 @@ public class ProjectVersionRef
         this( ref.getGroupId(), ref.getArtifactId(), versionSpec );
     }
 
-    public ProjectVersionRef( final String groupId, final String artifactId, final VersionSpec versionSpec )
+    ProjectVersionRef( final String groupId, final String artifactId, final VersionSpec versionSpec,
+                       final String versionString )
     {
         super( groupId, artifactId );
-        if ( versionSpec == null )
+        if ( versionSpec == null && versionString == null )
         {
-            throw new NullPointerException( "Version cannot be null for '" + groupId + ":" + artifactId + "'" );
+            throw new NullPointerException( "Version spec AND string cannot both be null for '" + groupId + ":"
+                + artifactId + "'" );
         }
 
+        this.versionString = versionString;
         this.versionSpec = versionSpec;
     }
 
-    public ProjectVersionRef( final String groupId, final String artifactId, final String versionSpec )
+    public ProjectVersionRef( final String groupId, final String artifactId, final VersionSpec versionSpec )
+    {
+        this( groupId, artifactId, versionSpec, null );
+    }
+
+    public ProjectVersionRef( final String groupId, final String artifactId, final String versionString )
         throws InvalidVersionSpecificationException
     {
-        super( groupId, artifactId );
-        if ( versionSpec == null || versionSpec.trim()
-                                               .length() < 1 )
-        {
-            throw new InvalidVersionSpecificationException( versionSpec, "Version ('" + versionSpec
-                + "') cannot be null or empty for '" + groupId + ":" + artifactId + "'" );
-        }
-
-        this.versionSpec = VersionUtils.createFromSpec( versionSpec );
+        this( groupId, artifactId, null, versionString );
     }
 
     public ProjectVersionRef asProjectVersionRef()
     {
         return getClass().equals( ProjectVersionRef.class ) ? this : new ProjectVersionRef( getGroupId(),
                                                                                             getArtifactId(),
-                                                                                            getVersionSpec() );
+                                                                                            getVersionSpecRaw(),
+                                                                                            getVersionStringRaw() );
+    }
+
+    VersionSpec getVersionSpecRaw()
+    {
+        return versionSpec;
+    }
+
+    String getVersionStringRaw()
+    {
+        return versionString;
     }
 
     public ProjectRef asProjectRef()
@@ -82,21 +95,22 @@ public class ProjectVersionRef
 
     public boolean isRelease()
     {
-        return versionSpec.isConcrete();
+        return getVersionSpec().isConcrete();
     }
 
     public boolean isSpecificVersion()
     {
-        return versionSpec.isSingle();
+        return getVersionSpec().isSingle();
     }
 
     public boolean matchesVersion( final SingleVersion version )
     {
-        return versionSpec.contains( version );
+        return getVersionSpec().contains( version );
     }
 
     public ProjectVersionRef selectVersion( final SingleVersion version )
     {
+        final VersionSpec versionSpec = getVersionSpec();
         if ( versionSpec.equals( version ) )
         {
             return this;
@@ -116,8 +130,12 @@ public class ProjectVersionRef
         return new ProjectVersionRef( groupId, artifactId, version );
     }
 
-    public VersionSpec getVersionSpec()
+    public synchronized VersionSpec getVersionSpec()
     {
+        if ( versionSpec == null )
+        {
+            versionSpec = VersionUtils.createFromSpec( versionString );
+        }
         return versionSpec;
     }
 
@@ -173,17 +191,27 @@ public class ProjectVersionRef
     @Override
     public String toString()
     {
-        return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getVersionSpec().renderStandard() );
+        return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getVersionString() );
     }
 
     public boolean isCompound()
     {
-        return !versionSpec.isSingle();
+        return !getVersionSpec().isSingle();
     }
 
     public boolean isSnapshot()
     {
         return !isCompound() && !isRelease();
+    }
+
+    public synchronized String getVersionString()
+    {
+        if ( versionString == null )
+        {
+            versionString = versionSpec.renderStandard();
+        }
+
+        return versionString;
     }
 
 }

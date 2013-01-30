@@ -134,6 +134,7 @@ public class EProjectCycle
 
     public int indexOf( final ProjectVersionRef ref )
     {
+        int targetIdx = -1;
         for ( int i = 0; i < participants.size(); i++ )
         {
             final ProjectRelationship<?> rel = participants.get( i );
@@ -142,9 +143,19 @@ public class EProjectCycle
             {
                 return i;
             }
+
+            // if we find the ref we're after as a TARGET, log it.
+            // if, at the end, we haven't found it as a DECLARING ref, return
+            // the index of the relationship that lists it as a target.
+            if ( targetIdx < 0 && rel.getTarget()
+                                     .asProjectVersionRef()
+                                     .equals( ref ) )
+            {
+                targetIdx = i;
+            }
         }
 
-        return -1;
+        return targetIdx;
     }
 
     public Iterator<ProjectRelationship<?>> iterator()

@@ -47,7 +47,7 @@ public class ArtifactRef
 
     public ArtifactRef( final ProjectVersionRef ref, final String type, final String classifier, final boolean optional )
     {
-        super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpec() );
+        super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpecRaw(), ref.getVersionStringRaw() );
         this.optional = optional;
         this.type = type == null ? "jar" : type;
         this.classifier = isEmpty( classifier ) ? null : classifier;
@@ -148,13 +148,12 @@ public class ArtifactRef
     {
         if ( classifier != null )
         {
-            return String.format( "%s:%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionSpec().renderStandard(),
-                                  getType(), getClassifier() );
+            return String.format( "%s:%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionString(), getType(),
+                                  getClassifier() );
         }
         else
         {
-            return String.format( "%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionSpec().renderStandard(),
-                                  getType() );
+            return String.format( "%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionString(), getType() );
         }
     }
 

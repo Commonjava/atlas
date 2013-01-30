@@ -42,7 +42,7 @@ import java.util.IllegalFormatException;
  * @author <a href="mailto:brett@apache.org">Brett Porter</a>
  */
 public class InvalidVersionSpecificationException
-    extends Exception
+    extends RuntimeException
 {
     private static final long serialVersionUID = 1L;
 
