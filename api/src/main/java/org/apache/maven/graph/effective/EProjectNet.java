@@ -18,7 +18,9 @@ package org.apache.maven.graph.effective;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 
 public interface EProjectNet
@@ -35,7 +37,7 @@ public interface EProjectNet
 
     Set<ProjectVersionRef> getVariableSubgraphs();
 
-    void recomputeIncompleteSubgraphs();
+    //    void recomputeIncompleteSubgraphs();
 
     Set<EProjectCycle> getCycles();
 
@@ -47,4 +49,14 @@ public interface EProjectNet
 
     Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref );
 
+    boolean isDerivedFrom( EProjectNet net );
+
+    EProjectGraph getGraph( EProjectKey key )
+        throws GraphDriverException;
+
+    boolean containsGraph( EProjectKey eProjectKey );
+
+    Set<ProjectVersionRef> getAllProjects();
+
+    Set<ProjectRelationship<?>> getAllRelationships();
 }

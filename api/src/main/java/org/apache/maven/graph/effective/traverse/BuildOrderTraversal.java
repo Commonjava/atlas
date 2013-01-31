@@ -90,28 +90,33 @@ public class BuildOrderTraversal
     {
         super.endTraverse( pass, network );
 
-        final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>( network.getCycles() );
-        for ( final Iterator<EProjectCycle> iterator = cycles.iterator(); iterator.hasNext(); )
+        Set<EProjectCycle> cycles = network.getCycles();
+        if ( cycles != null )
         {
-            final EProjectCycle eProjectCycle = iterator.next();
-            ProjectRelationshipFilter filter = getFilter();
-
-            boolean include = true;
-            for ( final ProjectRelationship<?> rel : eProjectCycle )
+            cycles = new HashSet<EProjectCycle>( cycles );
+            for ( final Iterator<EProjectCycle> iterator = cycles.iterator(); iterator.hasNext(); )
             {
-                if ( !filter.accept( rel ) )
+                final EProjectCycle eProjectCycle = iterator.next();
+                ProjectRelationshipFilter filter = getFilter();
+
+                boolean include = true;
+                for ( final ProjectRelationship<?> rel : eProjectCycle )
                 {
-                    include = false;
-                    break;
+                    if ( !filter.accept( rel ) )
+                    {
+                        include = false;
+                        break;
+                    }
+
+                    filter = filter.getChildFilter( rel );
                 }
 
-                filter = filter.getChildFilter( rel );
+                if ( !include )
+                {
+                    iterator.remove();
+                }
             }
 
-            if ( !include )
-            {
-                iterator.remove();
-            }
         }
 
         this.cycles = cycles;

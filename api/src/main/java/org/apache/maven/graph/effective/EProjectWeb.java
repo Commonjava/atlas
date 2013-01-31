@@ -15,17 +15,17 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.rel.DependencyRelationship;
+import org.apache.maven.graph.effective.filter.AnyFilter;
+import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.transform.FilteringGraphTransformer;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
@@ -35,14 +35,6 @@ public class EProjectWeb
 {
 
     private static final long serialVersionUID = 1L;
-
-    private transient Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
-
-    private transient Set<ProjectVersionRef> connectedProjects = new HashSet<ProjectVersionRef>();
-
-    private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
-
-    private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
     private final EGraphDriver driver;
 
@@ -72,7 +64,6 @@ public class EProjectWeb
      * @see org.apache.maven.graph.effective.EProjectNetwork#getAllRelationships()
      */
     public Set<ProjectRelationship<?>> getAllRelationships()
-        throws GraphDriverException
     {
         return new HashSet<ProjectRelationship<?>>( driver.getAllRelationships() );
     }
@@ -82,7 +73,7 @@ public class EProjectWeb
      */
     public boolean isComplete()
     {
-        return incompleteSubgraphs.isEmpty();
+        return !driver.hasMissingProjects();
     }
 
     /* (non-Javadoc)
@@ -90,7 +81,7 @@ public class EProjectWeb
      */
     public boolean isConcrete()
     {
-        return variableSubgraphs.isEmpty();
+        return !driver.hasVariableProjects();
     }
 
     /* (non-Javadoc)
@@ -98,7 +89,7 @@ public class EProjectWeb
      */
     public Set<ProjectVersionRef> getIncompleteSubgraphs()
     {
-        return Collections.unmodifiableSet( incompleteSubgraphs );
+        return Collections.unmodifiableSet( driver.getMissingProjects() );
     }
 
     /* (non-Javadoc)
@@ -106,80 +97,67 @@ public class EProjectWeb
      */
     public Set<ProjectVersionRef> getVariableSubgraphs()
     {
-        return Collections.unmodifiableSet( variableSubgraphs );
+        return Collections.unmodifiableSet( driver.getVariableProjects() );
     }
 
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#add(org.apache.maven.graph.effective.EProjectRelationships)
      */
-    public void add( final EProjectRelationships rels )
+    public Set<ProjectRelationship<?>> add( final EProjectRelationships rels )
     {
-        if ( incompleteSubgraphs.contains( rels.getProjectRef() ) )
-        {
-            incompleteSubgraphs.remove( rels.getProjectRef() );
-        }
-
-        connectedProjects.add( rels.getProjectRef() );
-
-        addAll( rels.getAllRelationships() );
+        return addAll( rels.getAllRelationships() );
     }
 
-    public <T extends ProjectRelationship<?>> void add( final T rel )
+    public <T extends ProjectRelationship<?>> boolean add( final T rel )
     {
         if ( rel == null )
         {
-            return;
+            return false;
         }
 
-        incompleteSubgraphs.remove( rel.getDeclaring() );
-
-        ProjectVersionRef target = rel.getTarget();
-        if ( rel instanceof DependencyRelationship )
-        {
-            target = ( (ArtifactRef) target ).asProjectVersionRef();
-        }
-
-        driver.addRelationship( rel );
-
-        if ( !target.getVersionSpec()
-                    .isSingle() )
-        {
-            variableSubgraphs.add( target );
-        }
-        else if ( !connectedProjects.contains( target ) )
-        {
-            incompleteSubgraphs.add( target );
-        }
+        return driver.addRelationship( rel );
     }
 
-    public <T extends ProjectRelationship<?>> void addAll( final Collection<T> rels )
+    public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
     {
         if ( rels == null )
         {
-            return;
+            return null;
         }
 
+        final Set<T> result = new HashSet<T>();
         for ( final T rel : rels )
         {
-            add( rel );
+            if ( add( rel ) )
+            {
+                result.add( rel );
+            }
         }
 
-        recomputeIncompleteSubgraphs();
+        driver.recomputeIncompleteSubgraphs();
+
+        return result;
     }
 
-    public <T extends ProjectRelationship<?>> void addAll( final T... rels )
+    public <T extends ProjectRelationship<?>> Set<T> addAll( final T... rels )
     {
         if ( rels == null )
         {
-            return;
+            return null;
         }
 
+        final Set<T> result = new HashSet<T>();
         for ( final T rel : rels )
         {
-            add( rel );
+            if ( add( rel ) )
+            {
+                result.add( rel );
+            }
         }
 
-        recomputeIncompleteSubgraphs();
+        driver.recomputeIncompleteSubgraphs();
+
+        return result;
     }
 
     /* (non-Javadoc)
@@ -188,41 +166,10 @@ public class EProjectWeb
     public void connect( final EProjectWeb otherWeb )
         throws GraphDriverException
     {
-        final EGraphDriver otherDriver = otherWeb.getDriver();
-        final Collection<ProjectVersionRef> otherNodes = otherDriver.getAllProjects();
-        for ( final ProjectVersionRef node : otherNodes )
+        if ( !otherWeb.isDerivedFrom( this ) )
         {
-            final Collection<? extends ProjectRelationship<?>> outEdges = otherDriver.getRelationshipsDeclaredBy( node );
-            if ( incompleteSubgraphs.contains( node ) && outEdges != null && !outEdges.isEmpty() )
-            {
-                incompleteSubgraphs.remove( node );
-            }
+            addAll( otherWeb.getExactAllRelationships() );
         }
-
-        final Set<ProjectVersionRef> otherIncomplete = otherWeb.getIncompleteSubgraphs();
-        for ( final ProjectVersionRef node : otherIncomplete )
-        {
-            if ( incompleteSubgraphs.contains( node ) )
-            {
-                continue;
-            }
-
-            if ( driver.containsProject( node ) )
-            {
-                final Collection<? extends ProjectRelationship<?>> outEdges = driver.getRelationshipsDeclaredBy( node );
-                if ( outEdges == null || outEdges.isEmpty() )
-                {
-                    incompleteSubgraphs.add( node );
-                }
-            }
-            else
-            {
-                incompleteSubgraphs.add( node );
-            }
-        }
-
-        this.connectedProjects.addAll( otherWeb.connectedProjects );
-        addAll( otherWeb.getAllRelationships() );
     }
 
     /* (non-Javadoc)
@@ -269,63 +216,29 @@ public class EProjectWeb
         return result;
     }
 
-    private void readObject( final java.io.ObjectInputStream in )
-        throws IOException, ClassNotFoundException
-    {
-        in.defaultReadObject();
-        incompleteSubgraphs = new HashSet<ProjectVersionRef>();
-        connectedProjects = new HashSet<ProjectVersionRef>();
-        variableSubgraphs = new HashSet<ProjectVersionRef>();
-    }
-
-    public void recomputeIncompleteSubgraphs()
-    {
-        for ( final ProjectVersionRef vertex : driver.getAllProjects() )
-        {
-            incompleteSubgraphs.remove( vertex );
-        }
-    }
-
     public Set<ProjectRelationship<?>> getExactAllRelationships()
-        throws GraphDriverException
     {
         return getAllRelationships();
     }
 
     public boolean isCycleParticipant( final ProjectVersionRef ref )
     {
-        for ( final EProjectCycle cycle : cycles )
-        {
-            if ( cycle.contains( ref ) )
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return driver.isCycleParticipant( ref );
     }
 
     public boolean isCycleParticipant( final ProjectRelationship<?> rel )
     {
-        for ( final EProjectCycle cycle : cycles )
-        {
-            if ( cycle.contains( rel ) )
-            {
-                return true;
-            }
-        }
-
-        return false;
+        return driver.isCycleParticipant( rel );
     }
 
     public void addCycle( final EProjectCycle cycle )
     {
-        this.cycles.add( cycle );
+        driver.addCycle( cycle );
     }
 
     public Set<EProjectCycle> getCycles()
     {
-        return new HashSet<EProjectCycle>( cycles );
+        return driver.getCycles();
     }
 
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
@@ -342,5 +255,29 @@ public class EProjectWeb
     public EGraphDriver getDriver()
     {
         return driver;
+    }
+
+    public boolean isDerivedFrom( final EProjectNet net )
+    {
+        return driver.isDerivedFrom( net.getDriver() );
+    }
+
+    public EProjectGraph getGraph( final EProjectKey key )
+        throws GraphDriverException
+    {
+        final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter() );
+        traverse( key.getProject(), transformer );
+
+        return transformer.getTransformedGraph();
+    }
+
+    public boolean containsGraph( final EProjectKey key )
+    {
+        return driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() );
+    }
+
+    public Set<ProjectVersionRef> getAllProjects()
+    {
+        return driver.getAllProjects();
     }
 }

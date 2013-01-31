@@ -19,16 +19,13 @@ import java.io.Serializable;
 import java.util.Collection;
 
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.spi.GraphDriverException;
 
 public interface EProjectRelationshipCollection
     extends Serializable
 {
 
-    Collection<ProjectRelationship<?>> getAllRelationships()
-        throws GraphDriverException;
+    Collection<ProjectRelationship<?>> getAllRelationships();
 
-    Collection<ProjectRelationship<?>> getExactAllRelationships()
-        throws GraphDriverException;
+    Collection<ProjectRelationship<?>> getExactAllRelationships();
 
 }

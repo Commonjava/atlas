@@ -17,7 +17,7 @@ public final class BuildOrder
     public BuildOrder( final List<ProjectRef> order, final Set<EProjectCycle> cycles )
     {
         this.order = Collections.unmodifiableList( order );
-        this.cycles = Collections.unmodifiableSet( cycles );
+        this.cycles = cycles == null ? null : Collections.unmodifiableSet( cycles );
     }
 
     public List<ProjectRef> getOrder()

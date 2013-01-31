@@ -11,7 +11,7 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.VersionSpec;
+import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.AbstractProjectRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
@@ -30,8 +30,14 @@ public class JungEGraphDriver
     implements EGraphDriver
 {
 
-    private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
+    private DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
+
+    private transient Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
+
+    private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
+
+    private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
     {
@@ -57,20 +63,31 @@ public class JungEGraphDriver
             changed = true;
         }
 
-        if ( !graph.containsVertex( rel.getTarget()
-                                       .asProjectVersionRef() ) )
+        final ProjectVersionRef target = rel.getTarget()
+                                            .asProjectVersionRef();
+        if ( !target.getVersionSpec()
+                    .isSingle() )
         {
-            graph.addVertex( rel.getTarget()
-                                .asProjectVersionRef() );
+            variableSubgraphs.add( target );
+        }
+        else if ( !graph.containsVertex( target ) )
+        {
+            incompleteSubgraphs.add( target );
+        }
+
+        if ( !graph.containsVertex( target ) )
+        {
+            graph.addVertex( target );
             changed = true;
         }
 
         if ( !graph.containsEdge( rel ) )
         {
-            graph.addEdge( rel, rel.getDeclaring(), rel.getTarget()
-                                                       .asProjectVersionRef() );
+            graph.addEdge( rel, rel.getDeclaring(), target );
             changed = true;
         }
+
+        incompleteSubgraphs.remove( rel.getDeclaring() );
 
         return changed;
     }
@@ -278,40 +295,125 @@ public class JungEGraphDriver
 
     public void restrictProjectMembership( final Set<ProjectVersionRef> refs )
     {
-        // TODO Auto-generated method stub
+        final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
+        for ( final ProjectVersionRef ref : refs )
+        {
+            final Collection<ProjectRelationship<?>> edges = graph.getOutEdges( ref );
+            if ( edges != null )
+            {
+                rels.addAll( edges );
+            }
+        }
 
-        throw new UnsupportedOperationException( "Not implemented!" );
+        restrictRelationshipMembership( rels );
     }
 
     public void restrictRelationshipMembership( final Set<ProjectRelationship<?>> rels )
     {
-        // TODO Auto-generated method stub
+        graph = new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
+        incompleteSubgraphs.clear();
+        variableSubgraphs.clear();
 
-        throw new UnsupportedOperationException( "Not implemented!" );
-    }
+        for ( final ProjectRelationship<?> rel : rels )
+        {
+            addRelationship( rel );
+        }
 
-    public void selectVersion( final ProjectVersionRef ref, final VersionSpec spec )
-    {
-        // TODO Auto-generated method stub
-
-        throw new UnsupportedOperationException( "Not implemented!" );
-    }
-
-    public Set<ProjectVersionRef> getUnconnectedProjectReferences()
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException( "Not implemented!" );
-    }
-
-    public Set<ProjectVersionRef> getVariableProjectReferences()
-    {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException( "Not implemented!" );
+        recomputeIncompleteSubgraphs();
     }
 
     public void close()
         throws IOException
     {
-        // TODO Save graph somehow??
+        // NOP; stored in memory.
+    }
+
+    public boolean isDerivedFrom( final EGraphDriver driver )
+    {
+        return false;
+    }
+
+    public boolean isMissing( final ProjectVersionRef project )
+    {
+        return !graph.containsVertex( project );
+    }
+
+    public boolean hasMissingProjects()
+    {
+        return !incompleteSubgraphs.isEmpty();
+    }
+
+    public Set<ProjectVersionRef> getMissingProjects()
+    {
+        return new HashSet<ProjectVersionRef>( incompleteSubgraphs );
+    }
+
+    public boolean hasVariableProjects()
+    {
+        return !variableSubgraphs.isEmpty();
+    }
+
+    public Set<ProjectVersionRef> getVariableProjects()
+    {
+        return new HashSet<ProjectVersionRef>( variableSubgraphs );
+    }
+
+    public boolean addCycle( final EProjectCycle cycle )
+    {
+        boolean changed = false;
+        synchronized ( this.cycles )
+        {
+            changed = this.cycles.add( cycle );
+        }
+
+        for ( final ProjectRelationship<?> rel : cycle )
+        {
+            incompleteSubgraphs.remove( rel.getDeclaring() );
+        }
+
+        return changed;
+    }
+
+    public Set<EProjectCycle> getCycles()
+    {
+        return new HashSet<EProjectCycle>( cycles );
+    }
+
+    public boolean isCycleParticipant( final ProjectRelationship<?> rel )
+    {
+        for ( final EProjectCycle cycle : cycles )
+        {
+            if ( cycle.contains( rel ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public boolean isCycleParticipant( final ProjectVersionRef ref )
+    {
+        for ( final EProjectCycle cycle : cycles )
+        {
+            if ( cycle.contains( ref ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void recomputeIncompleteSubgraphs()
+    {
+        for ( final ProjectVersionRef vertex : getAllProjects() )
+        {
+            final Collection<? extends ProjectRelationship<?>> outEdges = getRelationshipsDeclaredBy( vertex );
+            if ( outEdges != null && !outEdges.isEmpty() )
+            {
+                incompleteSubgraphs.remove( vertex );
+            }
+        }
     }
 }

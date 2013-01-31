@@ -5,7 +5,7 @@ import java.util.Collection;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.VersionSpec;
+import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
@@ -39,10 +39,26 @@ public interface EGraphDriver
 
     boolean containsRelationship( ProjectRelationship<?> rel );
 
-    void selectVersion( ProjectVersionRef ref, VersionSpec spec );
+    boolean isDerivedFrom( EGraphDriver driver );
 
-    Set<ProjectVersionRef> getUnconnectedProjectReferences();
+    boolean isMissing( ProjectVersionRef project );
 
-    Set<ProjectVersionRef> getVariableProjectReferences();
+    boolean hasMissingProjects();
+
+    Set<ProjectVersionRef> getMissingProjects();
+
+    boolean hasVariableProjects();
+
+    Set<ProjectVersionRef> getVariableProjects();
+
+    boolean addCycle( EProjectCycle cycle );
+
+    Set<EProjectCycle> getCycles();
+
+    boolean isCycleParticipant( ProjectRelationship<?> rel );
+
+    boolean isCycleParticipant( ProjectVersionRef ref );
+
+    void recomputeIncompleteSubgraphs();
 
 }

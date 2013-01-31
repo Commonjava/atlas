@@ -9,7 +9,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.VersionSpec;
+import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
@@ -423,24 +423,6 @@ public class Neo4JEGraphDriver
         return hits.hasNext() ? hits.next() : null;
     }
 
-    public void selectVersion( final ProjectVersionRef ref, final VersionSpec spec )
-    {
-        // TODO Auto-generated method stub
-
-    }
-
-    public Set<ProjectVersionRef> getUnconnectedProjectReferences()
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
-    public Set<ProjectVersionRef> getVariableProjectReferences()
-    {
-        // TODO Auto-generated method stub
-        return null;
-    }
-
     public synchronized void close()
         throws IOException
     {
@@ -476,6 +458,97 @@ public class Neo4JEGraphDriver
         {
             new Logger( getClass() ).error( "Failed to shutdown graph database. Reason: %s", e, e.getMessage() );
         }
+    }
+
+    public boolean isDerivedFrom( final EGraphDriver driver )
+    {
+        return ancestry.contains( driver );
+    }
+
+    public boolean isMissing( final ProjectVersionRef ref )
+    {
+        final IndexHits<Node> hits = graph.index()
+                                          .forNodes( UNCONNECTED_NODES )
+                                          .get( Conversions.GAV, ref.toString() );
+
+        return hits.size() > 0;
+    }
+
+    public boolean hasMissingProjects()
+    {
+        final Index<Node> index = graph.index()
+                                       .forNodes( UNCONNECTED_NODES );
+
+        final IndexHits<Node> hits = index.query( Conversions.GAV, "*" );
+        return hits.size() > 0;
+    }
+
+    public Set<ProjectVersionRef> getMissingProjects()
+    {
+        final Index<Node> index = graph.index()
+                                       .forNodes( UNCONNECTED_NODES );
+
+        final IndexHits<Node> hits = index.query( Conversions.GAV, "*" );
+        final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
+        while ( hits.hasNext() )
+        {
+            result.add( Conversions.toProjectVersionRef( hits.next() ) );
+        }
+
+        return result;
+    }
+
+    public boolean hasVariableProjects()
+    {
+        final Index<Node> index = graph.index()
+                                       .forNodes( VARIABLE_NODES );
+
+        final IndexHits<Node> hits = index.query( Conversions.GAV, "*" );
+        return hits.size() > 0;
+    }
+
+    public Set<ProjectVersionRef> getVariableProjects()
+    {
+        final Index<Node> index = graph.index()
+                                       .forNodes( VARIABLE_NODES );
+
+        final IndexHits<Node> hits = index.query( Conversions.GAV, "*" );
+        final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
+        while ( hits.hasNext() )
+        {
+            result.add( Conversions.toProjectVersionRef( hits.next() ) );
+        }
+
+        return result;
+    }
+
+    public boolean addCycle( final EProjectCycle cycle )
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public Set<EProjectCycle> getCycles()
+    {
+        // TODO Auto-generated method stub
+        return null;
+    }
+
+    public boolean isCycleParticipant( final ProjectRelationship<?> rel )
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public boolean isCycleParticipant( final ProjectVersionRef ref )
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    public void recomputeIncompleteSubgraphs()
+    {
+        // NOP, handled automatically.
     }
 
 }
