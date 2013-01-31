@@ -10,7 +10,7 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.traversal.Evaluation;
 import org.neo4j.graphdb.traversal.Evaluator;
 
-public class MembershipEvaluator
+public class MembershipWrappedTraversalEvaluator
     implements Evaluator
 {
 
@@ -20,7 +20,8 @@ public class MembershipEvaluator
 
     private final int pass;
 
-    public MembershipEvaluator( final Neo4JEGraphDriver driver, final ProjectNetTraversal traversal, final int pass )
+    public MembershipWrappedTraversalEvaluator( final Neo4JEGraphDriver driver, final ProjectNetTraversal traversal,
+                                final int pass )
     {
         this.driver = driver;
         this.traversal = traversal;

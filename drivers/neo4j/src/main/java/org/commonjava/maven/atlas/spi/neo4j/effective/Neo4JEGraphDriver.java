@@ -49,8 +49,6 @@ public class Neo4JEGraphDriver
 
     private GraphDatabaseService graph;
 
-    private final File dbPath;
-
     private final Set<Long> nodeMembership = new HashSet<Long>();
 
     private final Set<Long> relMembership = new HashSet<Long>();
@@ -64,7 +62,6 @@ public class Neo4JEGraphDriver
 
     public Neo4JEGraphDriver( final File dbPath, final boolean useShutdownHook )
     {
-        this.dbPath = dbPath;
         graph = new GraphDatabaseFactory().newEmbeddedDatabase( dbPath.getAbsolutePath() );
         if ( useShutdownHook )
         {
@@ -75,7 +72,6 @@ public class Neo4JEGraphDriver
 
     private Neo4JEGraphDriver( final Neo4JEGraphDriver driver )
     {
-        this.dbPath = driver.dbPath;
         this.graph = driver.graph;
         this.ancestry.addAll( driver.ancestry );
         this.ancestry.add( driver );
@@ -267,7 +263,7 @@ public class Neo4JEGraphDriver
             }
 
             traversal.startTraverse( i, net );
-            description = description.evaluator( new MembershipEvaluator( this, traversal, i ) );
+            description = description.evaluator( new MembershipWrappedTraversalEvaluator( this, traversal, i ) );
 
             final Traverser traverser = description.traverse( rootNode );
             for ( final Path path : traverser )
@@ -478,8 +474,7 @@ public class Neo4JEGraphDriver
         }
         catch ( final IOException e )
         {
-            new Logger( getClass() ).error( "Failed to shutdown graph database at: %s. Reason: %s", e, dbPath,
-                                            e.getMessage() );
+            new Logger( getClass() ).error( "Failed to shutdown graph database. Reason: %s", e, e.getMessage() );
         }
     }
 
