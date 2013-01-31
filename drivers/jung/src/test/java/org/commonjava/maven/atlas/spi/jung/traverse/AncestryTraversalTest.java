@@ -15,13 +15,22 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.jung.traverse;
 
+import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.maven.atlas.spi.jung.effective.JungEGraphDriver;
 import org.commonjava.maven.atlas.tck.effective.traverse.AncestryTraversalTCK;
+import org.commonjava.util.logging.Log4jUtil;
+import org.junit.BeforeClass;
 
 public class AncestryTraversalTest
     extends AncestryTraversalTCK
 {
+    @BeforeClass
+    public static void logging()
+    {
+        Log4jUtil.configure( Level.DEBUG );
+    }
+
     @Override
     protected EGraphDriver newDriverInstance()
         throws Exception

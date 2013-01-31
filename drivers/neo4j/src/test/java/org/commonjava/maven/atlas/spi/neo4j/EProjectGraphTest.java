@@ -16,12 +16,14 @@
 package org.commonjava.maven.atlas.spi.neo4j;
 
 import java.io.File;
+import java.io.IOException;
 
 import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.effective.Neo4JEGraphDriver;
 import org.commonjava.maven.atlas.tck.effective.EProjectGraphTCK;
 import org.commonjava.util.logging.Log4jUtil;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.rules.TemporaryFolder;
@@ -33,10 +35,19 @@ public class EProjectGraphTest
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
 
+    private Neo4JEGraphDriver driver;
+
     @BeforeClass
     public static void logging()
     {
         Log4jUtil.configure( Level.DEBUG );
+    }
+
+    @After
+    public void teardown()
+        throws IOException
+    {
+        driver.close();
     }
 
     @Override
@@ -44,7 +55,10 @@ public class EProjectGraphTest
         throws Exception
     {
         final File db = folder.newFolder();
+        db.delete();
+        db.mkdirs();
 
-        return new Neo4JEGraphDriver( db );
+        driver = new Neo4JEGraphDriver( db, false );
+        return driver;
     }
 }

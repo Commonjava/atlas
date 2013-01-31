@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
+import org.commonjava.util.logging.Logger;
 import org.junit.Test;
 
 public abstract class EProjectGraphTCK
@@ -53,6 +54,8 @@ public abstract class EProjectGraphTCK
         child.traverse( ancestryTraversal );
 
         final List<ProjectVersionRef> ancestry = ancestryTraversal.getAncestry();
+        new Logger( getClass() ).info( "Ancestry: %s", ancestry );
+
         assertThat( ancestry, notNullValue() );
         assertThat( ancestry.size(), equalTo( 3 ) );
 

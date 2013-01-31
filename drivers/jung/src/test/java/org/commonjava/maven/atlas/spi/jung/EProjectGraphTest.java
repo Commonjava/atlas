@@ -15,13 +15,22 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.jung;
 
+import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.maven.atlas.spi.jung.effective.JungEGraphDriver;
 import org.commonjava.maven.atlas.tck.effective.EProjectGraphTCK;
+import org.commonjava.util.logging.Log4jUtil;
+import org.junit.BeforeClass;
 
 public class EProjectGraphTest
     extends EProjectGraphTCK
 {
+    @BeforeClass
+    public static void logging()
+    {
+        Log4jUtil.configure( Level.DEBUG );
+    }
+
     @Override
     protected EGraphDriver newDriverInstance()
         throws Exception

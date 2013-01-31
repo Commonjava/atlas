@@ -59,10 +59,18 @@ public class Neo4JEGraphDriver
 
     public Neo4JEGraphDriver( final File dbPath )
     {
+        this( dbPath, true );
+    }
+
+    public Neo4JEGraphDriver( final File dbPath, final boolean useShutdownHook )
+    {
         this.dbPath = dbPath;
         graph = new GraphDatabaseFactory().newEmbeddedDatabase( dbPath.getAbsolutePath() );
-        Runtime.getRuntime()
-               .addShutdownHook( new Thread( this ) );
+        if ( useShutdownHook )
+        {
+            Runtime.getRuntime()
+                   .addShutdownHook( new Thread( this ) );
+        }
     }
 
     private Neo4JEGraphDriver( final Neo4JEGraphDriver driver )
@@ -202,8 +210,7 @@ public class Neo4JEGraphDriver
                 final Node from = graph.getNodeById( ids[0] );
                 final Node to = graph.getNodeById( ids[1] );
 
-                final Relationship relationship =
-                    from.createRelationshipTo( to, GraphRelType.map( rel.getType() ) );
+                final Relationship relationship = from.createRelationshipTo( to, GraphRelType.map( rel.getType() ) );
 
                 Conversions.toRelationshipProperties( rel, relationship );
 
@@ -445,8 +452,15 @@ public class Neo4JEGraphDriver
         {
             if ( graph != null )
             {
-                graph.shutdown();
-                graph = null;
+                try
+                {
+                    graph.shutdown();
+                    graph = null;
+                }
+                catch ( final Exception e )
+                {
+                    throw new IOException( "Failed to shutdown: " + e.getMessage(), e );
+                }
             }
         }
         else
