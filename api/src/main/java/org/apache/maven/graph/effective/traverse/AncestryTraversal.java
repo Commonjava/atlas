@@ -47,27 +47,22 @@ public class AncestryTraversal
     public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {
-        if ( relationship instanceof ParentRelationship )
+        if ( !preCheck( relationship, path, pass ) )
         {
-            if ( relationship.getDeclaring()
-                             .equals( relationship.getTarget() ) )
-            {
-                // reached the end of the line. STOP.
-                return false;
-            }
+            return false;
+        }
 
-            if ( ancestry.isEmpty() )
-            {
-                ancestry.add( relationship.getDeclaring() );
-                ancestry.add( relationship.getTarget() );
-                return true;
-            }
-            else if ( ancestry.get( ancestry.size() - 1 )
-                              .equals( relationship.getDeclaring() ) )
-            {
-                ancestry.add( relationship.getTarget() );
-                return true;
-            }
+        if ( ancestry.isEmpty() )
+        {
+            ancestry.add( relationship.getDeclaring() );
+            ancestry.add( relationship.getTarget() );
+            return true;
+        }
+        else if ( ancestry.get( ancestry.size() - 1 )
+                          .equals( relationship.getDeclaring() ) )
+        {
+            ancestry.add( relationship.getTarget() );
+            return true;
         }
 
         return false;
@@ -99,6 +94,18 @@ public class AncestryTraversal
     public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                final int pass )
     {
+    }
+
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                             final int pass )
+    {
+        if ( relationship instanceof ParentRelationship && !relationship.getDeclaring()
+                                                                        .equals( relationship.getTarget() ) )
+        {
+            return true;
+        }
+
+        return true;
     }
 
 }

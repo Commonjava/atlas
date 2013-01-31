@@ -32,6 +32,7 @@ import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.traverse.BuildOrderTraversal;
 import org.apache.maven.graph.effective.traverse.model.BuildOrder;
 import org.commonjava.maven.atlas.tck.effective.AbstractEGraphTCK;
+import org.commonjava.util.logging.Logger;
 import org.junit.Test;
 
 public abstract class BuildOrderTraversalTCK
@@ -122,6 +123,8 @@ public abstract class BuildOrderTraversalTCK
 
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
+
+        new Logger( getClass() ).info( "Build order: %s", buildOrder );
 
         assertThat( buildOrder.size(), equalTo( 4 ) );
 
@@ -316,6 +319,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
+        //        new Logger( getClass() ).info( "Build order: %s", buildOrder );
         assertThat( buildOrder.size(), equalTo( 3 ) );
 
         int idx = 0;

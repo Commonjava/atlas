@@ -1,5 +1,6 @@
 package org.commonjava.maven.atlas.spi.jung.effective;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,6 +11,7 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.VersionSpec;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.AbstractProjectRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
@@ -271,5 +273,44 @@ public class JungEGraphDriver
     public boolean containsRelationship( final ProjectRelationship<?> rel )
     {
         return graph.containsEdge( rel );
+    }
+
+    public void restrictProjectMembership( final Set<ProjectVersionRef> refs )
+    {
+        // TODO Auto-generated method stub
+
+        throw new UnsupportedOperationException( "Not implemented!" );
+    }
+
+    public void restrictRelationshipMembership( final Set<ProjectRelationship<?>> rels )
+    {
+        // TODO Auto-generated method stub
+
+        throw new UnsupportedOperationException( "Not implemented!" );
+    }
+
+    public void selectVersion( final ProjectVersionRef ref, final VersionSpec spec )
+    {
+        // TODO Auto-generated method stub
+
+        throw new UnsupportedOperationException( "Not implemented!" );
+    }
+
+    public Set<ProjectVersionRef> getUnconnectedProjectReferences()
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException( "Not implemented!" );
+    }
+
+    public Set<ProjectVersionRef> getVariableProjectReferences()
+    {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException( "Not implemented!" );
+    }
+
+    public void close()
+        throws IOException
+    {
+        // TODO Save graph somehow??
     }
 }

@@ -63,6 +63,8 @@ public class FilteringGraphTransformer
             }
         }
 
+        driver.restrictRelationshipMembership( relationships );
+
         return new EProjectGraph( key, relationships, Collections.<EProjectRelationships> emptyList(), cycles, driver );
     }
 

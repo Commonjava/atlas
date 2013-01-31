@@ -34,10 +34,9 @@ public interface ProjectNetTraversal
     void endTraverse( int pass, EProjectNet network )
         throws GraphDriverException;
 
-    boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass )
-        throws GraphDriverException;
+    boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
 
-    void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass )
-        throws GraphDriverException;
+    void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
 
+    boolean preCheck( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
 }

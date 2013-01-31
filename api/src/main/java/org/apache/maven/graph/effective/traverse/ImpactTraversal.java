@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
@@ -74,6 +73,26 @@ public class ImpactTraversal
     public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {
+        if ( !preCheck( relationship, path, pass ) )
+        {
+            return false;
+        }
+
+        final ProjectVersionRef target = relationship.getTarget()
+                                                     .asProjectVersionRef();
+        final Set<List<ProjectRelationship<?>>> paths = impactedPaths.get( target );
+        final ArrayList<ProjectRelationship<?>> p = new ArrayList<ProjectRelationship<?>>( path );
+        p.add( relationship );
+
+        paths.add( p );
+
+        // we may yet encounter the impact targets, so allow this traverse to proceed.
+        return true;
+    }
+
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                             final int pass )
+    {
         if ( !includeManagedInfo )
         {
             if ( relationship instanceof DependencyRelationship
@@ -88,28 +107,16 @@ public class ImpactTraversal
             }
         }
 
-        ProjectVersionRef target = relationship.getTarget();
-        if ( target instanceof ArtifactRef )
+        final Set<List<ProjectRelationship<?>>> paths = impactedPaths.get( relationship.getTarget()
+                                                                                       .asProjectVersionRef() );
+        if ( paths != null && paths.isEmpty() )
         {
-            target = ( (ArtifactRef) target ).asProjectVersionRef();
-        }
-
-        final Set<List<ProjectRelationship<?>>> paths = impactedPaths.get( target );
-        if ( paths != null )
-        {
-            if ( !path.isEmpty() )
-            {
-                final ArrayList<ProjectRelationship<?>> p = new ArrayList<ProjectRelationship<?>>( path );
-                p.add( relationship );
-
-                paths.add( p );
-            }
-
             // we've seen an impact target, we don't need to go further.
+
+            // TODO: huh??
             return false;
         }
 
-        // we may yet encounter the impact targets, so allow this traverse to proceed.
         return true;
     }
 

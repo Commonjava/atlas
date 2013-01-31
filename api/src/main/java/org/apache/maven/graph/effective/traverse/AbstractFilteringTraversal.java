@@ -15,10 +15,9 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.traverse;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.maven.graph.effective.filter.NoneFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
@@ -26,24 +25,22 @@ public abstract class AbstractFilteringTraversal
     extends AbstractTraversal
 {
 
-    private final Map<EdgeId, ProjectRelationshipFilter> filtersInReserve =
-        new HashMap<EdgeId, ProjectRelationshipFilter>();
-
-    private ProjectRelationshipFilter currentFilter;
+    private final ProjectRelationshipFilter rootFilter;
 
     protected AbstractFilteringTraversal()
     {
+        rootFilter = null;
     }
 
     protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter )
     {
-        currentFilter = filter;
+        rootFilter = filter;
     }
 
     protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter, final TraversalType... types )
     {
         super( types );
-        currentFilter = filter;
+        rootFilter = filter;
     }
 
     protected abstract boolean shouldTraverseEdge( ProjectRelationship<?> relationship,
@@ -56,18 +53,13 @@ public abstract class AbstractFilteringTraversal
 
     protected final ProjectRelationshipFilter getFilter()
     {
-        return currentFilter;
+        return rootFilter;
     }
 
     @Override
     public final void edgeTraversed( final ProjectRelationship<?> relationship,
                                      final List<ProjectRelationship<?>> path, final int pass )
     {
-        final EdgeId id = new EdgeId( relationship, path );
-        final ProjectRelationshipFilter filter = filtersInReserve.get( id );
-
-        currentFilter = filter;
-
         edgeTraversalFinished( relationship, path, pass );
     }
 
@@ -75,91 +67,52 @@ public abstract class AbstractFilteringTraversal
     public final boolean traverseEdge( final ProjectRelationship<?> relationship,
                                        final List<ProjectRelationship<?>> path, final int pass )
     {
-        if ( currentFilter != null && !currentFilter.accept( relationship ) )
+        if ( !preCheck( relationship, path, pass ) )
         {
             return false;
         }
 
         if ( shouldTraverseEdge( relationship, path, pass ) )
         {
-            if ( currentFilter != null )
-            {
-                final EdgeId id = new EdgeId( relationship, path );
-                filtersInReserve.put( id, currentFilter );
-
-                currentFilter = currentFilter.getChildFilter( relationship );
-            }
-
             return true;
         }
 
         return false;
     }
 
-    public static final class EdgeId
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                             final int pass )
     {
-
-        private final ProjectRelationship<?> top;
-
-        private final List<ProjectRelationship<?>> path;
-
-        public EdgeId( final ProjectRelationship<?> top, final List<ProjectRelationship<?>> path )
+        final ProjectRelationshipFilter filter = constructFilter( path );
+        if ( filter != null && !filter.accept( relationship ) )
         {
-            this.top = top;
-            this.path = path;
+            return false;
         }
 
-        @Override
-        public int hashCode()
+        return true;
+    }
+
+    private ProjectRelationshipFilter constructFilter( final List<ProjectRelationship<?>> path )
+    {
+        if ( rootFilter == null )
         {
-            final int prime = 31;
-            int result = 1;
-            result = prime * result + ( ( path == null ) ? 0 : path.hashCode() );
-            result = prime * result + ( ( top == null ) ? 0 : top.hashCode() );
-            return result;
+            return null;
         }
 
-        @Override
-        public boolean equals( final Object obj )
+        ProjectRelationshipFilter filter = rootFilter;
+        for ( final ProjectRelationship<?> rel : path )
         {
-            if ( this == obj )
+            if ( !filter.accept( rel ) )
             {
-                return true;
+                return new NoneFilter();
             }
-            if ( obj == null )
+            else
             {
-                return false;
+                filter = filter.getChildFilter( rel );
             }
-            if ( getClass() != obj.getClass() )
-            {
-                return false;
-            }
-            final EdgeId other = (EdgeId) obj;
-            if ( path == null )
-            {
-                if ( other.path != null )
-                {
-                    return false;
-                }
-            }
-            else if ( !path.equals( other.path ) )
-            {
-                return false;
-            }
-            if ( top == null )
-            {
-                if ( other.top != null )
-                {
-                    return false;
-                }
-            }
-            else if ( !top.equals( other.top ) )
-            {
-                return false;
-            }
-            return true;
         }
 
+        return filter;
     }
 
 }

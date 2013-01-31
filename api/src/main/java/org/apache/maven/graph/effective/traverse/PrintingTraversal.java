@@ -46,4 +46,10 @@ public class PrintingTraversal
         return buffer.toString();
     }
 
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                             final int pass )
+    {
+        return true;
+    }
+
 }
