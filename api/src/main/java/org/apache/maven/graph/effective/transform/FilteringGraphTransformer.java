@@ -73,7 +73,10 @@ public class FilteringGraphTransformer
             }
         }
 
-        driver.restrictRelationshipMembership( relationships );
+        if ( driver != null )
+        {
+            driver.restrictRelationshipMembership( relationships );
+        }
 
         if ( key == null )
         {

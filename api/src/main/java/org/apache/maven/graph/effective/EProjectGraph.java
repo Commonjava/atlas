@@ -522,7 +522,8 @@ public class EProjectGraph
         final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter(), key );
         traverse( key.getProject(), transformer );
 
-        if ( transformer.isEmpty() && driver.isMissing( key.getProject() ) )
+        if ( transformer.isEmpty()
+            && ( !driver.containsProject( key.getProject() ) || driver.isMissing( key.getProject() ) ) )
         {
             return null;
         }
