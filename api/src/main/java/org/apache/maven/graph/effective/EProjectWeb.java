@@ -290,13 +290,12 @@ public class EProjectWeb
         final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter(), key );
         traverse( key.getProject(), transformer );
 
-        final EProjectNet net = transformer.getTransformedNetwork();
         if ( transformer.isEmpty() && driver.isMissing( key.getProject() ) )
         {
             return null;
         }
 
-        return (EProjectGraph) net;
+        return (EProjectGraph) transformer.getTransformedNetwork();
     }
 
     public boolean containsGraph( final EProjectKey key )
