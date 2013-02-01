@@ -58,14 +58,17 @@ public class FilteringGraphTransformer
 
     public EProjectNet getTransformedNetwork()
     {
-        for ( final EProjectCycle cycle : new HashSet<EProjectCycle>( cycles ) )
+        if ( cycles != null )
         {
-            for ( final ProjectRelationship<?> rel : cycle )
+            for ( final EProjectCycle cycle : new HashSet<EProjectCycle>( cycles ) )
             {
-                if ( !relationships.contains( rel ) )
+                for ( final ProjectRelationship<?> rel : cycle )
                 {
-                    cycles.remove( cycle );
-                    break;
+                    if ( !relationships.contains( rel ) )
+                    {
+                        cycles.remove( cycle );
+                        break;
+                    }
                 }
             }
         }
