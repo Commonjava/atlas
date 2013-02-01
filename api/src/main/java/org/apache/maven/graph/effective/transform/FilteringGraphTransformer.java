@@ -124,4 +124,9 @@ public class FilteringGraphTransformer
         super.startTraverse( pass, network );
     }
 
+    public boolean isEmpty()
+    {
+        return relationships.isEmpty();
+    }
+
 }

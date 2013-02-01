@@ -256,11 +256,11 @@ public abstract class AbstractNeo4JEGraphDriver
         final Node rootNode = getNode( root );
         if ( rootNode == null )
         {
-            throw new GraphDriverException( "Project: %s was not found in graph.", root );
+            return;
         }
         else if ( !inMembership( rootNode ) )
         {
-            throw new GraphDriverException( "Project: %s is not in the restricted membership for this graph.", root );
+            return;
         }
 
         for ( int i = 0; i < traversal.getRequiredPasses(); i++ )
