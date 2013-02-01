@@ -15,6 +15,7 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective;
 
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
@@ -59,4 +60,10 @@ public interface EProjectNet
     Set<ProjectVersionRef> getAllProjects();
 
     Set<ProjectRelationship<?>> getAllRelationships();
+
+    Map<String, String> getMetadata( EProjectKey key );
+
+    void addMetadata( EProjectKey key, String name, String value );
+
+    void addMetadata( EProjectKey key, Map<String, String> metadata );
 }

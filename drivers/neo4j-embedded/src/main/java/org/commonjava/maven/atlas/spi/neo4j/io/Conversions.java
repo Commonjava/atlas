@@ -1,6 +1,10 @@
 package org.commonjava.maven.atlas.spi.neo4j.io;
 
+import static org.apache.commons.lang.StringUtils.join;
+
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -15,6 +19,7 @@ import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
+import org.commonjava.maven.atlas.spi.neo4j.effective.NodeType;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
@@ -55,6 +60,18 @@ public final class Conversions
 
     public static final String EXCLUDES = "excludes";
 
+    public static final String CYCLE_ID = "cycle-id";
+
+    public static final String CYCLE_RELATIONSHIPS = "relationship-participants";
+
+    public static final String CYCLE_PROJECTS = "project-participants";
+
+    private static final String METADATA_PREFIX = "_metadata-";
+
+    public static final String NODE_TYPE = "_node-type";
+
+    public static final String CYCLE_MEMBERSHIP = "cycle-membership";
+
     private Conversions()
     {
     }
@@ -70,14 +87,33 @@ public final class Conversions
             throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: %s:%s:%s", g, a, v ) );
         }
 
+        node.setProperty( NODE_TYPE, NodeType.PROJECT.name() );
         node.setProperty( ARTIFACT_ID, a );
         node.setProperty( GROUP_ID, g );
         node.setProperty( VERSION, v );
         node.setProperty( GAV, ref.toString() );
     }
 
+    public static boolean isAtlasType( final Relationship rel )
+    {
+        return GraphRelType.valueOf( rel.getType()
+                                        .name() )
+                           .isAtlasRelationship();
+    }
+
+    public static boolean isType( final Node node, final NodeType type )
+    {
+        final String nt = getStringProperty( NODE_TYPE, node );
+        return nt != null && type == NodeType.valueOf( nt );
+    }
+
     public static ProjectVersionRef toProjectVersionRef( final Node node )
     {
+        if ( !isType( node, NodeType.PROJECT ) )
+        {
+            throw new IllegalArgumentException( "Node " + node.getId() + " is not a project reference." );
+        }
+
         final String g = getStringProperty( GROUP_ID, node );
         final String a = getStringProperty( ARTIFACT_ID, node );
         final String v = getStringProperty( VERSION, node );
@@ -158,12 +194,17 @@ public final class Conversions
     public static ProjectRelationship<?> toProjectRelationship( final Relationship rel )
     {
         final GraphRelType mapper = GraphRelType.valueOf( rel.getType()
-                                                                                 .name() );
+                                                             .name() );
 
         //        LOGGER.info( "Converting relationship of type: %s (atlas type: %s)", mapper,
         //                                              mapper.atlasType() );
 
-        if ( mapper.atlasType() == null )
+        if ( !mapper.isAtlasRelationship() )
+        {
+            return null;
+        }
+
+        if ( !isType( rel.getStartNode(), NodeType.PROJECT ) || !isType( rel.getEndNode(), NodeType.PROJECT ) )
         {
             return null;
         }
@@ -268,7 +309,7 @@ public final class Conversions
         }
     }
 
-    private static String getStringProperty( final String prop, final PropertyContainer container )
+    public static String getStringProperty( final String prop, final PropertyContainer container )
     {
         if ( container.hasProperty( prop ) )
         {
@@ -277,7 +318,7 @@ public final class Conversions
         return null;
     }
 
-    private static Boolean getBooleanProperty( final String prop, final PropertyContainer container )
+    public static Boolean getBooleanProperty( final String prop, final PropertyContainer container )
     {
         if ( container.hasProperty( prop ) )
         {
@@ -286,13 +327,60 @@ public final class Conversions
         return null;
     }
 
-    private static Integer getIntegerProperty( final String prop, final PropertyContainer container )
+    public static Integer getIntegerProperty( final String prop, final PropertyContainer container )
     {
         if ( container.hasProperty( prop ) )
         {
             return (Integer) container.getProperty( prop );
         }
         return null;
+    }
+
+    public static void setMetadata( final String key, final String value, final PropertyContainer container )
+    {
+        container.setProperty( METADATA_PREFIX + key, value );
+    }
+
+    public static void setMetadata( final Map<String, String> metadata, final PropertyContainer container )
+    {
+        for ( final Map.Entry<String, String> entry : metadata.entrySet() )
+        {
+            container.setProperty( METADATA_PREFIX + entry.getKey(), entry.getValue() );
+        }
+    }
+
+    public static Map<String, String> getMetadataMap( final PropertyContainer container )
+    {
+        final Iterable<String> keys = container.getPropertyKeys();
+        final Map<String, String> md = new HashMap<String, String>();
+        for ( final String key : keys )
+        {
+            if ( !key.startsWith( METADATA_PREFIX ) )
+            {
+                continue;
+            }
+
+            final String k = key.substring( METADATA_PREFIX.length() );
+            final String value = getStringProperty( key, container );
+
+            md.put( k, value );
+        }
+
+        return md.isEmpty() ? null : md;
+    }
+
+    public static String getMetadata( final String key, final PropertyContainer container )
+    {
+        return getStringProperty( METADATA_PREFIX + key, container );
+    }
+
+    public static void toNodeProperties( final String cycleId, final String rawCycleId,
+                                         final Set<ProjectVersionRef> refs, final Node node )
+    {
+        node.setProperty( NODE_TYPE, NodeType.CYCLE.name() );
+        node.setProperty( CYCLE_ID, cycleId );
+        node.setProperty( CYCLE_RELATIONSHIPS, rawCycleId );
+        node.setProperty( CYCLE_PROJECTS, join( refs, "," ) );
     }
 
 }

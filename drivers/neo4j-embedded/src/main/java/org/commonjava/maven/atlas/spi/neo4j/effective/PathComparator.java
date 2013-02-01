@@ -13,9 +13,9 @@ public class PathComparator
 
     private final RelationshipPathComparator pathComparator = new RelationshipPathComparator();
 
-    private final Neo4JEGraphDriver driver;
+    private final AbstractNeo4JEGraphDriver driver;
 
-    public PathComparator( final Neo4JEGraphDriver driver )
+    public PathComparator( final AbstractNeo4JEGraphDriver driver )
     {
         this.driver = driver;
     }

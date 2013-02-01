@@ -15,13 +15,13 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.transform;
 
-import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 
 public interface ProjectGraphTransformer
     extends ProjectNetTraversal
 {
 
-    EProjectGraph getTransformedGraph();
+    EProjectNet getTransformedNetwork();
 
 }

@@ -24,6 +24,7 @@ import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.EProjectRelationships;
+import org.apache.maven.graph.effective.EProjectWeb;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -49,7 +50,13 @@ public class FilteringGraphTransformer
         super( filter );
     }
 
-    public EProjectGraph getTransformedGraph()
+    public FilteringGraphTransformer( final ProjectRelationshipFilter filter, final EProjectKey key )
+    {
+        super( filter );
+        this.key = key;
+    }
+
+    public EProjectNet getTransformedNetwork()
     {
         for ( final EProjectCycle cycle : new HashSet<EProjectCycle>( cycles ) )
         {
@@ -64,6 +71,11 @@ public class FilteringGraphTransformer
         }
 
         driver.restrictRelationshipMembership( relationships );
+
+        if ( key == null )
+        {
+            return new EProjectWeb( relationships, Collections.<EProjectRelationships> emptyList(), cycles, driver );
+        }
 
         return new EProjectGraph( key, relationships, Collections.<EProjectRelationships> emptyList(), cycles, driver );
     }
@@ -90,23 +102,19 @@ public class FilteringGraphTransformer
     public void startTraverse( final int pass, final EProjectNet network )
         throws GraphDriverException
     {
-        if ( key == null )
+        if ( pass == 0 )
         {
-            if ( !( network instanceof EProjectGraph ) )
+            if ( network instanceof EProjectGraph )
             {
-                throw new IllegalArgumentException( "Only networks of type " + EProjectGraph.class.getSimpleName()
-                    + " are transformable currently." );
+                key = ( (EProjectGraph) network ).getKey();
             }
 
-            final EProjectGraph graph = (EProjectGraph) network;
-            this.key = graph.getKey();
-
-            this.driver = graph.getDriver()
-                               .newInstance();
+            this.driver = network.getDriver()
+                                 .newInstance();
 
             this.cycles = new HashSet<EProjectCycle>();
 
-            final Set<EProjectCycle> graphCycles = graph.getCycles();
+            final Set<EProjectCycle> graphCycles = network.getCycles();
             if ( graphCycles != null && !graphCycles.isEmpty() )
             {
                 this.cycles.addAll( graphCycles );

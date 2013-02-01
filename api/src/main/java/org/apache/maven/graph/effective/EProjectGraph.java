@@ -519,10 +519,10 @@ public class EProjectGraph
     public EProjectGraph getGraph( final EProjectKey key )
         throws GraphDriverException
     {
-        final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter() );
+        final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter(), key );
         traverse( key.getProject(), transformer );
 
-        return transformer.getTransformedGraph();
+        return (EProjectGraph) transformer.getTransformedNetwork();
     }
 
     public boolean containsGraph( final EProjectKey key )
@@ -533,5 +533,20 @@ public class EProjectGraph
     public Set<ProjectVersionRef> getAllProjects()
     {
         return driver.getAllProjects();
+    }
+
+    public Map<String, String> getMetadata( final EProjectKey key )
+    {
+        return driver.getProjectMetadata( key.getProject() );
+    }
+
+    public void addMetadata( final EProjectKey key, final String name, final String value )
+    {
+        driver.addProjectMetadata( key.getProject(), name, value );
+    }
+
+    public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
+    {
+        driver.addProjectMetadata( key.getProject(), metadata );
     }
 }

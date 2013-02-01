@@ -52,7 +52,7 @@ public abstract class AncestryTraversalTCK
 
         final EProjectGraph graph = pgBuilder.build();
 
-        final AncestryTraversal ancestry = new AncestryTraversal( graph.getRoot() );
+        final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );
 
         final List<ProjectVersionRef> ancestorRefs = ancestry.getAncestry();
@@ -94,7 +94,7 @@ public abstract class AncestryTraversalTCK
 
         final EProjectGraph graph = pgBuilder.build();
 
-        final AncestryTraversal ancestry = new AncestryTraversal( graph.getRoot() );
+        final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );
 
         final List<ProjectVersionRef> ancestorRefs = ancestry.getAncestry();
@@ -173,7 +173,7 @@ public abstract class AncestryTraversalTCK
 
         final EProjectGraph graph = pgBuilder.build();
 
-        final AncestryTraversal ancestry = new AncestryTraversal( graph.getRoot() );
+        final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );
 
         final List<ProjectVersionRef> ancestorRefs = ancestry.getAncestry();

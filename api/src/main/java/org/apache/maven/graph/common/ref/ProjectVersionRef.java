@@ -144,7 +144,7 @@ public class ProjectVersionRef
     {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ( ( getVersionSpec() == null ) ? 0 : getVersionSpec().hashCode() );
+        result = prime * result + ( ( getVersionString() == null ) ? 0 : getVersionString().hashCode() );
         return result;
     }
 

@@ -9,7 +9,7 @@ public enum GraphRelType
         org.apache.maven.graph.common.RelationshipType.DEPENDENCY ), PLUGIN(
         org.apache.maven.graph.common.RelationshipType.PLUGIN ), PLUGIN_DEP(
         org.apache.maven.graph.common.RelationshipType.PLUGIN_DEP ), EXTENSION(
-        org.apache.maven.graph.common.RelationshipType.EXTENSION );
+        org.apache.maven.graph.common.RelationshipType.EXTENSION ), CYCLE;
 
     private org.apache.maven.graph.common.RelationshipType atlasType;
 

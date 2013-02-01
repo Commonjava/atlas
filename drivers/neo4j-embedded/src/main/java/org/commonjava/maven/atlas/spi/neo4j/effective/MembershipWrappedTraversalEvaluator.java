@@ -14,14 +14,14 @@ public class MembershipWrappedTraversalEvaluator
     implements Evaluator
 {
 
-    private final Neo4JEGraphDriver driver;
+    private final AbstractNeo4JEGraphDriver driver;
 
     private final ProjectNetTraversal traversal;
 
     private final int pass;
 
-    public MembershipWrappedTraversalEvaluator( final Neo4JEGraphDriver driver, final ProjectNetTraversal traversal,
-                                final int pass )
+    public MembershipWrappedTraversalEvaluator( final AbstractNeo4JEGraphDriver driver,
+                                                final ProjectNetTraversal traversal, final int pass )
     {
         this.driver = driver;
         this.traversal = traversal;
@@ -32,6 +32,11 @@ public class MembershipWrappedTraversalEvaluator
     {
         final Relationship rel = path.lastRelationship();
         final Node node = path.endNode();
+
+        if ( rel == null )
+        {
+            return Evaluation.EXCLUDE_AND_CONTINUE;
+        }
 
         if ( driver.inMembership( node ) && driver.inMembership( rel ) )
         {

@@ -2,6 +2,7 @@ package org.apache.maven.graph.spi.effective;
 
 import java.io.Closeable;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
@@ -60,5 +61,11 @@ public interface EGraphDriver
     boolean isCycleParticipant( ProjectVersionRef ref );
 
     void recomputeIncompleteSubgraphs();
+
+    Map<String, String> getProjectMetadata( ProjectVersionRef ref );
+
+    void addProjectMetadata( ProjectVersionRef ref, String key, String value );
+
+    void addProjectMetadata( ProjectVersionRef ref, Map<String, String> metadata );
 
 }

@@ -4,11 +4,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectCycle;
@@ -36,6 +39,9 @@ public class JungEGraphDriver
     private transient Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
+
+    private final Map<ProjectVersionRef, Map<String, String>> metadata =
+        new HashMap<ProjectVersionRef, Map<String, String>>();
 
     private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
@@ -415,5 +421,44 @@ public class JungEGraphDriver
                 incompleteSubgraphs.remove( vertex );
             }
         }
+    }
+
+    public Map<String, String> getProjectMetadata( final ProjectVersionRef ref )
+    {
+        return metadata.get( ref );
+    }
+
+    public void addProjectMetadata( final ProjectVersionRef ref, final String key, final String value )
+    {
+        if ( StringUtils.isEmpty( key ) || StringUtils.isEmpty( value ) )
+        {
+            return;
+        }
+
+        final Map<String, String> md = getMetadata( ref );
+        md.put( key, value );
+    }
+
+    public void addProjectMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
+    {
+        if ( metadata == null || metadata.isEmpty() )
+        {
+            return;
+        }
+
+        final Map<String, String> md = getMetadata( ref );
+        md.putAll( metadata );
+    }
+
+    private Map<String, String> getMetadata( final ProjectVersionRef ref )
+    {
+        Map<String, String> metadata = this.metadata.get( ref );
+        if ( metadata == null )
+        {
+            metadata = new HashMap<String, String>();
+            this.metadata.put( ref, metadata );
+        }
+
+        return metadata;
     }
 }

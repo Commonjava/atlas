@@ -19,6 +19,7 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
@@ -41,6 +42,26 @@ public class EProjectWeb
     public EProjectWeb( final EGraphDriver driver )
     {
         this.driver = driver;
+    }
+
+    public EProjectWeb( final Set<ProjectRelationship<?>> relationships,
+                        final Collection<EProjectRelationships> projectRelationships, final Set<EProjectCycle> cycles,
+                        final EGraphDriver driver )
+    {
+        this.driver = driver;
+        addAll( relationships );
+        for ( final EProjectRelationships project : projectRelationships )
+        {
+            add( project );
+        }
+
+        if ( cycles != null )
+        {
+            for ( final EProjectCycle cycle : cycles )
+            {
+                addCycle( cycle );
+            }
+        }
     }
 
     public EProjectWeb( final Collection<ProjectRelationship<?>> relationships,
@@ -243,10 +264,11 @@ public class EProjectWeb
 
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
-        final Collection<? extends ProjectRelationship<?>> rels = driver.getRelationshipsTargeting( ref );
+        final Collection<? extends ProjectRelationship<?>> rels =
+            driver.getRelationshipsTargeting( ref.asProjectVersionRef() );
         if ( rels == null )
         {
-            return null;
+            return Collections.emptySet();
         }
 
         return new HashSet<ProjectRelationship<?>>( rels );
@@ -265,10 +287,10 @@ public class EProjectWeb
     public EProjectGraph getGraph( final EProjectKey key )
         throws GraphDriverException
     {
-        final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter() );
+        final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter(), key );
         traverse( key.getProject(), transformer );
 
-        return transformer.getTransformedGraph();
+        return (EProjectGraph) transformer.getTransformedNetwork();
     }
 
     public boolean containsGraph( final EProjectKey key )
@@ -279,5 +301,20 @@ public class EProjectWeb
     public Set<ProjectVersionRef> getAllProjects()
     {
         return driver.getAllProjects();
+    }
+
+    public Map<String, String> getMetadata( final EProjectKey key )
+    {
+        return driver.getProjectMetadata( key.getProject() );
+    }
+
+    public void addMetadata( final EProjectKey key, final String name, final String value )
+    {
+        driver.addProjectMetadata( key.getProject(), name, value );
+    }
+
+    public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
+    {
+        driver.addProjectMetadata( key.getProject(), metadata );
     }
 }

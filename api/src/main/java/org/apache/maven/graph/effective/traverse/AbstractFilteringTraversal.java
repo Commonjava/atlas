@@ -72,12 +72,7 @@ public abstract class AbstractFilteringTraversal
             return false;
         }
 
-        if ( shouldTraverseEdge( relationship, path, pass ) )
-        {
-            return true;
-        }
-
-        return false;
+        return shouldTraverseEdge( relationship, path, pass );
     }
 
     public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,

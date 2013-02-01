@@ -25,6 +25,7 @@ import org.apache.maven.graph.common.ref.VersionlessArtifactRef;
 import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.filter.OrFilter;
 import org.apache.maven.graph.effective.filter.ParentFilter;
+import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -44,6 +45,16 @@ public class TransitiveDependencyTransformer
     public TransitiveDependencyTransformer( final DependencyScope scope )
     {
         super( new OrFilter( new DependencyFilter( scope ), new ParentFilter() ) );
+    }
+
+    public TransitiveDependencyTransformer( final EProjectKey key )
+    {
+        this( DependencyScope.runtime, key );
+    }
+
+    public TransitiveDependencyTransformer( final DependencyScope scope, final EProjectKey key )
+    {
+        super( new OrFilter( new DependencyFilter( scope ), new ParentFilter() ), key );
     }
 
     @Override
