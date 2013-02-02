@@ -679,41 +679,50 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( hits.size() < 1 )
         {
-            final Node node = graph.createNode();
-            Conversions.toNodeProperties( cycleId, rawCycleId, cycle.getAllParticipatingProjects(), node );
-
-            index.add( node, Conversions.CYCLE_ID, cycleId );
-
-            if ( !nodeMembership.isEmpty() )
+            final Transaction tx = graph.beginTx();
+            try
             {
-                nodeMembership.add( node.getId() );
-            }
+                final Node node = graph.createNode();
+                Conversions.toNodeProperties( cycleId, rawCycleId, cycle.getAllParticipatingProjects(), node );
 
-            for ( final Relationship r : relationships )
-            {
-                String cycleRefs = Conversions.getMetadata( Conversions.CYCLE_MEMBERSHIP, r );
-                if ( cycleRefs == null )
+                index.add( node, Conversions.CYCLE_ID, cycleId );
+
+                if ( !nodeMembership.isEmpty() )
                 {
-                    cycleRefs = "";
+                    nodeMembership.add( node.getId() );
                 }
 
-                if ( !cycleRefs.contains( cycleId ) )
+                for ( final Relationship r : relationships )
                 {
-                    Conversions.setMetadata( Conversions.CYCLE_MEMBERSHIP, cycleRefs + "," + cycleId, r );
-                }
-            }
+                    String cycleRefs = Conversions.getMetadata( Conversions.CYCLE_MEMBERSHIP, r );
+                    if ( cycleRefs == null )
+                    {
+                        cycleRefs = "";
+                    }
 
-            for ( final ProjectVersionRef ref : cycle.getAllParticipatingProjects() )
+                    if ( !cycleRefs.contains( cycleId ) )
+                    {
+                        Conversions.setMetadata( Conversions.CYCLE_MEMBERSHIP, cycleRefs + "," + cycleId, r );
+                    }
+                }
+
+                for ( final ProjectVersionRef ref : cycle.getAllParticipatingProjects() )
+                {
+                    final Node affectedNode = getNode( ref );
+                    final Relationship relationship = affectedNode.createRelationshipTo( node, GraphRelType.CYCLE );
+                    if ( !relMembership.isEmpty() )
+                    {
+                        relMembership.add( relationship.getId() );
+                    }
+                }
+
+                tx.success();
+                return true;
+            }
+            finally
             {
-                final Node affectedNode = getNode( ref );
-                final Relationship relationship = affectedNode.createRelationshipTo( node, GraphRelType.CYCLE );
-                if ( !relMembership.isEmpty() )
-                {
-                    relMembership.add( relationship.getId() );
-                }
+                tx.finish();
             }
-
-            return true;
         }
 
         return false;
@@ -809,24 +818,44 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public void addProjectMetadata( final ProjectVersionRef ref, final String key, final String value )
     {
-        final Node node = getNode( ref );
-        if ( node == null )
+        final Transaction tx = graph.beginTx();
+        try
         {
-            return;
-        }
+            final Node node = getNode( ref );
+            if ( node == null )
+            {
+                tx.failure();
+                return;
+            }
 
-        Conversions.setMetadata( key, value, node );
+            Conversions.setMetadata( key, value, node );
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
     public void addProjectMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
     {
-        final Node node = getNode( ref );
-        if ( node == null )
+        final Transaction tx = graph.beginTx();
+        try
         {
-            return;
-        }
+            final Node node = getNode( ref );
+            if ( node == null )
+            {
+                tx.failure();
+                return;
+            }
 
-        Conversions.setMetadata( metadata, node );
+            Conversions.setMetadata( metadata, node );
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
     public boolean includeGraph( final ProjectVersionRef ref )
