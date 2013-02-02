@@ -28,11 +28,11 @@ import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
-import org.commonjava.maven.atlas.tck.effective.AbstractEGraphTCK;
+import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
 
 public abstract class AncestryTraversalTCK
-    extends AbstractEGraphTCK
+    extends AbstractSPI_TCK
 {
 
     @Test

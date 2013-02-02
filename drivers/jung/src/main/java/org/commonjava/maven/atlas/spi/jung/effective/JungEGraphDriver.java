@@ -2,6 +2,7 @@ package org.commonjava.maven.atlas.spi.jung.effective;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -44,6 +45,26 @@ public class JungEGraphDriver
         new HashMap<ProjectVersionRef, Map<String, String>>();
 
     private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+
+    public JungEGraphDriver()
+    {
+    }
+
+    public JungEGraphDriver( final JungEGraphDriver from )
+    {
+        incompleteSubgraphs.addAll( from.incompleteSubgraphs );
+        variableSubgraphs.addAll( from.variableSubgraphs );
+
+        for ( final Map.Entry<ProjectVersionRef, Map<String, String>> entry : from.metadata.entrySet() )
+        {
+            metadata.put( entry.getKey(), new HashMap<String, String>( entry.getValue() ) );
+        }
+
+        for ( final ProjectRelationship<?> rel : from.getAllRelationships() )
+        {
+            addRelationship( rel );
+        }
+    }
 
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
     {
@@ -284,6 +305,14 @@ public class JungEGraphDriver
 
     }
 
+    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectVersionRef... from )
+    {
+        final JungEGraphDriver neo = new JungEGraphDriver( this );
+        neo.restrictProjectMembership( Arrays.asList( from ) );
+
+        return neo;
+    }
+
     public EGraphDriver newInstance()
     {
         return new JungEGraphDriver();
@@ -299,7 +328,7 @@ public class JungEGraphDriver
         return graph.containsEdge( rel );
     }
 
-    public void restrictProjectMembership( final Set<ProjectVersionRef> refs )
+    public void restrictProjectMembership( final Collection<ProjectVersionRef> refs )
     {
         final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
         for ( final ProjectVersionRef ref : refs )
@@ -314,7 +343,7 @@ public class JungEGraphDriver
         restrictRelationshipMembership( rels );
     }
 
-    public void restrictRelationshipMembership( final Set<ProjectRelationship<?>> rels )
+    public void restrictRelationshipMembership( final Collection<ProjectRelationship<?>> rels )
     {
         graph = new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
         incompleteSubgraphs.clear();
@@ -461,4 +490,11 @@ public class JungEGraphDriver
 
         return metadata;
     }
+
+    public boolean includeGraph( final ProjectVersionRef project )
+    {
+        throw new UnsupportedOperationException(
+                                                 "need to implement notion of a global graph in jung before this can work." );
+    }
+
 }

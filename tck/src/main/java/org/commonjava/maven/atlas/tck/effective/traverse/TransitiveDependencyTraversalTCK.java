@@ -28,11 +28,11 @@ import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.EProjectRelationships;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.traverse.TransitiveDependencyTraversal;
-import org.commonjava.maven.atlas.tck.effective.AbstractEGraphTCK;
+import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
 
 public abstract class TransitiveDependencyTraversalTCK
-    extends AbstractEGraphTCK
+    extends AbstractSPI_TCK
 {
 
     @Test

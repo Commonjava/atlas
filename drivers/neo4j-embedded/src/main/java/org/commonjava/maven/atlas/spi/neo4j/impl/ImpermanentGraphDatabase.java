@@ -48,6 +48,7 @@ import org.neo4j.tooling.GlobalGraphOperations;
 /**
  * A database meant to be used in unit tests. It will always be empty on start.
  */
+@SuppressWarnings( "deprecation" )
 public class ImpermanentGraphDatabase
     extends EmbeddedGraphDatabase
 {
@@ -82,7 +83,7 @@ public class ImpermanentGraphDatabase
     //    }
     //
     public ImpermanentGraphDatabase( final Map<String, String> params, final List<IndexProvider> indexProviders,
-                                     final List<KernelExtension> kernelExtensions,
+                                     @SuppressWarnings( "rawtypes" ) final List<KernelExtension> kernelExtensions,
                                      final List<CacheProvider> cacheProviders )
     {
         super( path(), withoutMemmap( params ), indexProviders, kernelExtensions, cacheProviders );

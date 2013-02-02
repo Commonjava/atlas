@@ -15,20 +15,19 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.neo4j.traverse;
 
-import java.io.IOException;
-
 import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.commonjava.maven.atlas.spi.neo4j.effective.MemoryNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.spi.neo4j.fixture.MemoryDriverFixture;
 import org.commonjava.maven.atlas.tck.effective.traverse.AncestryTraversalTCK;
 import org.commonjava.util.logging.Log4jUtil;
-import org.junit.After;
 import org.junit.BeforeClass;
+import org.junit.Rule;
 
 public class MemoryAncestryTraversalTest
     extends AncestryTraversalTCK
 {
-    private MemoryNeo4JEGraphDriver driver;
+    @Rule
+    public MemoryDriverFixture fixture = new MemoryDriverFixture();
 
     @BeforeClass
     public static void logging()
@@ -36,18 +35,10 @@ public class MemoryAncestryTraversalTest
         Log4jUtil.configure( Level.DEBUG );
     }
 
-    @After
-    public void teardown()
-        throws IOException
-    {
-        driver.close();
-    }
-
     @Override
     protected EGraphDriver newDriverInstance()
         throws Exception
     {
-        driver = new MemoryNeo4JEGraphDriver( false );
-        return driver;
+        return fixture.newDriverInstance();
     }
 }

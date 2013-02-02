@@ -18,6 +18,7 @@ package org.apache.maven.graph.effective;
 import static org.apache.maven.graph.effective.util.EGraphUtils.filterTerminalParents;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -28,7 +29,6 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.filter.AnyFilter;
 import org.apache.maven.graph.effective.ref.EGraphFacts;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
@@ -37,10 +37,11 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.transform.FilteringGraphTransformer;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
+import org.commonjava.util.logging.Logger;
 
 public class EProjectGraph
     implements EProjectNet, KeyedProjectRelationshipCollection, Serializable
@@ -48,15 +49,35 @@ public class EProjectGraph
 
     private static final long serialVersionUID = 1L;
 
+    private final Logger logger = new Logger( getClass() );
+
     private final EProjectKey key;
 
     private final EGraphDriver driver;
+
+    private final List<EProjectNet> superNets = new ArrayList<EProjectNet>();
+
+    public EProjectGraph( final EProjectNet parent, final EProjectKey key )
+    {
+        this.key = key;
+        this.driver = parent.getDriver()
+                            .newInstanceFrom( this, key.getProject() );
+
+        this.superNets.addAll( parent.getSuperNets() );
+        this.superNets.add( parent );
+    }
 
     public EProjectGraph( final EProjectRelationships relationships, final EGraphDriver driver )
     {
         this.key = relationships.getKey();
         this.driver = driver;
+
         add( relationships );
+
+        if ( driver instanceof GloballyBackedGraphDriver )
+        {
+            ( (GloballyBackedGraphDriver) driver ).restrictToRoots( Collections.singleton( key.getProject() ), null );
+        }
     }
 
     // TODO: If we construct like this based on contents of another graph, will we lose that graph's list of variable subgraphs??
@@ -90,6 +111,16 @@ public class EProjectGraph
         {
             add( project );
         }
+
+        if ( driver instanceof GloballyBackedGraphDriver )
+        {
+            ( (GloballyBackedGraphDriver) driver ).restrictToRoots( Collections.singleton( key.getProject() ), null );
+        }
+    }
+
+    public List<EProjectNet> getSuperNets()
+    {
+        return superNets;
     }
 
     public EProjectKey getKey()
@@ -128,6 +159,7 @@ public class EProjectGraph
 
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
+        logger.info( "Retrieving all relationships in graph: %s", key.getProject() );
         final Set<ProjectRelationship<?>> rels = getExactAllRelationships();
         filterTerminalParents( rels );
 
@@ -412,7 +444,7 @@ public class EProjectGraph
         return driver.addRelationship( rel );
     }
 
-    private <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
+    public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
     {
         if ( rels == null )
         {
@@ -433,12 +465,44 @@ public class EProjectGraph
         return result;
     }
 
-    public void connect( final EProjectGraph subGraph )
+    public boolean connectFor( final EProjectKey key )
         throws GraphDriverException
     {
-        if ( !subGraph.isDerivedFrom( this ) )
+        final EGraphDriver driver = getDriver();
+        if ( driver instanceof GloballyBackedGraphDriver )
         {
-            addAll( subGraph.getExactAllRelationships() );
+            if ( ( (GloballyBackedGraphDriver) driver ).includeGraph( key.getProject() ) )
+            {
+                for ( final EProjectNet net : getSuperNets() )
+                {
+                    final EGraphDriver d = net.getDriver();
+                    if ( d instanceof GloballyBackedGraphDriver )
+                    {
+                        ( (GloballyBackedGraphDriver) d ).includeGraph( key.getProject() );
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void connect( final EProjectGraph graph )
+        throws GraphDriverException
+    {
+        if ( getDriver() instanceof GloballyBackedGraphDriver )
+        {
+            connectFor( graph.getKey() );
+        }
+        else if ( !graph.isDerivedFrom( this ) )
+        {
+            addAll( graph.getExactAllRelationships() );
+            for ( final EProjectNet net : getSuperNets() )
+            {
+                net.addAll( graph.getExactAllRelationships() );
+            }
         }
     }
 
@@ -519,16 +583,12 @@ public class EProjectGraph
     public EProjectGraph getGraph( final EProjectKey key )
         throws GraphDriverException
     {
-        final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter(), key );
-        traverse( key.getProject(), transformer );
-
-        if ( transformer.isEmpty()
-            && ( !driver.containsProject( key.getProject() ) || driver.isMissing( key.getProject() ) ) )
+        if ( driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() ) )
         {
-            return null;
+            return new EProjectGraph( this, key );
         }
 
-        return (EProjectGraph) transformer.getTransformedNetwork();
+        return null;
     }
 
     public boolean containsGraph( final EProjectKey key )

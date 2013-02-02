@@ -19,9 +19,9 @@ public interface EGraphDriver
     EGraphDriver newInstance()
         throws GraphDriverException;
 
-    void restrictProjectMembership( Set<ProjectVersionRef> refs );
+    void restrictProjectMembership( Collection<ProjectVersionRef> refs );
 
-    void restrictRelationshipMembership( Set<ProjectRelationship<?>> rels );
+    void restrictRelationshipMembership( Collection<ProjectRelationship<?>> rels );
 
     Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( ProjectVersionRef root );
 
@@ -67,5 +67,7 @@ public interface EGraphDriver
     void addProjectMetadata( ProjectVersionRef ref, String key, String value );
 
     void addProjectMetadata( ProjectVersionRef ref, Map<String, String> metadata );
+
+    EGraphDriver newInstanceFrom( EProjectNet net, ProjectVersionRef... refs );
 
 }

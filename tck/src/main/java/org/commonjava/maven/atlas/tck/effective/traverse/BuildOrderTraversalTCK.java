@@ -31,12 +31,12 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.traverse.BuildOrderTraversal;
 import org.apache.maven.graph.effective.traverse.model.BuildOrder;
-import org.commonjava.maven.atlas.tck.effective.AbstractEGraphTCK;
+import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.commonjava.util.logging.Logger;
 import org.junit.Test;
 
 public abstract class BuildOrderTraversalTCK
-    extends AbstractEGraphTCK
+    extends AbstractSPI_TCK
 {
 
     @Test

@@ -109,6 +109,11 @@ public final class Conversions
 
     public static ProjectVersionRef toProjectVersionRef( final Node node )
     {
+        if ( node == null )
+        {
+            return null;
+        }
+
         if ( !isType( node, NodeType.PROJECT ) )
         {
             throw new IllegalArgumentException( "Node " + node.getId() + " is not a project reference." );
@@ -193,6 +198,11 @@ public final class Conversions
 
     public static ProjectRelationship<?> toProjectRelationship( final Relationship rel )
     {
+        if ( rel == null )
+        {
+            return null;
+        }
+
         final GraphRelType mapper = GraphRelType.valueOf( rel.getType()
                                                              .name() );
 
@@ -204,11 +214,13 @@ public final class Conversions
             return null;
         }
 
-        if ( !isType( rel.getStartNode(), NodeType.PROJECT ) || !isType( rel.getEndNode(), NodeType.PROJECT ) )
+        if ( rel.getStartNode() == null || rel.getEndNode() == null || !isType( rel.getStartNode(), NodeType.PROJECT )
+            || !isType( rel.getEndNode(), NodeType.PROJECT ) )
         {
             return null;
         }
 
+        LOGGER.info( "Pulling from/to nodes,  and index, out of rel: %s", rel );
         final ProjectVersionRef from = toProjectVersionRef( rel.getStartNode() );
         final ProjectVersionRef to = toProjectVersionRef( rel.getEndNode() );
         final int index = getIntegerProperty( INDEX, rel );
@@ -292,6 +304,11 @@ public final class Conversions
 
     private static ArtifactRef toArtifactRef( final ProjectVersionRef ref, final Relationship rel )
     {
+        if ( ref == null )
+        {
+            return null;
+        }
+
         final String type = getStringProperty( TYPE, rel );
         final String classifier = getStringProperty( CLASSIFIER, rel );
         final boolean optional = getBooleanProperty( OPTIONAL, rel );

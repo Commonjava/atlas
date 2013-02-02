@@ -1,5 +1,9 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective;
 
+import java.util.Arrays;
+
+import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.impl.MemoryGraphDatabaseFactory;
@@ -30,6 +34,14 @@ public class MemoryNeo4JEGraphDriver
         throws GraphDriverException
     {
         return new MemoryNeo4JEGraphDriver( this );
+    }
+
+    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectVersionRef... refs )
+    {
+        final MemoryNeo4JEGraphDriver driver = new MemoryNeo4JEGraphDriver( this );
+        driver.restrictToRoots( Arrays.asList( refs ), net );
+
+        return driver;
     }
 
 }

@@ -102,6 +102,7 @@ public class EphemeralFileSystemAbstraction
         }
     }
 
+    @SuppressWarnings( "resource" )
     public synchronized FileChannel open( final String fileName, final String mode )
         throws IOException
     {
@@ -190,8 +191,6 @@ public class EphemeralFileSystemAbstraction
     private static class EphemeralFileChannel
         extends FileChannel
     {
-        final FileStillOpenException openedAt;
-
         private final EphemeralFileData data;
 
         long position = 0;
@@ -199,7 +198,6 @@ public class EphemeralFileSystemAbstraction
         EphemeralFileChannel( final EphemeralFileData data, final FileStillOpenException opened )
         {
             this.data = data;
-            this.openedAt = opened;
             data.open( this );
         }
 
@@ -431,11 +429,6 @@ public class EphemeralFileSystemAbstraction
                     refs.remove();
                 }
             };
-        }
-
-        boolean isOpen()
-        {
-            return getOpenChannels().hasNext();
         }
 
         int write( final EphemeralFileChannel fc, final ByteBuffer src )

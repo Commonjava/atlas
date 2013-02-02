@@ -15,6 +15,8 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective;
 
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -66,4 +68,8 @@ public interface EProjectNet
     void addMetadata( EProjectKey key, String name, String value );
 
     void addMetadata( EProjectKey key, Map<String, String> metadata );
+
+    List<EProjectNet> getSuperNets();
+
+    <T extends ProjectRelationship<?>> Set<T> addAll( Collection<T> rels );
 }

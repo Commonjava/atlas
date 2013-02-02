@@ -21,6 +21,7 @@ import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.traverse.TraversalType;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
@@ -35,10 +36,11 @@ import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
 import org.neo4j.kernel.Traversal;
+import org.neo4j.kernel.Uniqueness;
 import org.neo4j.tooling.GlobalGraphOperations;
 
 public abstract class AbstractNeo4JEGraphDriver
-    implements Runnable, EGraphDriver
+    implements Runnable, EGraphDriver, GloballyBackedGraphDriver
 {
 
     private static final String ALL_RELATIONSHIPS = "all-relationships";
@@ -74,6 +76,8 @@ public abstract class AbstractNeo4JEGraphDriver
         this.graph = driver.graph;
         this.ancestry.addAll( driver.ancestry );
         this.ancestry.add( driver );
+
+        new Logger( getClass() ).info( "Ancestry for new driver is:\n  %s", join( ancestry, "\n  " ) );
     }
 
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
@@ -265,7 +269,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         for ( int i = 0; i < traversal.getRequiredPasses(); i++ )
         {
-            TraversalDescription description = Traversal.description()
+            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
                                                         .sort( new PathComparator( this ) );
 
             if ( traversal.getType( i ) == TraversalType.breadth_first )
@@ -365,7 +369,60 @@ public abstract class AbstractNeo4JEGraphDriver
         return rels;
     }
 
-    public void restrictProjectMembership( final Set<ProjectVersionRef> refs )
+    public void restrictToRoots( final Collection<ProjectVersionRef> roots, final EProjectNet net )
+    {
+        final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>( roots );
+        for ( final ProjectVersionRef ref : refs )
+        {
+            final Node node = getNode( ref );
+            includeNodeAndRelationships( node );
+        }
+    }
+
+    private boolean includeNodeAndRelationships( final Node node )
+    {
+        if ( node == null )
+        {
+            return false;
+        }
+
+        boolean changed = nodeMembership.add( node.getId() );
+        if ( !changed )
+        {
+            return false;
+        }
+
+        if ( isMissing( node ) )
+        {
+            return changed;
+        }
+
+        final Iterable<Relationship> rels = node.getRelationships( Direction.OUTGOING );
+        if ( rels != null )
+        {
+            for ( final Relationship r : rels )
+            {
+                if ( relMembership.add( r.getId() ) )
+                {
+                    changed = true;
+                }
+                else
+                {
+                    continue;
+                }
+
+                final Node out = r.getEndNode();
+                if ( out != null && out.getId() != node.getId() )
+                {
+                    changed = includeNodeAndRelationships( out ) || changed;
+                }
+            }
+        }
+
+        return changed;
+    }
+
+    public void restrictProjectMembership( final Collection<ProjectVersionRef> refs )
     {
         checkClosed();
 
@@ -383,7 +440,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
-    public void restrictRelationshipMembership( final Set<ProjectRelationship<?>> rels )
+    public void restrictRelationshipMembership( final Collection<ProjectRelationship<?>> rels )
     {
         checkClosed();
 
@@ -497,7 +554,22 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public boolean isDerivedFrom( final EGraphDriver driver )
     {
-        return ancestry.contains( driver );
+        return driver == this || ancestry.contains( driver );
+    }
+
+    private boolean isMissing( final Node node )
+    {
+        final String gav = Conversions.getStringProperty( Conversions.GAV, node );
+        if ( gav == null )
+        {
+            return true;
+        }
+
+        final IndexHits<Node> hits = graph.index()
+                                          .forNodes( UNCONNECTED_NODES )
+                                          .get( Conversions.GAV, gav );
+
+        return hits.size() > 0;
     }
 
     public boolean isMissing( final ProjectVersionRef ref )
@@ -757,4 +829,14 @@ public abstract class AbstractNeo4JEGraphDriver
         Conversions.setMetadata( metadata, node );
     }
 
+    public boolean includeGraph( final ProjectVersionRef ref )
+    {
+        final Node node = getNode( ref );
+        if ( node == null )
+        {
+            return false;
+        }
+
+        return includeNodeAndRelationships( node );
+    }
 }

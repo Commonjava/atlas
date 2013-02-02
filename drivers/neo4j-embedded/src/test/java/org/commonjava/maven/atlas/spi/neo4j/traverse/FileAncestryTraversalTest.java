@@ -15,26 +15,19 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.neo4j.traverse;
 
-import java.io.File;
-import java.io.IOException;
-
 import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.commonjava.maven.atlas.spi.neo4j.effective.FileNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
 import org.commonjava.maven.atlas.tck.effective.traverse.AncestryTraversalTCK;
 import org.commonjava.util.logging.Log4jUtil;
-import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Rule;
-import org.junit.rules.TemporaryFolder;
 
 public class FileAncestryTraversalTest
     extends AncestryTraversalTCK
 {
     @Rule
-    public TemporaryFolder folder = new TemporaryFolder();
-
-    private FileNeo4JEGraphDriver driver;
+    public FileDriverFixture fixture = new FileDriverFixture();
 
     @BeforeClass
     public static void logging()
@@ -42,22 +35,10 @@ public class FileAncestryTraversalTest
         Log4jUtil.configure( Level.DEBUG );
     }
 
-    @After
-    public void teardown()
-        throws IOException
-    {
-        driver.close();
-    }
-
     @Override
     protected EGraphDriver newDriverInstance()
         throws Exception
     {
-        final File db = folder.newFolder();
-        db.delete();
-        db.mkdirs();
-
-        driver = new FileNeo4JEGraphDriver( db, false );
-        return driver;
+        return fixture.newDriverInstance();
     }
 }

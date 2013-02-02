@@ -16,17 +16,17 @@
 package org.apache.maven.graph.effective;
 
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.filter.AnyFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.transform.FilteringGraphTransformer;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
@@ -38,6 +38,8 @@ public class EProjectWeb
     private static final long serialVersionUID = 1L;
 
     private final EGraphDriver driver;
+
+    private final List<EProjectNet> superNets = new ArrayList<EProjectNet>();
 
     public EProjectWeb( final EGraphDriver driver )
     {
@@ -79,6 +81,11 @@ public class EProjectWeb
     {
         this.driver = driver;
         addAll( relationships );
+    }
+
+    public List<EProjectNet> getSuperNets()
+    {
+        return superNets;
     }
 
     /* (non-Javadoc)
@@ -287,16 +294,12 @@ public class EProjectWeb
     public EProjectGraph getGraph( final EProjectKey key )
         throws GraphDriverException
     {
-        final FilteringGraphTransformer transformer = new FilteringGraphTransformer( new AnyFilter(), key );
-        traverse( key.getProject(), transformer );
-
-        if ( transformer.isEmpty()
-            && ( !driver.containsProject( key.getProject() ) || driver.isMissing( key.getProject() ) ) )
+        if ( driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() ) )
         {
-            return null;
+            return new EProjectGraph( this, key );
         }
 
-        return (EProjectGraph) transformer.getTransformedNetwork();
+        return null;
     }
 
     public boolean containsGraph( final EProjectKey key )
