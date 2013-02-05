@@ -22,7 +22,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class CompoundVersionSpec
-    implements VersionSpec, Iterable<VersionSpec>, Serializable
+    implements VersionSpec, Iterable<VersionSpec>, Serializable, MultiVersionSpec
 {
 
     private static final long serialVersionUID = 1L;
@@ -130,6 +130,19 @@ public class CompoundVersionSpec
         return specs.get( specs.size() - 1 );
     }
 
+    public boolean isSnapshot()
+    {
+        for ( final VersionSpec spec : specs )
+        {
+            if ( spec.isSnapshot() )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public boolean isSingle()
     {
         return specs.size() == 1 && specs.get( 0 )
@@ -151,6 +164,45 @@ public class CompoundVersionSpec
     public int getComponentCount()
     {
         return specs.size();
+    }
+
+    public boolean isPinned()
+    {
+        if ( specs.size() != 1 )
+        {
+            return false;
+        }
+
+        final VersionSpec spec = specs.get( 0 );
+        if ( spec.isSingle() )
+        {
+            return true;
+        }
+
+        final MultiVersionSpec mvs = (MultiVersionSpec) spec;
+        return mvs.isPinned();
+    }
+
+    public SingleVersion getPinnedVersion()
+    {
+        if ( specs.size() != 1 )
+        {
+            return null;
+        }
+
+        final VersionSpec spec = specs.get( 0 );
+        if ( spec instanceof SingleVersion )
+        {
+            return (SingleVersion) spec;
+        }
+
+        final MultiVersionSpec mvs = (MultiVersionSpec) spec;
+        if ( mvs.isPinned() )
+        {
+            return mvs.getPinnedVersion();
+        }
+
+        return null;
     }
 
 }

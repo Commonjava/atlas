@@ -21,6 +21,8 @@ public interface VersionSpec
     extends Comparable<VersionSpec>, Serializable
 {
 
+    boolean isSnapshot();
+
     /**
      * Version is concrete if it cannot be interpreted (resolved). Non-concrete versions include compound versions,
      * version ranges, and snapshots.

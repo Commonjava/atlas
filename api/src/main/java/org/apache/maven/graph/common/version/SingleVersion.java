@@ -260,6 +260,11 @@ public class SingleVersion
         return sb.toString();
     }
 
+    public boolean isSnapshot()
+    {
+        return !isRelease();
+    }
+
     public boolean isConcrete()
     {
         return isRelease();

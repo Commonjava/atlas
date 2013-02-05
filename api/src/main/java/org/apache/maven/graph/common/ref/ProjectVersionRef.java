@@ -201,7 +201,7 @@ public class ProjectVersionRef
 
     public boolean isSnapshot()
     {
-        return !isCompound() && !isRelease();
+        return getVersionSpec().isSnapshot();
     }
 
     public synchronized String getVersionString()

@@ -18,7 +18,7 @@ package org.apache.maven.graph.common.version;
 import java.io.Serializable;
 
 public class RangeVersionSpec
-    implements VersionSpec, Serializable
+    implements VersionSpec, Serializable, MultiVersionSpec
 {
 
     private static final long serialVersionUID = 1L;
@@ -31,7 +31,7 @@ public class RangeVersionSpec
 
     private final boolean upperInclusive;
 
-    private final boolean snapshotsAllowed;
+    private final boolean snapshotAllowed;
 
     private final String rawExpression;
 
@@ -50,7 +50,7 @@ public class RangeVersionSpec
         this.lowerInclusive = lowerInclusive;
         this.upperInclusive = upperInclusive;
 
-        snapshotsAllowed = ( lower != null && !lower.isRelease() ) || ( upper != null && !upper.isRelease() );
+        snapshotAllowed = ( lower != null && !lower.isRelease() ) || ( upper != null && !upper.isRelease() );
     }
 
     public boolean isPinned()
@@ -58,9 +58,14 @@ public class RangeVersionSpec
         return lowerInclusive && upperInclusive && lower != null && lower.equals( upper );
     }
 
-    public boolean isSnapshotsAlowed()
+    public SingleVersion getPinnedVersion()
     {
-        return snapshotsAllowed;
+        return isPinned() ? lower : null;
+    }
+
+    public boolean isSnapshot()
+    {
+        return snapshotAllowed;
     }
 
     public String renderStandard()
@@ -179,7 +184,7 @@ public class RangeVersionSpec
     public String toString()
     {
         return String.format( "Range [lower=%s, lowerInclusive=%s, upper=%s, upperInclusive=%s, snapshots allowed? %s] (%s)",
-                              lower, lowerInclusive, upper, upperInclusive, snapshotsAllowed, renderStandard() );
+                              lower, lowerInclusive, upper, upperInclusive, snapshotAllowed, renderStandard() );
     }
 
     public SingleVersion getLowerBound()
@@ -229,7 +234,7 @@ public class RangeVersionSpec
         int result = 1;
         result = prime * result + ( ( lower == null ) ? 0 : lower.hashCode() );
         result = prime * result + ( lowerInclusive ? 1231 : 1237 );
-        result = prime * result + ( snapshotsAllowed ? 1231 : 1237 );
+        result = prime * result + ( snapshotAllowed ? 1231 : 1237 );
         result = prime * result + ( ( upper == null ) ? 0 : upper.hashCode() );
         result = prime * result + ( upperInclusive ? 1231 : 1237 );
         return result;
@@ -266,7 +271,7 @@ public class RangeVersionSpec
         {
             return false;
         }
-        if ( snapshotsAllowed != other.snapshotsAllowed )
+        if ( snapshotAllowed != other.snapshotAllowed )
         {
             return false;
         }
