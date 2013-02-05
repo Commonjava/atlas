@@ -19,7 +19,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringTokenizer;
 
+import org.apache.maven.graph.common.version.part.NumericPart;
 import org.apache.maven.graph.common.version.part.SeparatorPart;
 import org.apache.maven.graph.common.version.part.SnapshotPart;
 import org.apache.maven.graph.common.version.part.StringPart;
@@ -162,7 +164,42 @@ public class SingleVersion
         for ( int i = 0; i < parts.size(); i++ )
         {
             final VersionPart part = parts.get( i );
-            if ( prev != null && !( prev instanceof SeparatorPart ) && !( part instanceof SeparatorPart ) )
+            if ( part instanceof SnapshotPart && ( parts.size() == 1 || i < parts.size() - 1 ) )
+            {
+                final SnapshotPart snap = (SnapshotPart) part;
+
+                if ( snap.isLocalSnapshot() )
+                {
+                    final StringPart sub = new StringPart( ( (SnapshotPart) part ).getLiteral() );
+                    result.add( sub );
+                    prev = sub;
+                }
+                else
+                {
+                    final StringTokenizer st = new StringTokenizer( snap.getLiteral(), ".-", true );
+                    int idx = 0;
+                    while ( st.hasMoreTokens() )
+                    {
+                        final String tok = st.nextToken();
+                        if ( idx % 2 == 1 )
+                        {
+                            final SeparatorPart sep = new SeparatorPart( VersionPartSeparator.find( tok ) );
+                            result.add( sep );
+                            prev = sep;
+                        }
+                        else
+                        {
+                            final NumericPart np = new NumericPart( tok );
+                            result.add( np );
+                            prev = np;
+                        }
+
+                        idx++;
+                    }
+                }
+
+            }
+            else if ( prev != null && !( prev instanceof SeparatorPart ) && !( part instanceof SeparatorPart ) )
             {
                 final SeparatorPart sep = new SeparatorPart( VersionPartSeparator.BLANK );
                 result.add( sep );

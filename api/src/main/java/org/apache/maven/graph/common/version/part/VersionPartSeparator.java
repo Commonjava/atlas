@@ -15,7 +15,6 @@
  ******************************************************************************/
 package org.apache.maven.graph.common.version.part;
 
-
 public enum VersionPartSeparator
 {
 
@@ -31,6 +30,19 @@ public enum VersionPartSeparator
     public String getRenderedString()
     {
         return rendered;
+    }
+
+    public static VersionPartSeparator find( final String literal )
+    {
+        for ( final VersionPartSeparator vps : values() )
+        {
+            if ( vps.rendered.equals( literal ) )
+            {
+                return vps;
+            }
+        }
+
+        return null;
     }
 
 }
