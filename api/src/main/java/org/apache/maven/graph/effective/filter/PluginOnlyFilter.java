@@ -15,41 +15,36 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.filter;
 
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 // TODO: Do we need to consider excludes in the direct plugin-level dependency?
 public class PluginOnlyFilter
-    implements ProjectRelationshipFilter
+    extends AbstractTypedFilter
 {
-
-    private boolean includeManaged = false;
-
-    private boolean includeConcrete = true;
 
     public PluginOnlyFilter()
     {
+        this( false, true );
     }
 
     public PluginOnlyFilter( final boolean includeManaged, final boolean includeConcrete )
     {
-        this.includeManaged = includeManaged;
-        this.includeConcrete = includeConcrete;
+        super( RelationshipType.PLUGIN, false, includeManaged, includeConcrete );
     }
 
-    public boolean accept( final ProjectRelationship<?> rel )
+    @Override
+    public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        if ( rel instanceof PluginRelationship )
+        final PluginRelationship pr = (PluginRelationship) rel;
+        if ( isManagedInfoIncluded() && pr.isManaged() )
         {
-            final PluginRelationship pr = (PluginRelationship) rel;
-            if ( includeManaged && pr.isManaged() )
-            {
-                return true;
-            }
-            else if ( includeConcrete && !pr.isManaged() )
-            {
-                return true;
-            }
+            return true;
+        }
+        else if ( isConcreteInfoIncluded() && !pr.isManaged() )
+        {
+            return true;
         }
 
         return false;

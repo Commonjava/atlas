@@ -37,4 +37,6 @@ public interface ProjectRelationship<T extends ProjectVersionRef>
 
     ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef );
 
+    boolean isManaged();
+
 }

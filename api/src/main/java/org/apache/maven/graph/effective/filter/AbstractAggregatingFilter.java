@@ -37,7 +37,7 @@ public abstract class AbstractAggregatingFilter
         this.filters = new ArrayList<ProjectRelationshipFilter>( Arrays.asList( filters ) );
     }
 
-    protected final List<? extends ProjectRelationshipFilter> getFilters()
+    public final List<? extends ProjectRelationshipFilter> getFilters()
     {
         return filters;
     }

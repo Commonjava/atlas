@@ -15,6 +15,7 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.filter;
 
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
@@ -22,45 +23,38 @@ import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 // TODO: Do we need to consider excludes in the direct plugin-level dependency?
 public class PluginDependencyOnlyFilter
-    implements ProjectRelationshipFilter
+    extends AbstractTypedFilter
 {
-
-    private boolean includeManaged = false;
-
-    private boolean includeConcrete = true;
 
     private final ProjectRef plugin;
 
     public PluginDependencyOnlyFilter( final PluginRelationship plugin )
     {
-        this.plugin = plugin.getTarget()
-                            .asProjectRef();
+        this( plugin, false, true );
     }
 
     public PluginDependencyOnlyFilter( final PluginRelationship plugin, final boolean includeManaged,
                                        final boolean includeConcrete )
     {
+        super( RelationshipType.PLUGIN_DEP, false, includeManaged, includeConcrete );
+
         this.plugin = plugin.getTarget()
                             .asProjectRef();
-        this.includeManaged = includeManaged;
-        this.includeConcrete = includeConcrete;
     }
 
-    public boolean accept( final ProjectRelationship<?> rel )
+    @Override
+    public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        if ( rel instanceof PluginDependencyRelationship )
+        final PluginDependencyRelationship pdr = (PluginDependencyRelationship) rel;
+        if ( plugin.equals( pdr.getPlugin() ) )
         {
-            final PluginDependencyRelationship pdr = (PluginDependencyRelationship) rel;
-            if ( plugin.equals( pdr.getPlugin() ) )
+            if ( isManagedInfoIncluded() && pdr.isManaged() )
             {
-                if ( includeManaged && pdr.isManaged() )
-                {
-                    return true;
-                }
-                else if ( includeConcrete && !pdr.isManaged() )
-                {
-                    return true;
-                }
+                return true;
+            }
+            else if ( isConcreteInfoIncluded() && !pdr.isManaged() )
+            {
+                return true;
             }
         }
 

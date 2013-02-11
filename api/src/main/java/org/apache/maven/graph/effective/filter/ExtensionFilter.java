@@ -16,17 +16,17 @@
 package org.apache.maven.graph.effective.filter;
 
 import org.apache.maven.graph.common.DependencyScope;
-import org.apache.maven.graph.effective.rel.ExtensionRelationship;
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 // TODO: Do we need to consider excludes in the direct plugin-level dependency?
 public class ExtensionFilter
-    implements ProjectRelationshipFilter
+    extends AbstractTypedFilter
 {
 
-    public boolean accept( final ProjectRelationship<?> rel )
+    public ExtensionFilter()
     {
-        return rel instanceof ExtensionRelationship;
+        super( RelationshipType.EXTENSION, RelationshipType.DEPENDENCY, false, true );
     }
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )

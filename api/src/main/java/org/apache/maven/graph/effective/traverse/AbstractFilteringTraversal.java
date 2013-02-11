@@ -15,17 +15,24 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.traverse;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.NoneFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.commonjava.util.logging.Logger;
 
 public abstract class AbstractFilteringTraversal
     extends AbstractTraversal
 {
 
+    private final Logger logger = new Logger( getClass() );
+
     private final ProjectRelationshipFilter rootFilter;
+
+    private final Set<ProjectRelationship<?>> seen = new HashSet<ProjectRelationship<?>>();
 
     protected AbstractFilteringTraversal()
     {
@@ -51,7 +58,7 @@ public abstract class AbstractFilteringTraversal
     {
     }
 
-    protected final ProjectRelationshipFilter getFilter()
+    public final ProjectRelationshipFilter getRootFilter()
     {
         return rootFilter;
     }
@@ -72,15 +79,31 @@ public abstract class AbstractFilteringTraversal
             return false;
         }
 
-        return shouldTraverseEdge( relationship, path, pass );
+        // only add to seen when traversed, NOT during preCheck, which may be called more than once per relationship.
+        seen.add( relationship );
+        //        logger.info( "SEEN: %d relationships", seen.size() );
+
+        final boolean ok = shouldTraverseEdge( relationship, path, pass );
+        if ( !ok )
+        {
+            logger.info( "STOP traversal from shouldTraverseEdge: %s", relationship );
+        }
+
+        return ok;
     }
 
     public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                              final int pass )
     {
+        if ( seen.contains( relationship ) )
+        {
+            return false;
+        }
+
         final ProjectRelationshipFilter filter = constructFilter( path );
         if ( filter != null && !filter.accept( relationship ) )
         {
+            //            logger.info( "STOP traversal in preCheck: %s", relationship );
             return false;
         }
 

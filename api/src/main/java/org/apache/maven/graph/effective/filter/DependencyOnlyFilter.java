@@ -16,61 +16,54 @@
 package org.apache.maven.graph.effective.filter;
 
 import org.apache.maven.graph.common.DependencyScope;
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class DependencyOnlyFilter
-    implements ProjectRelationshipFilter
+    extends AbstractTypedFilter
 {
 
     // if unspecified, include all dependencies.
-    private DependencyScope scope = DependencyScope.test;
+    private final DependencyScope scope;
 
-    private boolean includeManaged = false;
-
-    private boolean includeConcrete = true;
-
-    private boolean useImpliedScope = true;
+    private final boolean useImpliedScope;
 
     public DependencyOnlyFilter()
     {
+        this( DependencyScope.test, false, true, true );
     }
 
     public DependencyOnlyFilter( final DependencyScope scope )
     {
-        if ( scope != null )
-        {
-            this.scope = scope;
-        }
+        this( scope, false, true, true );
     }
 
     public DependencyOnlyFilter( final DependencyScope scope, final boolean includeManaged,
                                  final boolean includeConcrete, final boolean useImpliedScope )
     {
-        if ( scope != null )
-        {
-            this.scope = scope;
-        }
-        this.includeConcrete = includeConcrete;
-        this.includeManaged = includeManaged;
+        super( RelationshipType.DEPENDENCY, false, includeManaged, includeConcrete );
+
+        this.scope = scope == null ? DependencyScope.test : scope;
         this.useImpliedScope = useImpliedScope;
     }
 
-    public boolean accept( final ProjectRelationship<?> rel )
+    @Override
+    public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        if ( rel instanceof DependencyRelationship )
+        if ( this.scope == null )
         {
-            if ( this.scope == null )
+            return true;
+        }
+
+        final DependencyRelationship dr = (DependencyRelationship) rel;
+        final DependencyScope scope = dr.getScope();
+        if ( scope == this.scope || ( useImpliedScope && this.scope.implies( scope ) ) )
+        {
+            if ( ( dr.isManaged() && isManagedInfoIncluded() ) || ( !dr.isManaged() && isConcreteInfoIncluded() ) )
             {
                 return true;
             }
-
-            final DependencyScope scope = ( (DependencyRelationship) rel ).getScope();
-            if ( scope == this.scope || ( useImpliedScope && this.scope.implies( scope ) ) )
-            {
-                return true;
-            }
-
         }
 
         return false;
@@ -91,9 +84,9 @@ public class DependencyOnlyFilter
         sb.append( "DEPENDENCIES ONLY[scope: " );
         sb.append( scope.realName() );
         sb.append( ", managed: " )
-          .append( includeManaged )
+          .append( isManagedInfoIncluded() )
           .append( ", concrete: " )
-          .append( includeConcrete );
+          .append( isConcreteInfoIncluded() );
         sb.append( "]" );
     }
 

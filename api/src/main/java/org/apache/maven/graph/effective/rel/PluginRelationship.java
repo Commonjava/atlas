@@ -28,8 +28,6 @@ public final class PluginRelationship
 
     private static final long serialVersionUID = 1L;
 
-    private final boolean managed;
-
     private final boolean reporting;
 
     public PluginRelationship( final ProjectVersionRef declaring, final ProjectVersionRef target, final int index,
@@ -41,8 +39,7 @@ public final class PluginRelationship
     public PluginRelationship( final ProjectVersionRef declaring, final ProjectVersionRef target, final int index,
                                final boolean managed, final boolean reporting )
     {
-        super( RelationshipType.PLUGIN, declaring, target, index );
-        this.managed = managed;
+        super( RelationshipType.PLUGIN, declaring, target, index, managed );
         this.reporting = reporting;
     }
 
@@ -51,15 +48,10 @@ public final class PluginRelationship
         return reporting;
     }
 
-    public final boolean isManaged()
-    {
-        return managed;
-    }
-
     @Override
     public synchronized ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new PluginRelationship( projectRef, getTarget(), getIndex(), managed, reporting );
+        return new PluginRelationship( projectRef, getTarget(), getIndex(), isManaged(), reporting );
     }
 
     @Override
@@ -67,7 +59,7 @@ public final class PluginRelationship
     {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ( managed ? 1231 : 1237 );
+        result = prime * result + ( isManaged() ? 1231 : 1237 );
         return result;
     }
 
@@ -87,7 +79,7 @@ public final class PluginRelationship
             return false;
         }
         final PluginRelationship other = (PluginRelationship) obj;
-        if ( managed != other.managed )
+        if ( isManaged() != other.isManaged() )
         {
             return false;
         }
@@ -98,7 +90,7 @@ public final class PluginRelationship
     public String toString()
     {
         return String.format( "PluginRelationship [%s => %s (managed=%s, index=%s)]", getDeclaring(), getTarget(),
-                              managed, getIndex() );
+                              isManaged(), getIndex() );
     }
 
     @Override

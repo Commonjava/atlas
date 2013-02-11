@@ -97,7 +97,7 @@ public class BuildOrderTraversal
             for ( final Iterator<EProjectCycle> iterator = cycles.iterator(); iterator.hasNext(); )
             {
                 final EProjectCycle eProjectCycle = iterator.next();
-                ProjectRelationshipFilter filter = getFilter();
+                ProjectRelationshipFilter filter = getRootFilter();
 
                 boolean include = true;
                 for ( final ProjectRelationship<?> rel : eProjectCycle )

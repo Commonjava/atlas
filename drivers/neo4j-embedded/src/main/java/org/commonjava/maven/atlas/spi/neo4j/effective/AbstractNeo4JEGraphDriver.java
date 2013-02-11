@@ -5,6 +5,7 @@ import static org.apache.commons.lang.StringUtils.join;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -12,11 +13,16 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
+import org.apache.maven.graph.effective.filter.AbstractAggregatingFilter;
+import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.traverse.AbstractFilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.traverse.TraversalType;
 import org.apache.maven.graph.spi.GraphDriverException;
@@ -24,6 +30,8 @@ import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.commonjava.util.logging.Logger;
+import org.neo4j.cypher.javacompat.ExecutionEngine;
+import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.GraphDatabaseService;
 import org.neo4j.graphdb.Node;
@@ -37,11 +45,12 @@ import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
 import org.neo4j.kernel.Traversal;
 import org.neo4j.kernel.Uniqueness;
-import org.neo4j.tooling.GlobalGraphOperations;
 
 public abstract class AbstractNeo4JEGraphDriver
-    implements Runnable, EGraphDriver, GloballyBackedGraphDriver
+    implements Runnable, GloballyBackedGraphDriver, Neo4JEGraphDriver
 {
+
+    private final Logger logger = new Logger( getClass() );
 
     private static final String ALL_RELATIONSHIPS = "all-relationships";
 
@@ -64,11 +73,33 @@ public abstract class AbstractNeo4JEGraphDriver
     protected AbstractNeo4JEGraphDriver( final GraphDatabaseService graph, final boolean useShutdownHook )
     {
         this.graph = graph;
+
+        printGraphStats();
+
         if ( useShutdownHook )
         {
             Runtime.getRuntime()
                    .addShutdownHook( new Thread( this ) );
         }
+    }
+
+    private void printGraphStats()
+    {
+        final Logger logger = new Logger( getClass() );
+        logger.info( "Loaded approximately %d nodes.", graph.index()
+                                                            .forNodes( ALL_NODES )
+                                                            .query( Conversions.GAV, "*" )
+                                                            .size() );
+
+        logger.info( "Loaded approximately %d relationships.", graph.index()
+                                                                    .forRelationships( ALL_RELATIONSHIPS )
+                                                                    .query( Conversions.RELATIONSHIP_ID, "*" )
+                                                                    .size() );
+
+        logger.info( "Loaded approximately %d relationship-cycle nodes.", graph.index()
+                                                                               .forNodes( ALL_CYCLES )
+                                                                               .query( Conversions.CYCLE_ID, "*" )
+                                                                               .size() );
     }
 
     protected AbstractNeo4JEGraphDriver( final AbstractNeo4JEGraphDriver driver )
@@ -127,8 +158,11 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( hits.hasNext() )
         {
             final Node node = hits.next();
-            final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
-            return convertToRelationships( relationships );
+            if ( inMembership( node ) )
+            {
+                final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
+                return convertToRelationships( relationships );
+            }
         }
 
         return null;
@@ -138,8 +172,35 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         checkClosed();
 
-        return convertToRelationships( GlobalGraphOperations.at( graph )
-                                                            .getAllRelationships() );
+        printCaller( "GET-ALL-RELATIONSHIPS" );
+
+        Set<ProjectRelationship<?>> rels;
+        if ( relMembership.isEmpty() )
+        {
+            rels =
+                new HashSet<ProjectRelationship<?>>( convertToRelationships( graph.index()
+                                                                                  .forRelationships( ALL_RELATIONSHIPS )
+                                                                                  .query( Conversions.RELATIONSHIP_ID,
+                                                                                          "*" ) ) );
+        }
+        else
+        {
+            rels = new HashSet<ProjectRelationship<?>>();
+            for ( final Long id : relMembership )
+            {
+                final Relationship r = graph.getRelationshipById( id );
+                if ( r != null )
+                {
+                    final ProjectRelationship<?> rel = Conversions.toProjectRelationship( r );
+                    if ( rel != null )
+                    {
+                        rels.add( rel );
+                    }
+                }
+            }
+        }
+
+        return rels;
     }
 
     public boolean addRelationship( final ProjectRelationship<?> rel )
@@ -214,7 +275,8 @@ public abstract class AbstractNeo4JEGraphDriver
                 //                if ( ids[0] != ids[1] )
                 //                {
                 changed = true;
-                final Relationship relationship = from.createRelationshipTo( to, GraphRelType.map( rel.getType() ) );
+                final Relationship relationship =
+                    from.createRelationshipTo( to, GraphRelType.map( rel.getType(), rel.isManaged() ) );
 
                 Conversions.toRelationshipProperties( rel, relationship );
                 relIdx.add( relationship, Conversions.RELATIONSHIP_ID, relId );
@@ -250,13 +312,40 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         checkClosed();
 
-        return new HashSet<ProjectVersionRef>( convertToProjects( GlobalGraphOperations.at( graph )
-                                                                                       .getAllNodes() ) );
+        printCaller( "GET-ALL-PROJECTS" );
+
+        Set<ProjectVersionRef> refs;
+        if ( nodeMembership.isEmpty() )
+        {
+            refs = new HashSet<ProjectVersionRef>( convertToProjects( graph.index()
+                                                                           .forNodes( ALL_NODES )
+                                                                           .query( Conversions.GAV, "*" ) ) );
+        }
+        else
+        {
+            refs = new HashSet<ProjectVersionRef>();
+            for ( final Long id : nodeMembership )
+            {
+                final Node node = graph.getNodeById( id );
+                if ( node != null )
+                {
+                    final ProjectVersionRef ref = Conversions.toProjectVersionRef( node );
+                    if ( ref != null )
+                    {
+                        refs.add( ref );
+                    }
+                }
+            }
+        }
+
+        return refs;
     }
 
     public void traverse( final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
         throws GraphDriverException
     {
+        printCaller( "TRAVERSE" );
+
         final Node rootNode = getNode( root );
         if ( rootNode == null )
         {
@@ -267,10 +356,17 @@ public abstract class AbstractNeo4JEGraphDriver
             return;
         }
 
+        final Set<GraphRelType> relTypes = getRelTypes( traversal );
+
         for ( int i = 0; i < traversal.getRequiredPasses(); i++ )
         {
             TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
                                                         .sort( new PathComparator( this ) );
+
+            for ( final GraphRelType grt : relTypes )
+            {
+                description.relationships( grt, Direction.OUTGOING );
+            }
 
             if ( traversal.getType( i ) == TraversalType.breadth_first )
             {
@@ -282,7 +378,13 @@ public abstract class AbstractNeo4JEGraphDriver
             }
 
             traversal.startTraverse( i, net );
-            description = description.evaluator( new MembershipWrappedTraversalEvaluator( this, traversal, i ) );
+
+            @SuppressWarnings( "rawtypes" )
+            final MembershipWrappedTraversalEvaluator checker =
+                new MembershipWrappedTraversalEvaluator( this, traversal, i );
+
+            description = description.expand( checker )
+                                     .evaluator( checker );
 
             final Traverser traverser = description.traverse( rootNode );
             for ( final Path path : traverser )
@@ -305,6 +407,95 @@ public abstract class AbstractNeo4JEGraphDriver
 
             traversal.endTraverse( i, net );
         }
+    }
+
+    private Set<GraphRelType> getRelTypes( final ProjectNetTraversal traversal )
+    {
+        final Set<GraphRelType> relTypes = new HashSet<GraphRelType>();
+        if ( traversal instanceof AbstractFilteringTraversal )
+        {
+            final ProjectRelationshipFilter rootFilter = ( (AbstractFilteringTraversal) traversal ).getRootFilter();
+            relTypes.addAll( getRelTypes( rootFilter ) );
+        }
+        else
+        {
+            relTypes.addAll( Arrays.asList( GraphRelType.values() ) );
+        }
+
+        return relTypes;
+    }
+
+    private Set<GraphRelType> getRelTypes( final ProjectRelationshipFilter filter )
+    {
+        final Set<GraphRelType> result = new HashSet<GraphRelType>();
+
+        if ( filter instanceof AbstractTypedFilter )
+        {
+            final AbstractTypedFilter typedFilter = (AbstractTypedFilter) filter;
+            final Set<RelationshipType> types = typedFilter.getRelationshipTypes();
+            for ( final RelationshipType rt : types )
+            {
+                if ( typedFilter.isManagedInfoIncluded() )
+                {
+                    final GraphRelType grt = GraphRelType.map( rt, true );
+                    if ( grt != null )
+                    {
+                        result.add( grt );
+                    }
+                }
+
+                if ( typedFilter.isConcreteInfoIncluded() )
+                {
+                    final GraphRelType grt = GraphRelType.map( rt, false );
+                    if ( grt != null )
+                    {
+                        result.add( grt );
+                    }
+                }
+            }
+
+            final Set<RelationshipType> dTypes = typedFilter.getDescendantRelationshipTypes();
+            for ( final RelationshipType rt : dTypes )
+            {
+                if ( typedFilter.isManagedInfoIncluded() )
+                {
+                    final GraphRelType grt = GraphRelType.map( rt, true );
+                    if ( grt != null )
+                    {
+                        result.add( grt );
+                    }
+                }
+
+                if ( typedFilter.isConcreteInfoIncluded() )
+                {
+                    final GraphRelType grt = GraphRelType.map( rt, false );
+                    if ( grt != null )
+                    {
+                        result.add( grt );
+                    }
+                }
+            }
+        }
+        else if ( filter instanceof AbstractAggregatingFilter )
+        {
+            final List<? extends ProjectRelationshipFilter> filters =
+                ( (AbstractAggregatingFilter) filter ).getFilters();
+
+            for ( final ProjectRelationshipFilter f : filters )
+            {
+                result.addAll( getRelTypes( f ) );
+            }
+        }
+
+        return result;
+    }
+
+    private void printCaller( final String label )
+    {
+        final StackTraceElement ste = new Throwable().getStackTrace()[3];
+
+        logger.info( "\n\n\n\n%s called from: %s.%s (%s:%s)\n\n\n\n", label, ste.getClassName(), ste.getMethodName(),
+                     ste.getFileName(), ste.getLineNumber() );
     }
 
     public boolean containsProject( final ProjectVersionRef ref )
@@ -473,6 +664,8 @@ public abstract class AbstractNeo4JEGraphDriver
             return false;
         }
 
+        //        logger.info( "Checking membership of: %s against: %s. Result: %s", node, nodeMembership,
+        //                     ( nodeMembership.isEmpty() || nodeMembership.contains( node.getId() ) ) );
         return nodeMembership.isEmpty() || nodeMembership.contains( node.getId() );
     }
 
@@ -483,10 +676,12 @@ public abstract class AbstractNeo4JEGraphDriver
             return false;
         }
 
+        //        logger.info( "Checking membership of: %s against: %s. Result: %s", relationship, relMembership,
+        //                     relMembership.isEmpty() || relMembership.contains( relationship.getId() ) );
         return relMembership.isEmpty() || relMembership.contains( relationship.getId() );
     }
 
-    Node getNode( final ProjectVersionRef ref )
+    public Node getNode( final ProjectVersionRef ref )
     {
         checkClosed();
 
@@ -498,7 +693,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return hits.hasNext() ? hits.next() : null;
     }
 
-    Relationship getRelationship( final ProjectRelationship<?> rel )
+    public Relationship getRelationship( final ProjectRelationship<?> rel )
     {
         return getRelationship( Conversions.id( rel ) );
     }
@@ -730,9 +925,12 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public Set<EProjectCycle> getCycles()
     {
+        printCaller( "GET-CYCLES" );
+
         final IndexHits<Node> query = graph.index()
                                            .forNodes( ALL_CYCLES )
                                            .query( Conversions.CYCLE_ID, "*" );
+
         final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
         for ( final Node cycleNode : query )
         {
@@ -867,5 +1065,89 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         return includeNodeAndRelationships( node );
+    }
+
+    public ExecutionResult executeFrom( final String cypher, final ProjectVersionRef... roots )
+        throws GraphDriverException
+    {
+        return executeFrom( cypher, null, roots );
+    }
+
+    public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params,
+                                        final ProjectVersionRef... roots )
+        throws GraphDriverException
+    {
+        if ( cypher.toLowerCase()
+                   .startsWith( "start" ) )
+        {
+            throw new GraphDriverException(
+                                            "Leave off the START clause when supplying ProjectVersionRef instances as query roots:\n'%s'",
+                                            cypher );
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        for ( final ProjectVersionRef root : roots )
+        {
+            final Node node = getNode( root );
+            if ( node != null )
+            {
+                if ( sb.length() > 0 )
+                {
+                    sb.append( ", " );
+                }
+                sb.append( node.getId() );
+            }
+        }
+
+        if ( sb.length() < 1 )
+        {
+            sb.append( "*" );
+        }
+
+        return execute( String.format( "START n=node(%s) %s", sb, cypher ), params );
+    }
+
+    public ExecutionResult executeFrom( final String cypher, final ProjectRelationship<?> rootRel )
+        throws GraphDriverException
+    {
+        return executeFrom( cypher, null, rootRel );
+    }
+
+    public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params,
+                                        final ProjectRelationship<?> rootRel )
+        throws GraphDriverException
+    {
+        if ( cypher.toLowerCase()
+                   .startsWith( "start" ) )
+        {
+            throw new GraphDriverException(
+                                            "Leave off the START clause when supplying ProjectRelationship instances as query roots:\n'%s'",
+                                            cypher );
+        }
+
+        String id = "*";
+        if ( rootRel != null )
+        {
+            final Relationship r = getRelationship( rootRel );
+            if ( r != null )
+            {
+                id = Long.toString( r.getId() );
+            }
+        }
+
+        return execute( String.format( "START r=relationship(%s) %s", id, cypher ), params );
+    }
+
+    public ExecutionResult execute( final String cypher )
+        throws GraphDriverException
+    {
+        return execute( cypher, null );
+    }
+
+    public ExecutionResult execute( final String cypher, final Map<String, Object> params )
+        throws GraphDriverException
+    {
+        final ExecutionEngine engine = new ExecutionEngine( graph );
+        return params == null ? engine.execute( cypher ) : engine.execute( cypher, params );
     }
 }

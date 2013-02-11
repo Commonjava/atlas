@@ -37,11 +37,19 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
 
     private final int index;
 
+    private boolean managed = false;
+
     @SuppressWarnings( "rawtypes" )
     private transient Constructor<? extends AbstractProjectRelationship> cloneCtor;
 
     protected AbstractProjectRelationship( final RelationshipType type, final ProjectVersionRef declaring,
                                            final T target, final int index )
+    {
+        this( type, declaring, target, index, false );
+    }
+
+    protected AbstractProjectRelationship( final RelationshipType type, final ProjectVersionRef declaring,
+                                           final T target, final int index, final boolean managed )
     {
         if ( declaring == null || target == null )
         {
@@ -53,6 +61,12 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         this.declaring = declaring;
         this.target = target;
         this.index = index;
+        this.managed = managed;
+    }
+
+    public final boolean isManaged()
+    {
+        return managed;
     }
 
     public final int getIndex()

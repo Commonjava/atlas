@@ -220,7 +220,6 @@ public final class Conversions
             return null;
         }
 
-        LOGGER.info( "Pulling from/to nodes,  and index, out of rel: %s", rel );
         final ProjectVersionRef from = toProjectVersionRef( rel.getStartNode() );
         final ProjectVersionRef to = toProjectVersionRef( rel.getEndNode() );
         final int index = getIntegerProperty( INDEX, rel );

@@ -33,8 +33,6 @@ public final class DependencyRelationship
 
     private static final long serialVersionUID = 1L;
 
-    private final boolean managed;
-
     private final DependencyScope scope;
 
     private final Set<ProjectRef> excludes;
@@ -43,15 +41,9 @@ public final class DependencyRelationship
                                    final DependencyScope scope, final int index, final boolean managed,
                                    final ProjectRef... excludes )
     {
-        super( RelationshipType.DEPENDENCY, declaring, target, index );
+        super( RelationshipType.DEPENDENCY, declaring, target, index, managed );
         this.scope = scope == null ? DependencyScope.compile : scope;
-        this.managed = managed;
         this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
-    }
-
-    public final boolean isManaged()
-    {
-        return managed;
     }
 
     public final DependencyScope getScope()
@@ -62,7 +54,7 @@ public final class DependencyRelationship
     @Override
     public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new DependencyRelationship( projectRef, getTarget(), scope, getIndex(), managed );
+        return new DependencyRelationship( projectRef, getTarget(), scope, getIndex(), isManaged() );
     }
 
     @Override
@@ -70,7 +62,7 @@ public final class DependencyRelationship
     {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ( managed ? 1231 : 1237 );
+        result = prime * result + ( isManaged() ? 1231 : 1237 );
         return result;
     }
 
@@ -90,7 +82,7 @@ public final class DependencyRelationship
             return false;
         }
         final DependencyRelationship other = (DependencyRelationship) obj;
-        if ( managed != other.managed )
+        if ( isManaged() != other.isManaged() )
         {
             return false;
         }
@@ -101,7 +93,7 @@ public final class DependencyRelationship
     public String toString()
     {
         return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s)]", getDeclaring(),
-                              getTarget(), managed, scope, getIndex() );
+                              getTarget(), isManaged(), scope, getIndex() );
     }
 
     @Override

@@ -15,33 +15,33 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective.filter;
 
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class ParentFilter
-    implements ProjectRelationshipFilter
+    extends AbstractTypedFilter
 {
 
     private final boolean allowTerminalParent;
 
     public ParentFilter()
     {
-        this.allowTerminalParent = true;
+        this( true );
     }
 
     public ParentFilter( final boolean allowTerminalParent )
     {
+        super( RelationshipType.PARENT, true, false, true );
         this.allowTerminalParent = allowTerminalParent;
     }
 
-    public boolean accept( final ProjectRelationship<?> rel )
+    @Override
+    public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        if ( rel instanceof ParentRelationship )
+        if ( allowTerminalParent || !( (ParentRelationship) rel ).isTerminus() )
         {
-            if ( allowTerminalParent || !( (ParentRelationship) rel ).isTerminus() )
-            {
-                return true;
-            }
+            return true;
         }
 
         return false;

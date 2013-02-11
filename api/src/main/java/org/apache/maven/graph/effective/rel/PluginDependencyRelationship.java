@@ -31,14 +31,11 @@ public final class PluginDependencyRelationship
 
     private final ProjectRef plugin;
 
-    private final boolean managed;
-
     public PluginDependencyRelationship( final ProjectVersionRef declaring, final ProjectRef plugin,
                                          final ArtifactRef target, final int index, final boolean managed )
     {
-        super( RelationshipType.PLUGIN_DEP, declaring, target, index );
+        super( RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
         this.plugin = plugin;
-        this.managed = managed;
     }
 
     public final ProjectRef getPlugin()
@@ -46,15 +43,10 @@ public final class PluginDependencyRelationship
         return plugin;
     }
 
-    public final boolean isManaged()
-    {
-        return managed;
-    }
-
     @Override
     public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new PluginDependencyRelationship( projectRef, plugin, getTarget(), getIndex(), managed );
+        return new PluginDependencyRelationship( projectRef, plugin, getTarget(), getIndex(), isManaged() );
     }
 
     @Override
@@ -62,7 +54,7 @@ public final class PluginDependencyRelationship
     {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ( managed ? 1231 : 1237 );
+        result = prime * result + ( isManaged() ? 1231 : 1237 );
         result = prime * result + ( ( plugin == null ) ? 0 : plugin.hashCode() );
         return result;
     }
@@ -83,7 +75,7 @@ public final class PluginDependencyRelationship
             return false;
         }
         final PluginDependencyRelationship other = (PluginDependencyRelationship) obj;
-        if ( managed != other.managed )
+        if ( isManaged() != other.isManaged() )
         {
             return false;
         }
@@ -105,7 +97,7 @@ public final class PluginDependencyRelationship
     public String toString()
     {
         return String.format( "PluginDependencyRelationship [%s(%s) => %s (managed=%s, index=%s)]", getDeclaring(),
-                              plugin, getTarget(), managed, getIndex() );
+                              plugin, getTarget(), isManaged(), getIndex() );
     }
 
     @Override

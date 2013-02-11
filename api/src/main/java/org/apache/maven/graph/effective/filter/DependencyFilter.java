@@ -19,47 +19,38 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.maven.graph.common.DependencyScope;
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ScopeTransitivity;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 public class DependencyFilter
-    implements ProjectRelationshipFilter
+    extends AbstractTypedFilter
 {
 
-    private DependencyScope scope = DependencyScope.test;
+    private final DependencyScope scope;
 
-    private ScopeTransitivity scopeTransitivity = ScopeTransitivity.maven;
-
-    private boolean includeManaged = false;
-
-    private boolean includeConcrete = true;
+    private final ScopeTransitivity scopeTransitivity;
 
     private final Set<ProjectRef> excludes = new HashSet<ProjectRef>();
 
     public DependencyFilter()
     {
+        this( DependencyScope.test, ScopeTransitivity.maven, false, true, null );
     }
 
     public DependencyFilter( final DependencyScope scope )
     {
-        if ( scope != null )
-        {
-            this.scope = scope;
-        }
+        this( scope, ScopeTransitivity.maven, false, true, null );
     }
 
     public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity,
                              final boolean includeManaged, final boolean includeConcrete, final Set<ProjectRef> excludes )
     {
-        if ( scope != null )
-        {
-            this.scope = scope;
-        }
+        super( RelationshipType.DEPENDENCY, true, includeManaged, includeConcrete );
+        this.scope = scope == null ? DependencyScope.test : scope;
         this.scopeTransitivity = scopeTransitivity;
-        this.includeConcrete = includeConcrete;
-        this.includeManaged = includeManaged;
         if ( excludes != null )
         {
             this.excludes.addAll( excludes );
@@ -68,9 +59,8 @@ public class DependencyFilter
 
     public DependencyFilter( final DependencyFilter parent, final DependencyRelationship parentRel )
     {
+        super( RelationshipType.DEPENDENCY, true, parent.isManagedInfoIncluded(), parent.isConcreteInfoIncluded() );
         this.scopeTransitivity = parent.scopeTransitivity;
-        this.includeConcrete = parent.includeConcrete;
-        this.includeManaged = parent.includeManaged;
         this.scope = parent.scope == null ? parent.scope : scopeTransitivity.getChildFor( parent.scope );
 
         if ( parent.excludes != null )
@@ -88,38 +78,34 @@ public class DependencyFilter
         }
     }
 
-    public boolean accept( final ProjectRelationship<?> rel )
+    @Override
+    public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        if ( rel instanceof DependencyRelationship )
+        final DependencyRelationship dr = (DependencyRelationship) rel;
+        if ( excludes.contains( dr.getTarget()
+                                  .asProjectRef() ) )
         {
-            final DependencyRelationship dr = (DependencyRelationship) rel;
-            if ( excludes.contains( dr.getTarget()
-                                      .asProjectRef() ) )
-            {
-                return false;
-            }
-
-            if ( scope != null )
-            {
-                if ( !scope.implies( dr.getScope() ) )
-                {
-                    return false;
-                }
-            }
-
-            if ( !includeManaged && dr.isManaged() )
-            {
-                return false;
-            }
-            else if ( !includeConcrete && !dr.isManaged() )
-            {
-                return false;
-            }
-
-            return true;
+            return false;
         }
 
-        return false;
+        if ( scope != null )
+        {
+            if ( !scope.implies( dr.getScope() ) )
+            {
+                return false;
+            }
+        }
+
+        if ( !isManagedInfoIncluded() && dr.isManaged() )
+        {
+            return false;
+        }
+        else if ( !isConcreteInfoIncluded() && !dr.isManaged() )
+        {
+            return false;
+        }
+
+        return true;
     }
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
@@ -145,9 +131,9 @@ public class DependencyFilter
         sb.append( ", transitivity: " )
           .append( scopeTransitivity.name() );
         sb.append( ", managed: " )
-          .append( includeManaged )
+          .append( isManagedInfoIncluded() )
           .append( ", concrete: " )
-          .append( includeConcrete );
+          .append( isConcreteInfoIncluded() );
         if ( excludes != null && !excludes.isEmpty() )
         {
             sb.append( ", exclude: {" );
