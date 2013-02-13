@@ -174,18 +174,37 @@ public class ProjectVersionRef
             return false;
         }
         final ProjectVersionRef other = (ProjectVersionRef) obj;
-        if ( getVersionSpec() == null )
+        boolean result = true;
+        try
         {
-            if ( other.getVersionSpec() != null )
+            if ( getVersionSpec() == null )
             {
-                return false;
+                if ( other.getVersionSpec() != null )
+                {
+                    result = false;
+                }
+            }
+            else if ( !getVersionSpec().equals( other.getVersionSpec() ) )
+            {
+                result = false;
             }
         }
-        else if ( !getVersionSpec().equals( other.getVersionSpec() ) )
+        catch ( final InvalidVersionSpecificationException e )
         {
-            return false;
+            if ( getVersionString() == null )
+            {
+                if ( other.getVersionString() != null )
+                {
+                    result = false;
+                }
+            }
+            else if ( !getVersionString().equals( other.getVersionString() ) )
+            {
+                result = false;
+            }
         }
-        return true;
+
+        return result;
     }
 
     @Override

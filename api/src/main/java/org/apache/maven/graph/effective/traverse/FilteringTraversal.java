@@ -13,9 +13,17 @@ public class FilteringTraversal
 
     private final List<ProjectRelationship<?>> captured = new ArrayList<ProjectRelationship<?>>();
 
+    private final boolean doCapture;
+
     public FilteringTraversal( final ProjectRelationshipFilter filter )
     {
+        this( filter, false );
+    }
+
+    public FilteringTraversal( final ProjectRelationshipFilter filter, final boolean doCapture )
+    {
         super( filter );
+        this.doCapture = doCapture;
     }
 
     public List<ProjectRelationship<?>> getCapturedRelationships()
@@ -50,7 +58,10 @@ public class FilteringTraversal
     protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
                                           final List<ProjectRelationship<?>> path, final int pass )
     {
-        captured.add( relationship );
+        if ( doCapture )
+        {
+            captured.add( relationship );
+        }
         return true;
     }
 

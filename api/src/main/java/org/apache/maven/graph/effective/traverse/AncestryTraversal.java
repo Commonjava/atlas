@@ -26,7 +26,7 @@ public class AncestryTraversal
 
     public AncestryTraversal()
     {
-        super( new ParentFilter( false ) );
+        super( new ParentFilter( false ), true );
     }
 
     public List<ProjectVersionRef> getAncestry()

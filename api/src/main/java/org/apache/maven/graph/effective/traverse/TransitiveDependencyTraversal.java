@@ -27,6 +27,7 @@ import org.apache.maven.graph.common.ref.VersionlessArtifactRef;
 import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.filter.OrFilter;
 import org.apache.maven.graph.effective.filter.ParentFilter;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -42,6 +43,11 @@ public class TransitiveDependencyTraversal
     public TransitiveDependencyTraversal()
     {
         this( DependencyScope.runtime );
+    }
+
+    public TransitiveDependencyTraversal( final ProjectRelationshipFilter filter )
+    {
+        super( filter );
     }
 
     public TransitiveDependencyTraversal( final DependencyScope scope )
@@ -64,6 +70,7 @@ public class TransitiveDependencyTraversal
     public boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
                                        final List<ProjectRelationship<?>> path, final int pass )
     {
+        boolean result = false;
         if ( relationship instanceof DependencyRelationship )
         {
             final ArtifactRef target = (ArtifactRef) relationship.getTarget();
@@ -73,15 +80,14 @@ public class TransitiveDependencyTraversal
             {
                 artifacts.add( target );
                 seen.add( versionlessTarget );
-                return true;
+                result = true;
             }
         }
         else if ( relationship instanceof ParentRelationship )
         {
-            // TODO: What are we supposed to do with these??
-            return true;
+            result = true;
         }
 
-        return false;
+        return result;
     }
 }

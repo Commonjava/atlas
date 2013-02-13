@@ -39,4 +39,6 @@ public interface ProjectNetTraversal
     void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
 
     boolean preCheck( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
+
+    TraversalType[] getTraversalTypes();
 }

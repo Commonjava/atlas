@@ -22,13 +22,10 @@ import java.util.Set;
 import org.apache.maven.graph.effective.filter.NoneFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.commonjava.util.logging.Logger;
 
 public abstract class AbstractFilteringTraversal
     extends AbstractTraversal
 {
-
-    private final Logger logger = new Logger( getClass() );
 
     private final ProjectRelationshipFilter rootFilter;
 
@@ -86,15 +83,9 @@ public abstract class AbstractFilteringTraversal
             return false;
         }
 
-        // only add to seen when traversed, NOT during preCheck, which may be called more than once per relationship.
         seen.add( relationship );
-        //        logger.info( "SEEN: %d relationships", seen.size() );
 
         final boolean ok = shouldTraverseEdge( relationship, path, pass );
-        if ( !ok )
-        {
-            logger.info( "STOP traversal from shouldTraverseEdge: %s", relationship );
-        }
 
         return ok;
     }
@@ -102,20 +93,20 @@ public abstract class AbstractFilteringTraversal
     public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                              final int pass )
     {
+        boolean result = true;
         if ( seen.contains( relationship ) )
         {
-            logger.info( "STOP: Already seen: %s", relationship );
-            return false;
+            result = false;
         }
 
         final ProjectRelationshipFilter filter = constructFilter( path );
-        if ( filter != null && !filter.accept( relationship ) )
+        if ( result && filter != null && !filter.accept( relationship ) )
         {
-            logger.info( "STOP traversal in preCheck: %s", relationship );
-            return false;
+            seen.add( relationship );
+            result = false;
         }
 
-        return true;
+        return result;
     }
 
     private ProjectRelationshipFilter constructFilter( final List<ProjectRelationship<?>> path )

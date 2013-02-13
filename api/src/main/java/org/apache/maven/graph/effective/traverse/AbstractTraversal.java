@@ -88,4 +88,9 @@ public abstract class AbstractTraversal
     {
         return true;
     }
+
+    public TraversalType[] getTraversalTypes()
+    {
+        return types.toArray( new TraversalType[] {} );
+    }
 }

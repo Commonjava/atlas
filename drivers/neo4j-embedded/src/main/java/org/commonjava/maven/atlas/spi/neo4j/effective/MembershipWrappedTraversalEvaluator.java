@@ -5,7 +5,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
@@ -30,6 +29,10 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     private final ProjectNetTraversal traversal;
 
     private final Set<Long> seenRels = new HashSet<Long>();
+
+    private final Set<Long> accepted = new HashSet<Long>();
+
+    private final Set<Long> rejected = new HashSet<Long>();
 
     private final int pass;
 
@@ -85,24 +88,32 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     public Evaluation evaluate( final Path path )
     {
         evalHits++;
-        //        check++;
 
         final Relationship rel = path.lastRelationship();
         if ( rel == null )
         {
-            //            logger.info( "[%d] Relationship is null. Continue traversal.", check );
             return Evaluation.EXCLUDE_AND_CONTINUE;
         }
 
         if ( seenRels.contains( rel.getId() ) )
         {
             evalDupes++;
-            //            logger.info( "[%d] Already saw relationship: %d. Skipping.", check, rel.getId() );
             return Evaluation.EXCLUDE_AND_PRUNE;
         }
 
-        //        logger.info( "Adding: %s to seen relationships: %s", rel, seenRels );
         seenRels.add( rel.getId() );
+
+        if ( accepted.contains( rel.getId() ) )
+        {
+            evalMemberHits++;
+            evalPreChecks++;
+            return Evaluation.INCLUDE_AND_CONTINUE;
+        }
+        else if ( rejected.contains( rel.getId() ) )
+        {
+            evalMemberHits++;
+            return Evaluation.EXCLUDE_AND_PRUNE;
+        }
 
         final Node node = path.endNode();
 
@@ -111,34 +122,30 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             evalMemberHits++;
 
             final ProjectRelationship<?> lastRel = Conversions.toProjectRelationship( rel );
-            //            logger.info( "[%d] Rel: %s is in membership; checking vs filter: %s", check, lastRel, traversal );
-
-            if ( lastRel.getDeclaring()
-                        .equals( lastRel.getTarget() ) && lastRel.getType() == RelationshipType.PARENT )
-            {
-                //                logger.info( "[%d] Detected terminal parent: %s", check, lastRel );
-                //                return Evaluation.EXCLUDE_AND_PRUNE;
-            }
 
             final List<ProjectRelationship<?>> relPath = driver.convertToRelationships( path.relationships() );
-            //            logger.info( "\n\n\n\n[%d] Path:\n  %s\n\n\n", check, StringUtils.join( relPath, "\n  " ) );
+            if ( relPath.indexOf( lastRel ) == relPath.size() - 1 )
+            {
+                logger.warn( "\n\n\n\n\nREMOVING last-relationship: %s from path!\n\n\n\n\n" );
+                relPath.remove( relPath.size() - 1 );
+            }
 
             if ( relPath.isEmpty() )
             {
-                //                logger.info( "[%d] Relationship path is empty. Skipping this relationship, but continuing to traverse beyond it.",
-                //                             check );
                 return Evaluation.EXCLUDE_AND_CONTINUE;
             }
             else
             {
-                //                logger.info( "[%d] Relationship path has %d elements.", check, relPath.size() );
-                final ProjectRelationship<?> projectRel = relPath.remove( relPath.size() - 1 );
-                //                logger.info( "[%d] Checking relationship: %s vs filter: %s.", check, projectRel, traversal );
-                if ( traversal.preCheck( projectRel, relPath, pass ) )
+                if ( traversal.preCheck( lastRel, relPath, pass ) )
                 {
+                    accepted.add( rel.getId() );
                     evalPreChecks++;
-                    //                    logger.info( "[%d] Included by filter.", check );
+
                     return Evaluation.INCLUDE_AND_CONTINUE;
+                }
+                else
+                {
+                    rejected.add( rel.getId() );
                 }
             }
         }
@@ -147,7 +154,6 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             evalMemberMisses++;
         }
 
-        //        logger.info( "[%d] Exclude and prune.", check );
         return Evaluation.EXCLUDE_AND_PRUNE;
     }
 
@@ -166,8 +172,69 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             return Collections.emptySet();
         }
 
+        final Relationship rel = path.lastRelationship();
+        if ( rel != null )
+        {
+            if ( !driver.inMembership( rel ) )
+            {
+                //                logger.info( "Last relationship (%s) is not in membership.", rel );
+                expMemberMisses++;
+                return Collections.emptySet();
+            }
+        }
+
+        expMemberHits++;
+
+        final Iterable<Relationship> rs =
+            node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
+        if ( rs == null )
+        {
+            //            logger.info( "No relationships from end-node: %s", node );
+            return Collections.emptySet();
+        }
+
+        final Set<Relationship> result = new HashSet<Relationship>();
+        List<ProjectRelationship<?>> rels = null;
+        for ( final Relationship r : rs )
+        {
+            if ( accepted.contains( r.getId() ) )
+            {
+                result.add( r );
+                continue;
+            }
+            else if ( rejected.contains( r.getId() ) )
+            {
+                continue;
+            }
+
+            //            logger.info( "Pre-checking relationship %s for expansion using filter: %s", r, traversal );
+            final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
+            if ( rels == null )
+            {
+                rels = getPathRelationships( path );
+            }
+
+            if ( traversal.preCheck( projectRel, rels, pass ) )
+            {
+                accepted.add( r.getId() );
+                expPreChecks++;
+                //                logger.info( "Adding for expansion: %s", r );
+                result.add( r );
+            }
+            else
+            {
+                rejected.add( r.getId() );
+            }
+        }
+
+        //        logger.info( "Expanding for %d relationships.", result.size() );
+        return result;
+    }
+
+    private List<ProjectRelationship<?>> getPathRelationships( final Path path )
+    {
         List<ProjectRelationship<?>> rels;
-        Iterable<Relationship> rs = path.relationships();
+        final Iterable<Relationship> rs = path.relationships();
         if ( rs == null )
         {
             //            logger.info( "Constructing empty relationship list for filter." );
@@ -185,41 +252,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             Collections.reverse( rels );
         }
 
-        final Relationship rel = path.lastRelationship();
-        if ( rel != null )
-        {
-            if ( !driver.inMembership( rel ) )
-            {
-                //                logger.info( "Last relationship (%s) is not in membership.", rel );
-                expMemberMisses++;
-                return Collections.emptySet();
-            }
-        }
-
-        expMemberHits++;
-
-        rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
-        if ( rs == null )
-        {
-            //            logger.info( "No relationships from end-node: %s", node );
-            return Collections.emptySet();
-        }
-
-        final Set<Relationship> result = new HashSet<Relationship>();
-        for ( final Relationship r : rs )
-        {
-            //            logger.info( "Pre-checking relationship %s for expansion using filter: %s", r, traversal );
-            final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
-            if ( traversal.preCheck( projectRel, rels, pass ) )
-            {
-                expPreChecks++;
-                //                logger.info( "Adding for expansion: %s", r );
-                result.add( r );
-            }
-        }
-
-        //        logger.info( "Expanding for %d relationships.", result.size() );
-        return result;
+        return rels;
     }
 
     public PathExpander<STATE> reverse()

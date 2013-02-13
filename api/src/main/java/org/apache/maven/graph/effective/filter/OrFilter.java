@@ -19,13 +19,12 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.commonjava.util.logging.Logger;
 
 public class OrFilter
     extends AbstractAggregatingFilter
 {
 
-    private final Logger logger = new Logger( getClass() );
+    //    private final Logger logger = new Logger( getClass() );
 
     public OrFilter( final Collection<? extends ProjectRelationshipFilter> filters )
     {
