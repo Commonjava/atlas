@@ -50,6 +50,13 @@ public abstract class AbstractFilteringTraversal
         rootFilter = filter;
     }
 
+    protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter, final int passes,
+                                          final TraversalType... types )
+    {
+        super( passes, types );
+        rootFilter = filter;
+    }
+
     protected abstract boolean shouldTraverseEdge( ProjectRelationship<?> relationship,
                                                    List<ProjectRelationship<?>> path, int pass );
 
@@ -97,13 +104,14 @@ public abstract class AbstractFilteringTraversal
     {
         if ( seen.contains( relationship ) )
         {
+            logger.info( "STOP: Already seen: %s", relationship );
             return false;
         }
 
         final ProjectRelationshipFilter filter = constructFilter( path );
         if ( filter != null && !filter.accept( relationship ) )
         {
-            //            logger.info( "STOP traversal in preCheck: %s", relationship );
+            logger.info( "STOP traversal in preCheck: %s", relationship );
             return false;
         }
 

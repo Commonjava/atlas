@@ -31,6 +31,7 @@ import org.apache.maven.graph.effective.filter.ParentFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.model.BuildOrder;
+import org.apache.maven.graph.spi.GraphDriverException;
 
 public class BuildOrderTraversal
     extends AbstractFilteringTraversal
@@ -87,6 +88,7 @@ public class BuildOrderTraversal
 
     @Override
     public void endTraverse( final int pass, final EProjectNet network )
+        throws GraphDriverException
     {
         super.endTraverse( pass, network );
 

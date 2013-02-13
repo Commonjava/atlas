@@ -8,10 +8,13 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.commonjava.util.logging.Logger;
 
 public abstract class AbstractTypedFilter
     implements ProjectRelationshipFilter
 {
+
+    private final Logger logger = new Logger( getClass() );
 
     private final Set<RelationshipType> types;
 
@@ -125,8 +128,24 @@ public abstract class AbstractTypedFilter
     {
         if ( types.contains( rel.getType() ) )
         {
-            return doAccept( rel );
+            final boolean accepted = doAccept( rel );
+            if ( accepted )
+            {
+                //                logger.info( "ACCEPT relationship: %s. Type is in: %s, and was accepted in second-level analysis", rel,
+                //                             types );
+            }
+            else
+            {
+                //                logger.info( "REJECT relationship: %s. Type is in: %s but was rejected by second-level analysis.", rel,
+                //                             types );
+            }
+
+            return accepted;
         }
+        //        else
+        //        {
+        //            logger.info( "REJECT relationship: %s. Type is not in: %s", rel, types );
+        //        }
 
         return false;
     }

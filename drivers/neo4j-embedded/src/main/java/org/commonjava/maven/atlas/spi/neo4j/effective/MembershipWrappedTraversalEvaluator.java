@@ -9,6 +9,7 @@ import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
+import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -22,7 +23,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     implements Evaluator, PathExpander<STATE>
 {
 
-    //    private final Logger logger = new Logger( getClass() );
+    private final Logger logger = new Logger( getClass() );
 
     private final AbstractNeo4JEGraphDriver driver;
 
@@ -33,6 +34,24 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     private final int pass;
 
     private boolean reversedExpander;
+
+    private int expHits = 0;
+
+    private int evalHits = 0;
+
+    private int expMemberMisses = 0;
+
+    private int evalMemberMisses = 0;
+
+    private int expMemberHits = 0;
+
+    private int evalMemberHits = 0;
+
+    private int evalDupes = 0;
+
+    private int expPreChecks = 0;
+
+    private int evalPreChecks = 0;
 
     public MembershipWrappedTraversalEvaluator( final AbstractNeo4JEGraphDriver driver,
                                                 final ProjectNetTraversal traversal, final int pass )
@@ -51,8 +70,21 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.reversedExpander = reversedExpander;
     }
 
+    public void printStats()
+    {
+        logger.info( "\n\n\n\nStats for traversal:\n" + "---------------------\n" + "\ntotal expander hits: %d"
+                         + "\nexpander membership hits: %d" + "\nexpander membership misses: %d"
+                         + "\nexpander preCheck() calls: %d" + "\n\ntotal evaluator hits: %d"
+                         + "\nevaluator membership hits: %d" + "\nevaluator membership misses: %s"
+                         + "\nevaluator duplicate hits: %d" + "\nevaluator preCheck() calls: %d\n\n\n\n", expHits,
+                     expMemberHits,
+                     expMemberMisses, expPreChecks, evalHits, evalMemberHits, evalMemberMisses, evalDupes,
+                     evalPreChecks );
+    }
+
     public Evaluation evaluate( final Path path )
     {
+        evalHits++;
         //        check++;
 
         final Relationship rel = path.lastRelationship();
@@ -64,6 +96,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         if ( seenRels.contains( rel.getId() ) )
         {
+            evalDupes++;
             //            logger.info( "[%d] Already saw relationship: %d. Skipping.", check, rel.getId() );
             return Evaluation.EXCLUDE_AND_PRUNE;
         }
@@ -75,6 +108,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         if ( driver.inMembership( node ) && driver.inMembership( rel ) )
         {
+            evalMemberHits++;
+
             final ProjectRelationship<?> lastRel = Conversions.toProjectRelationship( rel );
             //            logger.info( "[%d] Rel: %s is in membership; checking vs filter: %s", check, lastRel, traversal );
 
@@ -101,10 +136,15 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                 //                logger.info( "[%d] Checking relationship: %s vs filter: %s.", check, projectRel, traversal );
                 if ( traversal.preCheck( projectRel, relPath, pass ) )
                 {
+                    evalPreChecks++;
                     //                    logger.info( "[%d] Included by filter.", check );
                     return Evaluation.INCLUDE_AND_CONTINUE;
                 }
             }
+        }
+        else
+        {
+            evalMemberMisses++;
         }
 
         //        logger.info( "[%d] Exclude and prune.", check );
@@ -113,12 +153,15 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     public Iterable<Relationship> expand( final Path path, final BranchState<STATE> state )
     {
+        expHits++;
+
         final Node node = path.endNode();
         //        logger.info( "START expansion for node: %s", node );
 
         // TODO: Is node(0) appropriate to see??
         if ( node.getId() != 0 && !driver.inMembership( node ) )
         {
+            expMemberMisses++;
             //            logger.info( "%s not in membership. Skipping expansion.", node );
             return Collections.emptySet();
         }
@@ -148,9 +191,12 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             if ( !driver.inMembership( rel ) )
             {
                 //                logger.info( "Last relationship (%s) is not in membership.", rel );
+                expMemberMisses++;
                 return Collections.emptySet();
             }
         }
+
+        expMemberHits++;
 
         rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
         if ( rs == null )
@@ -166,6 +212,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
             if ( traversal.preCheck( projectRel, rels, pass ) )
             {
+                expPreChecks++;
                 //                logger.info( "Adding for expansion: %s", r );
                 result.add( r );
             }

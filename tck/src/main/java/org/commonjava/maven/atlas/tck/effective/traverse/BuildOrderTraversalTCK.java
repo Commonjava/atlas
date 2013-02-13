@@ -17,8 +17,11 @@ package org.commonjava.maven.atlas.tck.effective.traverse;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
@@ -46,6 +49,11 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef c = new ProjectVersionRef( "group.id", "c", "3" );
         final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
+
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        relativeOrder.put( c, b );
+        relativeOrder.put( b, a );
 
         final EProjectGraph graph =
             new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
@@ -77,10 +85,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
-        int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
+        assertRelativeOrder( relativeOrder, buildOrder );
     }
 
     @Test
@@ -92,6 +97,12 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
         final ProjectVersionRef p = new ProjectVersionRef( "group.id", "b-parent", "1001" );
+
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        relativeOrder.put( c, b );
+        relativeOrder.put( b, a );
+        relativeOrder.put( b, p );
 
         final EProjectGraph graph =
             new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
@@ -128,11 +139,7 @@ public abstract class BuildOrderTraversalTCK
 
         assertThat( buildOrder.size(), equalTo( 4 ) );
 
-        int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( p.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
+        assertRelativeOrder( relativeOrder, buildOrder );
     }
 
     @Test
@@ -144,6 +151,11 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
+
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        relativeOrder.put( c, b );
+        relativeOrder.put( b, a );
 
         final EProjectGraph graph =
             new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
@@ -185,10 +197,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
-        int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
+        assertRelativeOrder( relativeOrder, buildOrder );
     }
 
     @Test
@@ -202,6 +211,11 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
+
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        relativeOrder.put( c, b );
+        relativeOrder.put( b, a );
 
         final EProjectGraph graph =
             new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
@@ -263,10 +277,7 @@ public abstract class BuildOrderTraversalTCK
 
         assertThat( buildOrder.size(), equalTo( 3 ) );
 
-        int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
+        assertRelativeOrder( relativeOrder, buildOrder );
     }
 
     @Test
@@ -277,6 +288,11 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef c = new ProjectVersionRef( "group.id", "c", "3" );
         final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
+
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        relativeOrder.put( c, b );
+        relativeOrder.put( b, a );
 
         final EProjectGraph graph =
             new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
@@ -322,10 +338,7 @@ public abstract class BuildOrderTraversalTCK
         //        new Logger( getClass() ).info( "Build order: %s", buildOrder );
         assertThat( buildOrder.size(), equalTo( 3 ) );
 
-        int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
+        assertRelativeOrder( relativeOrder, buildOrder );
     }
 
     @Test
@@ -337,6 +350,13 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.dep.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
+
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        relativeOrder.put( c, b );
+        relativeOrder.put( b, a );
+        relativeOrder.put( c, pb );
+        relativeOrder.put( pb, pa );
 
         final EProjectGraph graph =
             new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
@@ -378,12 +398,40 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
-        int idx = 0;
-        assertThat( buildOrder.get( idx++ ), equalTo( a.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( b.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( pa.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( pb.asProjectRef() ) );
-        assertThat( buildOrder.get( idx++ ), equalTo( c.asProjectRef() ) );
+        System.out.printf( "Build order: %s\n", buildOrder );
+
+        assertRelativeOrder( relativeOrder, buildOrder );
+    }
+
+    private void assertRelativeOrder( final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder,
+                                      final List<ProjectRef> buildOrder )
+    {
+        for ( final Map.Entry<ProjectVersionRef, ProjectVersionRef> entry : relativeOrder.entrySet() )
+        {
+            final ProjectRef k = entry.getKey()
+                                      .asProjectRef();
+            final ProjectRef v = entry.getValue()
+                                      .asProjectRef();
+
+            final int kidx = buildOrder.indexOf( k );
+            final int vidx = buildOrder.indexOf( v );
+
+            if ( kidx < 0 )
+            {
+                fail( "Cannot find: " + k + " in build order: " + buildOrder );
+            }
+
+            if ( vidx < 0 )
+            {
+                fail( "Cannot find: " + v + " in build order: " + buildOrder );
+            }
+
+            if ( vidx >= kidx )
+            {
+                fail( "prerequisite project: " + v + " of: " + k + " appears AFTER it in the build order: "
+                    + buildOrder );
+            }
+        }
     }
 
 }

@@ -406,6 +406,8 @@ public abstract class AbstractNeo4JEGraphDriver
             }
 
             traversal.endTraverse( i, net );
+
+            checker.printStats();
         }
     }
 

@@ -16,6 +16,7 @@
 package org.apache.maven.graph.effective.traverse;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.maven.graph.effective.EProjectNet;
@@ -26,14 +27,25 @@ public abstract class AbstractTraversal
     implements ProjectNetTraversal
 {
 
-    private List<TraversalType> types;
+    private final List<TraversalType> types;
+
+    private final int passes;
 
     protected AbstractTraversal()
     {
+        this.passes = 1;
+        this.types = Collections.singletonList( TraversalType.depth_first );
+    }
+
+    protected AbstractTraversal( final int passes, final TraversalType... types )
+    {
+        this.passes = passes;
+        this.types = Arrays.asList( types );
     }
 
     protected AbstractTraversal( final TraversalType... types )
     {
+        this.passes = 1;
         this.types = Arrays.asList( types );
     }
 
@@ -58,10 +70,11 @@ public abstract class AbstractTraversal
 
     public int getRequiredPasses()
     {
-        return 1;
+        return passes;
     }
 
     public void endTraverse( final int pass, final EProjectNet network )
+        throws GraphDriverException
     {
     }
 
