@@ -17,6 +17,7 @@ package org.apache.maven.graph.effective.filter;
 
 import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.RelationshipType;
+import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
 // TODO: Do we need to consider excludes in the direct plugin-level dependency?
@@ -31,7 +32,14 @@ public class ExtensionFilter
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        return new DependencyFilter( DependencyScope.runtime );
+        if ( parent instanceof ExtensionRelationship )
+        {
+            return new OrFilter( new DependencyFilter( DependencyScope.runtime ), new ParentFilter( false ) );
+        }
+        else
+        {
+            return new NoneFilter();
+        }
     }
 
     public void render( final StringBuilder sb )

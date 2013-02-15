@@ -34,11 +34,20 @@ public class PluginRuntimeFilter
 
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        final PluginRelationship plugin = (PluginRelationship) parent;
+        ProjectRelationshipFilter child;
+        if ( parent instanceof PluginRelationship )
+        {
+            final PluginRelationship plugin = (PluginRelationship) parent;
 
-        final OrFilter child =
-            new OrFilter( new DependencyFilter( DependencyScope.runtime ), new PluginDependencyFilter( plugin, true,
-                                                                                                       true ) );
+            child =
+                new OrFilter( new DependencyFilter( DependencyScope.runtime ),
+                              new PluginDependencyFilter( plugin, true, true ), new ParentFilter( false ) );
+        }
+        else
+        {
+            child = new NoneFilter();
+        }
+
         return child;
     }
 
