@@ -109,8 +109,6 @@ public abstract class AbstractNeo4JEGraphDriver
         this.graph = driver.graph;
         this.ancestry.addAll( driver.ancestry );
         this.ancestry.add( driver );
-
-        new Logger( getClass() ).info( "Ancestry for new driver is:\n  %s", join( ancestry, "\n  " ) );
     }
 
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
@@ -1176,6 +1174,11 @@ public abstract class AbstractNeo4JEGraphDriver
                 if ( inMembership( node ) )
                 {
                     final Map<String, String> md = Conversions.getMetadataMap( node );
+                    if ( md == null || md.isEmpty() )
+                    {
+                        continue;
+                    }
+
                     for ( final String key : md.keySet() )
                     {
                         graph.index()
