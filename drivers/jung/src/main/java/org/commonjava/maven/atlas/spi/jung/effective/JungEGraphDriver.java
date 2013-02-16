@@ -41,6 +41,8 @@ public class JungEGraphDriver
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
+    private final Map<String, Set<ProjectVersionRef>> metadataOwners = new HashMap<String, Set<ProjectVersionRef>>();
+
     private final Map<ProjectVersionRef, Map<String, String>> metadata =
         new HashMap<ProjectVersionRef, Map<String, String>>();
 
@@ -466,6 +468,20 @@ public class JungEGraphDriver
 
         final Map<String, String> md = getMetadata( ref );
         md.put( key, value );
+
+        addMetadataOwner( key, ref );
+    }
+
+    private synchronized void addMetadataOwner( final String key, final ProjectVersionRef ref )
+    {
+        Set<ProjectVersionRef> owners = this.metadataOwners.get( key );
+        if ( owners == null )
+        {
+            owners = new HashSet<ProjectVersionRef>();
+            metadataOwners.put( key, owners );
+        }
+
+        owners.add( ref );
     }
 
     public void addProjectMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
@@ -479,7 +495,7 @@ public class JungEGraphDriver
         md.putAll( metadata );
     }
 
-    private Map<String, String> getMetadata( final ProjectVersionRef ref )
+    private synchronized Map<String, String> getMetadata( final ProjectVersionRef ref )
     {
         Map<String, String> metadata = this.metadata.get( ref );
         if ( metadata == null )
@@ -495,6 +511,24 @@ public class JungEGraphDriver
     {
         throw new UnsupportedOperationException(
                                                  "need to implement notion of a global graph in jung before this can work." );
+    }
+
+    public synchronized void reindex()
+        throws GraphDriverException
+    {
+        for ( final Map.Entry<ProjectVersionRef, Map<String, String>> refEntry : metadata.entrySet() )
+        {
+            for ( final Map.Entry<String, String> mdEntry : refEntry.getValue()
+                                                                    .entrySet() )
+            {
+                addMetadataOwner( mdEntry.getKey(), refEntry.getKey() );
+            }
+        }
+    }
+
+    public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
+    {
+        return metadataOwners.get( key );
     }
 
 }

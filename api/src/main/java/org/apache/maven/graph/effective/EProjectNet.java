@@ -72,4 +72,9 @@ public interface EProjectNet
     List<EProjectNet> getSuperNets();
 
     <T extends ProjectRelationship<?>> Set<T> addAll( Collection<T> rels );
+
+    Set<ProjectVersionRef> getProjectsWithMetadata( String key );
+
+    void reindex()
+        throws GraphDriverException;
 }

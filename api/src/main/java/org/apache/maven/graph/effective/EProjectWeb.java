@@ -327,4 +327,15 @@ public class EProjectWeb
         driver.addProjectMetadata( key.getProject(), metadata );
     }
 
+    public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
+    {
+        return driver.getProjectsWithMetadata( key );
+    }
+
+    public void reindex()
+        throws GraphDriverException
+    {
+        driver.reindex();
+    }
+
 }

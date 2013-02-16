@@ -62,6 +62,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String ALL_CYCLES = "all-cycles";
 
+    private static final String METADATA_INDEX_PREFIX = "has-metadata-";
+
     private GraphDatabaseService graph;
 
     private final Set<Long> nodeMembership = new HashSet<Long>();
@@ -1151,5 +1153,52 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final ExecutionEngine engine = new ExecutionEngine( graph );
         return params == null ? engine.execute( cypher ) : engine.execute( cypher, params );
+    }
+
+    public void reindex()
+        throws GraphDriverException
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final IndexHits<Node> nodes = graph.index()
+                                               .forNodes( ALL_NODES )
+                                               .query( Conversions.GAV, "*" );
+
+            for ( final Node node : nodes )
+            {
+                final String gav = Conversions.getStringProperty( Conversions.GAV, node );
+                if ( gav == null )
+                {
+                    continue;
+                }
+
+                if ( inMembership( node ) )
+                {
+                    final Map<String, String> md = Conversions.getMetadataMap( node );
+                    for ( final String key : md.keySet() )
+                    {
+                        graph.index()
+                             .forNodes( METADATA_INDEX_PREFIX + key )
+                             .add( node, Conversions.GAV, gav );
+                    }
+                }
+            }
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
+    {
+        final IndexHits<Node> nodes = graph.index()
+                                           .forNodes( METADATA_INDEX_PREFIX + key )
+                                           .query( Conversions.GAV, "*" );
+
+        return new HashSet<ProjectVersionRef>( convertToProjects( nodes ) );
     }
 }
