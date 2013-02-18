@@ -109,6 +109,18 @@
     <pluginManagement>
       <plugins>
         <plugin>
+          <artifactId>maven-release-plugin</artifactId>
+          <configuration>
+            <autoVersionSubmodules>true</autoVersionSubmodules>
+          </configuration>
+        </plugin>
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <configuration>
+            <detectOfflineLinks>false</detectOfflineLinks>
+          </configuration>
+        </plugin>
+        <plugin>
           <artifactId>maven-assembly-plugin</artifactId>
           <version>2.3</version>
         </plugin>
