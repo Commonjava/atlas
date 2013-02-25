@@ -42,6 +42,21 @@ public class EProjectWeb
 
     private final List<EProjectNet> superNets = new ArrayList<EProjectNet>();
 
+    EProjectWeb( final EProjectNet parent, final EProjectKey... roots )
+    {
+        final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>();
+        for ( final EProjectKey key : roots )
+        {
+            refs.add( key.getProject() );
+        }
+
+        this.driver = parent.getDriver()
+                            .newInstanceFrom( this, refs.toArray( new ProjectVersionRef[] {} ) );
+
+        this.superNets.addAll( parent.getSuperNets() );
+        this.superNets.add( parent );
+    }
+
     public EProjectWeb( final EGraphDriver driver )
     {
         this.driver = driver;
@@ -301,6 +316,20 @@ public class EProjectWeb
         }
 
         return null;
+    }
+
+    public EProjectWeb getWeb( final EProjectKey... keys )
+        throws GraphDriverException
+    {
+        for ( final EProjectKey key : keys )
+        {
+            if ( !driver.containsProject( key.getProject() ) || driver.isMissing( key.getProject() ) )
+            {
+                return null;
+            }
+        }
+
+        return new EProjectWeb( this, keys );
     }
 
     public boolean containsGraph( final EProjectKey key )

@@ -58,6 +58,9 @@ public interface EProjectNet
     EProjectGraph getGraph( EProjectKey key )
         throws GraphDriverException;
 
+    EProjectWeb getWeb( final EProjectKey... keys )
+        throws GraphDriverException;
+
     boolean containsGraph( EProjectKey eProjectKey );
 
     Set<ProjectVersionRef> getAllProjects();

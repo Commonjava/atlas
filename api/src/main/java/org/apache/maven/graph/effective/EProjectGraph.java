@@ -592,6 +592,20 @@ public class EProjectGraph
         return null;
     }
 
+    public EProjectWeb getWeb( final EProjectKey... keys )
+        throws GraphDriverException
+    {
+        for ( final EProjectKey key : keys )
+        {
+            if ( !driver.containsProject( key.getProject() ) || driver.isMissing( key.getProject() ) )
+            {
+                return null;
+            }
+        }
+
+        return new EProjectWeb( this, keys );
+    }
+
     public boolean containsGraph( final EProjectKey key )
     {
         return driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() );
