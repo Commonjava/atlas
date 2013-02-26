@@ -31,6 +31,7 @@ import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
 
 public class EProjectWeb
     implements EProjectNet, Serializable
@@ -368,4 +369,44 @@ public class EProjectWeb
         driver.reindex();
     }
 
+    public boolean connectFor( final EProjectKey key )
+        throws GraphDriverException
+    {
+        final EGraphDriver driver = getDriver();
+        if ( driver instanceof GloballyBackedGraphDriver )
+        {
+            if ( ( (GloballyBackedGraphDriver) driver ).includeGraph( key.getProject() ) )
+            {
+                for ( final EProjectNet net : getSuperNets() )
+                {
+                    final EGraphDriver d = net.getDriver();
+                    if ( d instanceof GloballyBackedGraphDriver )
+                    {
+                        ( (GloballyBackedGraphDriver) d ).includeGraph( key.getProject() );
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void connect( final EProjectGraph graph )
+        throws GraphDriverException
+    {
+        if ( getDriver() instanceof GloballyBackedGraphDriver )
+        {
+            connectFor( graph.getKey() );
+        }
+        else if ( !graph.isDerivedFrom( this ) )
+        {
+            addAll( graph.getExactAllRelationships() );
+            for ( final EProjectNet net : getSuperNets() )
+            {
+                net.addAll( graph.getExactAllRelationships() );
+            }
+        }
+    }
 }

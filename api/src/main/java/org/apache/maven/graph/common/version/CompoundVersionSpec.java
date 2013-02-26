@@ -72,7 +72,19 @@ public class CompoundVersionSpec
 
     public String renderStandard()
     {
-        return rawExpression;
+        if ( rawExpression == null )
+        {
+            final StringBuilder sb = new StringBuilder();
+            for ( final VersionSpec spec : specs )
+            {
+                sb.append( spec.renderStandard() );
+            }
+            return sb.toString();
+        }
+        else
+        {
+            return rawExpression;
+        }
     }
 
     public boolean contains( final VersionSpec version )

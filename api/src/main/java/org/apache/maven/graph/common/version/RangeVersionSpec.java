@@ -71,7 +71,10 @@ public class RangeVersionSpec
 
     public String renderStandard()
     {
-        return rawExpression;
+        return rawExpression == null ? String.format( "%s%s,%s%s", ( lowerInclusive ? "[" : "(" ), ( lower == null ? ""
+                                                                      : lower.renderStandard() ),
+                                                      ( upperInclusive ? "]" : ")" ),
+                                                      ( upper == null ? "" : upper.renderStandard() ) ) : rawExpression;
     }
 
     public boolean contains( final VersionSpec version )

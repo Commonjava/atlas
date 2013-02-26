@@ -81,4 +81,10 @@ public interface EProjectNet
 
     void reindex()
         throws GraphDriverException;
+
+    boolean connectFor( final EProjectKey key )
+        throws GraphDriverException;
+
+    void connect( final EProjectGraph graph )
+        throws GraphDriverException;
 }
