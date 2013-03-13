@@ -21,6 +21,7 @@ import java.io.Serializable;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 
 public interface ProjectRelationship<T extends ProjectVersionRef>
     extends Serializable
@@ -37,6 +38,10 @@ public interface ProjectRelationship<T extends ProjectVersionRef>
     ArtifactRef getTargetArtifact();
 
     ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef );
+
+    ProjectRelationship<T> selectDeclaring( SingleVersion version );
+
+    ProjectRelationship<T> selectTarget( SingleVersion version );
 
     boolean isManaged();
 

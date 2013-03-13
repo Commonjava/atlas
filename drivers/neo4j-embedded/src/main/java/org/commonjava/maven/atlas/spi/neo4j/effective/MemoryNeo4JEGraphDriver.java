@@ -16,10 +16,9 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.neo4j.effective;
 
-import java.util.Arrays;
-
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectNet;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.impl.MemoryGraphDatabaseFactory;
@@ -41,21 +40,24 @@ public class MemoryNeo4JEGraphDriver
                                                .newGraphDatabase(), useShutdownHook );
     }
 
-    private MemoryNeo4JEGraphDriver( final MemoryNeo4JEGraphDriver driver )
+    private MemoryNeo4JEGraphDriver( final MemoryNeo4JEGraphDriver driver, final ProjectRelationshipFilter filter,
+                                     final ProjectVersionRef... refs )
+        throws GraphDriverException
     {
-        super( driver );
+        super( driver, filter, refs );
     }
 
     public EGraphDriver newInstance()
         throws GraphDriverException
     {
-        return new MemoryNeo4JEGraphDriver( this );
+        return new MemoryNeo4JEGraphDriver( this, null );
     }
 
-    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectVersionRef... refs )
+    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectRelationshipFilter filter,
+                                         final ProjectVersionRef... refs )
+        throws GraphDriverException
     {
-        final MemoryNeo4JEGraphDriver driver = new MemoryNeo4JEGraphDriver( this );
-        driver.restrictToRoots( Arrays.asList( refs ), net );
+        final MemoryNeo4JEGraphDriver driver = new MemoryNeo4JEGraphDriver( this, filter, refs );
 
         return driver;
     }

@@ -30,6 +30,8 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EGraphFacts;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
@@ -59,32 +61,43 @@ public class EProjectGraph
     private final List<EProjectNet> superNets = new ArrayList<EProjectNet>();
 
     public EProjectGraph( final EProjectNet parent, final EProjectKey key )
+        throws GraphDriverException
     {
         this.key = key;
         this.driver = parent.getDriver()
-                            .newInstanceFrom( this, key.getProject() );
+                            .newInstanceFrom( this, null, key.getProject() );
 
         this.superNets.addAll( parent.getSuperNets() );
         this.superNets.add( parent );
     }
 
-    public EProjectGraph( final EProjectRelationships relationships, final EGraphDriver driver )
+    public EProjectGraph( final EProjectNet parent, final ProjectRelationshipFilter filter, final EProjectKey key )
+        throws GraphDriverException
+    {
+        this.key = key;
+        this.driver = parent.getDriver()
+                            .newInstanceFrom( this, filter, key.getProject() );
+
+        this.superNets.addAll( parent.getSuperNets() );
+        this.superNets.add( parent );
+    }
+
+    public EProjectGraph( final EProjectRelationships relationships, final ProjectRelationshipFilter filter,
+                          final EGraphDriver driver )
+        throws GraphDriverException
     {
         this.key = relationships.getKey();
-        this.driver = driver;
+        this.driver = driver.newInstanceFrom( null, filter, key.getProject() );
 
         add( relationships );
-
-        if ( driver instanceof GloballyBackedGraphDriver )
-        {
-            ( (GloballyBackedGraphDriver) driver ).restrictToRoots( Collections.singleton( key.getProject() ), null );
-        }
     }
 
     // TODO: If we construct like this based on contents of another graph, will we lose that graph's list of variable subgraphs??
     public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship<?>> relationships,
                           final Collection<EProjectRelationships> projectRelationships,
-                          final Set<EProjectCycle> cycles, final EGraphDriver driver )
+                          final Set<EProjectCycle> cycles, final ProjectRelationshipFilter filter,
+                          final EGraphDriver driver )
+        throws GraphDriverException
     {
         // NOTE: It does make sense to allow analysis of snapshots...it just requires different standards for mutability.
         //        final VersionSpec version = key.getProject()
@@ -98,7 +111,7 @@ public class EProjectGraph
         //        }
 
         this.key = key;
-        this.driver = driver;
+        this.driver = driver.newInstanceFrom( null, filter, key.getProject() );
         if ( cycles != null )
         {
             for ( final EProjectCycle cycle : cycles )
@@ -111,11 +124,6 @@ public class EProjectGraph
         for ( final EProjectRelationships project : projectRelationships )
         {
             add( project );
-        }
-
-        if ( driver instanceof GloballyBackedGraphDriver )
-        {
-            ( (GloballyBackedGraphDriver) driver ).restrictToRoots( Collections.singleton( key.getProject() ), null );
         }
     }
 
@@ -199,6 +207,8 @@ public class EProjectGraph
 
         private final EGraphDriver driver;
 
+        private ProjectRelationshipFilter filter;
+
         public Builder( final EProjectRelationships rels, final EGraphDriver driver )
         {
             this.driver = driver;
@@ -216,6 +226,12 @@ public class EProjectGraph
         {
             this.key = key;
             this.driver = driver;
+        }
+
+        public Builder withFilter( final ProjectRelationshipFilter filter )
+        {
+            this.filter = filter;
+            return this;
         }
 
         public Builder withParent( final ProjectVersionRef parent )
@@ -392,6 +408,7 @@ public class EProjectGraph
         }
 
         public EProjectGraph build()
+            throws GraphDriverException
         {
             boolean foundParent = false;
             for ( final ProjectRelationship<?> rel : relationships )
@@ -409,7 +426,7 @@ public class EProjectGraph
                 relationships.add( new ParentRelationship( key.getProject(), key.getProject() ) );
             }
 
-            return new EProjectGraph( key, relationships, projects, cycles, driver );
+            return new EProjectGraph( key, relationships, projects, cycles, filter, driver );
         }
 
         public Builder withCycles( final Set<EProjectCycle> cycles )
@@ -584,15 +601,27 @@ public class EProjectGraph
     public EProjectGraph getGraph( final EProjectKey key )
         throws GraphDriverException
     {
+        return getGraph( null, key );
+    }
+
+    public EProjectGraph getGraph( final ProjectRelationshipFilter filter, final EProjectKey key )
+        throws GraphDriverException
+    {
         if ( driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() ) )
         {
-            return new EProjectGraph( this, key );
+            return new EProjectGraph( this, filter, key );
         }
 
         return null;
     }
 
     public EProjectWeb getWeb( final EProjectKey... keys )
+        throws GraphDriverException
+    {
+        return getWeb( null, keys );
+    }
+
+    public EProjectWeb getWeb( final ProjectRelationshipFilter filter, final EProjectKey... keys )
         throws GraphDriverException
     {
         for ( final EProjectKey key : keys )
@@ -603,7 +632,7 @@ public class EProjectGraph
             }
         }
 
-        return new EProjectWeb( this, keys );
+        return new EProjectWeb( this, filter, keys );
     }
 
     public boolean containsGraph( final EProjectKey key )
@@ -642,4 +671,17 @@ public class EProjectGraph
         driver.reindex();
     }
 
+    public ProjectVersionRef selectVersionFor( final ProjectVersionRef variable, final SingleVersion version )
+        throws GraphDriverException
+    {
+        final ProjectVersionRef ref = variable.selectVersion( version );
+        driver.selectVersionFor( variable, ref );
+
+        return ref;
+    }
+
+    public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+    {
+        return driver.clearSelectedVersions();
+    }
 }

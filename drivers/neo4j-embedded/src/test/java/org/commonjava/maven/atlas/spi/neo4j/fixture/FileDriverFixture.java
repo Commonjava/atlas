@@ -20,11 +20,14 @@ import java.io.File;
 
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.effective.FileNeo4JEGraphDriver;
+import org.commonjava.util.logging.Logger;
 import org.junit.rules.TemporaryFolder;
 
 public class FileDriverFixture
     extends AbstractDriverFixture
 {
+
+    private final Logger logger = new Logger( getClass() );
 
     private final TemporaryFolder folder = new TemporaryFolder();
 
@@ -36,6 +39,7 @@ public class FileDriverFixture
         dbDir.delete();
         dbDir.mkdirs();
 
+        logger.info( "Initializing db in: %s", dbDir );
         return new FileNeo4JEGraphDriver( dbDir );
     }
 

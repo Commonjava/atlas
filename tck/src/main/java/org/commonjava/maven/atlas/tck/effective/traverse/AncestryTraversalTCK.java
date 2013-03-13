@@ -42,6 +42,7 @@ public abstract class AncestryTraversalTCK
     {
         final EProjectGraph.Builder pgBuilder =
             new EProjectGraph.Builder( new ProjectVersionRef( "my.group", "my-artifact", "1.0" ), newDriverInstance() );
+
         final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
         pgBuilder.withParent( parentRef );
 
@@ -57,6 +58,8 @@ public abstract class AncestryTraversalTCK
         graph.traverse( ancestry );
 
         final List<ProjectVersionRef> ancestorRefs = ancestry.getAncestry();
+
+        logger.info( "Ancestry: %s", ancestorRefs );
 
         assertThat( ancestorRefs.size(), equalTo( 3 ) );
 

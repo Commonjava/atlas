@@ -26,6 +26,7 @@ import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 
 public final class DependencyRelationship
     extends AbstractProjectRelationship<ArtifactRef>
@@ -106,6 +107,25 @@ public final class DependencyRelationship
     public Set<ProjectRef> getExcludes()
     {
         return excludes;
+    }
+
+    public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version )
+    {
+        final ProjectVersionRef d = getDeclaring().selectVersion( version );
+        final ArtifactRef t = getTarget();
+
+        return new DependencyRelationship( d, t, getScope(), getIndex(), isManaged(),
+                                           getExcludes().toArray( new ProjectRef[] {} ) );
+    }
+
+    public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version )
+    {
+        final ProjectVersionRef d = getDeclaring();
+        ArtifactRef t = getTarget();
+        t = new ArtifactRef( t.selectVersion( version ), t.getType(), t.getClassifier(), t.isOptional() );
+
+        return new DependencyRelationship( d, t, getScope(), getIndex(), isManaged(),
+                                           getExcludes().toArray( new ProjectRef[] {} ) );
     }
 
 }

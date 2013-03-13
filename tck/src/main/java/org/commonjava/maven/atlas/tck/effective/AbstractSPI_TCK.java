@@ -17,10 +17,14 @@
 package org.commonjava.maven.atlas.tck.effective;
 
 import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.commonjava.util.logging.Logger;
 
 public abstract class AbstractSPI_TCK
 {
-    
-    protected abstract EGraphDriver newDriverInstance() throws Exception;
+
+    protected final Logger logger = new Logger( getClass() );
+
+    protected abstract EGraphDriver newDriverInstance()
+        throws Exception;
 
 }

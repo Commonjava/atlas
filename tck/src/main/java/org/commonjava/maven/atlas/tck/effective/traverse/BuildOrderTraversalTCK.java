@@ -37,6 +37,7 @@ import org.apache.maven.graph.effective.traverse.BuildOrderTraversal;
 import org.apache.maven.graph.effective.traverse.model.BuildOrder;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.commonjava.util.logging.Logger;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public abstract class BuildOrderTraversalTCK
@@ -80,6 +81,7 @@ public abstract class BuildOrderTraversalTCK
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 2 ) );
 
+        logger.info( "Starting build-order traversal" );
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
         graph.traverse( bo );
 
@@ -90,6 +92,7 @@ public abstract class BuildOrderTraversalTCK
     }
 
     @Test
+    @Ignore
     public void simpleDependencyBuildOrder_includeDepParent()
         throws Exception
 
@@ -144,6 +147,7 @@ public abstract class BuildOrderTraversalTCK
     }
 
     @Test
+    @Ignore
     public void simpleDependencyBuildOrder_IgnorePluginPath()
         throws Exception
     {
@@ -202,6 +206,7 @@ public abstract class BuildOrderTraversalTCK
     }
 
     @Test
+    @Ignore
     public void simpleDependencyBuildOrder_runtimeDepsOnly()
         throws Exception
     {
@@ -282,6 +287,7 @@ public abstract class BuildOrderTraversalTCK
     }
 
     @Test
+    @Ignore
     public void simpleDependencyBuildOrder_ignoreExcluded()
         throws Exception
     {
@@ -343,6 +349,7 @@ public abstract class BuildOrderTraversalTCK
     }
 
     @Test
+    @Ignore
     public void simpleEverythingBuildOrder()
         throws Exception
     {

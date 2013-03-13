@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.spi.GraphDriverException;
@@ -30,6 +32,11 @@ import org.apache.maven.graph.spi.effective.EGraphDriver;
 public interface EProjectNet
     extends EProjectRelationshipCollection
 {
+
+    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions();
+
+    ProjectVersionRef selectVersionFor( ProjectVersionRef variable, SingleVersion version )
+        throws GraphDriverException;
 
     EGraphDriver getDriver();
 
@@ -47,25 +54,31 @@ public interface EProjectNet
 
     void addCycle( final EProjectCycle cycle );
 
-    boolean isCycleParticipant( final ProjectRelationship<?> rel );
+    boolean isCycleParticipant( ProjectRelationship<?> rel );
 
-    boolean isCycleParticipant( final ProjectVersionRef ref );
+    boolean isCycleParticipant( ProjectVersionRef ref );
 
-    Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref );
+    Set<ProjectRelationship<?>> getRelationshipsTargeting( ProjectVersionRef ref );
 
     boolean isDerivedFrom( EProjectNet net );
+
+    EProjectGraph getGraph( ProjectRelationshipFilter filter, EProjectKey key )
+        throws GraphDriverException;
 
     EProjectGraph getGraph( EProjectKey key )
         throws GraphDriverException;
 
-    EProjectWeb getWeb( final EProjectKey... keys )
+    EProjectWeb getWeb( EProjectKey... keys )
+        throws GraphDriverException;
+
+    EProjectWeb getWeb( ProjectRelationshipFilter filter, EProjectKey... keys )
         throws GraphDriverException;
 
     boolean containsGraph( EProjectKey eProjectKey );
 
     Set<ProjectVersionRef> getAllProjects();
 
-    Set<ProjectRelationship<?>> getAllRelationships();
+    //    Set<ProjectRelationship<?>> getAllRelationships();
 
     Map<String, String> getMetadata( EProjectKey key );
 
@@ -82,9 +95,9 @@ public interface EProjectNet
     void reindex()
         throws GraphDriverException;
 
-    boolean connectFor( final EProjectKey key )
+    boolean connectFor( EProjectKey key )
         throws GraphDriverException;
 
-    void connect( final EProjectGraph graph )
+    void connect( EProjectGraph graph )
         throws GraphDriverException;
 }

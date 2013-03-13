@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.commonjava.maven.atlas.spi.neo4j.effective;
+package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
+import org.commonjava.maven.atlas.spi.neo4j.effective.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
@@ -108,11 +109,13 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         final Relationship rel = path.lastRelationship();
         if ( rel == null )
         {
+            //            logger.info( "MISSING last-relationship: %s. exclude and continue", rel );
             return Evaluation.EXCLUDE_AND_CONTINUE;
         }
 
         if ( seenRels.contains( rel.getId() ) )
         {
+            //            logger.info( "SEEN last-relationship: %s. exclude and prune", rel );
             evalDupes++;
             return Evaluation.EXCLUDE_AND_PRUNE;
         }
@@ -121,19 +124,21 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         if ( accepted.contains( rel.getId() ) )
         {
+            //            logger.info( "ACCEPTED last-relationship: %s. include and continue", rel );
             evalMemberHits++;
             evalPreChecks++;
             return Evaluation.INCLUDE_AND_CONTINUE;
         }
         else if ( rejected.contains( rel.getId() ) )
         {
+            //            logger.info( "REJECTED last-relationship: %s. exclude and prune", rel );
             evalMemberHits++;
             return Evaluation.EXCLUDE_AND_PRUNE;
         }
 
-        final Node node = path.endNode();
-
-        if ( driver.inMembership( node ) && driver.inMembership( rel ) )
+        final Set<Long> roots = driver.getRootIds();
+        if ( roots == null || roots.isEmpty() || roots.contains( path.startNode()
+                                                                     .getId() ) )
         {
             evalMemberHits++;
 
@@ -142,7 +147,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             final List<ProjectRelationship<?>> relPath = driver.convertToRelationships( path.relationships() );
             if ( relPath.indexOf( lastRel ) == relPath.size() - 1 )
             {
-                logger.warn( "\n\n\n\n\nREMOVING last-relationship: %s from path!\n\n\n\n\n" );
+                //                logger.warn( "\n\n\n\n\nREMOVING last-relationship: %s from path!\n\n\n\n\n" );
                 relPath.remove( relPath.size() - 1 );
             }
 
@@ -154,6 +159,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             {
                 if ( traversal.preCheck( lastRel, relPath, pass ) )
                 {
+                    //                    logger.info( "PRE-CHECK+ last-relationship: %s. include and continue", rel );
                     accepted.add( rel.getId() );
                     evalPreChecks++;
 
@@ -161,15 +167,18 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                 }
                 else
                 {
+                    //                    logger.info( "PRE-CHECK- last-relationship: %s.", rel );
                     rejected.add( rel.getId() );
                 }
             }
         }
         else
         {
+            //            logger.info( "NON-ROOTED-PATH: %s.", path );
             evalMemberMisses++;
         }
 
+        //        logger.info( "exclude and prune" );
         return Evaluation.EXCLUDE_AND_PRUNE;
     }
 
@@ -178,26 +187,24 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         expHits++;
 
         final Node node = path.endNode();
-        //        logger.info( "START expansion for node: %s", node );
+        //        logger.info( "START expansion for: %s", path );
 
         // TODO: Is node(0) appropriate to see??
-        if ( node.getId() != 0 && !driver.inMembership( node ) )
+        final Set<Long> roots = driver.getRootIds();
+        if ( node.getId() != 0 && roots != null && roots.isEmpty() && !roots.contains( path.startNode()
+                                                                                           .getId() ) )
         {
             expMemberMisses++;
             //            logger.info( "%s not in membership. Skipping expansion.", node );
             return Collections.emptySet();
         }
 
-        final Relationship rel = path.lastRelationship();
-        if ( rel != null )
-        {
-            if ( !driver.inMembership( rel ) )
-            {
-                //                logger.info( "Last relationship (%s) is not in membership.", rel );
-                expMemberMisses++;
-                return Collections.emptySet();
-            }
-        }
+        //        final Relationship rel = path.lastRelationship();
+        //        if ( rel != null )
+        //        {
+        //            expMemberMisses++;
+        //            return Collections.emptySet();
+        //        }
 
         expMemberHits++;
 
@@ -213,13 +220,17 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         List<ProjectRelationship<?>> rels = null;
         for ( final Relationship r : rs )
         {
+            //            logger.info( "Attempting to expand: %s", r );
+
             if ( accepted.contains( r.getId() ) )
             {
+                //                logger.info( "Previously accepted for expansion: %s", r.getId() );
                 result.add( r );
                 continue;
             }
             else if ( rejected.contains( r.getId() ) )
             {
+                //                logger.warn( "Previously rejected for expansion: %s", r.getId() );
                 continue;
             }
 

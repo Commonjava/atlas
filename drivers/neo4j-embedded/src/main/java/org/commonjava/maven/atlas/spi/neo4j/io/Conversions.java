@@ -28,6 +28,7 @@ import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
@@ -88,11 +89,17 @@ public final class Conversions
 
     public static final String CYCLE_MEMBERSHIP = "cycle-membership";
 
+    public static final String VARIABLE = "_variable";
+
+    public static final String CONNECTED = "_connected";
+
+    public static final String SELECTED_VERSION = "_selected-version";
+
     private Conversions()
     {
     }
 
-    public static void toNodeProperties( final ProjectVersionRef ref, final Node node )
+    public static void toNodeProperties( final ProjectVersionRef ref, final Node node, final boolean connected )
     {
         final String g = ref.getGroupId();
         final String a = ref.getArtifactId();
@@ -108,6 +115,13 @@ public final class Conversions
         node.setProperty( GROUP_ID, g );
         node.setProperty( VERSION, v );
         node.setProperty( GAV, ref.toString() );
+
+        if ( !ref.isRelease() )
+        {
+            node.setProperty( VARIABLE, true );
+        }
+
+        markConnected( node, connected );
     }
 
     public static boolean isAtlasType( final Relationship rel )
@@ -125,6 +139,11 @@ public final class Conversions
 
     public static ProjectVersionRef toProjectVersionRef( final Node node )
     {
+        return toProjectVersionRef( node, true );
+    }
+
+    public static ProjectVersionRef toProjectVersionRef( final Node node, final boolean useSelectedVersion )
+    {
         if ( node == null )
         {
             return null;
@@ -137,7 +156,12 @@ public final class Conversions
 
         final String g = getStringProperty( GROUP_ID, node );
         final String a = getStringProperty( ARTIFACT_ID, node );
-        final String v = getStringProperty( VERSION, node );
+        String v = getStringProperty( VERSION, node );
+
+        if ( getBooleanProperty( VARIABLE, node, false ) )
+        {
+            v = getStringProperty( SELECTED_VERSION, node );
+        }
 
         if ( empty( g ) || empty( a ) || empty( v ) )
         {
@@ -359,6 +383,17 @@ public final class Conversions
         return null;
     }
 
+    public static Boolean getBooleanProperty( final String prop, final PropertyContainer container,
+                                              final Boolean defaultValue )
+    {
+        if ( container.hasProperty( prop ) )
+        {
+            return (Boolean) container.getProperty( prop );
+        }
+
+        return defaultValue;
+    }
+
     public static Integer getIntegerProperty( final String prop, final PropertyContainer container )
     {
         if ( container.hasProperty( prop ) )
@@ -413,6 +448,32 @@ public final class Conversions
         node.setProperty( CYCLE_ID, cycleId );
         node.setProperty( CYCLE_RELATIONSHIPS, rawCycleId );
         node.setProperty( CYCLE_PROJECTS, join( refs, "," ) );
+    }
+
+    public static boolean isConnected( final Node node )
+    {
+        return getBooleanProperty( CONNECTED, node );
+    }
+
+    public static void markConnected( final Node node, final boolean connected )
+    {
+        node.setProperty( CONNECTED, connected );
+    }
+
+    public static void selectVersion( final Node node, final ProjectVersionRef ref, final SingleVersion newVersion )
+    {
+        if ( getBooleanProperty( VARIABLE, node, false ) )
+        {
+            node.setProperty( SELECTED_VERSION, newVersion );
+        }
+    }
+
+    public static void deselectVersion( final Node node, final ProjectVersionRef ref )
+    {
+        if ( getBooleanProperty( VARIABLE, node, false ) && getStringProperty( SELECTED_VERSION, node ) != null )
+        {
+            node.removeProperty( SELECTED_VERSION );
+        }
     }
 
 }

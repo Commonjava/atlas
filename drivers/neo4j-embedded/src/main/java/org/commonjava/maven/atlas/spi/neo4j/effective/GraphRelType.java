@@ -16,6 +16,9 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.neo4j.effective;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.neo4j.graphdb.RelationshipType;
 
 public enum GraphRelType
@@ -75,5 +78,19 @@ public enum GraphRelType
         }
 
         return null;
+    }
+
+    public static Set<GraphRelType> atlasRelationshipTypes()
+    {
+        final Set<GraphRelType> types = new HashSet<GraphRelType>();
+        for ( final GraphRelType type : values() )
+        {
+            if ( type.isAtlasRelationship() )
+            {
+                types.add( type );
+            }
+        }
+
+        return types;
     }
 }

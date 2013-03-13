@@ -21,6 +21,7 @@ import java.io.Serializable;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 
 public final class ExtensionRelationship
     extends AbstractProjectRelationship<ProjectVersionRef>
@@ -44,6 +45,22 @@ public final class ExtensionRelationship
     public ArtifactRef getTargetArtifact()
     {
         return new ArtifactRef( getTarget(), null, null, false );
+    }
+
+    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
+    {
+        final ProjectVersionRef d = getDeclaring().selectVersion( version );
+        final ProjectVersionRef t = getTarget();
+
+        return new ExtensionRelationship( d, t, getIndex() );
+    }
+
+    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
+    {
+        final ProjectVersionRef d = getDeclaring();
+        final ProjectVersionRef t = getTarget().selectVersion( version );
+
+        return new ExtensionRelationship( d, t, getIndex() );
     }
 
 }

@@ -22,6 +22,7 @@ import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 
 public final class PluginDependencyRelationship
     extends AbstractProjectRelationship<ArtifactRef>
@@ -105,6 +106,23 @@ public final class PluginDependencyRelationship
     public ArtifactRef getTargetArtifact()
     {
         return getTarget();
+    }
+
+    public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version )
+    {
+        final ProjectVersionRef d = getDeclaring().selectVersion( version );
+        final ArtifactRef t = getTarget();
+
+        return new PluginDependencyRelationship( d, getPlugin(), t, getIndex(), isManaged() );
+    }
+
+    public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version )
+    {
+        final ProjectVersionRef d = getDeclaring();
+        ArtifactRef t = getTarget();
+        t = new ArtifactRef( t.selectVersion( version ), t.getType(), t.getClassifier(), t.isOptional() );
+
+        return new PluginDependencyRelationship( d, getPlugin(), t, getIndex(), isManaged() );
     }
 
 }

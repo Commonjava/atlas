@@ -31,13 +31,16 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.AbstractProjectRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.rel.RelationshipComparator;
 import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
+import org.apache.maven.graph.effective.traverse.FilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.util.EGraphUtils;
 import org.apache.maven.graph.spi.GraphDriverException;
@@ -57,6 +60,12 @@ public class JungEGraphDriver
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
+    private transient Map<ProjectVersionRef, ProjectVersionRef> selected =
+        new HashMap<ProjectVersionRef, ProjectVersionRef>();
+
+    private transient Map<ProjectRelationship<?>, ProjectRelationship<?>> replaced =
+        new HashMap<ProjectRelationship<?>, ProjectRelationship<?>>();
+
     private final Map<String, Set<ProjectVersionRef>> metadataOwners = new HashMap<String, Set<ProjectVersionRef>>();
 
     private final Map<ProjectVersionRef, Map<String, String>> metadata =
@@ -68,20 +77,63 @@ public class JungEGraphDriver
     {
     }
 
-    public JungEGraphDriver( final JungEGraphDriver from )
+    public JungEGraphDriver( final JungEGraphDriver from, final ProjectRelationshipFilter filter,
+                             final EProjectNet net, final ProjectVersionRef... roots )
+        throws GraphDriverException
     {
-        incompleteSubgraphs.addAll( from.incompleteSubgraphs );
-        variableSubgraphs.addAll( from.variableSubgraphs );
-
-        for ( final Map.Entry<ProjectVersionRef, Map<String, String>> entry : from.metadata.entrySet() )
+        Collection<ProjectRelationship<?>> rels;
+        if ( filter != null && roots.length > 0 )
         {
-            metadata.put( entry.getKey(), new HashMap<String, String>( entry.getValue() ) );
+            rels = filterRelationships( filter, net, roots );
+        }
+        else
+        {
+            rels = from.getAllRelationships();
         }
 
-        for ( final ProjectRelationship<?> rel : from.getAllRelationships() )
+        for ( final ProjectRelationship<?> rel : rels )
         {
             addRelationship( rel );
         }
+
+        for ( final ProjectVersionRef ref : from.incompleteSubgraphs )
+        {
+            if ( graph.containsVertex( ref ) )
+            {
+                incompleteSubgraphs.add( ref );
+            }
+        }
+
+        for ( final ProjectVersionRef ref : from.variableSubgraphs )
+        {
+            if ( graph.containsVertex( ref ) )
+            {
+                variableSubgraphs.add( ref );
+            }
+        }
+
+        for ( final Map.Entry<ProjectVersionRef, Map<String, String>> entry : from.metadata.entrySet() )
+        {
+            final ProjectVersionRef ref = entry.getKey();
+
+            if ( graph.containsVertex( ref ) )
+            {
+                metadata.put( ref, new HashMap<String, String>( entry.getValue() ) );
+            }
+        }
+    }
+
+    private Set<ProjectRelationship<?>> filterRelationships( final ProjectRelationshipFilter filter,
+                                                             final EProjectNet net, final ProjectVersionRef... roots )
+        throws GraphDriverException
+    {
+        final FilteringTraversal traversal = new FilteringTraversal( filter, true );
+        for ( final ProjectVersionRef root : roots )
+        {
+            traverse( traversal, net, root );
+        }
+
+        return new HashSet<ProjectRelationship<?>>( traversal.getCapturedRelationships() );
     }
 
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
@@ -321,11 +373,23 @@ public class JungEGraphDriver
             return new ArtifactRef( getTarget(), "pom", null, false );
         }
 
+        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
+        {
+            return new SelfEdge( getDeclaring().selectVersion( version ) );
+        }
+
+        public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
+        {
+            return new SelfEdge( getDeclaring().selectVersion( version ) );
+        }
+
     }
 
-    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectVersionRef... from )
+    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectRelationshipFilter filter,
+                                         final ProjectVersionRef... from )
+        throws GraphDriverException
     {
-        final JungEGraphDriver neo = new JungEGraphDriver( this );
+        final JungEGraphDriver neo = new JungEGraphDriver( this, filter, net, from );
         neo.restrictProjectMembership( Arrays.asList( from ) );
 
         return neo;
@@ -545,6 +609,86 @@ public class JungEGraphDriver
     public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
     {
         return metadataOwners.get( key );
+    }
+
+    public void selectVersionFor( final ProjectVersionRef variable, final ProjectVersionRef select )
+        throws GraphDriverException
+    {
+        if ( !select.isSpecificVersion() )
+        {
+            throw new GraphDriverException( "Cannot select non-concrete version! Attempted to select: %s", select );
+        }
+
+        if ( variable.isSpecificVersion() )
+        {
+            throw new GraphDriverException(
+                                            "Cannot select version if target is already a concrete version! Attempted to select for: %s",
+                                            variable );
+        }
+
+        selected.put( variable, select );
+
+        final Collection<ProjectRelationship<?>> rels = graph.getIncidentEdges( variable );
+        for ( final ProjectRelationship<?> rel : rels )
+        {
+
+            ProjectRelationship<?> repl;
+            if ( rel.getTarget()
+                    .asProjectVersionRef()
+                    .equals( variable ) )
+            {
+                repl = rel.selectTarget( (SingleVersion) select.getVersionSpec() );
+            }
+            else if ( rel.getDeclaring()
+                         .equals( variable ) )
+            {
+                repl = rel.selectDeclaring( (SingleVersion) select.getVersionSpec() );
+            }
+            else
+            {
+                continue;
+            }
+
+            graph.removeEdge( rel );
+            graph.addEdge( repl, repl.getDeclaring(), repl.getTarget()
+                                                          .asProjectVersionRef() );
+
+            replaced.put( rel, repl );
+        }
+    }
+
+    public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+    {
+        final Map<ProjectVersionRef, ProjectVersionRef> selected =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>( this.selected );
+
+        selected.clear();
+
+        for ( final Map.Entry<ProjectRelationship<?>, ProjectRelationship<?>> entry : replaced.entrySet() )
+        {
+            final ProjectRelationship<?> rel = entry.getKey();
+            final ProjectRelationship<?> repl = entry.getValue();
+
+            graph.removeEdge( repl );
+            graph.addEdge( rel, rel.getDeclaring(), rel.getTarget()
+                                                       .asProjectVersionRef() );
+        }
+
+        for ( final ProjectVersionRef select : new HashSet<ProjectVersionRef>( selected.values() ) )
+        {
+            final Collection<ProjectRelationship<?>> edges = graph.getIncidentEdges( select );
+            if ( edges.isEmpty() )
+            {
+                graph.removeVertex( select );
+            }
+        }
+
+        return selected;
+    }
+
+    public Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
+    {
+        return selected;
     }
 
 }

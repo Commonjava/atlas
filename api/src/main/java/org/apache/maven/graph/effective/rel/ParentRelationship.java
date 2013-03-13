@@ -21,6 +21,7 @@ import java.io.Serializable;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 
 public final class ParentRelationship
     extends AbstractProjectRelationship<ProjectVersionRef>
@@ -57,6 +58,28 @@ public final class ParentRelationship
     public boolean isTerminus()
     {
         return getDeclaring().equals( getTarget() );
+    }
+
+    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
+    {
+        ProjectVersionRef d = getDeclaring();
+        final ProjectVersionRef t = getTarget();
+        final boolean self = d.equals( t );
+
+        d = d.selectVersion( version );
+
+        return new ParentRelationship( d, self ? d : t );
+    }
+
+    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
+    {
+        final ProjectVersionRef d = getDeclaring();
+        ProjectVersionRef t = getTarget();
+        final boolean self = d.equals( t );
+
+        t = t.selectVersion( version );
+
+        return new ParentRelationship( self ? t : d, t );
     }
 
 }

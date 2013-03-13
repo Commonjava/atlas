@@ -23,6 +23,7 @@ package org.commonjava.maven.atlas.spi.neo4j.impl;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 
+import java.io.File;
 import java.io.IOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -777,5 +778,12 @@ public class EphemeralFileSystemAbstraction
         {
             this.buf.clear();
         }
+    }
+
+    public void autoCreatePath( final File path )
+        throws IOException
+    {
+        final EphemeralFileData data = new EphemeralFileData();
+        free( files.put( path.getPath(), data ) );
     }
 }

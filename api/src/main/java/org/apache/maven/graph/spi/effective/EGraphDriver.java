@@ -24,6 +24,7 @@ import java.util.Set;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
+import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
@@ -37,10 +38,6 @@ public interface EGraphDriver
 
     void reindex()
         throws GraphDriverException;
-
-    void restrictProjectMembership( Collection<ProjectVersionRef> refs );
-
-    void restrictRelationshipMembership( Collection<ProjectRelationship<?>> rels );
 
     Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( ProjectVersionRef root );
 
@@ -87,8 +84,16 @@ public interface EGraphDriver
 
     void addProjectMetadata( ProjectVersionRef ref, Map<String, String> metadata );
 
-    EGraphDriver newInstanceFrom( EProjectNet net, ProjectVersionRef... refs );
+    EGraphDriver newInstanceFrom( EProjectNet net, ProjectRelationshipFilter filter, ProjectVersionRef... refs )
+        throws GraphDriverException;
 
     Set<ProjectVersionRef> getProjectsWithMetadata( String key );
+
+    void selectVersionFor( ProjectVersionRef variable, ProjectVersionRef select )
+        throws GraphDriverException;
+
+    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions();
+
+    Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions();
 
 }
