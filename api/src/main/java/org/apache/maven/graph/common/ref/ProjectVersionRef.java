@@ -96,7 +96,7 @@ public class ProjectVersionRef
 
     public boolean isRelease()
     {
-        return getVersionSpec().isConcrete();
+        return getVersionSpec().isRelease();
     }
 
     public boolean isSpecificVersion()
@@ -107,6 +107,12 @@ public class ProjectVersionRef
     public boolean matchesVersion( final SingleVersion version )
     {
         return getVersionSpec().contains( version );
+    }
+
+    public ProjectVersionRef selectVersion( final String version )
+    {
+        final SingleVersion single = VersionUtils.createSingleVersion( version );
+        return selectVersion( single );
     }
 
     public ProjectVersionRef selectVersion( final SingleVersion version )
@@ -216,7 +222,7 @@ public class ProjectVersionRef
 
     public boolean isCompound()
     {
-        return !getVersionSpec().isSingle();
+        return !getVersionSpec().isConcrete();
     }
 
     public boolean isSnapshot()

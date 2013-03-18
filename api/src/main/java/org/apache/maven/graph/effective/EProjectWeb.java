@@ -446,6 +446,7 @@ public class EProjectWeb
     }
 
     public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+        throws GraphDriverException
     {
         return driver.clearSelectedVersions();
     }

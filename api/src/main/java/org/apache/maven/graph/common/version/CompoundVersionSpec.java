@@ -156,6 +156,11 @@ public class CompoundVersionSpec
         return false;
     }
 
+    public boolean isRelease()
+    {
+        return !isSnapshot();
+    }
+
     public boolean isSingle()
     {
         return specs.size() == 1 && specs.get( 0 )

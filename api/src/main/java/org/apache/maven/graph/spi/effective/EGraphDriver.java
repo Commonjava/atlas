@@ -92,8 +92,10 @@ public interface EGraphDriver
     void selectVersionFor( ProjectVersionRef variable, ProjectVersionRef select )
         throws GraphDriverException;
 
-    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions();
+    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+        throws GraphDriverException;
 
-    Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions();
+    Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
+        throws GraphDriverException;
 
 }

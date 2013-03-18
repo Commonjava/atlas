@@ -628,7 +628,8 @@ public class JungEGraphDriver
 
         selected.put( variable, select );
 
-        final Collection<ProjectRelationship<?>> rels = graph.getIncidentEdges( variable );
+        // Don't worry about selecting for outbound edges, as those subgraphs are supposed to be the same...
+        final Collection<ProjectRelationship<?>> rels = graph.getInEdges( variable );
         for ( final ProjectRelationship<?> rel : rels )
         {
 
@@ -638,11 +639,6 @@ public class JungEGraphDriver
                     .equals( variable ) )
             {
                 repl = rel.selectTarget( (SingleVersion) select.getVersionSpec() );
-            }
-            else if ( rel.getDeclaring()
-                         .equals( variable ) )
-            {
-                repl = rel.selectDeclaring( (SingleVersion) select.getVersionSpec() );
             }
             else
             {
@@ -676,7 +672,7 @@ public class JungEGraphDriver
 
         for ( final ProjectVersionRef select : new HashSet<ProjectVersionRef>( selected.values() ) )
         {
-            final Collection<ProjectRelationship<?>> edges = graph.getIncidentEdges( select );
+            final Collection<ProjectRelationship<?>> edges = graph.getInEdges( select );
             if ( edges.isEmpty() )
             {
                 graph.removeVertex( select );

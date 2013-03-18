@@ -14,26 +14,33 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.commonjava.maven.atlas.tck.effective;
+package org.commonjava.maven.atlas.spi.neo4j;
 
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.junit.Assert.assertThat;
-
+import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.junit.Test;
+import org.commonjava.maven.atlas.spi.neo4j.fixture.MemoryDriverFixture;
+import org.commonjava.maven.atlas.tck.effective.SubGraphSelectionTCK;
+import org.commonjava.util.logging.Log4jUtil;
+import org.junit.BeforeClass;
+import org.junit.Rule;
 
-public abstract class EGraphDriverTCK
-    extends AbstractSPI_TCK
+public class MemorySubGraphSelectionTest
+    extends SubGraphSelectionTCK
 {
+    @Rule
+    public MemoryDriverFixture fixture = new MemoryDriverFixture();
 
-    @Test
-    public void childDriverIsDerivedFromParent()
-        throws Exception
+    @BeforeClass
+    public static void logging()
     {
-        final EGraphDriver parent = newDriverInstance();
-        final EGraphDriver child = parent.newInstance();
-
-        assertThat( child.isDerivedFrom( parent ), equalTo( true ) );
+        Log4jUtil.configure( Level.DEBUG );
+        //        Log4jUtil.configure( Level.INFO );
     }
 
+    @Override
+    protected EGraphDriver newDriverInstance()
+        throws Exception
+    {
+        return fixture.newDriverInstance();
+    }
 }

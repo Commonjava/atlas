@@ -14,22 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.commonjava.maven.atlas.spi.neo4j;
+package org.commonjava.maven.atlas.spi.jung;
 
 import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.commonjava.maven.atlas.spi.neo4j.fixture.MemoryDriverFixture;
-import org.commonjava.maven.atlas.tck.effective.GloballyBackedDriverTCK;
+import org.commonjava.maven.atlas.spi.jung.effective.JungEGraphDriver;
+import org.commonjava.maven.atlas.tck.effective.EProjectGraphTCK;
 import org.commonjava.util.logging.Log4jUtil;
 import org.junit.BeforeClass;
-import org.junit.Rule;
 
-public class MemoryDriverTest
-    extends GloballyBackedDriverTCK
+public class SubGraphSelectionTest
+    extends EProjectGraphTCK
 {
-    @Rule
-    public MemoryDriverFixture fixture = new MemoryDriverFixture();
-
     @BeforeClass
     public static void logging()
     {
@@ -40,6 +36,6 @@ public class MemoryDriverTest
     protected EGraphDriver newDriverInstance()
         throws Exception
     {
-        return fixture.newDriverInstance();
+        return new JungEGraphDriver();
     }
 }

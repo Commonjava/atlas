@@ -266,7 +266,31 @@ public class SingleVersion
 
     public boolean contains( final VersionSpec version )
     {
-        return version.isSingle() && equals( version.getSingleVersion() );
+        if ( version.isSingle() )
+        {
+            final SingleVersion sv = version.getSingleVersion();
+            if ( !getBaseVersion().equals( sv.getBaseVersion() ) )
+            {
+                // if my base version doesn't match the other's base version, there's no way I can contain it.
+                return false;
+            }
+
+            if ( isLocalSnapshot() )
+            {
+                // if I'm a local snapshot, then I can contain any other single snapshot.
+                return version.isSnapshot();
+            }
+            else if ( sv.isLocalSnapshot() )
+            {
+                // either I'm a release or a timestamped snapshot.
+                // if the other one is a local snapshot, I DON'T contain it.
+                return false;
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     public int compareTo( final VersionSpec other )
@@ -276,8 +300,7 @@ public class SingleVersion
 
     public boolean isRelease()
     {
-        final VersionPhrase last = phrases.get( phrases.size() - 1 );
-        return !last.isSnapshot();
+        return !isSnapshot();
     }
 
     @Override
@@ -300,12 +323,41 @@ public class SingleVersion
 
     public boolean isSnapshot()
     {
-        return !isRelease();
+        final VersionPhrase last = phrases.get( phrases.size() - 1 );
+        return last.isSnapshot();
+    }
+
+    public boolean isLocalSnapshot()
+    {
+        final VersionPart lastPart = getLastPart();
+        if ( lastPart instanceof SnapshotPart )
+        {
+            final SnapshotPart part = (SnapshotPart) lastPart;
+            return part.isLocalSnapshot();
+        }
+
+        return false;
+    }
+
+    private VersionPart getLastPart()
+    {
+        int idx = phrases.size();
+        VersionPhrase last;
+        List<VersionPart> parts;
+        do
+        {
+            idx--;
+            last = phrases.get( idx );
+            parts = last.getVersionParts();
+        }
+        while ( idx > 0 && parts.isEmpty() );
+
+        return parts == null || parts.isEmpty() ? null : parts.get( parts.size() - 1 );
     }
 
     public boolean isConcrete()
     {
-        return isRelease();
+        return isRelease() || !isLocalSnapshot();
     }
 
     public boolean isSingle()

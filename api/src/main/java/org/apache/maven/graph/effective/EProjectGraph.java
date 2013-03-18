@@ -681,6 +681,7 @@ public class EProjectGraph
     }
 
     public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+        throws GraphDriverException
     {
         return driver.clearSelectedVersions();
     }

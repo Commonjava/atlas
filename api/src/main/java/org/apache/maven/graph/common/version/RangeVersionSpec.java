@@ -51,7 +51,7 @@ public class RangeVersionSpec
         this.lowerInclusive = lowerInclusive;
         this.upperInclusive = upperInclusive;
 
-        snapshotAllowed = ( lower != null && !lower.isRelease() ) || ( upper != null && !upper.isRelease() );
+        snapshotAllowed = ( lower != null && lower.isSnapshot() ) || ( upper != null && upper.isSnapshot() );
     }
 
     public boolean isPinned()
@@ -67,6 +67,11 @@ public class RangeVersionSpec
     public boolean isSnapshot()
     {
         return snapshotAllowed;
+    }
+
+    public boolean isRelease()
+    {
+        return !isSnapshot();
     }
 
     public String renderStandard()

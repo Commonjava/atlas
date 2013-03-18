@@ -18,17 +18,17 @@ package org.commonjava.maven.atlas.spi.neo4j;
 
 import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.commonjava.maven.atlas.spi.neo4j.fixture.MemoryDriverFixture;
-import org.commonjava.maven.atlas.tck.effective.GloballyBackedDriverTCK;
+import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
+import org.commonjava.maven.atlas.tck.effective.SubGraphSelectionTCK;
 import org.commonjava.util.logging.Log4jUtil;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 
-public class MemoryDriverTest
-    extends GloballyBackedDriverTCK
+public class FileSubGraphSelectionTest
+    extends SubGraphSelectionTCK
 {
     @Rule
-    public MemoryDriverFixture fixture = new MemoryDriverFixture();
+    public FileDriverFixture fixture = new FileDriverFixture();
 
     @BeforeClass
     public static void logging()

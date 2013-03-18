@@ -68,4 +68,6 @@ public interface VersionSpec
      * @see VersionSpec#isSingle()
      */
     SingleVersion getSingleVersion();
+
+    boolean isRelease();
 }

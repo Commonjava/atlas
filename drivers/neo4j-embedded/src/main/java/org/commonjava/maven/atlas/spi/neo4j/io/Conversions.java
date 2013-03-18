@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.spi.neo4j.io;
 
 import static org.apache.commons.lang.StringUtils.join;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -28,7 +29,6 @@ import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
@@ -47,7 +47,7 @@ public final class Conversions
 
     private static final Logger LOGGER = new Logger( Conversions.class );
 
-    public static final String RELATIONSHIP_ID = "relationship-id";
+    public static final String RELATIONSHIP_ID = "relationship_id";
 
     public static final String GROUP_ID = "groupId";
 
@@ -63,9 +63,9 @@ public final class Conversions
 
     public static final String IS_MANAGED = "managed";
 
-    public static final String PLUGIN_GROUP_ID = "plugin-groupId";
+    public static final String PLUGIN_GROUP_ID = "plugin_groupId";
 
-    public static final String PLUGIN_ARTIFACT_ID = "plugin-artifactId";
+    public static final String PLUGIN_ARTIFACT_ID = "plugin_artifactId";
 
     public static final String TYPE = "type";
 
@@ -77,23 +77,27 @@ public final class Conversions
 
     public static final String EXCLUDES = "excludes";
 
-    public static final String CYCLE_ID = "cycle-id";
+    public static final String CYCLE_ID = "cycle_id";
 
-    public static final String CYCLE_RELATIONSHIPS = "relationship-participants";
+    public static final String CYCLE_RELATIONSHIPS = "relationship_participants";
 
-    public static final String CYCLE_PROJECTS = "project-participants";
+    public static final String CYCLE_PROJECTS = "project_participants";
 
-    private static final String METADATA_PREFIX = "_metadata-";
+    private static final String METADATA_PREFIX = "_metadata_";
 
-    public static final String NODE_TYPE = "_node-type";
+    public static final String NODE_TYPE = "_node_type";
 
-    public static final String CYCLE_MEMBERSHIP = "cycle-membership";
+    public static final String CYCLE_MEMBERSHIP = "cycle_membership";
 
     public static final String VARIABLE = "_variable";
 
     public static final String CONNECTED = "_connected";
 
-    public static final String SELECTED_VERSION = "_selected-version";
+    public static final String SELECTED_FOR = "_selected_for";
+
+    public static final String DESELECTED_FOR = "_deselected_for";
+
+    public static final String CLONE_OF = "_clone_of";
 
     private Conversions()
     {
@@ -116,8 +120,9 @@ public final class Conversions
         node.setProperty( VERSION, v );
         node.setProperty( GAV, ref.toString() );
 
-        if ( !ref.isRelease() )
+        if ( ref.isCompound() )
         {
+            LOGGER.debug( "Marking: %s as variable.", ref );
             node.setProperty( VARIABLE, true );
         }
 
@@ -139,11 +144,6 @@ public final class Conversions
 
     public static ProjectVersionRef toProjectVersionRef( final Node node )
     {
-        return toProjectVersionRef( node, true );
-    }
-
-    public static ProjectVersionRef toProjectVersionRef( final Node node, final boolean useSelectedVersion )
-    {
         if ( node == null )
         {
             return null;
@@ -156,12 +156,7 @@ public final class Conversions
 
         final String g = getStringProperty( GROUP_ID, node );
         final String a = getStringProperty( ARTIFACT_ID, node );
-        String v = getStringProperty( VERSION, node );
-
-        if ( getBooleanProperty( VARIABLE, node, false ) )
-        {
-            v = getStringProperty( SELECTED_VERSION, node );
-        }
+        final String v = getStringProperty( VERSION, node );
 
         if ( empty( g ) || empty( a ) || empty( v ) )
         {
@@ -246,7 +241,7 @@ public final class Conversions
         final GraphRelType mapper = GraphRelType.valueOf( rel.getType()
                                                              .name() );
 
-        //        LOGGER.info( "Converting relationship of type: %s (atlas type: %s)", mapper,
+        //        LOGGER.debug( "Converting relationship of type: %s (atlas type: %s)", mapper,
         //                                              mapper.atlasType() );
 
         if ( !mapper.isAtlasRelationship() )
@@ -332,7 +327,7 @@ public final class Conversions
             }
         }
 
-        //        LOGGER.info( "Returning project relationship: %s", result );
+        //        LOGGER.debug( "Returning project relationship: %s", result );
         return result;
     }
 
@@ -460,20 +455,111 @@ public final class Conversions
         node.setProperty( CONNECTED, connected );
     }
 
-    public static void selectVersion( final Node node, final ProjectVersionRef ref, final SingleVersion newVersion )
+    public static void cloneRelationshipProperties( final Relationship from, final Relationship to )
     {
-        if ( getBooleanProperty( VARIABLE, node, false ) )
+        final Iterable<String> keys = from.getPropertyKeys();
+        for ( final String key : keys )
         {
-            node.setProperty( SELECTED_VERSION, newVersion );
+            to.setProperty( key, from.getProperty( key ) );
+        }
+
+        to.setProperty( CLONE_OF, from.getId() );
+    }
+
+    public static boolean isCloneFor( final Relationship relationship, final Relationship original )
+    {
+        if ( relationship.hasProperty( CLONE_OF ) )
+        {
+            final long id = (Long) relationship.getProperty( CLONE_OF );
+            return original.getId() == id;
+        }
+
+        return false;
+    }
+
+    public static void markSelectedFor( final Relationship relationship, final Node root )
+    {
+        LOGGER.debug( "Marking selected: %s for root: %s", getStringProperty( GAV, relationship.getEndNode() ),
+                      getStringProperty( GAV, root ) );
+        addToIdListing( root.getId(), SELECTED_FOR, relationship );
+    }
+
+    public static void markDeselectedFor( final Relationship relationship, final Node root )
+    {
+        LOGGER.debug( "Marking de-selected: %s for root: %s", getStringProperty( GAV, relationship.getEndNode() ),
+                      getStringProperty( GAV, root ) );
+        addToIdListing( root.getId(), DESELECTED_FOR, relationship );
+    }
+
+    public static void removeSelectionAnnotationsFor( final Relationship relationship, final Node root )
+    {
+        LOGGER.debug( "%s: removing ALL selection annotations for: %s",
+                      getStringProperty( GAV, relationship.getEndNode() ), getStringProperty( GAV, root ) );
+        removeFromIdListing( root.getId(), SELECTED_FOR, relationship );
+        removeFromIdListing( root.getId(), DESELECTED_FOR, relationship );
+    }
+
+    private static boolean idListingContains( final long target, final String property, final Relationship relationship )
+    {
+        final long[] ids = (long[]) relationship.getProperty( property, new long[] {} );
+
+        Arrays.sort( ids );
+        return Arrays.binarySearch( ids, target ) >= 0;
+    }
+
+    private static void addToIdListing( final long target, final String property, final Relationship relationship )
+    {
+        final Set<Long> ids = new HashSet<Long>();
+        boolean contains = false;
+        for ( final long id : (long[]) relationship.getProperty( property, new long[] {} ) )
+        {
+            if ( id == target )
+            {
+                contains = true;
+            }
+
+            ids.add( id );
+        }
+
+        if ( !contains )
+        {
+            ids.add( target );
+            relationship.setProperty( property, ids.toArray( new Long[] {} ) );
         }
     }
 
-    public static void deselectVersion( final Node node, final ProjectVersionRef ref )
+    private static void removeFromIdListing( final long target, final String property, final Relationship relationship )
     {
-        if ( getBooleanProperty( VARIABLE, node, false ) && getStringProperty( SELECTED_VERSION, node ) != null )
+        final Set<Long> ids = new HashSet<Long>();
+        boolean changed = false;
+        for ( final long id : (long[]) relationship.getProperty( property, new long[] {} ) )
         {
-            node.removeProperty( SELECTED_VERSION );
+            if ( id == target )
+            {
+                changed = true;
+            }
+            else
+            {
+                ids.add( id );
+            }
         }
+
+        if ( changed )
+        {
+            if ( ids.isEmpty() )
+            {
+                relationship.removeProperty( property );
+            }
+            else
+            {
+                relationship.setProperty( property, ids.toArray( new Long[] {} ) );
+            }
+        }
+    }
+
+    public static boolean isDeselectedFor( final Node root, final Relationship relationship )
+    {
+        return idListingContains( root.getId(), DESELECTED_FOR, relationship );
     }
 
 }

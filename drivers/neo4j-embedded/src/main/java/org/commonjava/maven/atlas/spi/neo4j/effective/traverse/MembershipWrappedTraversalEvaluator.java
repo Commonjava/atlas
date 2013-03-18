@@ -199,12 +199,13 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             return Collections.emptySet();
         }
 
-        //        final Relationship rel = path.lastRelationship();
-        //        if ( rel != null )
-        //        {
-        //            expMemberMisses++;
-        //            return Collections.emptySet();
-        //        }
+        final Node root = path.startNode();
+        final Relationship rel = path.lastRelationship();
+        if ( rel != null && Conversions.isDeselectedFor( root, rel ) )
+        {
+            expMemberMisses++;
+            return Collections.emptySet();
+        }
 
         expMemberHits++;
 

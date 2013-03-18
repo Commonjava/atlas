@@ -33,7 +33,8 @@ public interface EProjectNet
     extends EProjectRelationshipCollection
 {
 
-    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions();
+    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+        throws GraphDriverException;
 
     ProjectVersionRef selectVersionFor( ProjectVersionRef variable, SingleVersion version )
         throws GraphDriverException;
