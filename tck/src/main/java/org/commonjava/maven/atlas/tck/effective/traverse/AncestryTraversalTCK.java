@@ -40,19 +40,16 @@ public abstract class AncestryTraversalTCK
     public void traverseTwoAncestors()
         throws Exception
     {
-        final EProjectGraph.Builder pgBuilder =
-            new EProjectGraph.Builder( new ProjectVersionRef( "my.group", "my-artifact", "1.0" ), newDriverInstance() );
-
+        final ProjectVersionRef myRef = new ProjectVersionRef( "my.group", "my-artifact", "1.0" );
         final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
-        pgBuilder.withParent( parentRef );
-
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
-        final EProjectRelationships parentRels = new EProjectRelationships.Builder( parentRef ).withParent( grandRef )
-                                                                                               .build();
 
-        pgBuilder.withDirectProjectRelationships( parentRels );
-
-        final EProjectGraph graph = pgBuilder.build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( myRef, newDriverInstance() )
+            .withParent( parentRef )
+            .withDirectProjectRelationships( new EProjectRelationships.Builder( parentRef ).withParent( grandRef ).build() )
+            .build();
+        /* @formatter:on */
 
         final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );
@@ -85,18 +82,16 @@ public abstract class AncestryTraversalTCK
     public void traverseTwoAncestorsWithEmptyGrandParentRels()
         throws Exception
     {
-        final EProjectGraph.Builder pgBuilder =
-            new EProjectGraph.Builder( new ProjectVersionRef( "my.group", "my-artifact", "1.0" ), newDriverInstance() );
+        final ProjectVersionRef myRef = new ProjectVersionRef( "my.group", "my-artifact", "1.0" );
         final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
-        pgBuilder.withParent( parentRef );
-
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
-        final EProjectRelationships parentRels = new EProjectRelationships.Builder( parentRef ).withParent( grandRef )
-                                                                                               .build();
 
-        pgBuilder.withDirectProjectRelationships( parentRels );
-
-        final EProjectGraph graph = pgBuilder.build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( myRef, newDriverInstance() )
+            .withParent( parentRef )
+            .withDirectProjectRelationships( new EProjectRelationships.Builder( parentRef ).withParent( grandRef ).build() )
+            .build();
+        /* @formatter:on */
 
         final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );
@@ -128,54 +123,33 @@ public abstract class AncestryTraversalTCK
         throws Exception
     {
         final ProjectVersionRef myRef = new ProjectVersionRef( "my.group", "my-artifact", "1.0" );
-
-        final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( myRef, newDriverInstance() );
-
         final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
-        pgBuilder.withParent( parentRef );
-
-        pgBuilder.withDependencies( new DependencyRelationship( myRef,
-                                                                new ArtifactRef( new ProjectVersionRef( "some.group",
-                                                                                                        "foo", "1.0" ),
-                                                                                 null, null, false ), null, 0, false ),
-                                    new DependencyRelationship(
-                                                                myRef,
-                                                                new ArtifactRef(
-                                                                                 new ProjectVersionRef( "some.group",
-                                                                                                        "bar", "1.2.1" ),
-                                                                                 null, null, false ), null, 1, false ) );
-
-        pgBuilder.withPlugins( new PluginRelationship( myRef,
-                                                       new ProjectVersionRef( "org.apache.maven.plugins",
-                                                                              "maven-compiler-plugin", "2.5.1" ), 0,
-                                                       false ),
-                               new PluginRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins",
-                                                                                     "maven-jar-plugin", "2.2" ), 1,
-                                                       false ) );
-
-        pgBuilder.withExtensions( new ExtensionRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins",
-                                                                                           "maven-compiler-plugin",
-                                                                                           "2.5.1" ), 0 ) );
-
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
-        final EProjectRelationships parentRels =
-            new EProjectRelationships.Builder( parentRef ).withParent( grandRef )
-                                                          .withDependencies( new DependencyRelationship(
-                                                                                                         parentRef,
-                                                                                                         new ArtifactRef(
-                                                                                                                          new ProjectVersionRef(
-                                                                                                                                                 "other.group",
-                                                                                                                                                 "utils",
-                                                                                                                                                 "3-1" ),
-                                                                                                                          null,
-                                                                                                                          null,
-                                                                                                                          false ),
-                                                                                                         null, 0, false ) )
-                                                          .build();
 
-        pgBuilder.withDirectProjectRelationships( parentRels );
-
-        final EProjectGraph graph = pgBuilder.build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( myRef, newDriverInstance() )
+            .withParent( parentRef )
+            .withDependencies(
+                  new DependencyRelationship( myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),
+                  new DependencyRelationship( myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "bar", "1.2.1" ), null, null, false ), null, 1, false )
+            )
+            .withPlugins(
+                 new PluginRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0, false ),
+                 new PluginRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins","maven-jar-plugin", "2.2" ), 1, false )
+            )
+            .withExtensions(
+                new ExtensionRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0 )
+            )
+            .withDirectProjectRelationships( 
+                 new EProjectRelationships.Builder( parentRef )
+                     .withParent( grandRef )
+                     .withDependencies( 
+                        new DependencyRelationship( parentRef, new ArtifactRef( new ProjectVersionRef( "other.group", "utils", "3-1" ), null, null, false ), null, 0, false )
+                     )
+                     .build()
+            )
+            .build();
+        /* @formatter:on */
 
         final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );

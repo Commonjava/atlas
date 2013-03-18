@@ -25,7 +25,6 @@ import java.util.List;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.EProjectWeb;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.util.logging.Logger;
@@ -44,13 +43,11 @@ public abstract class EProjectGraphTCK
         final ProjectVersionRef c = new ProjectVersionRef( "org.test", "child", "1.0" );
 
         final EGraphDriver driver = newDriverInstance();
-        final EProjectWeb global = new EProjectWeb( driver );
-
-        final EProjectGraph root = new EProjectGraph.Builder( r, driver.newInstance() ).build();
-        final EProjectGraph parent = new EProjectGraph.Builder( p, driver.newInstance() ).withParent( r )
-                                                                                         .build();
-        final EProjectGraph child = new EProjectGraph.Builder( c, driver.newInstance() ).withParent( p )
-                                                                                        .build();
+        final EProjectGraph root = new EProjectGraph.Builder( r, driver ).build();
+        final EProjectGraph parent = new EProjectGraph.Builder( p, driver ).withParent( r )
+                                                                           .build();
+        final EProjectGraph child = new EProjectGraph.Builder( c, driver ).withParent( p )
+                                                                          .build();
         parent.connect( root );
         child.connect( parent );
 

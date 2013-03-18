@@ -46,28 +46,13 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
+        /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                                                       project,
-                                                                                                                                       new ArtifactRef(
-                                                                                                                                                        varDep,
-                                                                                                                                                        null,
-                                                                                                                                                        null,
-                                                                                                                                                        false ),
-                                                                                                                                       null,
-                                                                                                                                       0,
-                                                                                                                                       false ),
-                                                                                                           new DependencyRelationship(
-                                                                                                                                       varDep,
-                                                                                                                                       new ArtifactRef(
-                                                                                                                                                        varD2,
-                                                                                                                                                        null,
-                                                                                                                                                        null,
-                                                                                                                                                        false ),
-                                                                                                                                       null,
-                                                                                                                                       0,
-                                                                                                                                       false ) )
-                                                                                        .build();
+            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() )
+                .withDependencies( new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+                .build();
+        /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );
@@ -91,28 +76,13 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
+        /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                                                       project,
-                                                                                                                                       new ArtifactRef(
-                                                                                                                                                        varDep,
-                                                                                                                                                        null,
-                                                                                                                                                        null,
-                                                                                                                                                        false ),
-                                                                                                                                       null,
-                                                                                                                                       0,
-                                                                                                                                       false ),
-                                                                                                           new DependencyRelationship(
-                                                                                                                                       varDep,
-                                                                                                                                       new ArtifactRef(
-                                                                                                                                                        varD2,
-                                                                                                                                                        null,
-                                                                                                                                                        null,
-                                                                                                                                                        false ),
-                                                                                                                                       null,
-                                                                                                                                       0,
-                                                                                                                                       false ) )
-                                                                                        .build();
+            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() )
+                .withDependencies( new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+                .build();
+        /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
         System.out.println( "Variable before selecting:\n  " + variables );
@@ -157,51 +127,19 @@ public abstract class SubGraphSelectionTCK
 
         final EGraphDriver rootDriver = newDriverInstance();
 
+        /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), rootDriver ).withDependencies( new DependencyRelationship(
-                                                                                                                              project,
-                                                                                                                              new ArtifactRef(
-                                                                                                                                               varDep,
-                                                                                                                                               null,
-                                                                                                                                               null,
-                                                                                                                                               false ),
-                                                                                                                              null,
-                                                                                                                              0,
-                                                                                                                              false ),
-                                                                                                  new DependencyRelationship(
-                                                                                                                              varDep,
-                                                                                                                              new ArtifactRef(
-                                                                                                                                               varD2,
-                                                                                                                                               null,
-                                                                                                                                               null,
-                                                                                                                                               false ),
-                                                                                                                              null,
-                                                                                                                              0,
-                                                                                                                              false ) )
-                                                                               .build();
+            new EProjectGraph.Builder( new EProjectKey( project ), rootDriver )
+                .withDependencies( new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+                .build();
 
         final EProjectGraph graph2 =
-            new EProjectGraph.Builder( new EProjectKey( project2 ), rootDriver ).withDependencies( new DependencyRelationship(
-                                                                                                                               project2,
-                                                                                                                               new ArtifactRef(
-                                                                                                                                                varDep,
-                                                                                                                                                null,
-                                                                                                                                                null,
-                                                                                                                                                false ),
-                                                                                                                               null,
-                                                                                                                               0,
-                                                                                                                               false ),
-                                                                                                   new DependencyRelationship(
-                                                                                                                               varDep,
-                                                                                                                               new ArtifactRef(
-                                                                                                                                                varD2,
-                                                                                                                                                null,
-                                                                                                                                                null,
-                                                                                                                                                false ),
-                                                                                                                               null,
-                                                                                                                               0,
-                                                                                                                               false ) )
-                                                                                .build();
+            new EProjectGraph.Builder( new EProjectKey( project2 ), rootDriver )
+                .withDependencies( new DependencyRelationship( project2, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( varDep,   new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+                .build();
+        /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph2.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );

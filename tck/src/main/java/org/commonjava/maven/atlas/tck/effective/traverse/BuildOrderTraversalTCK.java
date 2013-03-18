@@ -57,26 +57,13 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                              c,
-                                                                                                              new ArtifactRef(
-                                                                                                                               b,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              b,
-                                                                                                              new ArtifactRef(
-                                                                                                                               a,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ) )
-                                                               .build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( c, newDriverInstance() )
+            .withDependencies( new DependencyRelationship( c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                               new DependencyRelationship( b, new ArtifactRef( a, null, null, false ), null, 0, false )
+            )
+           .build();
+        /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 2 ) );
@@ -108,27 +95,14 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( b, a );
         relativeOrder.put( b, p );
 
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                              c,
-                                                                                                              new ArtifactRef(
-                                                                                                                               b,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              b,
-                                                                                                              new ArtifactRef(
-                                                                                                                               a,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ) )
-                                                               .withExactRelationships( new ParentRelationship( b, p ) )
-                                                               .build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( c, newDriverInstance() )
+            .withDependencies( new DependencyRelationship( c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                               new DependencyRelationship( b, new ArtifactRef( a, null, null, false ), null, 0, false )
+            )
+            .withExactRelationships( new ParentRelationship( b, p ) )
+            .build();
+        /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 3 ) );
@@ -162,36 +136,15 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                              c,
-                                                                                                              new ArtifactRef(
-                                                                                                                               b,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              b,
-                                                                                                              new ArtifactRef(
-                                                                                                                               a,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              pb,
-                                                                                                              new ArtifactRef(
-                                                                                                                               pa,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ) )
-                                                               .withPlugins( new PluginRelationship( c, pb, 0, false ) )
-                                                               .build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( c, newDriverInstance() )
+            .withDependencies( new DependencyRelationship( c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                               new DependencyRelationship( b, new ArtifactRef( a, null, null, false ), null, 0, false ),
+                               new DependencyRelationship( pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
+            )
+            .withPlugins( new PluginRelationship( c, pb, 0, false ) )
+            .build();
+        /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 4 ) );
@@ -223,54 +176,17 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                              c,
-                                                                                                              new ArtifactRef(
-                                                                                                                               b,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              b,
-                                                                                                              new ArtifactRef(
-                                                                                                                               a,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              DependencyScope.runtime,
-                                                                                                              0, false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              c,
-                                                                                                              new ArtifactRef(
-                                                                                                                               d,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              DependencyScope.test,
-                                                                                                              1, false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              d,
-                                                                                                              new ArtifactRef(
-                                                                                                                               e,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              DependencyScope.runtime,
-                                                                                                              0, false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              pb,
-                                                                                                              new ArtifactRef(
-                                                                                                                               pa,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ) )
-                                                               .withPlugins( new PluginRelationship( c, pb, 0, false ) )
-                                                               .build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( c, newDriverInstance() )
+            .withDependencies( new DependencyRelationship( c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                               new DependencyRelationship( b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
+                               new DependencyRelationship( c, new ArtifactRef( d, null, null, false ), DependencyScope.test, 1, false ),
+                               new DependencyRelationship( d, new ArtifactRef( e, null, null, false ), DependencyScope.runtime, 0, false ),
+                               new DependencyRelationship( pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
+            )
+            .withPlugins( new PluginRelationship( c, pb, 0, false ) )
+            .build();
+        /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 6 ) );
@@ -301,37 +217,14 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                              c,
-                                                                                                              new ArtifactRef(
-                                                                                                                               b,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null,
-                                                                                                              0,
-                                                                                                              false,
-                                                                                                              d.asProjectRef() ),
-                                                                                  new DependencyRelationship(
-                                                                                                              b,
-                                                                                                              new ArtifactRef(
-                                                                                                                               a,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              DependencyScope.runtime,
-                                                                                                              0, false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              b,
-                                                                                                              new ArtifactRef(
-                                                                                                                               d,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              DependencyScope.runtime,
-                                                                                                              1, false ) )
-                                                               .build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( c, newDriverInstance() )
+            .withDependencies( new DependencyRelationship( c, new ArtifactRef( b, null, null, false ), null, 0, false, d.asProjectRef() ),
+                               new DependencyRelationship( b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
+                               new DependencyRelationship( b, new ArtifactRef( d, null, null, false ), DependencyScope.runtime, 1, false )
+            )
+            .build();
+        /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 3 ) );
@@ -366,36 +259,15 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( c, pb );
         relativeOrder.put( pb, pa );
 
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( c, newDriverInstance() ).withDependencies( new DependencyRelationship(
-                                                                                                              c,
-                                                                                                              new ArtifactRef(
-                                                                                                                               b,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              b,
-                                                                                                              new ArtifactRef(
-                                                                                                                               a,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ),
-                                                                                  new DependencyRelationship(
-                                                                                                              pb,
-                                                                                                              new ArtifactRef(
-                                                                                                                               pa,
-                                                                                                                               null,
-                                                                                                                               null,
-                                                                                                                               false ),
-                                                                                                              null, 0,
-                                                                                                              false ) )
-                                                               .withPlugins( new PluginRelationship( c, pb, 0, false ) )
-                                                               .build();
+        /* @formatter:off */
+        final EProjectGraph graph = new EProjectGraph.Builder( c, newDriverInstance() )
+            .withDependencies( new DependencyRelationship( c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                               new DependencyRelationship( b, new ArtifactRef( a, null, null, false ), null, 0, false ),
+                               new DependencyRelationship( pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
+            )
+            .withPlugins( new PluginRelationship( c, pb, 0, false ) )
+            .build();
+        /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 4 ) );
