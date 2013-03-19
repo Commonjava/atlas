@@ -459,7 +459,7 @@ public class EProjectGraph
             target = ( (ArtifactRef) target ).asProjectVersionRef();
         }
 
-        return driver.addRelationship( rel );
+        return driver.addRelationships( rel );
     }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )

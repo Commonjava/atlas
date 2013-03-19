@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
+import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Path;
 
 public class PathComparator
@@ -29,17 +30,10 @@ public class PathComparator
 
     private final RelationshipPathComparator pathComparator = new RelationshipPathComparator();
 
-    private final AbstractNeo4JEGraphDriver driver;
-
-    public PathComparator( final AbstractNeo4JEGraphDriver driver )
-    {
-        this.driver = driver;
-    }
-
     public int compare( final Path first, final Path second )
     {
-        final List<ProjectRelationship<?>> firstRels = driver.convertToRelationships( first.relationships() );
-        final List<ProjectRelationship<?>> secondRels = driver.convertToRelationships( second.relationships() );
+        final List<ProjectRelationship<?>> firstRels = Conversions.convertToRelationships( first.relationships() );
+        final List<ProjectRelationship<?>> secondRels = Conversions.convertToRelationships( second.relationships() );
 
         return pathComparator.compare( firstRels, secondRels );
     }

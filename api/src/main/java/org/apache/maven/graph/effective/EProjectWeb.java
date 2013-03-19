@@ -174,7 +174,7 @@ public class EProjectWeb
             return false;
         }
 
-        return driver.addRelationship( rel );
+        return driver.addRelationships( rel );
     }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )

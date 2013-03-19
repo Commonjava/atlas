@@ -91,10 +91,7 @@ public class JungEGraphDriver
             rels = from.getAllRelationships();
         }
 
-        for ( final ProjectRelationship<?> rel : rels )
-        {
-            addRelationship( rel );
-        }
+        addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
 
         for ( final ProjectVersionRef ref : from.incompleteSubgraphs )
         {
@@ -151,40 +148,43 @@ public class JungEGraphDriver
         return graph.getEdges();
     }
 
-    public boolean addRelationship( final ProjectRelationship<?> rel )
+    public boolean addRelationships( final ProjectRelationship<?>... rels )
     {
         boolean changed = false;
-        if ( !graph.containsVertex( rel.getDeclaring() ) )
+        for ( final ProjectRelationship<?> rel : rels )
         {
-            graph.addVertex( rel.getDeclaring() );
-            changed = true;
-        }
+            if ( !graph.containsVertex( rel.getDeclaring() ) )
+            {
+                graph.addVertex( rel.getDeclaring() );
+                changed = true;
+            }
 
-        final ProjectVersionRef target = rel.getTarget()
-                                            .asProjectVersionRef();
-        if ( !target.getVersionSpec()
-                    .isSingle() )
-        {
-            variableSubgraphs.add( target );
-        }
-        else if ( !graph.containsVertex( target ) )
-        {
-            incompleteSubgraphs.add( target );
-        }
+            final ProjectVersionRef target = rel.getTarget()
+                                                .asProjectVersionRef();
+            if ( !target.getVersionSpec()
+                        .isSingle() )
+            {
+                variableSubgraphs.add( target );
+            }
+            else if ( !graph.containsVertex( target ) )
+            {
+                incompleteSubgraphs.add( target );
+            }
 
-        if ( !graph.containsVertex( target ) )
-        {
-            graph.addVertex( target );
-            changed = true;
-        }
+            if ( !graph.containsVertex( target ) )
+            {
+                graph.addVertex( target );
+                changed = true;
+            }
 
-        if ( !graph.containsEdge( rel ) )
-        {
-            graph.addEdge( rel, rel.getDeclaring(), target );
-            changed = true;
-        }
+            if ( !graph.containsEdge( rel ) )
+            {
+                graph.addEdge( rel, rel.getDeclaring(), target );
+                changed = true;
+            }
 
-        incompleteSubgraphs.remove( rel.getDeclaring() );
+            incompleteSubgraphs.remove( rel.getDeclaring() );
+        }
 
         return changed;
     }
@@ -431,10 +431,7 @@ public class JungEGraphDriver
         incompleteSubgraphs.clear();
         variableSubgraphs.clear();
 
-        for ( final ProjectRelationship<?> rel : rels )
-        {
-            addRelationship( rel );
-        }
+        addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
 
         recomputeIncompleteSubgraphs();
     }

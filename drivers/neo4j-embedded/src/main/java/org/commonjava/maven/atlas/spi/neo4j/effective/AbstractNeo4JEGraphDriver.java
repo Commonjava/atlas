@@ -18,6 +18,32 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.join;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CONNECTED;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CYCLE_ID;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CYCLE_MEMBERSHIP;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CYCLE_RELATIONSHIPS;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.VARIABLE;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.cloneRelationshipProperties;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToProjects;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToRelationships;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getMetadata;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getMetadataMap;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getStringProperty;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.id;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isCloneFor;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isConnected;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isType;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markConnected;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markDeselectedFor;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markSelectedFor;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.removeSelectionAnnotationsFor;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.setMetadata;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toNodeProperties;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectRelationship;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectVersionRef;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toRelationshipProperties;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -91,6 +117,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private ProjectRelationshipFilter filter;
 
+    private ExecutionEngine queryEngine;
+
     protected AbstractNeo4JEGraphDriver( final AbstractNeo4JEGraphDriver driver,
                                          final ProjectRelationshipFilter filter, final ProjectVersionRef... rootRefs )
         throws GraphDriverException
@@ -154,6 +182,11 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    protected GraphDatabaseService getGraph()
+    {
+        return graph;
+    }
+
     public Set<Long> getRootIds()
     {
         return roots;
@@ -169,17 +202,17 @@ public abstract class AbstractNeo4JEGraphDriver
         final Logger logger = new Logger( getClass() );
         logger.info( "Loaded approximately %d nodes.", graph.index()
                                                             .forNodes( ALL_NODES )
-                                                            .query( Conversions.GAV, "*" )
+                                                            .query( GAV, "*" )
                                                             .size() );
 
         logger.info( "Loaded approximately %d relationships.", graph.index()
                                                                     .forRelationships( ALL_RELATIONSHIPS )
-                                                                    .query( Conversions.RELATIONSHIP_ID, "*" )
+                                                                    .query( RELATIONSHIP_ID, "*" )
                                                                     .size() );
 
         logger.info( "Loaded approximately %d relationship-cycle nodes.", graph.index()
                                                                                .forNodes( ALL_CYCLES )
-                                                                               .query( Conversions.CYCLE_ID, "*" )
+                                                                               .query( CYCLE_ID, "*" )
                                                                                .size() );
     }
 
@@ -194,7 +227,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final Index<Node> index = graph.index()
                                        .forNodes( ALL_NODES );
-        final IndexHits<Node> hits = index.get( Conversions.GAV, ref.toString() );
+        final IndexHits<Node> hits = index.get( GAV, ref.toString() );
 
         if ( hits.hasNext() )
         {
@@ -220,7 +253,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final Index<Node> index = graph.index()
                                        .forNodes( ALL_NODES );
-        final IndexHits<Node> hits = index.get( Conversions.GAV, ref.toString() );
+        final IndexHits<Node> hits = index.get( GAV, ref.toString() );
 
         if ( hits.hasNext() )
         {
@@ -234,7 +267,47 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public Collection<ProjectRelationship<?>> getAllRelationships()
     {
-        return convertToRelationships( getAllRelationshipsTargeting( null ) );
+        final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
+        final Map<Node, Path> result = getResultsTargeting( false, null );
+        nextResult: for ( final Path p : result.values() )
+        {
+            final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
+            logger.debug( "Path: %s", p );
+
+            if ( filter != null )
+            {
+                //                            logger.debug( "Applying filter: %s", filter );
+
+                ProjectRelationshipFilter f = filter;
+                for ( final ProjectRelationship<?> pr : path )
+                {
+                    if ( !f.accept( pr ) )
+                    {
+                        continue nextResult;
+                    }
+
+                    f = f.getChildFilter( pr );
+                }
+            }
+
+            logger.debug( "Adding %d relationships: %s", path.size(), path );
+            rels.addAll( path );
+        }
+
+        for ( final ProjectRelationship<?> rel : new HashSet<ProjectRelationship<?>>( rels ) )
+        {
+            logger.debug( "Checking for self-referential parent: %s", rel );
+            if ( rel.getType() == RelationshipType.PARENT && rel.getDeclaring()
+                                                                .equals( rel.getTarget()
+                                                                            .asProjectVersionRef() ) )
+            {
+                logger.debug( "Removing self-referential parent: %s", rel );
+                rels.remove( rel );
+            }
+        }
+
+        logger.debug( "returning %d relationships: %s", rels.size(), rels );
+        return rels;
     }
 
     public Iterable<Relationship> getAllRelationshipsTargeting( final String where, final Long... ids )
@@ -245,7 +318,7 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             final Relationship r = p.lastRelationship();
 
-            //                        logger.debug( "Rel: %s\nPath: %s", r, p );
+            logger.debug( "Rel: %s\nPath: %s", r, p );
 
             if ( r == null )
             {
@@ -292,16 +365,16 @@ public abstract class AbstractNeo4JEGraphDriver
                             + "\nWHERE "
                             + ( roots == null || roots.isEmpty() ? "" : 
                                 String.format(
-                                      "\n  none( "
-                                    + "\n    r in relationships(p) "
+                                      "none(r in relationships(p) "
                                     + "\n      WHERE has(r._deselected_for) AND any(x in r._deselected_for WHERE x IN [%s])"
-                                    + "\n  )"
-                                    + "\n AND ", 
+                                    + "\n  )",
                                 join( roots, ", ")
                                 )
                               )
-                            + "has(n.gav) "
-                            + "\n  %s "
+//                            + "\nWHERE "
+                            + "\n    AND has(n.gav) "
+//                            + "\n    AND len = 0 "
+                            + "\n    %s "
                             + "\nRETURN n as node, p as path %s";
         
         final String query = String.format( baseQuery,
@@ -321,20 +394,24 @@ public abstract class AbstractNeo4JEGraphDriver
             if ( execResult != null )
             {
                 logger.debug( "Iterating query result" );
-                final Iterator<Path> pathIt = execResult.columnAs( "path" );
-                final Iterator<Node> nodeIt = execResult.columnAs( "node" );
+                final Iterator<Map<String, Object>> mapIt = execResult.iterator();
+                //                final Iterator<Path> pathIt = execResult.columnAs( "path" );
+                //                final Iterator<Node> nodeIt = execResult.columnAs( "node" );
 
-                nextResult: while ( nodeIt.hasNext() )
+                nextResult: while ( mapIt.hasNext() )
                 {
-                    final Node n = nodeIt.next();
-                    final Path p = pathIt.hasNext() ? pathIt.next() : null;
+                    final Map<String, Object> map = mapIt.next();
+                    logger.debug( "Current result row:\n  %s", map );
+
+                    final Node n = (Node) map.get( "node" );
+                    final Path p = (Path) map.get( "path" );
 
                     if ( !checkExistence && p == null )
                     {
                         continue;
                     }
 
-                    //                        logger.debug( "Rel: %s\nPath: %s", r, p );
+                    logger.debug( "Node: %s\nPath: %s", n, p );
 
                     if ( p != null && filter != null )
                     {
@@ -356,11 +433,12 @@ public abstract class AbstractNeo4JEGraphDriver
 
                     if ( checkExistence )
                     {
+                        logger.debug( "Only checking for existence, so breaking iteration now." );
                         break;
                     }
                 }
 
-                logger.debug( "Got %d results.", results.size() );
+                //                logger.debug( "Got %d results.", results.size() );
             }
         }
         catch ( final GraphDriverException e )
@@ -368,6 +446,8 @@ public abstract class AbstractNeo4JEGraphDriver
             logger.error( "Failed to run cypher query to find relationships connected to root(s): %s.\nReason: %s", e,
                           roots, e.getMessage() );
         }
+
+        //        logger.debug( "Total: %d results:\n\n  %s", results.size(), results );
 
         return results;
     }
@@ -403,68 +483,72 @@ public abstract class AbstractNeo4JEGraphDriver
         return paths;
     }
 
-    public boolean addRelationship( final ProjectRelationship<?> rel )
+    public boolean addRelationships( final ProjectRelationship<?>... rels )
     {
         checkClosed();
 
-        logger.debug( "Adding relationship: %s", rel );
-
-        final Index<Node> index = graph.index()
-                                       .forNodes( ALL_NODES );
-
-        final ProjectVersionRef declaring = rel.getDeclaring();
-        final ProjectVersionRef target = rel.getTarget()
-                                            .asProjectVersionRef();
-
-        final long[] ids = new long[2];
-        int i = 0;
-        boolean changed = false;
         final Transaction tx = graph.beginTx();
+        boolean changed = false;
         try
         {
-            for ( final ProjectVersionRef ref : new ProjectVersionRef[] { declaring, target } )
+            for ( final ProjectRelationship<?> rel : rels )
             {
-                final IndexHits<Node> hits = index.get( Conversions.GAV, ref.toString() );
-                if ( !hits.hasNext() )
+                logger.debug( "Adding relationship: %s", rel );
+
+                final Index<Node> index = graph.index()
+                                               .forNodes( ALL_NODES );
+
+                final ProjectVersionRef declaring = rel.getDeclaring();
+                final ProjectVersionRef target = rel.getTarget()
+                                                    .asProjectVersionRef();
+
+                final long[] ids = new long[2];
+                int i = 0;
+                for ( final ProjectVersionRef ref : new ProjectVersionRef[] { declaring, target } )
                 {
+                    final IndexHits<Node> hits = index.get( GAV, ref.toString() );
+                    if ( !hits.hasNext() )
+                    {
+                        changed = true;
+                        final Node node = newProjectNode( ref );
+                        logger.debug( "Created project node: %s with id: %d", ref, node.getId() );
+                        ids[i] = node.getId();
+                    }
+                    else
+                    {
+                        ids[i] = hits.next()
+                                     .getId();
+
+                        logger.debug( "Using existing project node: %s", ids[i] );
+                    }
+
+                    i++;
+                }
+
+                final RelationshipIndex relIdx = graph.index()
+                                                      .forRelationships( ALL_RELATIONSHIPS );
+
+                final String relId = id( rel );
+                final IndexHits<Relationship> relHits = relIdx.get( RELATIONSHIP_ID, relId );
+                if ( relHits.size() < 1 )
+                {
+                    final Node from = graph.getNodeById( ids[0] );
+                    final Node to = graph.getNodeById( ids[1] );
+
+                    logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, ids[0],
+                                  ids[1] );
+
                     changed = true;
-                    final Node node = newProjectNode( ref );
-                    logger.debug( "Created project node: %s with id: %d", ref, node.getId() );
-                    ids[i] = node.getId();
+                    final Relationship relationship =
+                        from.createRelationshipTo( to, GraphRelType.map( rel.getType(), rel.isManaged() ) );
+
+                    logger.debug( "New relationship is: %s", relationship );
+
+                    toRelationshipProperties( rel, relationship );
+                    relIdx.add( relationship, RELATIONSHIP_ID, relId );
+
+                    markConnected( from, true );
                 }
-                else
-                {
-                    ids[i] = hits.next()
-                                 .getId();
-
-                    logger.debug( "Using existing project node: %s", ids[i] );
-                }
-
-                i++;
-            }
-
-            final RelationshipIndex relIdx = graph.index()
-                                                  .forRelationships( ALL_RELATIONSHIPS );
-
-            final String relId = Conversions.id( rel );
-            final IndexHits<Relationship> relHits = relIdx.get( Conversions.RELATIONSHIP_ID, relId );
-            if ( relHits.size() < 1 )
-            {
-                final Node from = graph.getNodeById( ids[0] );
-                final Node to = graph.getNodeById( ids[1] );
-
-                logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, ids[0], ids[1] );
-
-                changed = true;
-                final Relationship relationship =
-                    from.createRelationshipTo( to, GraphRelType.map( rel.getType(), rel.isManaged() ) );
-
-                //                logger.debug( "New relationship: %d has type: %s", relationship.getId(), relationship.getType() );
-
-                Conversions.toRelationshipProperties( rel, relationship );
-                relIdx.add( relationship, Conversions.RELATIONSHIP_ID, relId );
-
-                Conversions.markConnected( from, true );
             }
 
             //            logger.debug( "Committing graph transaction." );
@@ -481,11 +565,11 @@ public abstract class AbstractNeo4JEGraphDriver
     private Node newProjectNode( final ProjectVersionRef ref )
     {
         final Node node = graph.createNode();
-        Conversions.toNodeProperties( ref, node, false );
+        toNodeProperties( ref, node, false );
 
         graph.index()
              .forNodes( ALL_NODES )
-             .add( node, Conversions.GAV, ref.toString() );
+             .add( node, GAV, ref.toString() );
 
         return node;
     }
@@ -504,7 +588,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
         for ( final Node node : hits )
         {
-            final ProjectVersionRef ref = Conversions.toProjectVersionRef( node );
+            final ProjectVersionRef ref = toProjectVersionRef( node );
 
             logger.debug( "HIT %s (ref: %s)", node, ref );
 
@@ -595,7 +679,7 @@ public abstract class AbstractNeo4JEGraphDriver
             //            logger.debug( "PASS: %d", i );
 
             TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
-                                                        .sort( new PathComparator( this ) );
+                                                        .sort( new PathComparator() );
 
             for ( final GraphRelType grt : relTypes )
             {
@@ -743,42 +827,6 @@ public abstract class AbstractNeo4JEGraphDriver
         return getRelationship( rel ) != null;
     }
 
-    List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
-    {
-        final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>();
-        for ( final Node node : nodes )
-        {
-            if ( node.getId() == 0 )
-            {
-                continue;
-            }
-
-            if ( !Conversions.isType( node, NodeType.PROJECT ) )
-            {
-                continue;
-            }
-
-            refs.add( Conversions.toProjectVersionRef( node ) );
-        }
-
-        return refs;
-    }
-
-    public List<ProjectRelationship<?>> convertToRelationships( final Iterable<Relationship> relationships )
-    {
-        final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
-        for ( final Relationship relationship : relationships )
-        {
-            final ProjectRelationship<?> rel = Conversions.toProjectRelationship( relationship );
-            if ( rel != null )
-            {
-                rels.add( rel );
-            }
-        }
-
-        return rels;
-    }
-
     public Node getNode( final ProjectVersionRef ref )
     {
         checkClosed();
@@ -786,7 +834,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Index<Node> idx = graph.index()
                                      .forNodes( ALL_NODES );
 
-        final IndexHits<Node> hits = idx.get( Conversions.GAV, ref.toString() );
+        final IndexHits<Node> hits = idx.get( GAV, ref.toString() );
 
         final Node node = hits.hasNext() ? hits.next() : null;
 
@@ -825,7 +873,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public Relationship getRelationship( final ProjectRelationship<?> rel )
     {
-        return getRelationship( Conversions.id( rel ) );
+        return getRelationship( id( rel ) );
     }
 
     Relationship getRelationship( final String relId )
@@ -835,7 +883,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final RelationshipIndex idx = graph.index()
                                            .forRelationships( ALL_RELATIONSHIPS );
 
-        final IndexHits<Relationship> hits = idx.get( Conversions.RELATIONSHIP_ID, relId );
+        final IndexHits<Relationship> hits = idx.get( RELATIONSHIP_ID, relId );
 
         return hits.hasNext() ? hits.next() : null;
     }
@@ -885,18 +933,18 @@ public abstract class AbstractNeo4JEGraphDriver
     @SuppressWarnings( "unused" )
     private boolean isMissing( final Node node )
     {
-        return !Conversions.isConnected( node );
+        return !isConnected( node );
     }
 
     public boolean isMissing( final ProjectVersionRef ref )
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( ALL_NODES )
-                                          .get( Conversions.GAV, ref.toString() );
+                                          .get( GAV, ref.toString() );
 
         if ( hits.size() > 0 )
         {
-            return !Conversions.isConnected( hits.next() );
+            return !isConnected( hits.next() );
         }
 
         return false;
@@ -904,19 +952,19 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public boolean hasMissingProjects()
     {
-        return hasFlaggedProject( Conversions.CONNECTED, false );
+        return hasFlaggedProject( CONNECTED, false );
     }
 
     public Set<ProjectVersionRef> getMissingProjects()
     {
-        return getAllFlaggedProjects( Conversions.CONNECTED, false );
+        return getAllFlaggedProjects( CONNECTED, false );
     }
 
     //    public boolean hasUnresolvedVariableProjects()
     //    {
     //        final Iterable<Node> hits =
     //            getAllProjectNodesWhere( true, String.format( "n.%s = %s and not(has(n._selected-version))",
-    //                                                          Conversions.VARIABLE, true ) );
+    //                                                          VARIABLE, true ) );
     //
     //        return hits.iterator()
     //                   .hasNext();
@@ -927,19 +975,19 @@ public abstract class AbstractNeo4JEGraphDriver
     //    {
     //        final Iterable<Node> hits =
     //            getAllProjectNodesWhere( false, String.format( "n.%s = %s and not(has(n._selected-version))",
-    //                                                           Conversions.VARIABLE, true ) );
+    //                                                           VARIABLE, true ) );
     //
     //        return new HashSet<ProjectVersionRef>( convertToProjects( hits ) );
     //    }
 
     public boolean hasVariableProjects()
     {
-        return hasFlaggedProject( Conversions.VARIABLE, true );
+        return hasFlaggedProject( VARIABLE, true );
     }
 
     public Set<ProjectVersionRef> getVariableProjects()
     {
-        return getAllFlaggedProjects( Conversions.VARIABLE, true );
+        return getAllFlaggedProjects( VARIABLE, true );
     }
 
     public boolean addCycle( final EProjectCycle cycle )
@@ -949,7 +997,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<Long> relationshipIds = new HashSet<Long>();
         for ( final ProjectRelationship<?> rel : cycle )
         {
-            relIds.add( Conversions.id( rel ) );
+            relIds.add( id( rel ) );
             final Relationship relationship = getRelationship( rel );
             if ( relationship != null )
             {
@@ -963,7 +1011,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Index<Node> index = graph.index()
                                        .forNodes( ALL_CYCLES );
 
-        final IndexHits<Node> hits = index.get( Conversions.CYCLE_ID, cycleId );
+        final IndexHits<Node> hits = index.get( CYCLE_ID, cycleId );
 
         if ( hits.size() < 1 )
         {
@@ -971,13 +1019,13 @@ public abstract class AbstractNeo4JEGraphDriver
             try
             {
                 final Node node = graph.createNode();
-                Conversions.toNodeProperties( cycleId, rawCycleId, cycle.getAllParticipatingProjects(), node );
+                toNodeProperties( cycleId, rawCycleId, cycle.getAllParticipatingProjects(), node );
 
-                index.add( node, Conversions.CYCLE_ID, cycleId );
+                index.add( node, CYCLE_ID, cycleId );
 
                 for ( final Relationship r : relationships )
                 {
-                    String cycleRefs = Conversions.getMetadata( Conversions.CYCLE_MEMBERSHIP, r );
+                    String cycleRefs = getMetadata( CYCLE_MEMBERSHIP, r );
                     if ( cycleRefs == null )
                     {
                         cycleRefs = "";
@@ -985,7 +1033,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
                     if ( !cycleRefs.contains( cycleId ) )
                     {
-                        Conversions.setMetadata( Conversions.CYCLE_MEMBERSHIP, cycleRefs + "," + cycleId, r );
+                        setMetadata( CYCLE_MEMBERSHIP, cycleRefs + "," + cycleId, r );
                     }
                 }
 
@@ -1013,17 +1061,17 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final IndexHits<Node> query = graph.index()
                                            .forNodes( ALL_CYCLES )
-                                           .query( Conversions.CYCLE_ID, "*" );
+                                           .query( CYCLE_ID, "*" );
 
         final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
         for ( final Node cycleNode : query )
         {
-            if ( !Conversions.isType( cycleNode, NodeType.CYCLE ) )
+            if ( !isType( cycleNode, NodeType.CYCLE ) )
             {
                 continue;
             }
 
-            final String relIdStr = Conversions.getStringProperty( Conversions.CYCLE_RELATIONSHIPS, cycleNode );
+            final String relIdStr = getStringProperty( CYCLE_RELATIONSHIPS, cycleNode );
             if ( isEmpty( relIdStr ) )
             {
                 continue;
@@ -1039,7 +1087,7 @@ public abstract class AbstractNeo4JEGraphDriver
                     continue;
                 }
 
-                final ProjectRelationship<?> pr = Conversions.toProjectRelationship( r );
+                final ProjectRelationship<?> pr = toProjectRelationship( r );
                 if ( pr == null )
                 {
                     continue;
@@ -1062,8 +1110,8 @@ public abstract class AbstractNeo4JEGraphDriver
             return false;
         }
 
-        final String cycleMembership = Conversions.getMetadata( Conversions.CYCLE_MEMBERSHIP, r );
-        return cycleMembership != null && cycleMembership.contains( Conversions.id( rel ) );
+        final String cycleMembership = getMetadata( CYCLE_MEMBERSHIP, r );
+        return cycleMembership != null && cycleMembership.contains( id( rel ) );
     }
 
     public boolean isCycleParticipant( final ProjectVersionRef ref )
@@ -1090,7 +1138,7 @@ public abstract class AbstractNeo4JEGraphDriver
             return null;
         }
 
-        return Conversions.getMetadataMap( node );
+        return getMetadataMap( node );
     }
 
     public void addProjectMetadata( final ProjectVersionRef ref, final String key, final String value )
@@ -1105,7 +1153,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 return;
             }
 
-            Conversions.setMetadata( key, value, node );
+            setMetadata( key, value, node );
             tx.success();
         }
         finally
@@ -1126,7 +1174,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 return;
             }
 
-            Conversions.setMetadata( metadata, node );
+            setMetadata( metadata, node );
             tx.success();
         }
         finally
@@ -1224,13 +1272,23 @@ public abstract class AbstractNeo4JEGraphDriver
     public ExecutionResult execute( final String cypher, final Map<String, Object> params )
         throws GraphDriverException
     {
-        final ExecutionEngine engine = new ExecutionEngine( graph );
+        checkExecutionEngine();
 
+        // FIXME: Remove this!
+        printGraphStats();
         logger.debug( "Running query:\n\n%s\n\n", cypher );
 
         final String query = cypher.replaceAll( "(\\s)\\s+", "$1" );
 
-        return params == null ? engine.execute( query ) : engine.execute( query, params );
+        return params == null ? queryEngine.execute( query ) : queryEngine.execute( query, params );
+    }
+
+    private synchronized void checkExecutionEngine()
+    {
+        if ( queryEngine == null )
+        {
+            queryEngine = new ExecutionEngine( graph );
+        }
     }
 
     public void reindex()
@@ -1242,13 +1300,13 @@ public abstract class AbstractNeo4JEGraphDriver
             final Iterable<Node> nodes = getAllProjectNodes();
             for ( final Node node : nodes )
             {
-                final String gav = Conversions.getStringProperty( Conversions.GAV, node );
+                final String gav = getStringProperty( GAV, node );
                 if ( gav == null )
                 {
                     continue;
                 }
 
-                final Map<String, String> md = Conversions.getMetadataMap( node );
+                final Map<String, String> md = getMetadataMap( node );
                 if ( md == null || md.isEmpty() )
                 {
                     continue;
@@ -1258,7 +1316,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 {
                     graph.index()
                          .forNodes( METADATA_INDEX_PREFIX + key )
-                         .add( node, Conversions.GAV, gav );
+                         .add( node, GAV, gav );
                 }
             }
 
@@ -1274,7 +1332,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final IndexHits<Node> nodes = graph.index()
                                            .forNodes( METADATA_INDEX_PREFIX + key )
-                                           .query( Conversions.GAV, "*" );
+                                           .query( GAV, "*" );
 
         return new HashSet<ProjectVersionRef>( convertToProjects( nodes ) );
     }
@@ -1321,7 +1379,7 @@ public abstract class AbstractNeo4JEGraphDriver
         for ( final Path p : affected )
         {
             final Relationship from = p.lastRelationship();
-            final ProjectRelationship<?> rel = Conversions.toProjectRelationship( from );
+            final ProjectRelationship<?> rel = toProjectRelationship( from );
             final ProjectRelationship<?> sel = rel.selectTarget( (SingleVersion) select.getVersionSpec() );
 
             selectRelationship( p.startNode(), from, sel );
@@ -1337,13 +1395,13 @@ public abstract class AbstractNeo4JEGraphDriver
             final RelationshipIndex relIdx = graph.index()
                                                   .forRelationships( ALL_RELATIONSHIPS );
 
-            final String toId = Conversions.id( toPR );
+            final String toId = id( toPR );
 
             Node fromNode = from.getStartNode();
 
             tx = graph.beginTx();
 
-            final IndexHits<Relationship> hits = relIdx.get( Conversions.RELATIONSHIP_ID, toId );
+            final IndexHits<Relationship> hits = relIdx.get( RELATIONSHIP_ID, toId );
             if ( hits.size() < 1 )
             {
                 fromNode = getNode( toPR.getDeclaring() );
@@ -1359,11 +1417,11 @@ public abstract class AbstractNeo4JEGraphDriver
 
                 to = fromNode.createRelationshipTo( toNode, from.getType() );
 
-                Conversions.cloneRelationshipProperties( from, to );
-                relIdx.add( to, Conversions.RELATIONSHIP_ID, toId );
+                cloneRelationshipProperties( from, to );
+                relIdx.add( to, RELATIONSHIP_ID, toId );
 
-                Conversions.markConnected( fromNode, true );
-                Conversions.markSelectedFor( to, root );
+                markConnected( fromNode, true );
+                markSelectedFor( to, root );
             }
             else
             {
@@ -1371,7 +1429,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 fromNode = to.getStartNode();
             }
 
-            Conversions.markDeselectedFor( from, root );
+            markDeselectedFor( from, root );
 
             tx.success();
         }
@@ -1399,6 +1457,11 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             for ( final SelectionInfo info : infos )
             {
+                logger.debug( "Clearing selection:\nSelected: %s\nVariable: %s",
+                              info.sr.getEndNode()
+                                     .getProperty( Conversions.GAV ), info.vr.getEndNode()
+                                                                             .getProperty( Conversions.GAV ) );
+
                 if ( tx == null )
                 {
                     tx = graph.beginTx();
@@ -1408,13 +1471,14 @@ public abstract class AbstractNeo4JEGraphDriver
                 final long vrId = info.vr.getId();
                 if ( deleted.contains( srId ) || deleted.contains( vrId ) )
                 {
-                    logger.info( "Selected- or Variable-relationship already deleted:\n  selected: %s\n    deleted? %s\n  variable: %s\n    deleted? %s.\nContinuing to next mapping.",
-                                 info.sr, deleted.contains( srId ), info.vr, deleted.contains( vrId ) );
+                    logger.debug( "Selected- or Variable-relationship already deleted:\n  selected: %s\n    deleted? %s\n  variable: %s\n    deleted? %s.\nContinuing to next mapping.",
+                                  info.sr, deleted.contains( srId ), info.vr, deleted.contains( vrId ) );
                     continue;
                 }
 
-                if ( Conversions.isCloneFor( info.sr, info.vr ) )
+                if ( isCloneFor( info.sr, info.vr ) )
                 {
+                    logger.debug( "Deleting cloned relationship from previous selection operation: %s", info.sr );
                     deleted.add( srId );
                     info.sr.delete();
                 }
@@ -1423,10 +1487,12 @@ public abstract class AbstractNeo4JEGraphDriver
                 {
                     final Node root = graph.getNodeById( rootId );
 
-                    Conversions.removeSelectionAnnotationsFor( info.vr, root );
+                    removeSelectionAnnotationsFor( info.vr, root );
                     if ( !deleted.contains( srId ) )
                     {
-                        Conversions.removeSelectionAnnotationsFor( info.sr, root );
+                        logger.debug( "Removing selection annotations for previously selected: %s", info.sr );
+                        markDeselectedFor( info.sr, root );
+                        //                        removeSelectionAnnotationsFor( info.sr, root );
                     }
                 }
             }
@@ -1461,7 +1527,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         for ( final SelectionInfo info : infos )
         {
-            result.put( Conversions.toProjectVersionRef( info.v ), Conversions.toProjectVersionRef( info.s ) );
+            result.put( toProjectVersionRef( info.v ), toProjectVersionRef( info.s ) );
         }
 
         return result;
@@ -1499,24 +1565,21 @@ public abstract class AbstractNeo4JEGraphDriver
         final String query = String.format( baseQuery, rootStr, typeStr, typeStr, rootStr, rootStr );
         final ExecutionResult result = execute( query );
 
-        final Iterator<Node> varNodes = result.columnAs( "v" );
-        final Iterator<Node> selNodes = result.columnAs( "s" );
-        final Iterator<Relationship> varRels = result.columnAs( "r1" );
-        final Iterator<Relationship> selRels = result.columnAs( "r2" );
+        final Iterator<Map<String, Object>> mapIt = result.iterator();
 
         final Set<SelectionInfo> selected = new HashSet<SelectionInfo>();
-        while ( varNodes.hasNext() )
+        while ( mapIt.hasNext() )
         {
-            final Node v = varNodes.next();
-            final Node s = selNodes.hasNext() ? selNodes.next() : null;
-            final Relationship vr = varRels.hasNext() ? varRels.next() : null;
-            final Relationship sr = selRels.hasNext() ? selRels.next() : null;
+            final Map<String, Object> record = mapIt.next();
+            final Node v = (Node) record.get( "v" );
+            final Node s = (Node) record.get( "s" );
+            final Relationship sr = (Relationship) record.get( "r1" );
+            final Relationship vr = (Relationship) record.get( "r2" );
 
             if ( s == null || vr == null || sr == null )
             {
                 logger.error( "Found de-selected: %s with missing selected project, variable relationship, or selected relationship!",
-                              ( v.hasProperty( Conversions.GAV ) ? v.getProperty( Conversions.GAV ) + "(" + v.getId()
-                                  + ")" : v.getId() ) );
+                              ( v.hasProperty( GAV ) ? v.getProperty( GAV ) + "(" + v.getId() + ")" : v.getId() ) );
                 continue;
             }
 

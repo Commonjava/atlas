@@ -45,7 +45,7 @@ public interface EGraphDriver
 
     Collection<ProjectRelationship<?>> getAllRelationships();
 
-    boolean addRelationship( ProjectRelationship<?> rel );
+    boolean addRelationships( ProjectRelationship<?>... rel );
 
     Set<ProjectVersionRef> getAllProjects();
 

@@ -144,7 +144,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
             final ProjectRelationship<?> lastRel = Conversions.toProjectRelationship( rel );
 
-            final List<ProjectRelationship<?>> relPath = driver.convertToRelationships( path.relationships() );
+            final List<ProjectRelationship<?>> relPath = Conversions.convertToRelationships( path.relationships() );
             if ( relPath.indexOf( lastRel ) == relPath.size() - 1 )
             {
                 //                logger.warn( "\n\n\n\n\nREMOVING last-relationship: %s from path!\n\n\n\n\n" );
@@ -270,7 +270,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         }
         else
         {
-            rels = driver.convertToRelationships( rs );
+            rels = Conversions.convertToRelationships( rs );
             //            logger.info( "Got relationship list %d entries long for filter", rels.size() );
         }
 

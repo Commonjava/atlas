@@ -18,9 +18,11 @@ package org.commonjava.maven.atlas.spi.neo4j.io;
 
 import static org.apache.commons.lang.StringUtils.join;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -101,6 +103,42 @@ public final class Conversions
 
     private Conversions()
     {
+    }
+
+    public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
+    {
+        final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>();
+        for ( final Node node : nodes )
+        {
+            if ( node.getId() == 0 )
+            {
+                continue;
+            }
+
+            if ( !Conversions.isType( node, NodeType.PROJECT ) )
+            {
+                continue;
+            }
+
+            refs.add( Conversions.toProjectVersionRef( node ) );
+        }
+
+        return refs;
+    }
+
+    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Relationship> relationships )
+    {
+        final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
+        for ( final Relationship relationship : relationships )
+        {
+            final ProjectRelationship<?> rel = Conversions.toProjectRelationship( relationship );
+            if ( rel != null )
+            {
+                rels.add( rel );
+            }
+        }
+
+        return rels;
     }
 
     public static void toNodeProperties( final ProjectVersionRef ref, final Node node, final boolean connected )
@@ -482,12 +520,14 @@ public final class Conversions
         LOGGER.debug( "Marking selected: %s for root: %s", getStringProperty( GAV, relationship.getEndNode() ),
                       getStringProperty( GAV, root ) );
         addToIdListing( root.getId(), SELECTED_FOR, relationship );
+        removeFromIdListing( root.getId(), DESELECTED_FOR, relationship );
     }
 
     public static void markDeselectedFor( final Relationship relationship, final Node root )
     {
         LOGGER.debug( "Marking de-selected: %s for root: %s", getStringProperty( GAV, relationship.getEndNode() ),
                       getStringProperty( GAV, root ) );
+        removeFromIdListing( root.getId(), SELECTED_FOR, relationship );
         addToIdListing( root.getId(), DESELECTED_FOR, relationship );
     }
 
@@ -536,6 +576,7 @@ public final class Conversions
         {
             if ( id == target )
             {
+                LOGGER.debug( "Found id: %d in property: %s.", target, property );
                 changed = true;
             }
             else
@@ -548,10 +589,12 @@ public final class Conversions
         {
             if ( ids.isEmpty() )
             {
+                LOGGER.debug( "Removing empty property: %s from: %s", property, relationship );
                 relationship.removeProperty( property );
             }
             else
             {
+                LOGGER.debug( "Modifying property: %s from: %s", property, relationship );
                 relationship.setProperty( property, ids.toArray( new Long[] {} ) );
             }
         }
