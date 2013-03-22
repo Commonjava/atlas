@@ -23,6 +23,7 @@ import org.commonjava.maven.atlas.tck.effective.SubGraphSelectionTCK;
 import org.commonjava.util.logging.Log4jUtil;
 import org.junit.BeforeClass;
 import org.junit.Rule;
+import org.junit.Test;
 
 public class FileSubGraphSelectionTest
     extends SubGraphSelectionTCK
@@ -41,5 +42,14 @@ public class FileSubGraphSelectionTest
         throws Exception
     {
         return fixture.newDriverInstance();
+    }
+
+    @Override
+    @Test
+    //    @Ignore
+    public void selectThenClearVersionForVariableSubgraph()
+        throws Exception
+    {
+        super.selectThenClearVersionForVariableSubgraph();
     }
 }

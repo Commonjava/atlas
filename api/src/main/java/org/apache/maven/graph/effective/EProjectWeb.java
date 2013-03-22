@@ -174,7 +174,8 @@ public class EProjectWeb
             return false;
         }
 
-        return driver.addRelationships( rel );
+        return driver.addRelationships( rel )
+                     .isEmpty();
     }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
@@ -184,16 +185,16 @@ public class EProjectWeb
             return null;
         }
 
-        final Set<T> result = new HashSet<T>();
-        for ( final T rel : rels )
-        {
-            if ( add( rel ) )
-            {
-                result.add( rel );
-            }
-        }
+        final Set<T> result = new HashSet<T>( rels );
 
-        driver.recomputeIncompleteSubgraphs();
+        final Set<ProjectRelationship<?>> rejected =
+            driver.addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+        result.removeAll( rejected );
+
+        if ( !result.isEmpty() )
+        {
+            driver.recomputeIncompleteSubgraphs();
+        }
 
         return result;
     }
@@ -449,5 +450,10 @@ public class EProjectWeb
         throws GraphDriverException
     {
         return driver.clearSelectedVersions();
+    }
+
+    public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef ref )
+    {
+        return driver.getAllPathsTo( ref );
     }
 }

@@ -40,11 +40,13 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.rel.RelationshipComparator;
 import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
+import org.apache.maven.graph.effective.traverse.AbstractTraversal;
 import org.apache.maven.graph.effective.traverse.FilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.util.EGraphUtils;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.commonjava.util.logging.Logger;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
@@ -73,6 +75,8 @@ public class JungEGraphDriver
 
     private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
+    private ProjectVersionRef[] roots;
+
     public JungEGraphDriver()
     {
     }
@@ -81,6 +85,7 @@ public class JungEGraphDriver
                              final EProjectNet net, final ProjectVersionRef... roots )
         throws GraphDriverException
     {
+        this.roots = roots;
         Collection<ProjectRelationship<?>> rels;
         if ( filter != null && roots.length > 0 )
         {
@@ -148,15 +153,20 @@ public class JungEGraphDriver
         return graph.getEdges();
     }
 
-    public boolean addRelationships( final ProjectRelationship<?>... rels )
+    public Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
-        boolean changed = false;
+        final Set<ProjectRelationship<?>> skipped = new HashSet<ProjectRelationship<?>>();
         for ( final ProjectRelationship<?> rel : rels )
         {
+            if ( introducesCycle( rel ) )
+            {
+                skipped.add( rel );
+                continue;
+            }
+
             if ( !graph.containsVertex( rel.getDeclaring() ) )
             {
                 graph.addVertex( rel.getDeclaring() );
-                changed = true;
             }
 
             final ProjectVersionRef target = rel.getTarget()
@@ -174,19 +184,47 @@ public class JungEGraphDriver
             if ( !graph.containsVertex( target ) )
             {
                 graph.addVertex( target );
-                changed = true;
             }
 
             if ( !graph.containsEdge( rel ) )
             {
                 graph.addEdge( rel, rel.getDeclaring(), target );
-                changed = true;
             }
 
             incompleteSubgraphs.remove( rel.getDeclaring() );
         }
 
-        return changed;
+        return skipped;
+    }
+
+    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef ref )
+    {
+        final PathDetectionTraversal traversal = new PathDetectionTraversal( ref );
+
+        if ( roots == null )
+        {
+            new Logger( getClass() ).warn( "Cannot retrieve paths targeting %s. No roots specified for this project network!",
+                                           ref );
+            return null;
+        }
+
+        for ( final ProjectVersionRef root : roots )
+        {
+            dfsTraverse( traversal, 0, root );
+        }
+
+        return traversal.getPaths();
+    }
+
+    public boolean introducesCycle( final ProjectRelationship<?> rel )
+    {
+        final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel.getDeclaring() );
+
+        dfsTraverse( traversal, 0, rel.getTarget()
+                                      .asProjectVersionRef() );
+
+        return !traversal.getCycleRoots()
+                         .isEmpty();
     }
 
     public Set<ProjectVersionRef> getAllProjects()
@@ -222,14 +260,12 @@ public class JungEGraphDriver
 
     // TODO: Implement without recursion.
     private void dfsTraverse( final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
-        throws GraphDriverException
     {
         dfsIterate( root, traversal, new LinkedList<ProjectRelationship<?>>(), pass );
     }
 
     private void dfsIterate( final ProjectVersionRef node, final ProjectNetTraversal traversal,
                              final LinkedList<ProjectRelationship<?>> path, final int pass )
-        throws GraphDriverException
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( node );
         if ( edges != null )
@@ -274,7 +310,6 @@ public class JungEGraphDriver
 
     // TODO: Implement without recursion.
     private void bfsTraverse( final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
-        throws GraphDriverException
     {
         final List<ProjectRelationship<?>> path = new ArrayList<ProjectRelationship<?>>();
         path.add( new SelfEdge( root ) );
@@ -284,7 +319,6 @@ public class JungEGraphDriver
 
     private void bfsIterate( final List<List<ProjectRelationship<?>>> thisLayer, final ProjectNetTraversal traversal,
                              final int pass )
-        throws GraphDriverException
     {
         final List<List<ProjectRelationship<?>>> nextLayer = new ArrayList<List<ProjectRelationship<?>>>();
 
@@ -682,6 +716,68 @@ public class JungEGraphDriver
     public Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
     {
         return selected;
+    }
+
+    private static final class CycleDetectionTraversal
+        extends AbstractTraversal
+    {
+        private final ProjectVersionRef from;
+
+        private final List<List<ProjectRelationship<?>>> cycleRoots = new ArrayList<List<ProjectRelationship<?>>>();
+
+        private CycleDetectionTraversal( final ProjectVersionRef from )
+        {
+            this.from = from;
+        }
+
+        public List<List<ProjectRelationship<?>>> getCycleRoots()
+        {
+            return cycleRoots;
+        }
+
+        public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                                 final int pass )
+        {
+            if ( from.equals( relationship.getTarget()
+                                          .asProjectVersionRef() ) )
+            {
+                cycleRoots.add( new ArrayList<ProjectRelationship<?>>( path ) );
+                return false;
+            }
+
+            return true;
+        }
+    }
+
+    private static final class PathDetectionTraversal
+        extends AbstractTraversal
+    {
+        private final ProjectVersionRef to;
+
+        private final Set<List<ProjectRelationship<?>>> paths = new HashSet<List<ProjectRelationship<?>>>();
+
+        private PathDetectionTraversal( final ProjectVersionRef to )
+        {
+            this.to = to;
+        }
+
+        public Set<List<ProjectRelationship<?>>> getPaths()
+        {
+            return paths;
+        }
+
+        public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                                 final int pass )
+        {
+            if ( to.equals( relationship.getTarget()
+                                        .asProjectVersionRef() ) )
+            {
+                paths.add( new ArrayList<ProjectRelationship<?>>( path ) );
+                return false;
+            }
+
+            return true;
+        }
     }
 
 }

@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
@@ -446,21 +445,22 @@ public class EProjectGraph
         return addAll( rels.getExactAllRelationships() );
     }
 
-    private <T extends ProjectRelationship<?>> boolean add( final T rel )
-    {
-        if ( rel == null )
-        {
-            return false;
-        }
-
-        ProjectVersionRef target = rel.getTarget();
-        if ( rel instanceof DependencyRelationship )
-        {
-            target = ( (ArtifactRef) target ).asProjectVersionRef();
-        }
-
-        return driver.addRelationships( rel );
-    }
+    //    private <T extends ProjectRelationship<?>> boolean add( final T rel )
+    //    {
+    //        if ( rel == null )
+    //        {
+    //            return false;
+    //        }
+    //
+    //        ProjectVersionRef target = rel.getTarget();
+    //        if ( rel instanceof DependencyRelationship )
+    //        {
+    //            target = ( (ArtifactRef) target ).asProjectVersionRef();
+    //        }
+    //
+    //        return driver.addRelationships( rel )
+    //                     .isEmpty();
+    //    }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
     {
@@ -469,16 +469,16 @@ public class EProjectGraph
             return null;
         }
 
-        final Set<T> result = new HashSet<T>();
-        for ( final T rel : rels )
-        {
-            if ( add( rel ) )
-            {
-                result.add( rel );
-            }
-        }
+        final Set<T> result = new HashSet<T>( rels );
 
-        driver.recomputeIncompleteSubgraphs();
+        final Set<ProjectRelationship<?>> rejected =
+            driver.addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+        result.removeAll( rejected );
+
+        if ( !result.isEmpty() )
+        {
+            driver.recomputeIncompleteSubgraphs();
+        }
 
         return result;
     }
@@ -684,5 +684,10 @@ public class EProjectGraph
         throws GraphDriverException
     {
         return driver.clearSelectedVersions();
+    }
+
+    public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef ref )
+    {
+        return driver.getAllPathsTo( ref );
     }
 }

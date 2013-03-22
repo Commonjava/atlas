@@ -87,7 +87,7 @@ public abstract class AbstractTraversal
     public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {
-        return true;
+        return preCheck( relationship, path, pass );
     }
 
     public TraversalType[] getTraversalTypes()

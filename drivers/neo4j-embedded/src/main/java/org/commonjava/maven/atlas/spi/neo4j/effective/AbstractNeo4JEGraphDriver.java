@@ -16,26 +16,22 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.neo4j.effective;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
 import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CONNECTED;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CYCLE_ID;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CYCLE_MEMBERSHIP;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CYCLE_RELATIONSHIPS;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.VARIABLE;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.cloneRelationshipProperties;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToProjects;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToRelationships;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getMetadata;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getMetadataMap;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getStringProperty;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.id;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isCloneFor;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isConnected;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isType;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markConnected;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markCycleInjection;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markDeselectedFor;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markSelectedFor;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.removeSelectionAnnotationsFor;
@@ -57,7 +53,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
@@ -106,6 +101,66 @@ public abstract class AbstractNeo4JEGraphDriver
     private static final String ALL_CYCLES = "all-cycles";
 
     private static final String METADATA_INDEX_PREFIX = "has-metadata-";
+
+    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
+
+    /* @formatter:off */
+    private static final String CYPHER_CYCLE_RETRIEVAL = String.format( 
+        "CYPHER 1.8 START n=node({roots}) " +
+        "\nMATCH p=(n)-[:%s*]->()-[r:%s]->(b) " +
+        "\nWITH p, n, r, b, ID(b) as bid " +
+        "\nWHERE has(r.%s) " +
+        // Paths with a cycle MUST have other occurrences of the terminating node:
+        "\n    AND length(filter(x in nodes(p) WHERE ID(x)=bid)) > 1" + 
+        "\nRETURN p as path", 
+        GRAPH_ATLAS_TYPES_CLAUSE, GRAPH_ATLAS_TYPES_CLAUSE, Conversions.CYCLE_INJECTION
+    );
+    
+    private static final String CYPHER_CYCLE_DETECTION = String.format( 
+        "CYPHER 1.8 START t=node({to}), f=node({from}) " +
+        "\nMATCH p=(t)-[:%s*]->f " +
+        "\nWHERE ID(t) <> ID(f) " +
+        "\nRETURN p as path " +
+        "\nLIMIT 1",
+        GRAPH_ATLAS_TYPES_CLAUSE
+    );
+    
+    private static final String CYPHER_SELECTION_RETRIEVAL = String.format(
+        "CYPHER 1.8 START a=node({roots}) " 
+            + "\nMATCH p1=(a)-[:%s*1..]->(s), " 
+            + "\n    p2=(a)-[:%s*1..]->(v) "
+            + "\nWITH v, s, last(relationships(p1)) as r1, last(relationships(p2)) as r2 "
+            + "\nWHERE v.groupId = s.groupId "
+            + "\n    AND v.artifactId = s.artifactId "
+            + "\n    AND has(r1._selected_for) "
+            + "\n    AND any(x in r1._selected_for "
+            + "\n        WHERE x IN {roots}) "
+            + "\n    AND has(r2._deselected_for) "
+            + "\n    AND any(x in r2._deselected_for "
+            + "\n          WHERE x IN {roots}) "
+            + "\nRETURN r1,r2,v,s",
+        GRAPH_ATLAS_TYPES_CLAUSE, GRAPH_ATLAS_TYPES_CLAUSE
+    );
+    
+    private static final String CYPHER_RETRIEVE_ALL_META = String.format( 
+        "CYPHER 1.8 START a=node({roots})%s "
+                    + "\nMATCH p=(a)-[:%s*]->(n) " 
+                    + "\nWHERE "
+                    + "\n    %s "
+                    + "\n    has(n.gav) "
+                    + "\n    %s "
+                    + "\nRETURN n as node, p as path",
+        "%s", GRAPH_ATLAS_TYPES_CLAUSE, "%s", "%s"
+    );
+    
+    private static final String CYPHER_ROOTED_CLAUSE = 
+        "none(r in relationships(p) "
+       + "\n        WHERE has(r._deselected_for) AND any(x in r._deselected_for WHERE x IN {roots}) "
+       + "\n    ) "
+       + "\n    AND ";
+
+
+    /* @formatter:on */
 
     private GraphDatabaseService graph;
 
@@ -268,27 +323,11 @@ public abstract class AbstractNeo4JEGraphDriver
     public Collection<ProjectRelationship<?>> getAllRelationships()
     {
         final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
-        final Map<Node, Path> result = getResultsTargeting( false, null );
-        nextResult: for ( final Path p : result.values() )
+        final Set<Path> result = getAllPathsTargeting( false );
+        for ( final Path p : result )
         {
             final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
             logger.debug( "Path: %s", p );
-
-            if ( filter != null )
-            {
-                //                            logger.debug( "Applying filter: %s", filter );
-
-                ProjectRelationshipFilter f = filter;
-                for ( final ProjectRelationship<?> pr : path )
-                {
-                    if ( !f.accept( pr ) )
-                    {
-                        continue nextResult;
-                    }
-
-                    f = f.getChildFilter( pr );
-                }
-            }
 
             logger.debug( "Adding %d relationships: %s", path.size(), path );
             rels.addAll( path );
@@ -310,11 +349,17 @@ public abstract class AbstractNeo4JEGraphDriver
         return rels;
     }
 
-    public Iterable<Relationship> getAllRelationshipsTargeting( final String where, final Long... ids )
+    public Set<Relationship> getAllRelationshipsTargeting( final Long... ids )
+    {
+        return getAllRelationshipsTargeting( null, null, ids );
+    }
+
+    public Set<Relationship> getAllRelationshipsTargeting( final String where, final Map<String, Object> whereParams,
+                                                           final Long... ids )
     {
         final Set<Relationship> rels = new HashSet<Relationship>();
-        final Map<Node, Path> result = getResultsTargeting( false, where, ids );
-        nextResult: for ( final Path p : result.values() )
+        final Set<Path> result = getAllPathsTargeting( false, where, whereParams, ids );
+        for ( final Path p : result )
         {
             final Relationship r = p.lastRelationship();
 
@@ -326,125 +371,92 @@ public abstract class AbstractNeo4JEGraphDriver
                 continue;
             }
 
-            if ( filter != null )
-            {
-                //                            logger.debug( "Applying filter: %s", filter );
-
-                final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
-                ProjectRelationshipFilter f = filter;
-                for ( final ProjectRelationship<?> pr : path )
-                {
-                    if ( !f.accept( pr ) )
-                    {
-                        continue nextResult;
-                    }
-
-                    f = f.getChildFilter( pr );
-                }
-
-                rels.add( r );
-            }
-            else
-            {
-                rels.add( r );
-            }
+            rels.add( r );
         }
 
         return rels;
     }
 
-    private Map<Node, Path> getResultsTargeting( final boolean checkExistence, final String where, final Long... ids )
+    private Map<Node, Set<Path>> getResultsTargeting( final String where, final Map<String, Object> whereParams,
+                                                      final Long... ids )
     {
         checkClosed();
 
         printCaller( "GET-ALL(where: " + where + ", targeting: " + join( ids, ", " ) + ")" );
 
         /* @formatter:off */
-        final String baseQuery = "START a=node(%s)%s "
-                            + "\nMATCH p=(a)-[:%s*]->(n) " 
-                            + "\nWHERE "
-                            + ( roots == null || roots.isEmpty() ? "" : 
-                                String.format(
-                                      "none(r in relationships(p) "
-                                    + "\n      WHERE has(r._deselected_for) AND any(x in r._deselected_for WHERE x IN [%s])"
-                                    + "\n  )",
-                                join( roots, ", ")
-                                )
-                              )
-//                            + "\nWHERE "
-                            + "\n    AND has(n.gav) "
-//                            + "\n    AND len = 0 "
-                            + "\n    %s "
-                            + "\nRETURN n as node, p as path %s";
-        
-        final String query = String.format( baseQuery,
-                                            ( roots == null || roots.isEmpty() ? "*" : join( roots, ", " ) ),
-                                            ( ids.length < 1 ? "" : ", n=node(" + join( ids, ", " ) + ")" ),
-                                            join( GraphRelType.atlasRelationshipTypes(), "|" ),
-                                            ( where == null ? "" : "AND " + where ),
-                                            ( checkExistence ? "LIMIT 1" : "" ) );
+        final String query = String.format( CYPHER_RETRIEVE_ALL_META, 
+                                            ( ids.length < 1 ? "" : ", n=node({targets})" ), 
+                                            ( roots == null || roots.isEmpty() ? "" : CYPHER_ROOTED_CLAUSE ), 
+                                            ( where == null ? "" : "AND " + where ) );
         /* @formatter:on */
+
+        final Map<String, Object> params = new HashMap<String, Object>();
+        if ( whereParams != null )
+        {
+            params.putAll( whereParams );
+        }
+
+        params.put( "roots", ( roots == null || roots.isEmpty() ? "*" : roots ) );
+
+        if ( ids.length > 0 )
+        {
+            params.put( "targets", Arrays.asList( ids ) );
+        }
 
         //            logger.debug( "Executing cypher query:\n\t%s", query );
 
-        final Map<Node, Path> results = new LinkedHashMap<Node, Path>();
-        try
+        final Map<Node, Set<Path>> results = new LinkedHashMap<Node, Set<Path>>();
+        final ExecutionResult execResult = execute( query, params );
+        if ( execResult != null )
         {
-            final ExecutionResult execResult = execute( query );
-            if ( execResult != null )
+            logger.debug( "Iterating query result" );
+            final Iterator<Map<String, Object>> mapIt = execResult.iterator();
+            //                final Iterator<Path> pathIt = execResult.columnAs( "path" );
+            //                final Iterator<Node> nodeIt = execResult.columnAs( "node" );
+
+            nextResult: while ( mapIt.hasNext() )
             {
-                logger.debug( "Iterating query result" );
-                final Iterator<Map<String, Object>> mapIt = execResult.iterator();
-                //                final Iterator<Path> pathIt = execResult.columnAs( "path" );
-                //                final Iterator<Node> nodeIt = execResult.columnAs( "node" );
+                final Map<String, Object> map = mapIt.next();
+                logger.debug( "Current result row:\n  %s", map );
 
-                nextResult: while ( mapIt.hasNext() )
+                final Node n = (Node) map.get( "node" );
+                final Path p = (Path) map.get( "path" );
+
+                if ( p == null )
                 {
-                    final Map<String, Object> map = mapIt.next();
-                    logger.debug( "Current result row:\n  %s", map );
+                    continue;
+                }
 
-                    final Node n = (Node) map.get( "node" );
-                    final Path p = (Path) map.get( "path" );
+                logger.debug( "Node: %s\nPath: %s", n, p );
 
-                    if ( !checkExistence && p == null )
+                if ( p != null && filter != null )
+                {
+                    //                            logger.debug( "Applying filter: %s", filter );
+                    final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
+                    ProjectRelationshipFilter f = filter;
+                    for ( final ProjectRelationship<?> pr : path )
                     {
-                        continue;
-                    }
-
-                    logger.debug( "Node: %s\nPath: %s", n, p );
-
-                    if ( p != null && filter != null )
-                    {
-                        //                            logger.debug( "Applying filter: %s", filter );
-                        final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
-                        ProjectRelationshipFilter f = filter;
-                        for ( final ProjectRelationship<?> pr : path )
+                        if ( !f.accept( pr ) )
                         {
-                            if ( !f.accept( pr ) )
-                            {
-                                continue nextResult;
-                            }
-
-                            f = f.getChildFilter( pr );
+                            continue nextResult;
                         }
-                    }
 
-                    results.put( n, p );
-
-                    if ( checkExistence )
-                    {
-                        logger.debug( "Only checking for existence, so breaking iteration now." );
-                        break;
+                        f = f.getChildFilter( pr );
                     }
                 }
 
-                //                logger.debug( "Got %d results.", results.size() );
+                Set<Path> paths = results.get( n );
+                if ( paths == null )
+                {
+                    paths = new HashSet<Path>();
+                    results.put( n, paths );
+                }
+
+                paths.add( p );
             }
-        }
-        catch ( final GraphDriverException e )
-        {
-            logger.error( "Failed to run cypher query to find relationships connected to root(s): %s.\nReason: %s", e,
-                          roots, e.getMessage() );
+
+            //                logger.debug( "Got %d results.", results.size() );
         }
 
         //        logger.debug( "Total: %d results:\n\n  %s", results.size(), results );
@@ -452,43 +464,72 @@ public abstract class AbstractNeo4JEGraphDriver
         return results;
     }
 
-    public Set<Path> getAllPathsTargeting( final String where, final Long... ids )
+    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef ref )
+    {
+        final Node n = getNode( ref );
+        if ( n == null )
+        {
+            return null;
+        }
+
+        final Set<Path> paths = getAllPathsTargeting( false, new Long[] { n.getId() } );
+        final Set<List<ProjectRelationship<?>>> result = new HashSet<List<ProjectRelationship<?>>>();
+        for ( final Path path : paths )
+        {
+            result.add( convertToRelationships( path.relationships() ) );
+        }
+
+        return result;
+    }
+
+    public Set<Path> getAllPathsTargeting( final boolean checkExistence, final Long... ids )
+    {
+        return getAllPathsTargeting( checkExistence, null, null, ids );
+    }
+
+    public Set<Path> getAllPathsTargeting( final boolean checkExistence, final String where,
+                                           final Map<String, Object> whereParams, final Long... ids )
     {
         final Set<Path> paths = new HashSet<Path>();
-        final Map<Node, Path> result = getResultsTargeting( false, where, ids );
-        nextResult: for ( final Path p : result.values() )
+
+        final Map<Node, Set<Path>> result = getResultsTargeting( where, whereParams, ids );
+        for ( final Set<Path> nodePaths : result.values() )
         {
-            //                        logger.debug( "Rel: %s\nPath: %s", r, p );
-
-            if ( filter != null )
+            nextResult: for ( final Path p : nodePaths )
             {
-                //                            logger.debug( "Applying filter: %s", filter );
-
-                final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
-                ProjectRelationshipFilter f = filter;
-                for ( final ProjectRelationship<?> pr : path )
+                if ( filter != null )
                 {
-                    if ( !f.accept( pr ) )
+                    final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
+                    ProjectRelationshipFilter f = filter;
+                    for ( final ProjectRelationship<?> pr : path )
                     {
-                        continue nextResult;
-                    }
+                        if ( !f.accept( pr ) )
+                        {
+                            continue nextResult;
+                        }
 
-                    f = f.getChildFilter( pr );
+                        f = f.getChildFilter( pr );
+                    }
+                }
+
+                paths.add( p );
+
+                if ( checkExistence )
+                {
+                    return paths;
                 }
             }
-
-            paths.add( p );
         }
 
         return paths;
     }
 
-    public boolean addRelationships( final ProjectRelationship<?>... rels )
+    public Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
         checkClosed();
 
         final Transaction tx = graph.beginTx();
-        boolean changed = false;
+        final Set<ProjectRelationship<?>> skipped = new HashSet<ProjectRelationship<?>>();
         try
         {
             for ( final ProjectRelationship<?> rel : rels )
@@ -509,7 +550,6 @@ public abstract class AbstractNeo4JEGraphDriver
                     final IndexHits<Node> hits = index.get( GAV, ref.toString() );
                     if ( !hits.hasNext() )
                     {
-                        changed = true;
                         final Node node = newProjectNode( ref );
                         logger.debug( "Created project node: %s with id: %d", ref, node.getId() );
                         ids[i] = node.getId();
@@ -538,7 +578,6 @@ public abstract class AbstractNeo4JEGraphDriver
                     logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, ids[0],
                                   ids[1] );
 
-                    changed = true;
                     final Relationship relationship =
                         from.createRelationshipTo( to, GraphRelType.map( rel.getType(), rel.isManaged() ) );
 
@@ -548,6 +587,18 @@ public abstract class AbstractNeo4JEGraphDriver
                     relIdx.add( relationship, RELATIONSHIP_ID, relId );
 
                     markConnected( from, true );
+
+                    if ( introducesCycle( rel, relationship ) )
+                    {
+                        markCycleInjection( relationship );
+                        skipped.add( rel );
+                        logger.warn( "%s introduces a cycle!", rel );
+                    }
+                }
+                else
+                {
+                    // Not SKIPPED per se...just already logged.
+                    //                    skipped.add( rel );
                 }
             }
 
@@ -559,7 +610,37 @@ public abstract class AbstractNeo4JEGraphDriver
             tx.finish();
         }
 
-        return changed;
+        return skipped;
+    }
+
+    public boolean introducesCycle( final ProjectRelationship<?> rel )
+    {
+        final Relationship r = getRelationship( rel );
+        return r != null && introducesCycle( rel, r );
+    }
+
+    private boolean introducesCycle( final ProjectRelationship<?> rel, final Relationship relationship )
+    {
+        final Node from = relationship.getStartNode();
+        final Node to = relationship.getEndNode();
+
+        if ( from == null || to == null )
+        {
+            return false;
+        }
+
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put( "to", to.getId() );
+        params.put( "from", from.getId() );
+
+        final ExecutionResult result = execute( CYPHER_CYCLE_DETECTION, params );
+        if ( result.iterator()
+                   .hasNext() )
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private Node newProjectNode( final ProjectVersionRef ref )
@@ -576,14 +657,17 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public Set<ProjectVersionRef> getAllProjects()
     {
-        return new HashSet<ProjectVersionRef>( convertToProjects( getAllProjectNodesWhere( false, "has(n.gav)" ) ) );
+        return new HashSet<ProjectVersionRef>( convertToProjects( getAllProjectNodesWhere( false, null, null ) ) );
     }
 
     private Set<ProjectVersionRef> getAllFlaggedProjects( final String flag, final boolean state )
     {
-        final String query = String.format( "n.%s%s = %s", flag, ( state ? "!" : "?" ), state );
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put( "value", state );
 
-        final Iterable<Node> hits = getAllProjectNodesWhere( false, query );
+        final String query = String.format( "n.%s%s = {value}", flag, ( state ? "!" : "?" ) );
+
+        final Iterable<Node> hits = getAllProjectNodesWhere( false, query, params );
 
         final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
         for ( final Node node : hits )
@@ -600,61 +684,76 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private boolean hasFlaggedProject( final String flag, final boolean state )
     {
-        final Iterable<Node> hits = getAllProjectNodesWhere( true, String.format( "n.%s = %s", flag, state ) );
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put( "value", state );
 
-        return hits.iterator()
-                   .hasNext();
+        final Set<Node> hits =
+            getAllProjectNodesWhere( true, String.format( "n.%s%s = {value}", flag, ( state ? "!" : "?" ) ), params );
+
+        return !hits.isEmpty();
     }
 
-    private Iterable<Node> getAllProjectNodes()
+    private Set<Node> getAllProjectNodes()
     {
-        return getAllProjectNodesWhere( false, null );
+        return getAllProjectNodesWhere( false, null, null );
     }
 
-    private Iterable<Node> getAllProjectNodesWhere( final boolean existence, final String where )
+    private Set<Node> getAllProjectNodesWhere( final boolean existence, final String where,
+                                               final Map<String, Object> whereParams )
     {
         final Set<Node> refs = new HashSet<Node>();
-        final Map<Node, Path> result = getResultsTargeting( existence, where );
-        int i = 0;
+        final Map<Node, Set<Path>> result = getResultsTargeting( where, whereParams );
+        //        int i = 0;
 
         //                    logger.debug( "Iterating result: %s", result );
-        nextResult: for ( final Map.Entry<Node, Path> entry : result.entrySet() )
+        for ( final Map.Entry<Node, Set<Path>> entry : result.entrySet() )
         {
             final Node n = entry.getKey();
-            final Path p = entry.getValue();
+            final Set<Path> nodePaths = entry.getValue();
 
-            logger.debug( "Result[%d]: node: %s, path: %s", i, n, p );
+            //            logger.debug( "Result[%d]: node: %s, path: %s", i, n, p );
 
             if ( n == null )
             {
                 continue;
             }
 
+            boolean add = true;
             if ( filter != null )
             {
-                if ( p == null )
+                add = false;
+                nextPath: for ( final Path p : nodePaths )
                 {
-                    continue nextResult;
-                }
-
-                final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
-                ProjectRelationshipFilter f = filter;
-                for ( final ProjectRelationship<?> pr : path )
-                {
-                    if ( !f.accept( pr ) )
+                    if ( p == null )
                     {
-                        continue nextResult;
+                        continue;
                     }
 
-                    f = f.getChildFilter( pr );
+                    final List<ProjectRelationship<?>> path = convertToRelationships( p.relationships() );
+                    ProjectRelationshipFilter f = filter;
+                    for ( final ProjectRelationship<?> pr : path )
+                    {
+                        if ( !f.accept( pr ) )
+                        {
+                            continue nextPath;
+                        }
+
+                        f = f.getChildFilter( pr );
+                    }
+
+                    add = true;
+                    break;
                 }
             }
 
-            refs.add( n );
+            if ( add )
+            {
+                refs.add( n );
+            }
 
             logger.debug( "Got %d projects so far.", refs.size() );
 
-            i++;
+            //            i++;
         }
 
         return refs;
@@ -829,6 +928,11 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public Node getNode( final ProjectVersionRef ref )
     {
+        return getNode( ref, true );
+    }
+
+    public Node getNode( final ProjectVersionRef ref, final boolean inCurrentGraph )
+    {
         checkClosed();
 
         final Index<Node> idx = graph.index()
@@ -841,7 +945,7 @@ public abstract class AbstractNeo4JEGraphDriver
         logger.debug( "Query result for node: %s is: %s\nChecking for path to root(s): %s", ref, node,
                       join( roots, "|" ) );
 
-        if ( !hasPathTo( node ) )
+        if ( inCurrentGraph && !hasPathTo( node ) )
         {
             return null;
         }
@@ -867,7 +971,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         logger.debug( "Checking for path between roots: %s and target node: %s", join( roots, "," ), node.getId() );
-        final Map<Node, Path> result = getResultsTargeting( true, null, node.getId() );
+        final Set<Path> result = getAllPathsTargeting( true, node.getId() );
         return !result.isEmpty();
     }
 
@@ -992,66 +1096,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public boolean addCycle( final EProjectCycle cycle )
     {
-        final Set<String> relIds = new HashSet<String>();
-        final Set<Relationship> relationships = new HashSet<Relationship>();
-        final Set<Long> relationshipIds = new HashSet<Long>();
-        for ( final ProjectRelationship<?> rel : cycle )
-        {
-            relIds.add( id( rel ) );
-            final Relationship relationship = getRelationship( rel );
-            if ( relationship != null )
-            {
-                relationships.add( relationship );
-                relationshipIds.add( relationship.getId() );
-            }
-        }
-
-        final String rawCycleId = join( relIds, "," );
-        final String cycleId = DigestUtils.shaHex( rawCycleId );
-        final Index<Node> index = graph.index()
-                                       .forNodes( ALL_CYCLES );
-
-        final IndexHits<Node> hits = index.get( CYCLE_ID, cycleId );
-
-        if ( hits.size() < 1 )
-        {
-            final Transaction tx = graph.beginTx();
-            try
-            {
-                final Node node = graph.createNode();
-                toNodeProperties( cycleId, rawCycleId, cycle.getAllParticipatingProjects(), node );
-
-                index.add( node, CYCLE_ID, cycleId );
-
-                for ( final Relationship r : relationships )
-                {
-                    String cycleRefs = getMetadata( CYCLE_MEMBERSHIP, r );
-                    if ( cycleRefs == null )
-                    {
-                        cycleRefs = "";
-                    }
-
-                    if ( !cycleRefs.contains( cycleId ) )
-                    {
-                        setMetadata( CYCLE_MEMBERSHIP, cycleRefs + "," + cycleId, r );
-                    }
-                }
-
-                for ( final ProjectVersionRef ref : cycle.getAllParticipatingProjects() )
-                {
-                    final Node affectedNode = getNode( ref );
-                    affectedNode.createRelationshipTo( node, GraphRelType.CYCLE );
-                }
-
-                tx.success();
-                return true;
-            }
-            finally
-            {
-                tx.finish();
-            }
-        }
-
+        // NOP, auto-detected.
         return false;
     }
 
@@ -1059,44 +1104,53 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         printCaller( "GET-CYCLES" );
 
-        final IndexHits<Node> query = graph.index()
-                                           .forNodes( ALL_CYCLES )
-                                           .query( CYCLE_ID, "*" );
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put( "roots", ( roots == null || roots.isEmpty() ? "*" : roots ) );
+
+        final ExecutionResult result = execute( CYPHER_CYCLE_RETRIEVAL, params );
 
         final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
-        for ( final Node cycleNode : query )
+        nextPath: for ( final Map<String, Object> record : result )
         {
-            if ( !isType( cycleNode, NodeType.CYCLE ) )
-            {
-                continue;
-            }
+            final Path p = (Path) record.get( "path" );
+            final Node terminus = p.lastRelationship()
+                                   .getEndNode();
 
-            final String relIdStr = getStringProperty( CYCLE_RELATIONSHIPS, cycleNode );
-            if ( isEmpty( relIdStr ) )
-            {
-                continue;
-            }
+            final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
+            boolean logging = false;
 
-            final String[] relIds = relIdStr.split( "\\s*,\\s*" );
-            final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>( relIds.length );
-            for ( final String relId : relIds )
+            ProjectRelationshipFilter f = filter;
+            for ( final Relationship r : p.relationships() )
             {
-                final Relationship r = getRelationship( relId );
-                if ( r == null )
+                if ( r.getStartNode()
+                      .equals( terminus ) )
                 {
-                    continue;
+                    logging = true;
                 }
 
-                final ProjectRelationship<?> pr = toProjectRelationship( r );
-                if ( pr == null )
+                if ( logging )
                 {
-                    continue;
-                }
+                    final ProjectRelationship<?> rel = toProjectRelationship( r );
+                    if ( f != null )
+                    {
+                        if ( !f.accept( rel ) )
+                        {
+                            continue nextPath;
+                        }
+                        else
+                        {
+                            f = f.getChildFilter( rel );
+                        }
+                    }
 
-                rels.add( pr );
+                    rels.add( rel );
+                }
             }
 
-            cycles.add( new EProjectCycle( rels ) );
+            if ( !rels.isEmpty() )
+            {
+                cycles.add( new EProjectCycle( rels ) );
+            }
         }
 
         return cycles;
@@ -1104,25 +1158,28 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public boolean isCycleParticipant( final ProjectRelationship<?> rel )
     {
-        final Relationship r = getRelationship( rel );
-        if ( r == null )
+        for ( final EProjectCycle cycle : getCycles() )
         {
-            return false;
+            if ( cycle.contains( rel ) )
+            {
+                return true;
+            }
         }
 
-        final String cycleMembership = getMetadata( CYCLE_MEMBERSHIP, r );
-        return cycleMembership != null && cycleMembership.contains( id( rel ) );
+        return false;
     }
 
     public boolean isCycleParticipant( final ProjectVersionRef ref )
     {
-        final Node node = getNode( ref );
-        if ( node == null )
+        for ( final EProjectCycle cycle : getCycles() )
         {
-            return false;
+            if ( cycle.contains( ref ) )
+            {
+                return true;
+            }
         }
 
-        return node.getSingleRelationship( GraphRelType.CYCLE, Direction.OUTGOING ) != null;
+        return false;
     }
 
     public void recomputeIncompleteSubgraphs()
@@ -1264,23 +1321,24 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     public ExecutionResult execute( final String cypher )
-        throws GraphDriverException
     {
         return execute( cypher, null );
     }
 
     public ExecutionResult execute( final String cypher, final Map<String, Object> params )
-        throws GraphDriverException
     {
         checkExecutionEngine();
 
-        // FIXME: Remove this!
-        printGraphStats();
-        logger.debug( "Running query:\n\n%s\n\n", cypher );
+        logger.debug( "Running query:\n\n%s\n\nWith params:\n\n%s\n\n", cypher, params );
 
         final String query = cypher.replaceAll( "(\\s)\\s+", "$1" );
 
-        return params == null ? queryEngine.execute( query ) : queryEngine.execute( query, params );
+        final ExecutionResult result =
+            params == null ? queryEngine.execute( query ) : queryEngine.execute( query, params );
+
+        //        logger.info( "Execution plan:\n%s", result.executionPlanDescription() );
+
+        return result;
     }
 
     private synchronized void checkExecutionEngine()
@@ -1375,7 +1433,7 @@ public abstract class AbstractNeo4JEGraphDriver
                                             variable );
         }
 
-        final Iterable<Path> affected = getAllPathsTargeting( null, node.getId() );
+        final Iterable<Path> affected = getAllPathsTargeting( false, node.getId() );
         for ( final Path p : affected )
         {
             final Relationship from = p.lastRelationship();
@@ -1542,28 +1600,10 @@ public abstract class AbstractNeo4JEGraphDriver
                                             "Cannot manage version selections unless current network has one or more root projects." );
         }
 
-        final String typeStr = join( GraphRelType.atlasRelationshipTypes(), "|" );
-        final String rootStr = join( roots, ", " );
+        final Map<String, Object> params = new HashMap<String, Object>();
+        params.put( "roots", roots );
 
-        /* @formatter:off */
-        final String baseQuery =
-            "START a=node(%s) " 
-                + "MATCH p1=(a)-[:%s*1..]->(s), " 
-                + "  p2=(a)-[:%s*1..]->(v) "
-                + "WITH v, s, last(relationships(p1)) as r1, last(relationships(p2)) as r2 "
-                + "WHERE v.groupId = s.groupId "
-                + "    AND v.artifactId = s.artifactId "
-                + "    AND has(r1._selected_for) "
-                + "    AND any(x in r1._selected_for "
-                + "        WHERE x IN [%s]) "
-                + "    AND has(r2._deselected_for) "
-                + "    AND any(x in r2._deselected_for "
-                + "          WHERE x IN [%s]) "
-                + "RETURN r1,r2,v,s";
-        /* @formatter:on */
-
-        final String query = String.format( baseQuery, rootStr, typeStr, typeStr, rootStr, rootStr );
-        final ExecutionResult result = execute( query );
+        final ExecutionResult result = execute( CYPHER_SELECTION_RETRIEVAL, params );
 
         final Iterator<Map<String, Object>> mapIt = result.iterator();
 

@@ -11,7 +11,7 @@ import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.spi.neo4j.effective.AbstractNeo4JEGraphDriver;
-import org.commonjava.maven.atlas.spi.neo4j.fixture.MemoryDriverFixture;
+import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
 import org.commonjava.util.logging.Log4jUtil;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -22,7 +22,7 @@ public class CypherQueriesTest
 {
 
     @Rule
-    public MemoryDriverFixture fixture = new MemoryDriverFixture();
+    public FileDriverFixture fixture = new FileDriverFixture();
 
     @BeforeClass
     public static void logging()

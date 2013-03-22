@@ -61,6 +61,8 @@ public interface EProjectNet
 
     Set<ProjectRelationship<?>> getRelationshipsTargeting( ProjectVersionRef ref );
 
+    Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef ref );
+
     boolean isDerivedFrom( EProjectNet net );
 
     EProjectGraph getGraph( ProjectRelationshipFilter filter, EProjectKey key )

@@ -101,6 +101,8 @@ public final class Conversions
 
     public static final String CLONE_OF = "_clone_of";
 
+    public static final String CYCLE_INJECTION = "_cycle_injection";
+
     private Conversions()
     {
     }
@@ -491,6 +493,11 @@ public final class Conversions
     public static void markConnected( final Node node, final boolean connected )
     {
         node.setProperty( CONNECTED, connected );
+    }
+
+    public static void markCycleInjection( final Relationship relationship )
+    {
+        relationship.setProperty( CYCLE_INJECTION, true );
     }
 
     public static void cloneRelationshipProperties( final Relationship from, final Relationship to )

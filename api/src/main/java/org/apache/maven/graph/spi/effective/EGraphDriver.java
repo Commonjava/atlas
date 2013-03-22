@@ -18,6 +18,7 @@ package org.apache.maven.graph.spi.effective;
 
 import java.io.Closeable;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,7 +46,16 @@ public interface EGraphDriver
 
     Collection<ProjectRelationship<?>> getAllRelationships();
 
-    boolean addRelationships( ProjectRelationship<?>... rel );
+    Set<List<ProjectRelationship<?>>> getAllPathsTo( ProjectVersionRef ref );
+
+    /**
+     * Add the given relationships. Skip/return those that introduce cycles.
+     * 
+     * @return The set of relationships that were NOT added because they introduce cycles. NEVER null, but maybe empty.
+     */
+    Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel );
+
+    boolean introducesCycle( ProjectRelationship<?> rel );
 
     Set<ProjectVersionRef> getAllProjects();
 
