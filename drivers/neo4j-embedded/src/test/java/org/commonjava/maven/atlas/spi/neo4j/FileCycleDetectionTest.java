@@ -14,42 +14,32 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.commonjava.maven.atlas.tck.effective;
+package org.commonjava.maven.atlas.spi.neo4j;
 
-import java.util.Date;
-
+import org.apache.log4j.Level;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.commonjava.util.logging.Logger;
-import org.junit.After;
-import org.junit.Before;
+import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
+import org.commonjava.maven.atlas.tck.effective.CycleDetectionTCK;
+import org.commonjava.util.logging.Log4jUtil;
+import org.junit.BeforeClass;
 import org.junit.Rule;
-import org.junit.rules.TestName;
 
-public abstract class AbstractSPI_TCK
+public class FileCycleDetectionTest
+    extends CycleDetectionTCK
 {
-
     @Rule
-    public TestName name = new TestName();
+    public FileDriverFixture fixture = new FileDriverFixture();
 
-    protected final Logger logger = new Logger( getClass() );
-
-    protected abstract EGraphDriver newDriverInstance()
-        throws Exception;
-
-    private long start;
-
-    @Before
-    public void printStart()
+    @BeforeClass
+    public static void logging()
     {
-        start = System.currentTimeMillis();
-        System.out.printf( "***START [%s#%s] (%s)\n\n", name.getClass(), name.getMethodName(), new Date().toString() );
+        Log4jUtil.configure( Level.DEBUG );
     }
 
-    @After
-    public void printEnd()
+    @Override
+    protected EGraphDriver newDriverInstance()
+        throws Exception
     {
-        System.out.printf( "\n\n***END [%s#%s] - %dms (%s)\n", name.getClass(), name.getMethodName(),
-                           ( System.currentTimeMillis() - start ), new Date().toString() );
+        return fixture.newDriverInstance();
     }
-
 }

@@ -18,7 +18,6 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 
 import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CONNECTED;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.CYCLE_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.VARIABLE;
@@ -94,13 +93,13 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private final Logger logger = new Logger( getClass() );
 
-    private static final String ALL_RELATIONSHIPS = "all-relationships";
+    private static final String ALL_RELATIONSHIPS = "all_relationships";
 
-    private static final String ALL_NODES = "all-nodes";
+    private static final String ALL_NODES = "all_nodes";
 
-    private static final String ALL_CYCLES = "all-cycles";
+    private static final String CYCLE_INJECTION_POINTS = "cycle_injections";
 
-    private static final String METADATA_INDEX_PREFIX = "has-metadata-";
+    private static final String METADATA_INDEX_PREFIX = "has_metadata_";
 
     private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
 
@@ -108,38 +107,47 @@ public abstract class AbstractNeo4JEGraphDriver
     private static final String CYPHER_CYCLE_RETRIEVAL = String.format( 
         "CYPHER 1.8 START n=node({roots}) " +
         "\nMATCH p=(n)-[:%s*]->()-[r:%s]->(b) " +
-        "\nWITH p, n, r, b, ID(b) as bid " +
         "\nWHERE has(r.%s) " +
-        // Paths with a cycle MUST have other occurrences of the terminating node:
-        "\n    AND length(filter(x in nodes(p) WHERE ID(x)=bid)) > 1" + 
         "\nRETURN p as path", 
         GRAPH_ATLAS_TYPES_CLAUSE, GRAPH_ATLAS_TYPES_CLAUSE, Conversions.CYCLE_INJECTION
     );
     
-    private static final String CYPHER_CYCLE_DETECTION = String.format( 
+    private static final String CYPHER_CYCLE_DETECTION_NEW = String.format( 
         "CYPHER 1.8 START t=node({to}), f=node({from}) " +
-        "\nMATCH p=(t)-[:%s*]->f " +
+        "\nMATCH p=(t)-[:%s*]->(f) " +
         "\nWHERE ID(t) <> ID(f) " +
         "\nRETURN p as path " +
         "\nLIMIT 1",
         GRAPH_ATLAS_TYPES_CLAUSE
     );
     
+    private static final String CYPHER_CYCLE_DETECTION_EXISTING = String.format( 
+       "CYPHER 1.8 START t=node({to}) " +
+        "\nMATCH p=(t)-[:%s*]->(t) " +
+       "\nRETURN p as path " +
+       "\nLIMIT 1",
+       GRAPH_ATLAS_TYPES_CLAUSE
+   );
+                                                                   
     private static final String CYPHER_SELECTION_RETRIEVAL = String.format(
         "CYPHER 1.8 START a=node({roots}) " 
             + "\nMATCH p1=(a)-[:%s*1..]->(s), " 
             + "\n    p2=(a)-[:%s*1..]->(v) "
             + "\nWITH v, s, last(relationships(p1)) as r1, last(relationships(p2)) as r2 "
-            + "\nWHERE v.groupId = s.groupId "
-            + "\n    AND v.artifactId = s.artifactId "
-            + "\n    AND has(r1._selected_for) "
-            + "\n    AND any(x in r1._selected_for "
+            + "\nWHERE v.%s = s.%s "
+            + "\n    AND v.%s = s.%s "
+            + "\n    AND has(r1.%s) "
+            + "\n    AND any(x in r1.%s "
             + "\n        WHERE x IN {roots}) "
-            + "\n    AND has(r2._deselected_for) "
-            + "\n    AND any(x in r2._deselected_for "
+            + "\n    AND has(r2.%s) "
+            + "\n    AND any(x in r2.%s "
             + "\n          WHERE x IN {roots}) "
             + "\nRETURN r1,r2,v,s",
-        GRAPH_ATLAS_TYPES_CLAUSE, GRAPH_ATLAS_TYPES_CLAUSE
+        GRAPH_ATLAS_TYPES_CLAUSE, GRAPH_ATLAS_TYPES_CLAUSE, 
+        Conversions.GROUP_ID, Conversions.GROUP_ID, 
+        Conversions.ARTIFACT_ID, Conversions.ARTIFACT_ID, 
+        Conversions.SELECTED_FOR, Conversions.SELECTED_FOR, 
+        Conversions.DESELECTED_FOR, Conversions.DESELECTED_FOR
     );
     
     private static final String CYPHER_RETRIEVE_ALL_META = String.format( 
@@ -147,19 +155,19 @@ public abstract class AbstractNeo4JEGraphDriver
                     + "\nMATCH p=(a)-[:%s*]->(n) " 
                     + "\nWHERE "
                     + "\n    %s "
-                    + "\n    has(n.gav) "
+                    + "\n    has(n.%s) "
                     + "\n    %s "
                     + "\nRETURN n as node, p as path",
-        "%s", GRAPH_ATLAS_TYPES_CLAUSE, "%s", "%s"
+        "%s", GRAPH_ATLAS_TYPES_CLAUSE, "%s", Conversions.GAV, "%s"
     );
     
-    private static final String CYPHER_ROOTED_CLAUSE = 
+    private static final String CYPHER_ROOTED_CLAUSE = String.format(
         "none(r in relationships(p) "
-       + "\n        WHERE has(r._deselected_for) AND any(x in r._deselected_for WHERE x IN {roots}) "
-       + "\n    ) "
-       + "\n    AND ";
-
-
+        + "\n        WHERE has(r.%s) AND any(x in r.%s WHERE x IN {roots}) "
+        + "\n    ) "
+        + "\n    AND ",
+        Conversions.DESELECTED_FOR, Conversions.DESELECTED_FOR
+    );
     /* @formatter:on */
 
     private GraphDatabaseService graph;
@@ -264,11 +272,6 @@ public abstract class AbstractNeo4JEGraphDriver
                                                                     .forRelationships( ALL_RELATIONSHIPS )
                                                                     .query( RELATIONSHIP_ID, "*" )
                                                                     .size() );
-
-        logger.info( "Loaded approximately %d relationship-cycle nodes.", graph.index()
-                                                                               .forNodes( ALL_CYCLES )
-                                                                               .query( CYCLE_ID, "*" )
-                                                                               .size() );
     }
 
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
@@ -573,27 +576,24 @@ public abstract class AbstractNeo4JEGraphDriver
                 if ( relHits.size() < 1 )
                 {
                     final Node from = graph.getNodeById( ids[0] );
-                    final Node to = graph.getNodeById( ids[1] );
 
-                    logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, ids[0],
-                                  ids[1] );
+                    if ( ids[0] != ids[1] )
+                    {
+                        final Node to = graph.getNodeById( ids[1] );
 
-                    final Relationship relationship =
-                        from.createRelationshipTo( to, GraphRelType.map( rel.getType(), rel.isManaged() ) );
+                        logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, ids[0],
+                                      ids[1] );
 
-                    logger.debug( "New relationship is: %s", relationship );
+                        final Relationship relationship =
+                            from.createRelationshipTo( to, GraphRelType.map( rel.getType(), rel.isManaged() ) );
 
-                    toRelationshipProperties( rel, relationship );
-                    relIdx.add( relationship, RELATIONSHIP_ID, relId );
+                        logger.debug( "New relationship is: %s", relationship );
+
+                        toRelationshipProperties( rel, relationship );
+                        relIdx.add( relationship, RELATIONSHIP_ID, relId );
+                    }
 
                     markConnected( from, true );
-
-                    if ( introducesCycle( rel, relationship ) )
-                    {
-                        markCycleInjection( relationship );
-                        skipped.add( rel );
-                        logger.warn( "%s introduces a cycle!", rel );
-                    }
                 }
                 else
                 {
@@ -610,20 +610,47 @@ public abstract class AbstractNeo4JEGraphDriver
             tx.finish();
         }
 
+        for ( final ProjectRelationship<?> rel : rels )
+        {
+            if ( skipped.contains( rel ) )
+            {
+                continue;
+            }
+
+            final Relationship r = getRelationship( rel );
+            if ( r == null || markCycle( rel, r ) )
+            {
+                skipped.add( rel );
+            }
+        }
+
         return skipped;
+    }
+
+    public boolean markCycle( final ProjectRelationship<?> rel, final Relationship relationship )
+    {
+        if ( introducesCycle( rel ) )
+        {
+            markCycleInjection( relationship );
+
+            final String relId = id( rel );
+            graph.index()
+                 .forRelationships( CYCLE_INJECTION_POINTS )
+                 .add( relationship, RELATIONSHIP_ID, relId );
+
+            return true;
+        }
+
+        return false;
     }
 
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
-        final Relationship r = getRelationship( rel );
-        return r != null && introducesCycle( rel, r );
-    }
+        logger.info( "\n\n\n\nCHECKING FOR CYCLES INTRODUCED BY: %s\n\n\n\n", rel );
 
-    private boolean introducesCycle( final ProjectRelationship<?> rel, final Relationship relationship )
-    {
-        final Node from = relationship.getStartNode();
-        final Node to = relationship.getEndNode();
-
+        final Node from = getNode( rel.getDeclaring() );
+        final Node to = getNode( rel.getTarget()
+                                    .asProjectVersionRef() );
         if ( from == null || to == null )
         {
             return false;
@@ -631,15 +658,27 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final Map<String, Object> params = new HashMap<String, Object>();
         params.put( "to", to.getId() );
-        params.put( "from", from.getId() );
+        //        params.put( "from", from.getId() );
 
-        final ExecutionResult result = execute( CYPHER_CYCLE_DETECTION, params );
+        ExecutionResult result = execute( CYPHER_CYCLE_DETECTION_EXISTING, params );
         if ( result.iterator()
                    .hasNext() )
         {
+            logger.warn( "\n\n\n\nCYCLE DETECTED!\n\nCycle completed via: %s\n\n\n\n", rel );
             return true;
         }
 
+        params.put( "from", from.getId() );
+
+        result = execute( CYPHER_CYCLE_DETECTION_NEW, params );
+        if ( result.iterator()
+                   .hasNext() )
+        {
+            logger.warn( "\n\n\n\nCYCLE DETECTED!\n\nCycle completed via: %s\n\n\n\n", rel );
+            return true;
+        }
+
+        logger.info( "\n\n\n\nNO CYCLES via: %s\n\n\n\n", rel );
         return false;
     }
 

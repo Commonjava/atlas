@@ -456,4 +456,9 @@ public class EProjectWeb
     {
         return driver.getAllPathsTo( ref );
     }
+
+    public boolean introducesCycle( final ProjectRelationship<?> rel )
+    {
+        return driver.introducesCycle( rel );
+    }
 }

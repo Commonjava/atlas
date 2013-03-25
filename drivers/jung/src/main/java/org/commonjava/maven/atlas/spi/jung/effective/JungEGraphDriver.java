@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.spi.jung.effective;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -54,6 +56,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 public class JungEGraphDriver
     implements EGraphDriver
 {
+    private final Logger logger = new Logger( getClass() );
 
     private DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
@@ -158,12 +161,6 @@ public class JungEGraphDriver
         final Set<ProjectRelationship<?>> skipped = new HashSet<ProjectRelationship<?>>();
         for ( final ProjectRelationship<?> rel : rels )
         {
-            if ( introducesCycle( rel ) )
-            {
-                skipped.add( rel );
-                continue;
-            }
-
             if ( !graph.containsVertex( rel.getDeclaring() ) )
             {
                 graph.addVertex( rel.getDeclaring() );
@@ -194,6 +191,29 @@ public class JungEGraphDriver
             incompleteSubgraphs.remove( rel.getDeclaring() );
         }
 
+        for ( final ProjectRelationship<?> rel : rels )
+        {
+            if ( skipped.contains( rel ) )
+            {
+                continue;
+            }
+
+            final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
+
+            dfsTraverse( traversal, 0, rel.getTarget()
+                                          .asProjectVersionRef() );
+
+            final List<EProjectCycle> cycles = traversal.getCycles();
+
+            if ( !cycles.isEmpty() )
+            {
+                skipped.add( rel );
+
+                graph.removeEdge( rel );
+                this.cycles.addAll( cycles );
+            }
+        }
+
         return skipped;
     }
 
@@ -218,12 +238,12 @@ public class JungEGraphDriver
 
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
-        final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel.getDeclaring() );
+        final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
         dfsTraverse( traversal, 0, rel.getTarget()
                                       .asProjectVersionRef() );
 
-        return !traversal.getCycleRoots()
+        return !traversal.getCycles()
                          .isEmpty();
     }
 
@@ -721,27 +741,40 @@ public class JungEGraphDriver
     private static final class CycleDetectionTraversal
         extends AbstractTraversal
     {
-        private final ProjectVersionRef from;
+        private final List<EProjectCycle> cycles = new ArrayList<EProjectCycle>();
 
-        private final List<List<ProjectRelationship<?>>> cycleRoots = new ArrayList<List<ProjectRelationship<?>>>();
+        private final ProjectRelationship<?> rel;
 
-        private CycleDetectionTraversal( final ProjectVersionRef from )
+        private CycleDetectionTraversal( final ProjectRelationship<?> rel )
         {
-            this.from = from;
+            this.rel = rel;
         }
 
-        public List<List<ProjectRelationship<?>>> getCycleRoots()
+        public List<EProjectCycle> getCycles()
         {
-            return cycleRoots;
+            return cycles;
         }
 
         public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
         {
+            if ( rel.getDeclaring()
+                    .equals( rel.getTarget()
+                                .asProjectVersionRef() ) )
+            {
+                return false;
+            }
+
+            new Logger( getClass() ).info( "Checking for cycle:\n\n%s\n\n", join( path, "\n" ) );
+
+            final ProjectVersionRef from = rel.getDeclaring();
             if ( from.equals( relationship.getTarget()
                                           .asProjectVersionRef() ) )
             {
-                cycleRoots.add( new ArrayList<ProjectRelationship<?>>( path ) );
+                final List<ProjectRelationship<?>> cycle = new ArrayList<ProjectRelationship<?>>( path );
+                cycle.add( rel );
+
+                cycles.add( new EProjectCycle( cycle ) );
                 return false;
             }
 

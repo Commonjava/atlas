@@ -53,6 +53,8 @@ public interface EProjectNet
 
     Set<EProjectCycle> getCycles();
 
+    boolean introducesCycle( ProjectRelationship<?> rel );
+
     void addCycle( final EProjectCycle cycle );
 
     boolean isCycleParticipant( ProjectRelationship<?> rel );
