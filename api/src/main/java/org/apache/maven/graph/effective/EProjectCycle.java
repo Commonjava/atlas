@@ -235,9 +235,12 @@ public class EProjectCycle
             final Set<ProjectRelationship<?>> cycle = new HashSet<ProjectRelationship<?>>( this.participants );
             final Set<ProjectRelationship<?>> otherCycle = new HashSet<ProjectRelationship<?>>( other.participants );
 
-            if ( !cycle.equals( otherCycle ) )
+            for ( final ProjectRelationship<?> rel : cycle )
             {
-                return false;
+                if ( !otherCycle.contains( rel ) )
+                {
+                    return false;
+                }
             }
         }
 

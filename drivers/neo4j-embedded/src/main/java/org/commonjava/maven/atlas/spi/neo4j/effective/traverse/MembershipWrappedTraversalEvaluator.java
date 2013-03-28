@@ -201,7 +201,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         final Node root = path.startNode();
         final Relationship rel = path.lastRelationship();
-        if ( rel != null && Conversions.isDeselectedFor( root, rel ) )
+        if ( rel != null && Conversions.isDeselectedFor( rel, root ) )
         {
             expMemberMisses++;
             return Collections.emptySet();

@@ -20,6 +20,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
@@ -50,6 +51,12 @@ public abstract class AncestryTraversalTCK
             .withDirectProjectRelationships( new EProjectRelationships.Builder( parentRef ).withParent( grandRef ).build() )
             .build();
         /* @formatter:on */
+
+        final Set<ProjectVersionRef> projects = graph.getAllProjects();
+        assertThat( projects.size(), equalTo( 3 ) );
+        assertThat( projects.contains( myRef ), equalTo( true ) );
+        assertThat( projects.contains( parentRef ), equalTo( true ) );
+        assertThat( projects.contains( grandRef ), equalTo( true ) );
 
         final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );

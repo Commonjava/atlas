@@ -695,4 +695,16 @@ public class EProjectGraph
     {
         return driver.introducesCycle( rel );
     }
+
+    @SuppressWarnings( "unchecked" )
+    public EProjectGraph filteredInstance( final ProjectRelationshipFilter filter )
+        throws GraphDriverException
+    {
+        return new EProjectGraph( this, filter, key );
+    }
+
+    public void addDisconnectedProject( final ProjectVersionRef ref )
+    {
+        driver.addDisconnectedProject( ref );
+    }
 }

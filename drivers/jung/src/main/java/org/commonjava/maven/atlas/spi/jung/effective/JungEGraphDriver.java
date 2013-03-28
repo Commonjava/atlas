@@ -56,7 +56,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 public class JungEGraphDriver
     implements EGraphDriver
 {
-    private final Logger logger = new Logger( getClass() );
+    //    private final Logger logger = new Logger( getClass() );
 
     private DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
@@ -810,6 +810,19 @@ public class JungEGraphDriver
             }
 
             return true;
+        }
+    }
+
+    public Set<ProjectVersionRef> getRoots()
+    {
+        return new HashSet<ProjectVersionRef>( Arrays.asList( roots ) );
+    }
+
+    public void addDisconnectedProject( final ProjectVersionRef ref )
+    {
+        if ( !graph.containsVertex( ref ) )
+        {
+            graph.addVertex( ref );
         }
     }
 

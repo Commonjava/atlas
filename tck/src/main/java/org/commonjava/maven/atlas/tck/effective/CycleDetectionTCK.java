@@ -80,8 +80,7 @@ public abstract class CycleDetectionTCK
         /* @formatter:on */
 
         final Set<EProjectCycle> cycles = graph.getCycles();
-        System.out.println( "Cycles:\n\n" + cycles.toString()
-                                                  .replace( ',', '\n' ) );
+        System.out.println( "Cycles:\n\n" + join( cycles, "\n" ) );
         assertThat( cycles.size(), equalTo( 1 ) );
 
         for ( final EProjectCycle cycle : cycles )
@@ -112,8 +111,7 @@ public abstract class CycleDetectionTCK
         /* @formatter:on */
 
         final Set<EProjectCycle> cycles = graph.getCycles();
-        System.out.println( "Cycles:\n\n" + cycles.toString()
-                                                  .replace( ',', '\n' ) );
+        System.out.println( "Cycles:\n\n" + join( cycles, "\n" ) );
         assertThat( cycles.size(), equalTo( 1 ) );
 
         for ( final EProjectCycle cycle : cycles )

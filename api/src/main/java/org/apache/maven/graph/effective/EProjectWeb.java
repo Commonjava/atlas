@@ -263,17 +263,7 @@ public class EProjectWeb
 
     public Set<ProjectVersionRef> getRoots()
     {
-        final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
-        for ( final ProjectVersionRef ref : driver.getAllProjects() )
-        {
-            final Collection<? extends ProjectRelationship<?>> inEdges = driver.getRelationshipsTargeting( ref );
-            if ( inEdges == null || inEdges.isEmpty() )
-            {
-                result.add( ref );
-            }
-        }
-
-        return result;
+        return driver.getRoots();
     }
 
     public Set<ProjectRelationship<?>> getExactAllRelationships()
@@ -460,5 +450,17 @@ public class EProjectWeb
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
         return driver.introducesCycle( rel );
+    }
+
+    @SuppressWarnings( "unchecked" )
+    public EProjectWeb filteredInstance( final ProjectRelationshipFilter filter )
+        throws GraphDriverException
+    {
+        return new EProjectWeb( this, filter, getRoots().toArray( new ProjectVersionRef[] {} ) );
+    }
+
+    public void addDisconnectedProject( final ProjectVersionRef ref )
+    {
+        driver.addDisconnectedProject( ref );
     }
 }

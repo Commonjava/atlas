@@ -108,4 +108,8 @@ public interface EGraphDriver
     Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
         throws GraphDriverException;
 
+    Set<ProjectVersionRef> getRoots();
+
+    void addDisconnectedProject( ProjectVersionRef ref );
+
 }

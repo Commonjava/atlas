@@ -20,8 +20,10 @@ import static org.apache.commons.lang.StringUtils.join;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,6 +43,7 @@ import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.maven.atlas.spi.neo4j.effective.NodeType;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
 
@@ -102,6 +105,8 @@ public final class Conversions
     public static final String CLONE_OF = "_clone_of";
 
     public static final String CYCLE_INJECTION = "_cycle_injection";
+
+    public static final String CYCLES_INJECTED = "_cycles";
 
     private Conversions()
     {
@@ -495,9 +500,95 @@ public final class Conversions
         node.setProperty( CONNECTED, connected );
     }
 
-    public static void markCycleInjection( final Relationship relationship )
+    public static void markCycleInjection( final Relationship relationship, final Set<Path> cycles )
     {
         relationship.setProperty( CYCLE_INJECTION, true );
+        final List<Long> collapsed = new ArrayList<Long>();
+        final Set<Set<Long>> existing = getInjectedCycles( relationship );
+        if ( existing != null && !existing.isEmpty() )
+        {
+            for ( final Set<Long> cycle : existing )
+            {
+                if ( !collapsed.isEmpty() )
+                {
+                    collapsed.add( -1L );
+                }
+
+                collapsed.addAll( cycle );
+            }
+        }
+
+        for ( final Path cycle : cycles )
+        {
+            if ( existing.contains( cycle ) )
+            {
+                continue;
+            }
+
+            if ( !collapsed.isEmpty() )
+            {
+                collapsed.add( -1L );
+            }
+
+            boolean containsGivenRelationship = false;
+            for ( final Relationship r : cycle.relationships() )
+            {
+                collapsed.add( r.getId() );
+                if ( r.getId() == relationship.getId() )
+                {
+                    containsGivenRelationship = true;
+                }
+            }
+
+            if ( !containsGivenRelationship )
+            {
+                collapsed.add( relationship.getId() );
+            }
+        }
+
+        final long[] arry = new long[collapsed.size()];
+        int i = 0;
+        for ( final Long l : collapsed )
+        {
+            arry[i] = l;
+            i++;
+        }
+
+        relationship.setProperty( CYCLES_INJECTED, arry );
+    }
+
+    public static Set<Set<Long>> getInjectedCycles( final Relationship relationship )
+    {
+        final Set<Set<Long>> cycles = new HashSet<Set<Long>>();
+
+        if ( relationship.hasProperty( CYCLES_INJECTED ) )
+        {
+            final long[] collapsed = (long[]) relationship.getProperty( CYCLES_INJECTED );
+
+            Set<Long> currentCycle = new LinkedHashSet<Long>();
+            for ( final long id : collapsed )
+            {
+                if ( id == -1 )
+                {
+                    if ( !currentCycle.isEmpty() )
+                    {
+                        cycles.add( currentCycle );
+                        currentCycle = new LinkedHashSet<Long>();
+                    }
+                }
+                else
+                {
+                    currentCycle.add( id );
+                }
+            }
+
+            if ( !currentCycle.isEmpty() )
+            {
+                cycles.add( currentCycle );
+            }
+        }
+
+        return cycles;
     }
 
     public static void cloneRelationshipProperties( final Relationship from, final Relationship to )
@@ -546,12 +637,52 @@ public final class Conversions
         removeFromIdListing( root.getId(), DESELECTED_FOR, relationship );
     }
 
-    private static boolean idListingContains( final long target, final String property, final Relationship relationship )
+    public static boolean idListingContains( final String property, final Relationship relationship,
+                                             final long... targets )
     {
+        if ( !relationship.hasProperty( property ) )
+        {
+            return false;
+        }
+
         final long[] ids = (long[]) relationship.getProperty( property, new long[] {} );
+        //        LOGGER.info( "Relationship: %s\nValue of property: %s is: %s", relationship, property,
+        //                     relationship.getProperty( property ) );
 
         Arrays.sort( ids );
-        return Arrays.binarySearch( ids, target ) >= 0;
+        for ( final long target : targets )
+        {
+            if ( Arrays.binarySearch( ids, target ) > -1 )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public static boolean idListingContains( final String property, final Relationship relationship,
+                                             final Collection<Node> targets )
+    {
+        if ( !relationship.hasProperty( property ) )
+        {
+            return false;
+        }
+
+        final long[] ids = (long[]) relationship.getProperty( property, new long[] {} );
+        //        LOGGER.info( "Relationship: %s\nValue of property: %s is: %s", relationship, property,
+        //                     relationship.getProperty( property ) );
+
+        Arrays.sort( ids );
+        for ( final Node target : targets )
+        {
+            if ( Arrays.binarySearch( ids, target.getId() ) > -1 )
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void addToIdListing( final long target, final String property, final Relationship relationship )
@@ -607,9 +738,49 @@ public final class Conversions
         }
     }
 
-    public static boolean isDeselectedFor( final Node root, final Relationship relationship )
+    public static boolean isDeselectedFor( final Relationship relationship, final Node... roots )
     {
-        return idListingContains( root.getId(), DESELECTED_FOR, relationship );
+        final long[] ids = new long[roots.length];
+        for ( int i = 0; i < roots.length; i++ )
+        {
+            final Node n = roots[i];
+            ids[i] = n.getId();
+        }
+
+        return idListingContains( DESELECTED_FOR, relationship, ids );
+    }
+
+    public static <T, P> Set<P> toProjectedSet( final Iterable<T> src, final Projector<T, P> projector )
+    {
+        final Set<P> set = new HashSet<P>();
+        for ( final T t : src )
+        {
+            set.add( projector.project( t ) );
+        }
+
+        return set;
+    }
+
+    public static <T> Set<T> toSet( final Iterable<T> src )
+    {
+        final Set<T> set = new HashSet<T>();
+        for ( final T t : src )
+        {
+            set.add( t );
+        }
+
+        return set;
+    }
+
+    public static <T> List<T> toList( final Iterable<T> src )
+    {
+        final List<T> set = new ArrayList<T>();
+        for ( final T t : src )
+        {
+            set.add( t );
+        }
+
+        return set;
     }
 
 }

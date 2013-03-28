@@ -105,4 +105,9 @@ public interface EProjectNet
 
     void connect( EProjectGraph graph )
         throws GraphDriverException;
+
+    <T extends EProjectNet> T filteredInstance( ProjectRelationshipFilter filter )
+        throws GraphDriverException;
+
+    void addDisconnectedProject( ProjectVersionRef ref );
 }
