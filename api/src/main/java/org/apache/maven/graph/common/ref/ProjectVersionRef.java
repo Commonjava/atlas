@@ -222,7 +222,7 @@ public class ProjectVersionRef
 
     public boolean isCompound()
     {
-        return !getVersionSpec().isConcrete();
+        return !getVersionSpec().isSingle();
     }
 
     public boolean isSnapshot()
@@ -238,6 +238,11 @@ public class ProjectVersionRef
         }
 
         return versionString;
+    }
+
+    public boolean isVariableVersion()
+    {
+        return isCompound() || ( isSpecificVersion() && ( (SingleVersion) getVersionSpec() ).isLocalSnapshot() );
     }
 
 }

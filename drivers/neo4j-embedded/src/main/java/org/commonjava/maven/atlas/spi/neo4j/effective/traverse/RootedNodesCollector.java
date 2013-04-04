@@ -21,18 +21,21 @@ public class RootedNodesCollector
     public RootedNodesCollector( final Node start, final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
         super( start, filter, checkExistence );
+        logEnabled = true;
     }
 
     public RootedNodesCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
                                  final boolean checkExistence )
     {
         super( startNodes, filter, checkExistence );
+        logEnabled = true;
     }
 
     private RootedNodesCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
                                   final boolean checkExistence, final Direction direction )
     {
         super( startNodes, filter, checkExistence, direction );
+        logEnabled = true;
     }
 
     public PathExpander reverse()
@@ -62,12 +65,12 @@ public class RootedNodesCollector
         {
             for ( final Node node : path.nodes() )
             {
-                //                logger.info( "Adding node: %s", node );
+                logger.info( "Adding node: %s", node );
                 found.add( node );
             }
         }
 
-        //        logger.info( "In any case, proceed on this path." );
+        logger.info( "In any case, proceed on this path." );
         return true;
     }
 

@@ -310,29 +310,40 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public Collection<ProjectRelationship<?>> getAllRelationships()
     {
-        final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
-        final RootedRelationshipsCollector checker = new RootedRelationshipsCollector( roots, filter, false );
-        collectAtlasRelationships( checker, roots );
-
-        for ( final Relationship r : checker )
+        if ( roots != null && !roots.isEmpty() )
         {
-            rels.add( toProjectRelationship( r ) );
-        }
+            final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
 
-        for ( final ProjectRelationship<?> rel : new HashSet<ProjectRelationship<?>>( rels ) )
-        {
-            logger.debug( "Checking for self-referential parent: %s", rel );
-            if ( rel.getType() == RelationshipType.PARENT && rel.getDeclaring()
-                                                                .equals( rel.getTarget()
-                                                                            .asProjectVersionRef() ) )
+            final RootedRelationshipsCollector checker = new RootedRelationshipsCollector( roots, filter, false );
+            collectAtlasRelationships( checker, roots );
+
+            for ( final Relationship r : checker )
             {
-                logger.debug( "Removing self-referential parent: %s", rel );
-                rels.remove( rel );
+                rels.add( toProjectRelationship( r ) );
             }
-        }
 
-        logger.debug( "returning %d relationships: %s", rels.size(), rels );
-        return rels;
+            for ( final ProjectRelationship<?> rel : new HashSet<ProjectRelationship<?>>( rels ) )
+            {
+                logger.debug( "Checking for self-referential parent: %s", rel );
+                if ( rel.getType() == RelationshipType.PARENT && rel.getDeclaring()
+                                                                    .equals( rel.getTarget()
+                                                                                .asProjectVersionRef() ) )
+                {
+                    logger.debug( "Removing self-referential parent: %s", rel );
+                    rels.remove( rel );
+                }
+            }
+
+            logger.debug( "returning %d relationships: %s", rels.size(), rels );
+            return rels;
+        }
+        else
+        {
+            final IndexHits<Relationship> hits = graph.index()
+                                                      .forRelationships( ALL_RELATIONSHIPS )
+                                                      .query( RELATIONSHIP_ID, "*" );
+            return convertToRelationships( hits );
+        }
     }
 
     public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef ref )
@@ -474,6 +485,12 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public boolean markCycle( final ProjectRelationship<?> rel, final Relationship relationship )
     {
+        //        if ( roots == null || roots.isEmpty() )
+        //        {
+        //            logger.info( "NOT marking cycles for global graph, where there are no root nodes." );
+        //            return false;
+        //        }
+
         final Set<Path> cycles = getIntroducedCycles( rel );
         if ( cycles != null && !cycles.isEmpty() )
         {
@@ -566,9 +583,9 @@ public abstract class AbstractNeo4JEGraphDriver
              .forNodes( MISSING_NODES_IDX )
              .add( node, GAV, gav );
 
-        if ( ref.isCompound() )
+        if ( ref.isVariableVersion() )
         {
-            //            logger.info( "Adding %s to variable-nodes index.", ref );
+            logger.info( "Adding %s to variable-nodes index.", ref );
             graph.index()
                  .forNodes( VARIABLE_NODES_IDX )
                  .add( node, GAV, gav );
@@ -579,16 +596,39 @@ public abstract class AbstractNeo4JEGraphDriver
 
     public Set<ProjectVersionRef> getAllProjects()
     {
-        final RootedNodesCollector agg = new RootedNodesCollector( roots, filter, false );
-        collectAtlasRelationships( agg, roots );
+        Iterable<Node> nodes = null;
+        if ( roots != null && !roots.isEmpty() )
+        {
+            final RootedNodesCollector agg = new RootedNodesCollector( roots, filter, false );
+            collectAtlasRelationships( agg, roots );
+            nodes = agg;
+        }
+        else
+        {
+            final IndexHits<Node> hits = graph.index()
+                                              .forNodes( ALL_NODES )
+                                              .query( GAV, "*" );
+            nodes = hits;
+        }
 
-        return new HashSet<ProjectVersionRef>( convertToProjects( agg ) );
+        return new HashSet<ProjectVersionRef>( convertToProjects( nodes ) );
     }
 
     private Set<Node> getAllProjectNodes()
     {
-        final RootedNodesCollector agg = new RootedNodesCollector( roots, filter, false );
-        return agg.getFoundNodes();
+        if ( roots != null && !roots.isEmpty() )
+        {
+            final RootedNodesCollector agg = new RootedNodesCollector( roots, filter, false );
+            collectAtlasRelationships( agg, roots );
+            return agg.getFoundNodes();
+        }
+        else
+        {
+            final IndexHits<Node> hits = graph.index()
+                                              .forNodes( ALL_NODES )
+                                              .query( GAV, "*" );
+            return toSet( hits );
+        }
     }
 
     public void traverse( final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
@@ -947,6 +987,12 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private void collectAtlasRelationships( final AtlasCollector<?> checker, final Set<Node> from )
     {
+        if ( from == null || from.isEmpty() )
+        {
+            throw new UnsupportedOperationException(
+                                                     "Cannot collect atlas nodes/relationships via traversal without at least one 'from' node!" );
+        }
+
         //        logger.info( "Traversing for aggregation using: %s from roots: %s", checker.getClass()
         //                                                                                   .getName(), from );
 

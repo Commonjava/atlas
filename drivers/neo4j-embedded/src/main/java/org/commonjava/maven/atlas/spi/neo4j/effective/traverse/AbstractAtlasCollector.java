@@ -7,6 +7,7 @@ import java.util.Set;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
+import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -18,7 +19,9 @@ public abstract class AbstractAtlasCollector<T>
     implements AtlasCollector<T>
 {
 
-    //    protected final Logger logger = new Logger( getClass() );
+    protected final Logger logger = new Logger( getClass() );
+
+    protected boolean logEnabled = false;
 
     protected Direction direction = Direction.OUTGOING;
 
@@ -58,13 +61,13 @@ public abstract class AbstractAtlasCollector<T>
     {
         if ( checkExistence && !found.isEmpty() )
         {
-            //            logger.info( "Only checking for existence, and already found one. Rejecting: %s", path );
+            log( "Only checking for existence, and already found one. Rejecting: %s", path );
             return Collections.emptySet();
         }
 
-        if ( !startNodes.contains( path.startNode() ) )
+        if ( !startNodes.isEmpty() && !startNodes.contains( path.startNode() ) )
         {
-            //            logger.info( "Rejecting path; it does not start with one of our roots:\n\t%s", path );
+            log( "Rejecting path; it does not start with one of our roots:\n\t%s", path );
             return Collections.emptySet();
         }
 
@@ -73,7 +76,7 @@ public abstract class AbstractAtlasCollector<T>
 
         if ( seen.contains( endId ) )
         {
-            //            logger.info( "Rejecting path; already seen it:\n\t%s", path );
+            log( "Rejecting path; already seen it:\n\t%s", path );
             return Collections.emptySet();
         }
 
@@ -81,7 +84,7 @@ public abstract class AbstractAtlasCollector<T>
 
         if ( returnChildren( path ) )
         {
-            //            logger.info( "Implementation says return the children of: %s", path.endNode() );
+            log( "Implementation says return the children of: %s", path.endNode() );
             return path.endNode()
                        .getRelationships( direction );
         }
@@ -96,10 +99,10 @@ public abstract class AbstractAtlasCollector<T>
         ProjectRelationshipFilter f = filter;
         for ( final Relationship r : path.relationships() )
         {
-            //            logger.info( "Checking relationship for acceptance: %s", r );
-            if ( Conversions.idListingContains( Conversions.DESELECTED_FOR, r, startNodes ) )
+            log( "Checking relationship for acceptance: %s", r );
+            if ( !startNodes.isEmpty() && Conversions.idListingContains( Conversions.DESELECTED_FOR, r, startNodes ) )
             {
-                //                logger.info( "Found relationship in path that was deselected: %s", r );
+                log( "Found relationship in path that was deselected: %s", r );
                 return false;
             }
 
@@ -108,7 +111,7 @@ public abstract class AbstractAtlasCollector<T>
                 final ProjectRelationship<?> rel = Conversions.toProjectRelationship( r );
                 if ( !f.accept( rel ) )
                 {
-                    //                    logger.info( "Filter rejected relationship: %s", rel );
+                    log( "Filter rejected relationship: %s", rel );
                     return false;
                 }
 
@@ -116,13 +119,21 @@ public abstract class AbstractAtlasCollector<T>
             }
         }
 
-        //        logger.info( "Path accepted: %s", path );
+        log( "Path accepted: %s", path );
         return true;
     }
 
     public final Evaluation evaluate( final Path path )
     {
         return Evaluation.INCLUDE_AND_CONTINUE;
+    }
+
+    protected void log( final String format, final Object... params )
+    {
+        if ( logEnabled )
+        {
+            logger.info( format, params );
+        }
     }
 
 }

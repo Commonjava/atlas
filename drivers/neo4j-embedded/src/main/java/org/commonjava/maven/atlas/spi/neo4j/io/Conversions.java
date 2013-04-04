@@ -165,7 +165,7 @@ public final class Conversions
         node.setProperty( VERSION, v );
         node.setProperty( GAV, ref.toString() );
 
-        if ( ref.isCompound() )
+        if ( ref.isVariableVersion() )
         {
             LOGGER.debug( "Marking: %s as variable.", ref );
             node.setProperty( VARIABLE, true );
