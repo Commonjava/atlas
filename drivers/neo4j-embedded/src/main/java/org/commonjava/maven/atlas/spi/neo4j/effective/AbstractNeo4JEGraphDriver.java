@@ -950,8 +950,8 @@ public abstract class AbstractNeo4JEGraphDriver
         //        logger.info( "Traversing for aggregation using: %s from roots: %s", checker.getClass()
         //                                                                                   .getName(), from );
 
-        TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
-                                                    .sort( new PathComparator() );
+        TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL );
+        //                                                    .sort( new PathComparator() );
 
         final Set<GraphRelType> relTypes = getRelTypes( filter );
         for ( final GraphRelType grt : relTypes )
