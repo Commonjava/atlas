@@ -46,7 +46,7 @@ public interface EGraphDriver
 
     Collection<ProjectRelationship<?>> getAllRelationships();
 
-    Set<List<ProjectRelationship<?>>> getAllPathsTo( ProjectVersionRef ref );
+    Set<List<ProjectRelationship<?>>> getAllPathsTo( ProjectVersionRef... projectVersionRefs );
 
     /**
      * Add the given relationships. Skip/return those that introduce cycles.

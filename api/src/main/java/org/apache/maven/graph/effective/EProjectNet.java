@@ -63,7 +63,7 @@ public interface EProjectNet
 
     Set<ProjectRelationship<?>> getRelationshipsTargeting( ProjectVersionRef ref );
 
-    Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef ref );
+    Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs );
 
     boolean isDerivedFrom( EProjectNet net );
 

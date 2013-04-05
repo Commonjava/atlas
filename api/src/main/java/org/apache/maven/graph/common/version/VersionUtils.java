@@ -77,6 +77,11 @@ public final class VersionUtils
             throw new InvalidVersionSpecificationException( version, "Failed to parse version range: %s", e,
                                                             e.getMessage() );
         }
+        catch ( final TokenMgrError e )
+        {
+            throw new InvalidVersionSpecificationException( version, "Failed to parse version range: %s", e,
+                                                            e.getMessage() );
+        }
     }
 
     public static SingleVersion createSingleVersion( final String version )
@@ -89,6 +94,11 @@ public final class VersionUtils
             return new VersionParser( version ).single();
         }
         catch ( final ParseException e )
+        {
+            throw new InvalidVersionSpecificationException( version, "Failed to parse single version: %s", e,
+                                                            e.getMessage() );
+        }
+        catch ( final TokenMgrError e )
         {
             throw new InvalidVersionSpecificationException( version, "Failed to parse single version: %s", e,
                                                             e.getMessage() );

@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.apache.maven.graph.effective;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -442,9 +444,9 @@ public class EProjectWeb
         return driver.clearSelectedVersions();
     }
 
-    public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef ref )
+    public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... projectVersionRefs )
     {
-        return driver.getAllPathsTo( ref );
+        return driver.getAllPathsTo( projectVersionRefs );
     }
 
     public boolean introducesCycle( final ProjectRelationship<?> rel )
@@ -462,5 +464,11 @@ public class EProjectWeb
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
         driver.addDisconnectedProject( ref );
+    }
+
+    @Override
+    public String toString()
+    {
+        return "EProjectWeb [roots: " + join( driver.getRoots(), ", " ) + "]";
     }
 }

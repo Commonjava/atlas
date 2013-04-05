@@ -686,9 +686,9 @@ public class EProjectGraph
         return driver.clearSelectedVersions();
     }
 
-    public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef ref )
+    public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs )
     {
-        return driver.getAllPathsTo( ref );
+        return driver.getAllPathsTo( refs );
     }
 
     public boolean introducesCycle( final ProjectRelationship<?> rel )
@@ -706,5 +706,11 @@ public class EProjectGraph
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
         driver.addDisconnectedProject( ref );
+    }
+
+    @Override
+    public String toString()
+    {
+        return "EProjectGraph [key: " + key + "]";
     }
 }

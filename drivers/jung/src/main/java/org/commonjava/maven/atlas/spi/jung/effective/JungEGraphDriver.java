@@ -217,14 +217,14 @@ public class JungEGraphDriver
         return skipped;
     }
 
-    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef ref )
+    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef... refs )
     {
-        final PathDetectionTraversal traversal = new PathDetectionTraversal( ref );
+        final PathDetectionTraversal traversal = new PathDetectionTraversal( refs );
 
         if ( roots == null )
         {
             new Logger( getClass() ).warn( "Cannot retrieve paths targeting %s. No roots specified for this project network!",
-                                           ref );
+                                           join( refs, ", " ) );
             return null;
         }
 
@@ -785,13 +785,13 @@ public class JungEGraphDriver
     private static final class PathDetectionTraversal
         extends AbstractTraversal
     {
-        private final ProjectVersionRef to;
+        private final ProjectVersionRef[] to;
 
         private final Set<List<ProjectRelationship<?>>> paths = new HashSet<List<ProjectRelationship<?>>>();
 
-        private PathDetectionTraversal( final ProjectVersionRef to )
+        private PathDetectionTraversal( final ProjectVersionRef[] refs )
         {
-            this.to = to;
+            this.to = refs;
         }
 
         public Set<List<ProjectRelationship<?>>> getPaths()
@@ -802,11 +802,15 @@ public class JungEGraphDriver
         public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
         {
-            if ( to.equals( relationship.getTarget()
-                                        .asProjectVersionRef() ) )
+            final ProjectVersionRef target = relationship.getTarget()
+                                                         .asProjectVersionRef();
+            for ( final ProjectVersionRef t : to )
             {
-                paths.add( new ArrayList<ProjectRelationship<?>>( path ) );
-                return false;
+                if ( t.equals( target ) )
+                {
+                    paths.add( new ArrayList<ProjectRelationship<?>>( path ) );
+                    return false;
+                }
             }
 
             return true;

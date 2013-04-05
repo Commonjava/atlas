@@ -346,17 +346,25 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
-    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef ref )
+    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef... refs )
     {
         // NOTE: using global lookup here to avoid checking for paths, which we're going to collect below.
-        final Node n = getNode( ref, false );
-        if ( n == null )
+        final Set<Node> nodes = new HashSet<Node>( refs.length );
+        for ( final ProjectVersionRef ref : refs )
+        {
+            final Node n = getNode( ref, false );
+            if ( n != null )
+            {
+                nodes.add( n );
+            }
+        }
+
+        if ( nodes.isEmpty() )
         {
             return null;
         }
 
-        final ConnectingPathsCollector checker =
-            new ConnectingPathsCollector( roots, Collections.singleton( n ), filter, false );
+        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, filter, false );
 
         collectAtlasRelationships( checker, roots );
 

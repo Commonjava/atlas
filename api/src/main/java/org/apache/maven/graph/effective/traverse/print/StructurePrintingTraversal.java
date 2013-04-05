@@ -14,18 +14,18 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.apache.maven.graph.effective.traverse;
+package org.apache.maven.graph.effective.traverse.print;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
+import org.apache.maven.graph.effective.traverse.TraversalType;
 import org.apache.maven.graph.spi.GraphDriverException;
 
 public class StructurePrintingTraversal
@@ -36,17 +36,34 @@ public class StructurePrintingTraversal
 
     private final ProjectNetTraversal traversal;
 
-    private final Map<ProjectVersionRef, List<ProjectVersionRef>> outboundLinks =
-        new HashMap<ProjectVersionRef, List<ProjectVersionRef>>();
+    private final StructureRelationshipPrinter relationshipPrinter;
+
+    private final Map<ProjectVersionRef, List<ProjectRelationship<?>>> outboundLinks =
+        new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
 
     public StructurePrintingTraversal()
     {
         this.traversal = null;
+        this.relationshipPrinter = new TargetRefPrinter();
     }
 
     public StructurePrintingTraversal( final ProjectNetTraversal traversal )
     {
         this.traversal = traversal;
+        this.relationshipPrinter = new TargetRefPrinter();
+    }
+
+    public StructurePrintingTraversal( final StructureRelationshipPrinter relationshipPrinter )
+    {
+        this.traversal = null;
+        this.relationshipPrinter = relationshipPrinter;
+    }
+
+    public StructurePrintingTraversal( final ProjectNetTraversal traversal,
+                                       final StructureRelationshipPrinter relationshipPrinter )
+    {
+        this.traversal = traversal;
+        this.relationshipPrinter = relationshipPrinter;
     }
 
     public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
@@ -54,18 +71,16 @@ public class StructurePrintingTraversal
     {
         if ( traversal == null || traversal.traverseEdge( relationship, path, pass ) )
         {
-            List<ProjectVersionRef> outbound = outboundLinks.get( relationship.getDeclaring() );
-            final ProjectVersionRef target = relationship.getTarget();
-
+            List<ProjectRelationship<?>> outbound = outboundLinks.get( relationship.getDeclaring() );
             if ( outbound == null )
             {
-                outbound = new ArrayList<ProjectVersionRef>();
+                outbound = new ArrayList<ProjectRelationship<?>>();
                 outboundLinks.put( relationship.getDeclaring(), outbound );
             }
 
-            if ( !outbound.contains( target ) )
+            if ( !outbound.contains( relationship ) )
             {
-                outbound.add( target );
+                outbound.add( relationship );
             }
 
             return true;
@@ -87,16 +102,16 @@ public class StructurePrintingTraversal
     public String printStructure( final ProjectVersionRef from, final String header, final String footer,
                                   final String indent )
     {
-        final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>();
-        for ( final Map.Entry<ProjectVersionRef, List<ProjectVersionRef>> entry : outboundLinks.entrySet() )
-        {
-            refs.add( entry.getKey() );
-            final List<ProjectVersionRef> list = entry.getValue();
-            if ( list != null )
-            {
-                refs.addAll( list );
-            }
-        }
+        //        final Set<ProjectRelationship<?>> refs = new HashSet<ProjectRelationship<?>>();
+        //        for ( final Map.Entry<ProjectVersionRef, List<ProjectRelationship<?>>> entry : outboundLinks.entrySet() )
+        //        {
+        //            refs.add( entry.getKey() );
+        //            final List<ProjectRelationship<?>> list = entry.getValue();
+        //            if ( list != null )
+        //            {
+        //                refs.addAll( list );
+        //            }
+        //        }
 
         //        logger.info( "Printing structure for: %s using %d accumulated project references.", from, refs.size() );
 
@@ -106,7 +121,10 @@ public class StructurePrintingTraversal
             builder.append( header );
         }
 
-        printLinks( from, builder, indent, 0 );
+        builder.append( "\n" );
+        builder.append( from );
+
+        printLinks( from, builder, indent, 1 );
         builder.append( "\n" );
 
         if ( footer != null )
@@ -120,21 +138,22 @@ public class StructurePrintingTraversal
     private void printLinks( final ProjectVersionRef from, final StringBuilder builder, final String indent,
                              final int depth )
     {
-        builder.append( "\n" );
-
-        for ( int i = 0; i < depth; i++ )
-        {
-            builder.append( indent );
-        }
-
-        builder.append( from );
-
-        final List<ProjectVersionRef> outbound = outboundLinks.get( from );
+        final List<ProjectRelationship<?>> outbound = outboundLinks.get( from );
         if ( outbound != null )
         {
-            for ( final ProjectVersionRef out : outbound )
+            for ( final ProjectRelationship<?> out : outbound )
             {
-                printLinks( out.asProjectVersionRef(), builder, indent, depth + 1 );
+                builder.append( "\n" );
+
+                for ( int i = 0; i < depth; i++ )
+                {
+                    builder.append( indent );
+                }
+
+                relationshipPrinter.print( out, builder );
+
+                printLinks( out.getTarget()
+                               .asProjectVersionRef(), builder, indent, depth + 1 );
             }
         }
     }
