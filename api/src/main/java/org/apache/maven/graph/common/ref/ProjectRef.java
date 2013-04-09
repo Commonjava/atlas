@@ -21,7 +21,7 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 import java.io.Serializable;
 
 public class ProjectRef
-    implements Serializable
+    implements Serializable, Comparable<ProjectRef>
 {
 
     private static final long serialVersionUID = 1L;
@@ -95,6 +95,17 @@ public class ProjectRef
             return false;
         }
         return true;
+    }
+
+    public int compareTo( final ProjectRef o )
+    {
+        int comp = groupId.compareTo( o.groupId );
+        if ( comp == 0 )
+        {
+            comp = artifactId.compareTo( o.artifactId );
+        }
+
+        return 0;
     }
 
 }

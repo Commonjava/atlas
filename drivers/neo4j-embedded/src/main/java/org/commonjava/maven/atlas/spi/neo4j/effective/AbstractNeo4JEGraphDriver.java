@@ -1251,7 +1251,7 @@ public abstract class AbstractNeo4JEGraphDriver
             return false;
         }
 
-        return true;
+        return isConnected( node );
     }
 
     public ExecutionResult executeFrom( final String cypher, final ProjectVersionRef... roots )

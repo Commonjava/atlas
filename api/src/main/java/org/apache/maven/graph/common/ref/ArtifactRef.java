@@ -80,6 +80,16 @@ public class ArtifactRef
         return classifier;
     }
 
+    public ArtifactRef setOptional( final boolean optional )
+    {
+        if ( this.optional == optional )
+        {
+            return this;
+        }
+
+        return new ArtifactRef( this, getType(), getClassifier(), optional );
+    }
+
     public boolean isOptional()
     {
         return optional;
@@ -119,6 +129,11 @@ public class ArtifactRef
 
     private boolean artifactFieldsEqual( final ArtifactRef other )
     {
+        if ( optional != other.optional )
+        {
+            return false;
+        }
+
         if ( classifier == null )
         {
             if ( other.classifier != null )

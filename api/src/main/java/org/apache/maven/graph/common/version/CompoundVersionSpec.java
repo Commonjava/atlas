@@ -57,13 +57,15 @@ public class CompoundVersionSpec
         final List<VersionSpec> s = new ArrayList<VersionSpec>();
         for ( final VersionSpec spec : specs )
         {
-            if ( ( spec instanceof SingleVersion ) )
+            if ( spec.isSingle() )
             {
-                throw new IllegalArgumentException(
-                                                    "Currently concrete versions are NOT supported in compound version specifications." );
+                final SingleVersion sv = (SingleVersion) spec;
+                s.add( new RangeVersionSpec( "[" + spec.renderStandard() + "]", sv, sv, true, true ) );
             }
-
-            s.add( spec );
+            else
+            {
+                s.add( spec );
+            }
         }
 
         Collections.sort( s, VersionSpecComparisons.comparator() );

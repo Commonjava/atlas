@@ -94,11 +94,6 @@ public class VersionlessArtifactRef
             return true;
         }
 
-        if ( getClass() != obj.getClass() )
-        {
-            return false;
-        }
-
         final ArtifactRef other = (ArtifactRef) obj;
         return versionlessEquals( other );
     }
