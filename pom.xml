@@ -31,7 +31,7 @@
 
   <groupId>org.commonjava.maven</groupId>
   <artifactId>atlas-parent</artifactId>
-  <version>0.6.0</version>
+  <version>0.6.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Atlas :: Maven Project-Graph :: Parent</name>
@@ -47,12 +47,12 @@
       <dependency>
         <groupId>org.commonjava.maven</groupId>
         <artifactId>atlas-api</artifactId>
-        <version>0.6.0</version>
+        <version>0.6.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.maven</groupId>
         <artifactId>atlas-drivers-tck</artifactId>
-        <version>0.6.0</version>
+        <version>0.6.0-SNAPSHOT</version>
         <scope>test</scope>
       </dependency>
       
