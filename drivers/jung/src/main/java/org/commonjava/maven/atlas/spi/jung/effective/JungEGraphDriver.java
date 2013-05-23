@@ -45,7 +45,7 @@ import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
 import org.apache.maven.graph.effective.traverse.AbstractTraversal;
 import org.apache.maven.graph.effective.traverse.FilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
-import org.apache.maven.graph.effective.util.EGraphUtils;
+import org.apache.maven.graph.effective.util.RelationshipUtils;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.util.logging.Logger;
@@ -402,7 +402,7 @@ public class JungEGraphDriver
 
         unsorted = new ArrayList<ProjectRelationship<?>>( unsorted );
 
-        EGraphUtils.filterTerminalParents( unsorted );
+        RelationshipUtils.filterTerminalParents( unsorted );
 
         final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
         Collections.sort( sorted, new RelationshipComparator() );
@@ -418,7 +418,7 @@ public class JungEGraphDriver
 
         SelfEdge( final ProjectVersionRef ref )
         {
-            super( null, ref, ref, 0 );
+            super( null, null, ref, ref, 0 );
         }
 
         @Override

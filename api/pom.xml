@@ -19,43 +19,35 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.commonjava.maven</groupId>
+    <groupId>org.commonjava.maven.atlas</groupId>
     <artifactId>atlas-parent</artifactId>
     <version>0.7.0-SNAPSHOT</version>
   </parent>
 
   <artifactId>atlas-api</artifactId>
 
-  <name>Atlas :: Maven Project-Graph :: API</name>
+  <name>Atlas :: Maven Project-Graph :: API Aggregator</name>
+  <description>API aggregation of aprox-identities and aprox-relationships-api.</description>
+  
+  <dependencies>
+    <dependency>
+      <groupId>org.commonjava.maven.atlas</groupId>
+      <artifactId>atlas-identities</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.commonjava.maven.atlas</groupId>
+      <artifactId>atlas-relationships-api</artifactId>
+    </dependency>
+  </dependencies>
   
   <build>
-    <plugins>
-      <plugin>
-        <artifactId>maven-assembly-plugin</artifactId>
-        <executions>
-          <execution>
-            <id>jar-with-deps</id>
-            <phase>package</phase>
-            <goals>
-              <goal>single</goal>
-            </goals>
-            <configuration>
-              <descriptorRefs>
-                <descriptorRef>jar-with-dependencies</descriptorRef>
-              </descriptorRefs>
-              <archive>
-                <manifest>
-                  <mainClass>org.apache.maven.graph.common.version.parse.VersionParser</mainClass>
-                </manifest>
-              </archive>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>javacc-maven-plugin</artifactId>
-      </plugin>
-    </plugins>
+    <resources>
+      <resource>
+        <directory>${project.basedir}</directory>
+        <includes>
+          <include>README.txt</include>
+        </includes>
+      </resource>
+    </resources>
   </build>
 </project>

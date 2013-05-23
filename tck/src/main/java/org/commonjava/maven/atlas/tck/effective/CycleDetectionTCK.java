@@ -20,6 +20,7 @@ import static org.apache.commons.lang.StringUtils.join;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,18 +45,20 @@ public abstract class CycleDetectionTCK
     public void introducesCycleCheckWithExistingGraph()
         throws Exception
     {
+        final URI source = sourceURI();
+
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef dep = new ProjectVersionRef( "org.other", "dep", "1.0" );
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ) )
                 .build();
         
-        final boolean introduces = graph.introducesCycle( new DependencyRelationship( dep,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
+        final boolean introduces = graph.introducesCycle( new DependencyRelationship( source, dep,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
         assertThat( introduces, equalTo( true ) );
@@ -66,16 +69,18 @@ public abstract class CycleDetectionTCK
     public void buildGraphWithCycleBackToRootAndRetrieveCycle()
         throws Exception
     {
+        final URI source = sourceURI();
+
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef dep = new ProjectVersionRef( "org.other", "dep", "1.0" );
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) )
                 .build();
         /* @formatter:on */
 
@@ -97,16 +102,18 @@ public abstract class CycleDetectionTCK
     public void buildGraphWithCycleBetweenDepLevelsAndRetrieveCycle()
         throws Exception
     {
+        final URI source = sourceURI();
+
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef dep = new ProjectVersionRef( "org.other", "dep", "1.0" );
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( dep2,  new ArtifactRef( dep,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, dep2,  new ArtifactRef( dep,  null, null, false ), null, 0, false ) )
                 .build();
         /* @formatter:on */
 
@@ -128,6 +135,8 @@ public abstract class CycleDetectionTCK
     public void GB_cycleFromGraph1PresentInGraph2WhenNodeIsCrossReferenced()
         throws Exception
     {
+        final URI source = sourceURI();
+
         final EGraphDriver driver = newDriverInstance();
         if ( !( driver instanceof GloballyBackedGraphDriver ) )
         {
@@ -147,16 +156,16 @@ public abstract class CycleDetectionTCK
         // a --> b --> c --> a
         // d --> e --> c --> a --> b --> c
         final EProjectGraph graph1 =
-            new EProjectGraph.Builder( new EProjectKey( a ), driver )
-                .withDependencies( new DependencyRelationship( a, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( b,  new ArtifactRef( c,  null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, a ), driver )
+                .withDependencies( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, b,  new ArtifactRef( c,  null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
                 .build();
         
         final EProjectGraph graph2 =
-                new EProjectGraph.Builder( new EProjectKey( d ), driver )
-                    .withDependencies( new DependencyRelationship( d, new ArtifactRef( e, null, null, false ), null, 0, false ),
-                                       new DependencyRelationship( e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
+                new EProjectGraph.Builder( new EProjectKey( source, d ), driver )
+                    .withDependencies( new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
+                                       new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
                     .build();
                     
         /* @formatter:on */
@@ -195,6 +204,8 @@ public abstract class CycleDetectionTCK
     public void cycleFromGraph1MissingInFilteredGraph2WhenOneRelationshipInCycleFilteredOut()
         throws Exception
     {
+        final URI source = sourceURI();
+
         final ProjectVersionRef a = new ProjectVersionRef( "project", "A", "1.0" );
         final ProjectVersionRef b = new ProjectVersionRef( "project", "B", "1.0" );
         final ProjectVersionRef c = new ProjectVersionRef( "project", "C", "1.0" );
@@ -208,16 +219,16 @@ public abstract class CycleDetectionTCK
         final EGraphDriver driver = newDriverInstance();
         
         final EProjectGraph graph1 =
-            new EProjectGraph.Builder( new EProjectKey( a ), driver )
-                .withDependencies( new DependencyRelationship( a, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
-                .withPlugins( new PluginRelationship( b,  c, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, a ), driver )
+                .withDependencies( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
+                .withPlugins( new PluginRelationship( source, b,  c, 0, false ) )
                 .build();
         
         final EProjectGraph graph2 =
-                new EProjectGraph.Builder( new EProjectKey( d ), driver )
-                    .withDependencies( new DependencyRelationship( d, new ArtifactRef( e, null, null, false ), null, 0, false ),
-                                       new DependencyRelationship( e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
+                new EProjectGraph.Builder( new EProjectKey( source, d ), driver )
+                    .withDependencies( new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
+                                       new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
                     .withFilter( new DependencyFilter() )
                     .build();
                     

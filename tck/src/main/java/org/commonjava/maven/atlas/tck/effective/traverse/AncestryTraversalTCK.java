@@ -19,6 +19,7 @@ package org.commonjava.maven.atlas.tck.effective.traverse;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+import java.net.URI;
 import java.util.List;
 import java.util.Set;
 
@@ -28,6 +29,7 @@ import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.EProjectRelationships;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
+import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
@@ -45,10 +47,12 @@ public abstract class AncestryTraversalTCK
         final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
 
+        final URI source = sourceURI();
+
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( myRef, newDriverInstance() )
-            .withParent( parentRef )
-            .withDirectProjectRelationships( new EProjectRelationships.Builder( parentRef ).withParent( grandRef ).build() )
+        final EProjectGraph graph = new EProjectGraph.Builder( source, myRef, newDriverInstance() )
+            .withParent( new ParentRelationship( source, myRef, parentRef ) )
+            .withDirectProjectRelationships( new EProjectRelationships.Builder( source, parentRef ).withParent( grandRef ).build() )
             .build();
         /* @formatter:on */
 
@@ -93,10 +97,12 @@ public abstract class AncestryTraversalTCK
         final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
 
+        final URI source = sourceURI();
+
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( myRef, newDriverInstance() )
-            .withParent( parentRef )
-            .withDirectProjectRelationships( new EProjectRelationships.Builder( parentRef ).withParent( grandRef ).build() )
+        final EProjectGraph graph = new EProjectGraph.Builder( source, myRef, newDriverInstance() )
+            .withParent( new ParentRelationship( source, myRef, parentRef ) )
+            .withDirectProjectRelationships( new EProjectRelationships.Builder( source, parentRef ).withParent( grandRef ).build() )
             .build();
         /* @formatter:on */
 
@@ -133,25 +139,27 @@ public abstract class AncestryTraversalTCK
         final ProjectVersionRef parentRef = new ProjectVersionRef( "my.group", "my-dad", "1" );
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
 
+        final URI source = sourceURI();
+
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( myRef, newDriverInstance() )
-            .withParent( parentRef )
+        final EProjectGraph graph = new EProjectGraph.Builder( source, myRef, newDriverInstance() )
+            .withParent( new ParentRelationship( source, myRef, parentRef ) )
             .withDependencies(
-                  new DependencyRelationship( myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),
-                  new DependencyRelationship( myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "bar", "1.2.1" ), null, null, false ), null, 1, false )
+                  new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),
+                  new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "bar", "1.2.1" ), null, null, false ), null, 1, false )
             )
             .withPlugins(
-                 new PluginRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0, false ),
-                 new PluginRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins","maven-jar-plugin", "2.2" ), 1, false )
+                 new PluginRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0, false ),
+                 new PluginRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins","maven-jar-plugin", "2.2" ), 1, false )
             )
             .withExtensions(
-                new ExtensionRelationship( myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0 )
+                new ExtensionRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0 )
             )
             .withDirectProjectRelationships( 
-                 new EProjectRelationships.Builder( parentRef )
-                     .withParent( grandRef )
+                 new EProjectRelationships.Builder( source, parentRef )
+                     .withParent( new ParentRelationship( source, parentRef, grandRef ) )
                      .withDependencies( 
-                        new DependencyRelationship( parentRef, new ArtifactRef( new ProjectVersionRef( "other.group", "utils", "3-1" ), null, null, false ), null, 0, false )
+                        new DependencyRelationship( source, parentRef, new ArtifactRef( new ProjectVersionRef( "other.group", "utils", "3-1" ), null, null, false ), null, 0, false )
                      )
                      .build()
             )

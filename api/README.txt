@@ -1,0 +1,1 @@
+This jar (aprox-api) is an empty jar. Its purpose is to provide an accompanying POM that will aggregate aprox-identities and aprox-relationships-api. It is provided mainly for backward compatibility.

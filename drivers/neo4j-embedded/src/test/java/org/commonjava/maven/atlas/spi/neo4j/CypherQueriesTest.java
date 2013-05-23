@@ -1,5 +1,7 @@
 package org.commonjava.maven.atlas.spi.neo4j;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Map;
 
 import org.apache.log4j.Level;
@@ -16,6 +18,7 @@ import org.commonjava.util.logging.Log4jUtil;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.rules.TestName;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 
 public class CypherQueriesTest
@@ -23,6 +26,15 @@ public class CypherQueriesTest
 
     @Rule
     public FileDriverFixture fixture = new FileDriverFixture();
+
+    @Rule
+    public TestName naming = new TestName();
+
+    private URI sourceURI()
+        throws URISyntaxException
+    {
+        return new URI( "test:repo:" + naming.getMethodName() );
+    }
 
     @BeforeClass
     public static void logging()
@@ -39,12 +51,14 @@ public class CypherQueriesTest
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
+        final URI source = sourceURI();
+
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), fixture.newDriverInstance() )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), fixture.newDriverInstance() )
                 .withDependencies( 
-                    new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                    new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
+                    new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                    new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
                 )
             .build();
 
@@ -80,12 +94,14 @@ public class CypherQueriesTest
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
+        final URI source = sourceURI();
+
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), fixture.newDriverInstance() )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), fixture.newDriverInstance() )
                 .withDependencies( 
-                    new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                    new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
+                    new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                    new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
                 )
             .build();
 

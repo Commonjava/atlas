@@ -17,7 +17,11 @@
 package org.commonjava.maven.atlas.spi.neo4j.io;
 
 import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.maven.graph.effective.util.RelationshipUtils.POM_ROOT_URI;
+import static org.apache.maven.graph.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -107,6 +111,10 @@ public final class Conversions
     public static final String CYCLE_INJECTION = "_cycle_injection";
 
     public static final String CYCLES_INJECTED = "_cycles";
+
+    public static final String SOURCE_URI = "source_uri";
+
+    public static final String POM_LOCATION_URI = "pom_location_uri";
 
     private Conversions()
     {
@@ -221,6 +229,11 @@ public final class Conversions
     public static void toRelationshipProperties( final ProjectRelationship<?> rel, final Relationship relationship )
     {
         relationship.setProperty( INDEX, rel.getIndex() );
+        relationship.setProperty( SOURCE_URI, rel.getSource()
+                                                 .toString() );
+        relationship.setProperty( POM_LOCATION_URI, rel.getPomLocation()
+                                                       .toString() );
+
         switch ( rel.getType() )
         {
             case DEPENDENCY:
@@ -303,6 +316,27 @@ public final class Conversions
         final ProjectVersionRef from = toProjectVersionRef( rel.getStartNode() );
         final ProjectVersionRef to = toProjectVersionRef( rel.getEndNode() );
         final int index = getIntegerProperty( INDEX, rel );
+        String uri = getStringProperty( SOURCE_URI, rel );
+        URI source;
+        try
+        {
+            source = new URI( uri );
+        }
+        catch ( final URISyntaxException e )
+        {
+            source = UNKNOWN_SOURCE_URI;
+        }
+
+        uri = getStringProperty( POM_LOCATION_URI, rel );
+        URI pomLocation;
+        try
+        {
+            pomLocation = new URI( uri );
+        }
+        catch ( final URISyntaxException e )
+        {
+            pomLocation = POM_ROOT_URI;
+        }
 
         ProjectRelationship<?> result = null;
         switch ( mapper.atlasType() )
@@ -335,7 +369,7 @@ public final class Conversions
                 }
 
                 result =
-                    new DependencyRelationship( from, artifact, scope, index, managed,
+                    new DependencyRelationship( source, pomLocation, from, artifact, scope, index, managed,
                                                 excludes.toArray( new ProjectRef[] {} ) );
                 break;
             }
@@ -346,7 +380,9 @@ public final class Conversions
                 final String pg = getStringProperty( PLUGIN_GROUP_ID, rel );
                 final boolean managed = getBooleanProperty( IS_MANAGED, rel );
 
-                result = new PluginDependencyRelationship( from, new ProjectRef( pg, pa ), artifact, index, managed );
+                result =
+                    new PluginDependencyRelationship( source, pomLocation, from, new ProjectRef( pg, pa ), artifact,
+                                                      index, managed );
                 break;
             }
             case PLUGIN:
@@ -354,17 +390,17 @@ public final class Conversions
                 final boolean managed = getBooleanProperty( IS_MANAGED, rel );
                 final boolean reporting = getBooleanProperty( IS_REPORTING_PLUGIN, rel );
 
-                result = new PluginRelationship( from, to, index, managed, reporting );
+                result = new PluginRelationship( source, pomLocation, from, to, index, managed, reporting );
                 break;
             }
             case EXTENSION:
             {
-                result = new ExtensionRelationship( from, to, index );
+                result = new ExtensionRelationship( source, from, to, index );
                 break;
             }
             case PARENT:
             {
-                result = new ParentRelationship( from, to );
+                result = new ParentRelationship( source, from, to );
                 break;
             }
             default:

@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.tck.effective;
 
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Date;
 
 import org.apache.maven.graph.spi.effective.EGraphDriver;
@@ -29,7 +31,13 @@ public abstract class AbstractSPI_TCK
 {
 
     @Rule
-    public TestName name = new TestName();
+    public TestName naming = new TestName();
+
+    protected URI sourceURI()
+        throws URISyntaxException
+    {
+        return new URI( "test:repo:" + naming.getMethodName() );
+    }
 
     protected final Logger logger = new Logger( getClass() );
 
@@ -42,13 +50,14 @@ public abstract class AbstractSPI_TCK
     public void printStart()
     {
         start = System.currentTimeMillis();
-        System.out.printf( "***START [%s#%s] (%s)\n\n", name.getClass(), name.getMethodName(), new Date().toString() );
+        System.out.printf( "***START [%s#%s] (%s)\n\n", naming.getClass(), naming.getMethodName(),
+                           new Date().toString() );
     }
 
     @After
     public void printEnd()
     {
-        System.out.printf( "\n\n***END [%s#%s] - %dms (%s)\n", name.getClass(), name.getMethodName(),
+        System.out.printf( "\n\n***END [%s#%s] - %dms (%s)\n", naming.getClass(), naming.getMethodName(),
                            ( System.currentTimeMillis() - start ), new Date().toString() );
     }
 

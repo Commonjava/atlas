@@ -1,0 +1,389 @@
+options {
+  DEBUG_PARSER = false;
+  DEBUG_LOOKAHEAD = false;
+  DEBUG_TOKEN_MANAGER = false;
+  LOOKAHEAD=20;
+  FORCE_LA_CHECK=true;
+  STATIC = false;
+}
+
+PARSER_BEGIN(VersionParser)
+package org.apache.maven.graph.common.version.parse;
+
+import org.apache.maven.graph.common.version.*;
+import org.apache.maven.graph.common.version.part.*;
+import org.apache.maven.graph.common.version.transform.*;
+import java.util.*;
+import java.text.*;
+import java.io.*;
+
+public class VersionParser
+{
+    private String rawSpec;
+    
+    public static void main( String[] args )
+        throws Exception
+    {
+        BufferedReader reader = new BufferedReader( new InputStreamReader( System.in ) );
+        while( true )
+        {
+        try
+        {
+            System.out.print( "Enter version specification: " );
+            String expr = reader.readLine();
+            VersionParser parser = new VersionParser( expr );
+            VersionSpec version = parser.parse();
+            System.out.println( version );
+        }
+        catch ( ParseException e )
+        {
+            e.printStackTrace();
+        }
+        }
+    }
+    
+    public VersionParser( String expression )
+    {
+        this( (Reader)(new StringReader( expression ) ) );
+        this.rawSpec = expression;
+    }
+    
+    private RangeVersionSpec getRangeVersionSpec( SingleVersion lower, SingleVersion upper, boolean lowerInclusive, boolean upperInclusive )
+    {
+      return new RangeVersionSpec( rawSpec, lower, upper, lowerInclusive, upperInclusive );
+    }
+    
+    private CompoundVersionSpec getCompoundVersionSpec( List<VersionSpec> specs )
+    {
+      return new CompoundVersionSpec( rawSpec, specs );
+    }
+    
+    private SnapshotPart newSnapshotPart( String date, String buildnum )
+      throws ParseException
+    {
+      try
+      {
+        return new SnapshotPart( SnapshotSupport.parseSnapshotTimestamp( date ), Integer.parseInt( buildnum ), date + "-" + buildnum );
+      }
+      catch ( java.text.ParseException e )
+      {
+        ParseException pe = new ParseException( "Failed to parse snapshot timestamp: '" + date + "'. Error: " + e.getMessage() );
+        pe.initCause( e );
+        
+        throw pe;
+      }
+      catch ( NumberFormatException e )
+      {
+        ParseException pe = new ParseException( "Failed to parse snapshot build number: '" + buildnum + "'. Error: " + e.getMessage() );
+        pe.initCause( e );
+        
+        throw pe;
+      }
+    }
+    
+    private void addPart( List<VersionPart> parts, VersionPart current, VersionPart last )
+    {
+      if ( last != null )
+      {
+        if ( !(last instanceof SeparatorPart) && !(current instanceof SeparatorPart))
+        {
+          parts.add( new SeparatorPart( VersionPartSeparator.BLANK ) );
+        }
+      }
+      
+      parts.add( current );
+    }
+}
+
+PARSER_END(VersionParser)
+
+SKIP :
+{
+  " "
+}
+
+TOKEN:
+{
+  <COMMA: ",">
+| <LPAREN: "(">
+| <RPAREN: ")">
+| <LBRAK: "[">
+| <RBRAK: "]">
+| <DASH: "-">
+| <USCORE: "_">
+| <DOT: ".">
+| <LSNAP: (["S","s"] ["N","n"] ["A","a"] ["P","p"] ["S","s"] ["H","h"] ["O","o"] ["T","t"]) >
+| <SNAPDATE: (<DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DOT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT>) >
+| <STRING: (["A"-"Z", "a"-"z"])+ >
+| <DIGIT: (["0"-"9"])>
+}
+
+VersionSpec parse() throws InvalidVersionSpecificationException :
+{VersionSpec version = null;}
+{
+  version=anySpec()
+  {
+    return version;
+  }
+}
+
+VersionSpec anySpec() throws InvalidVersionSpecificationException :
+{
+List<VersionSpec> versions=new ArrayList<VersionSpec>();
+VersionSpec version=null;
+}
+{
+  (
+    (version=anySingleSpec())
+    {versions.add( version );}
+  )*
+  {
+    if ( versions.isEmpty() )
+    {
+        throw new InvalidVersionSpecificationException( rawSpec, "Cannot parse; no version specs found!");
+    }
+    else if ( versions.size() == 1 )
+    {
+        return versions.iterator().next();
+    }
+    else
+    {
+        return getCompoundVersionSpec( versions );
+    }
+  }
+}
+
+VersionSpec anySingleSpec() throws InvalidVersionSpecificationException :
+{
+VersionSpec version = null;
+}
+{
+(
+  version=range()
+| version=single()
+)
+  {
+    return version;
+  }
+}
+
+RangeVersionSpec range() throws InvalidVersionSpecificationException :
+{
+RangeVersionSpec spec=null;
+}
+{
+(
+  spec=trueRange()
+| spec=pinnedRange()
+)
+  {
+      return spec;
+  }
+}
+
+RangeVersionSpec trueRange() throws InvalidVersionSpecificationException :
+{
+SingleVersion lower=null;
+boolean lowerInclusive=true;
+SingleVersion upper=null;
+boolean upperInclusive=true;
+}
+{
+  (
+    <LPAREN>
+    {
+      lowerInclusive=false;
+    }
+  | <LBRAK>
+    {
+      lowerInclusive=true;
+    }
+  )
+  (lower=single())?
+  <COMMA>
+  (upper=single())?
+  (
+    <RPAREN>
+    {
+      upperInclusive=false;
+    }
+  | <RBRAK>
+    {
+      upperInclusive=true;
+    }
+  )
+  {
+    return getRangeVersionSpec( lower, upper, lowerInclusive, upperInclusive );
+  }
+  
+}
+
+RangeVersionSpec pinnedRange() throws InvalidVersionSpecificationException :
+{
+SingleVersion version=null;
+}
+{
+(
+  <LBRAK>
+  version=single()
+  <RBRAK>
+)
+  {
+    return getRangeVersionSpec( version, version, true, true );
+  }
+}
+
+SingleVersion single() throws InvalidVersionSpecificationException :
+{
+List<VersionPart> parts = new ArrayList<VersionPart>();
+VersionPart seg=null;
+VersionPart last = null;
+}
+{
+  (seg=segment())
+  {
+    if ( ( seg instanceof StringPart ) && ((StringPart)seg).getValue().indexOf(".") > -1 )
+    {
+        String[] subParts = ((StringPart)seg).getValue().split("\\.");
+        for( int subIdx=0; subIdx<subParts.length; subIdx++ )
+        {
+            NumericPart subSeg = new NumericPart( subParts[subIdx] );
+            addPart( parts, subSeg, last );
+            last = subSeg;
+            
+            if ( subIdx+1 < subParts.length )
+            {
+                SeparatorPart sepPart = new SeparatorPart( VersionPartSeparator.DOT );
+                addPart( parts, sepPart, last );
+                last = sepPart;
+            }
+        }
+    }
+    else
+    {
+        addPart( parts, seg, last );
+        last = seg;
+    }
+  }
+  (
+    (
+      seg=separator()
+      {
+        addPart( parts, seg, last );
+        last = seg;
+      }
+    )?
+    (
+      (
+        seg=snapshot()
+        {
+          addPart( parts, seg, last );
+          last = seg;
+        }
+      )
+  |   (
+        seg=segment()
+        {
+          if ( ( seg instanceof StringPart ) && ((StringPart)seg).getValue().indexOf(".") > -1 )
+          {
+              String[] subParts = ((StringPart)seg).getValue().split("\\.");
+              for( int subIdx=0; subIdx<subParts.length; subIdx++ )
+              {
+                  NumericPart subSeg = new NumericPart( subParts[subIdx] );
+                  addPart( parts, subSeg, last );
+                  last = subSeg;
+
+                  if ( subIdx+1 < subParts.length )
+                  {
+                      SeparatorPart sepPart = new SeparatorPart( VersionPartSeparator.DOT );
+                      addPart( parts, sepPart, last );
+                      last = sepPart;
+                  }
+              }
+          }
+          else
+          {
+              addPart( parts, seg, last );
+              last = seg;
+          }
+        }
+      )
+    )
+  )*
+  {
+    return new SingleVersion( rawSpec, parts );
+  }
+}
+
+VersionPart segment() :
+{
+VersionPart part = null;
+StringBuilder num = new StringBuilder();
+Token val=null;
+}
+{
+(
+  (
+    part = snapshot()
+  )
+| (
+    val=<SNAPDATE>
+    {part = new StringPart(val.image);}
+  )
+| (
+    val=<DIGIT>
+    {num.append(val.image);}
+  )+
+| (
+    val=<STRING>
+    {part = new StringPart(val.image);}
+  )
+)
+{return part == null ? new NumericPart( num.toString() ) : part;}
+
+}
+
+VersionPart snapshot() :
+{
+SnapshotPart part = null;
+String ts = null;
+StringBuilder bn = new StringBuilder();
+Token token = null;
+}
+{
+(
+  (
+    (
+      token=<SNAPDATE>
+      {ts = token.image;}
+    )
+    <DASH>
+    (
+      token=<DIGIT>
+      {bn.append(token.image);}
+    )+
+  )
+| (
+    token=<LSNAP>
+    {part = new SnapshotPart(token.image);}
+  )
+)
+{return part == null ? newSnapshotPart( ts, bn.toString() ) : part;}
+}
+
+SeparatorPart separator() :
+{
+VersionPartSeparator sep = null;
+}
+{
+(
+  <DOT>
+  {sep = VersionPartSeparator.DOT;}
+| <DASH>
+  {sep = VersionPartSeparator.DASH;}
+| <USCORE>
+  {sep = VersionPartSeparator.UNDERSCORE;}
+)
+  {return new SeparatorPart( sep );}  
+}
+

@@ -19,6 +19,7 @@ package org.commonjava.maven.atlas.tck.effective;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,11 +47,13 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
+        final URI source = sourceURI();
+
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
                 .build();
         /* @formatter:on */
 
@@ -76,11 +79,13 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
+        final URI source = sourceURI();
+
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
                 .build();
         /* @formatter:on */
 
@@ -126,18 +131,19 @@ public abstract class SubGraphSelectionTCK
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
         final EGraphDriver rootDriver = newDriverInstance();
+        final URI source = sourceURI();
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( project ), rootDriver )
-                .withDependencies( new DependencyRelationship( project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, project ), rootDriver )
+                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
                 .build();
 
         final EProjectGraph graph2 =
-            new EProjectGraph.Builder( new EProjectKey( project2 ), rootDriver )
-                .withDependencies( new DependencyRelationship( project2, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( varDep,   new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( new EProjectKey( source, project2 ), rootDriver )
+                .withDependencies( new DependencyRelationship( source, project2, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                   new DependencyRelationship( source, varDep,   new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
                 .build();
         /* @formatter:on */
 

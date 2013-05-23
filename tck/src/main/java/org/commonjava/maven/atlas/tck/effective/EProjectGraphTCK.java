@@ -20,11 +20,13 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.junit.Assert.assertThat;
 
+import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.util.logging.Logger;
@@ -42,12 +44,16 @@ public abstract class EProjectGraphTCK
         final ProjectVersionRef p = new ProjectVersionRef( "org.test", "parent", "1.0" );
         final ProjectVersionRef c = new ProjectVersionRef( "org.test", "child", "1.0" );
 
+        final URI source = sourceURI();
+
         final EGraphDriver driver = newDriverInstance();
-        final EProjectGraph root = new EProjectGraph.Builder( r, driver ).build();
-        final EProjectGraph parent = new EProjectGraph.Builder( p, driver ).withParent( r )
-                                                                           .build();
-        final EProjectGraph child = new EProjectGraph.Builder( c, driver ).withParent( p )
-                                                                          .build();
+        final EProjectGraph root = new EProjectGraph.Builder( source, r, driver ).build();
+        final EProjectGraph parent =
+            new EProjectGraph.Builder( source, p, driver ).withParent( new ParentRelationship( source, p, r ) )
+                                                          .build();
+        final EProjectGraph child =
+            new EProjectGraph.Builder( source, c, driver ).withParent( new ParentRelationship( source, c, p ) )
+                                                          .build();
         parent.connect( root );
         child.connect( parent );
 
