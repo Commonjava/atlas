@@ -99,15 +99,6 @@ public interface EGraphDriver
 
     Set<ProjectVersionRef> getProjectsWithMetadata( String key );
 
-    void selectVersionFor( ProjectVersionRef variable, ProjectVersionRef select )
-        throws GraphDriverException;
-
-    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
-        throws GraphDriverException;
-
-    Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
-        throws GraphDriverException;
-
     Set<ProjectVersionRef> getRoots();
 
     void addDisconnectedProject( ProjectVersionRef ref );

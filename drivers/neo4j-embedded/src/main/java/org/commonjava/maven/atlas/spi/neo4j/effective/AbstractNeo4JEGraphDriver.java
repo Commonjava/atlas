@@ -225,6 +225,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return roots == null ? null : toProjectedSet( roots, new NodeIdProjector() );
     }
 
+    @Override
     public Set<ProjectVersionRef> getRoots()
     {
         final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>();
@@ -259,6 +260,7 @@ public abstract class AbstractNeo4JEGraphDriver
                                                                     .size() );
     }
 
+    @Override
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
     {
         checkClosed();
@@ -290,6 +292,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
         checkClosed();
@@ -308,6 +311,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return null;
     }
 
+    @Override
     public Collection<ProjectRelationship<?>> getAllRelationships()
     {
         if ( roots != null && !roots.isEmpty() )
@@ -346,6 +350,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef... refs )
     {
         // NOTE: using global lookup here to avoid checking for paths, which we're going to collect below.
@@ -378,6 +383,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return result;
     }
 
+    @Override
     public Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
         checkClosed();
@@ -515,6 +521,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return false;
     }
 
+    @Override
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
         return !getIntroducedCycles( rel ).isEmpty();
@@ -602,6 +609,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return node;
     }
 
+    @Override
     public Set<ProjectVersionRef> getAllProjects()
     {
         Iterable<Node> nodes = null;
@@ -639,6 +647,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public void traverse( final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
         throws GraphDriverException
     {
@@ -805,16 +814,19 @@ public abstract class AbstractNeo4JEGraphDriver
         //        logger.debug( "\n\n\n\n%s called from:\n\n%s\n\n\n\n", label, join( new Throwable().getStackTrace(), "\n" ) );
     }
 
+    @Override
     public boolean containsProject( final ProjectVersionRef ref )
     {
         return getNode( ref ) != null;
     }
 
+    @Override
     public boolean containsRelationship( final ProjectRelationship<?> rel )
     {
         return getRelationship( rel ) != null;
     }
 
+    @Override
     public Node getNode( final ProjectVersionRef ref )
     {
         return getNode( ref, true );
@@ -866,6 +878,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return checker.hasFoundNodes();
     }
 
+    @Override
     public Relationship getRelationship( final ProjectRelationship<?> rel )
     {
         return getRelationship( id( rel ) );
@@ -883,6 +896,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return hits.hasNext() ? hits.next() : null;
     }
 
+    @Override
     public synchronized void close()
         throws IOException
     {
@@ -908,6 +922,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public void run()
     {
         try
@@ -920,6 +935,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public boolean isDerivedFrom( final EGraphDriver driver )
     {
         return driver == this || ancestry.contains( driver );
@@ -931,6 +947,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return !isConnected( node );
     }
 
+    @Override
     public boolean isMissing( final ProjectVersionRef ref )
     {
         final IndexHits<Node> hits = graph.index()
@@ -945,6 +962,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return false;
     }
 
+    @Override
     public boolean hasMissingProjects()
     {
         final IndexHits<Node> hits = graph.index()
@@ -954,6 +972,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return hasIndexedProjects( hits );
     }
 
+    @Override
     public Set<ProjectVersionRef> getMissingProjects()
     {
         final IndexHits<Node> hits = graph.index()
@@ -1027,6 +1046,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public boolean hasVariableProjects()
     {
         final IndexHits<Node> hits = graph.index()
@@ -1036,6 +1056,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return hasIndexedProjects( hits );
     }
 
+    @Override
     public Set<ProjectVersionRef> getVariableProjects()
     {
         final IndexHits<Node> hits = graph.index()
@@ -1047,12 +1068,14 @@ public abstract class AbstractNeo4JEGraphDriver
         //        return getAllFlaggedProjects( VARIABLE, true );
     }
 
+    @Override
     public boolean addCycle( final EProjectCycle cycle )
     {
         // NOP, auto-detected.
         return false;
     }
 
+    @Override
     public Set<EProjectCycle> getCycles()
     {
         printCaller( "GET-CYCLES" );
@@ -1159,6 +1182,7 @@ public abstract class AbstractNeo4JEGraphDriver
         //        return cycles;
     }
 
+    @Override
     public boolean isCycleParticipant( final ProjectRelationship<?> rel )
     {
         for ( final EProjectCycle cycle : getCycles() )
@@ -1172,6 +1196,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return false;
     }
 
+    @Override
     public boolean isCycleParticipant( final ProjectVersionRef ref )
     {
         for ( final EProjectCycle cycle : getCycles() )
@@ -1185,11 +1210,13 @@ public abstract class AbstractNeo4JEGraphDriver
         return false;
     }
 
+    @Override
     public void recomputeIncompleteSubgraphs()
     {
         // NOP, handled automatically.
     }
 
+    @Override
     public Map<String, String> getProjectMetadata( final ProjectVersionRef ref )
     {
         final Node node = getNode( ref, false );
@@ -1201,6 +1228,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return getMetadataMap( node );
     }
 
+    @Override
     public void addProjectMetadata( final ProjectVersionRef ref, final String key, final String value )
     {
         final Transaction tx = graph.beginTx();
@@ -1222,6 +1250,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public void addProjectMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
     {
         final Transaction tx = graph.beginTx();
@@ -1243,6 +1272,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public boolean includeGraph( final ProjectVersionRef ref )
     {
         final Node node = getNode( ref );
@@ -1254,12 +1284,14 @@ public abstract class AbstractNeo4JEGraphDriver
         return isConnected( node );
     }
 
+    @Override
     public ExecutionResult executeFrom( final String cypher, final ProjectVersionRef... roots )
         throws GraphDriverException
     {
         return executeFrom( cypher, null, roots );
     }
 
+    @Override
     public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params,
                                         final ProjectVersionRef... roots )
         throws GraphDriverException
@@ -1293,12 +1325,14 @@ public abstract class AbstractNeo4JEGraphDriver
         return execute( String.format( "START n=node(%s) %s", sb, cypher ), params );
     }
 
+    @Override
     public ExecutionResult executeFrom( final String cypher, final ProjectRelationship<?> rootRel )
         throws GraphDriverException
     {
         return executeFrom( cypher, null, rootRel );
     }
 
+    @Override
     public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params,
                                         final ProjectRelationship<?> rootRel )
         throws GraphDriverException
@@ -1323,11 +1357,13 @@ public abstract class AbstractNeo4JEGraphDriver
         return execute( String.format( "START r=relationship(%s) %s", id, cypher ), params );
     }
 
+    @Override
     public ExecutionResult execute( final String cypher )
     {
         return execute( cypher, null );
     }
 
+    @Override
     public ExecutionResult execute( final String cypher, final Map<String, Object> params )
     {
         checkExecutionEngine();
@@ -1352,6 +1388,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public void reindex()
         throws GraphDriverException
     {
@@ -1389,6 +1426,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    @Override
     public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
     {
         final IndexHits<Node> nodes = graph.index()
@@ -1662,6 +1700,7 @@ public abstract class AbstractNeo4JEGraphDriver
         //        return selected;
     }
 
+    @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
         if ( !containsProject( ref ) )

@@ -104,9 +104,9 @@ public abstract class SubGraphSelectionTCK
         System.out.println( "Incomplete after selecting:\n  " + incomplete );
         assertThat( incomplete.contains( selDep ), equalTo( true ) );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> cleared = graph.clearSelectedVersions();
+        final Map<ProjectVersionRef, SingleVersion> cleared = graph.clearSelectedVersions();
         System.out.println( "Cleared:\n  " + cleared );
-        assertThat( cleared.get( varDep ), equalTo( selDep ) );
+        assertThat( cleared.get( varDep ), equalTo( selDep.getVersionSpec() ) );
 
         variables = graph.getVariableSubgraphs();
         System.out.println( "Variable after clearing:\n  " + variables );

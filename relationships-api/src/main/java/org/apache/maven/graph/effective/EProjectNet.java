@@ -26,6 +26,7 @@ import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 
@@ -33,13 +34,15 @@ public interface EProjectNet
     extends EProjectRelationshipCollection
 {
 
-    Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+    Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
         throws GraphDriverException;
 
     ProjectVersionRef selectVersionFor( ProjectVersionRef variable, SingleVersion version )
         throws GraphDriverException;
 
     EGraphDriver getDriver();
+
+    EGraphSession getSession();
 
     boolean isComplete();
 

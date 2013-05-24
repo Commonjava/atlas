@@ -32,6 +32,7 @@ import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
@@ -47,9 +48,13 @@ public class EProjectWeb
 
     private final List<EProjectNet> superNets = new ArrayList<EProjectNet>();
 
-    EProjectWeb( final EProjectNet parent, final ProjectRelationshipFilter filter, final EProjectKey... roots )
+    private final EGraphSession session;
+
+    EProjectWeb( final EGraphSession session, final EProjectNet parent, final ProjectRelationshipFilter filter,
+                 final EProjectKey... roots )
         throws GraphDriverException
     {
+        this.session = session;
         final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>();
         for ( final EProjectKey key : roots )
         {
@@ -63,15 +68,17 @@ public class EProjectWeb
         this.superNets.add( parent );
     }
 
-    public EProjectWeb( final EGraphDriver driver )
+    public EProjectWeb( final EGraphSession session, final EGraphDriver driver )
     {
+        this.session = session;
         this.driver = driver;
     }
 
-    public EProjectWeb( final Set<ProjectRelationship<?>> relationships,
+    public EProjectWeb( final EGraphSession session, final Set<ProjectRelationship<?>> relationships,
                         final Collection<EProjectRelationships> projectRelationships, final Set<EProjectCycle> cycles,
                         final EGraphDriver driver )
     {
+        this.session = session;
         this.driver = driver;
         addAll( relationships );
         for ( final EProjectRelationships project : projectRelationships )
@@ -88,9 +95,10 @@ public class EProjectWeb
         }
     }
 
-    public EProjectWeb( final Collection<ProjectRelationship<?>> relationships,
+    public EProjectWeb( final EGraphSession session, final Collection<ProjectRelationship<?>> relationships,
                         final Collection<EProjectRelationships> projectRelationships, final EGraphDriver driver )
     {
+        this.session = session;
         this.driver = driver;
         addAll( relationships );
         for ( final EProjectRelationships project : projectRelationships )
@@ -99,16 +107,19 @@ public class EProjectWeb
         }
     }
 
-    public EProjectWeb( final Set<ProjectRelationship<?>> relationships, final EGraphDriver driver )
+    public EProjectWeb( final EGraphSession session, final Set<ProjectRelationship<?>> relationships,
+                        final EGraphDriver driver )
     {
+        this.session = session;
         this.driver = driver;
         addAll( relationships );
     }
 
-    public EProjectWeb( final EProjectWeb parent, final ProjectRelationshipFilter filter,
+    public EProjectWeb( final EGraphSession session, final EProjectWeb parent, final ProjectRelationshipFilter filter,
                         final ProjectVersionRef... roots )
         throws GraphDriverException
     {
+        this.session = session;
         this.driver = parent.getDriver()
                             .newInstanceFrom( this, filter, roots );
 
@@ -326,7 +337,7 @@ public class EProjectWeb
     {
         if ( driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() ) )
         {
-            return new EProjectGraph( this, filter, key );
+            return new EProjectGraph( session, this, filter, key );
         }
 
         return null;
@@ -349,7 +360,7 @@ public class EProjectWeb
             }
         }
 
-        return new EProjectWeb( this, filter, keys );
+        return new EProjectWeb( session, this, filter, keys );
     }
 
     public boolean containsGraph( final EProjectKey key )
@@ -432,16 +443,13 @@ public class EProjectWeb
     public ProjectVersionRef selectVersionFor( final ProjectVersionRef variable, final SingleVersion version )
         throws GraphDriverException
     {
-        final ProjectVersionRef ref = variable.selectVersion( version );
-        driver.selectVersionFor( variable, ref );
-
-        return ref;
+        return session.selectVersion( variable, version );
     }
 
-    public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+    public Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
         throws GraphDriverException
     {
-        return driver.clearSelectedVersions();
+        return session.clearVersionSelections();
     }
 
     public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... projectVersionRefs )
@@ -454,11 +462,16 @@ public class EProjectWeb
         return driver.introducesCycle( rel );
     }
 
+    public EGraphSession getSession()
+    {
+        return session;
+    }
+
     @SuppressWarnings( "unchecked" )
     public EProjectWeb filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectWeb( this, filter, getRoots().toArray( new ProjectVersionRef[] {} ) );
+        return new EProjectWeb( session, this, filter, getRoots().toArray( new ProjectVersionRef[] {} ) );
     }
 
     public void addDisconnectedProject( final ProjectVersionRef ref )
@@ -469,6 +482,6 @@ public class EProjectWeb
     @Override
     public String toString()
     {
-        return "EProjectWeb [roots: " + join( driver.getRoots(), ", " ) + "]";
+        return String.format( "EProjectWeb [roots: %s, session=%s]", join( driver.getRoots(), ", " ), session );
     }
 }

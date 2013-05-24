@@ -39,6 +39,7 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
@@ -59,9 +60,12 @@ public class EProjectGraph
 
     private final List<EProjectNet> superNets = new ArrayList<EProjectNet>();
 
-    public EProjectGraph( final EProjectNet parent, final EProjectKey key )
+    private final EGraphSession session;
+
+    public EProjectGraph( final EGraphSession session, final EProjectNet parent, final EProjectKey key )
         throws GraphDriverException
     {
+        this.session = session;
         this.key = key;
         this.driver = parent.getDriver()
                             .newInstanceFrom( this, null, key.getProject() );
@@ -70,9 +74,11 @@ public class EProjectGraph
         this.superNets.add( parent );
     }
 
-    public EProjectGraph( final EProjectNet parent, final ProjectRelationshipFilter filter, final EProjectKey key )
+    public EProjectGraph( final EGraphSession session, final EProjectNet parent,
+                          final ProjectRelationshipFilter filter, final EProjectKey key )
         throws GraphDriverException
     {
+        this.session = session;
         this.key = key;
         this.driver = parent.getDriver()
                             .newInstanceFrom( this, filter, key.getProject() );
@@ -81,10 +87,11 @@ public class EProjectGraph
         this.superNets.add( parent );
     }
 
-    public EProjectGraph( final EProjectRelationships relationships, final ProjectRelationshipFilter filter,
-                          final EGraphDriver driver )
+    public EProjectGraph( final EGraphSession session, final EProjectRelationships relationships,
+                          final ProjectRelationshipFilter filter, final EGraphDriver driver )
         throws GraphDriverException
     {
+        this.session = session;
         this.key = relationships.getKey();
         this.driver = driver.newInstanceFrom( null, filter, key.getProject() );
 
@@ -92,7 +99,8 @@ public class EProjectGraph
     }
 
     // TODO: If we construct like this based on contents of another graph, will we lose that graph's list of variable subgraphs??
-    public EProjectGraph( final EProjectKey key, final Collection<ProjectRelationship<?>> relationships,
+    public EProjectGraph( final EGraphSession session, final EProjectKey key,
+                          final Collection<ProjectRelationship<?>> relationships,
                           final Collection<EProjectRelationships> projectRelationships,
                           final Set<EProjectCycle> cycles, final ProjectRelationshipFilter filter,
                           final EGraphDriver driver )
@@ -109,6 +117,7 @@ public class EProjectGraph
         //                                                    + version );
         //        }
 
+        this.session = session;
         this.key = key;
         this.driver = driver.newInstanceFrom( null, filter, key.getProject() );
         if ( cycles != null )
@@ -203,8 +212,11 @@ public class EProjectGraph
 
         private ProjectRelationshipFilter filter;
 
-        public Builder( final EProjectRelationships rels, final EGraphDriver driver )
+        private EGraphSession session;
+
+        public Builder( final EGraphSession session, final EProjectRelationships rels, final EGraphDriver driver )
         {
+            this.session = session;
             this.driver = driver;
             this.key = rels.getKey();
             addFromDirectRelationships( rels );
@@ -415,7 +427,7 @@ public class EProjectGraph
                 relationships.add( new ParentRelationship( key.getSource(), key.getProject(), key.getProject() ) );
             }
 
-            return new EProjectGraph( key, relationships, projects, cycles, filter, driver );
+            return new EProjectGraph( session, key, relationships, projects, cycles, filter, driver );
         }
 
         public Builder withCycles( final Set<EProjectCycle> cycles )
@@ -599,7 +611,7 @@ public class EProjectGraph
     {
         if ( driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() ) )
         {
-            return new EProjectGraph( this, filter, key );
+            return new EProjectGraph( session, this, filter, key );
         }
 
         return null;
@@ -622,7 +634,12 @@ public class EProjectGraph
             }
         }
 
-        return new EProjectWeb( this, filter, keys );
+        return new EProjectWeb( session, this, filter, keys );
+    }
+
+    public EGraphSession getSession()
+    {
+        return session;
     }
 
     public boolean containsGraph( final EProjectKey key )
@@ -664,16 +681,13 @@ public class EProjectGraph
     public ProjectVersionRef selectVersionFor( final ProjectVersionRef variable, final SingleVersion version )
         throws GraphDriverException
     {
-        final ProjectVersionRef ref = variable.selectVersion( version );
-        driver.selectVersionFor( variable, ref );
-
-        return ref;
+        return session.selectVersion( variable, version );
     }
 
-    public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+    public Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
         throws GraphDriverException
     {
-        return driver.clearSelectedVersions();
+        return session.clearVersionSelections();
     }
 
     public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs )
@@ -690,7 +704,7 @@ public class EProjectGraph
     public EProjectGraph filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectGraph( this, filter, key );
+        return new EProjectGraph( session, this, filter, key );
     }
 
     public void addDisconnectedProject( final ProjectVersionRef ref )
@@ -701,6 +715,6 @@ public class EProjectGraph
     @Override
     public String toString()
     {
-        return "EProjectGraph [key: " + key + "]";
+        return String.format( "EProjectGraph [key: %s, session: %s]", key, session );
     }
 }

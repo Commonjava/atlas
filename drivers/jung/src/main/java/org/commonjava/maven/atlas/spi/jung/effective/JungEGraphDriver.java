@@ -42,6 +42,7 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.rel.RelationshipComparator;
 import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.traverse.AbstractTraversal;
 import org.apache.maven.graph.effective.traverse.FilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
@@ -65,12 +66,12 @@ public class JungEGraphDriver
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private transient Map<ProjectVersionRef, ProjectVersionRef> selected =
-        new HashMap<ProjectVersionRef, ProjectVersionRef>();
-
-    private transient Map<ProjectRelationship<?>, ProjectRelationship<?>> replaced =
-        new HashMap<ProjectRelationship<?>, ProjectRelationship<?>>();
-
+    //    private transient Map<ProjectVersionRef, ProjectVersionRef> selected =
+    //        new HashMap<ProjectVersionRef, ProjectVersionRef>();
+    //
+    //    private transient Map<ProjectRelationship<?>, ProjectRelationship<?>> replaced =
+    //        new HashMap<ProjectRelationship<?>, ProjectRelationship<?>>();
+    //
     private final Map<String, Set<ProjectVersionRef>> metadataOwners = new HashMap<String, Set<ProjectVersionRef>>();
 
     private final Map<ProjectVersionRef, Map<String, String>> metadata =
@@ -80,8 +81,11 @@ public class JungEGraphDriver
 
     private ProjectVersionRef[] roots;
 
+    private final EGraphSession session;
+
     public JungEGraphDriver()
     {
+        this.session = null;
     }
 
     public JungEGraphDriver( final JungEGraphDriver from, final ProjectRelationshipFilter filter,
@@ -89,6 +93,7 @@ public class JungEGraphDriver
         throws GraphDriverException
     {
         this.roots = roots;
+        this.session = net.getSession();
         Collection<ProjectRelationship<?>> rels;
         if ( filter != null && roots.length > 0 )
         {
@@ -141,21 +146,50 @@ public class JungEGraphDriver
         return new HashSet<ProjectRelationship<?>>( traversal.getCapturedRelationships() );
     }
 
+    @Override
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ProjectVersionRef ref )
     {
-        return graph.getOutEdges( ref );
+        return imposeSelections( graph.getOutEdges( ref ) );
     }
 
+    @Override
     public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
-        return graph.getInEdges( ref );
+        return imposeSelections( graph.getInEdges( ref ) );
     }
 
+    @Override
     public Collection<ProjectRelationship<?>> getAllRelationships()
     {
-        return graph.getEdges();
+        return imposeSelections( graph.getEdges() );
     }
 
+    private Collection<ProjectRelationship<?>> imposeSelections( final Collection<ProjectRelationship<?>> edges )
+    {
+        if ( edges == null || edges.isEmpty() )
+        {
+            return edges;
+        }
+
+        final List<ProjectRelationship<?>> result = new ArrayList<ProjectRelationship<?>>( edges.size() );
+        for ( final ProjectRelationship<?> edge : edges )
+        {
+            final ProjectVersionRef target = edge.getTarget();
+            final SingleVersion selected = session.getSelectedVersion( target );
+            if ( selected != null )
+            {
+                result.add( edge.selectTarget( selected ) );
+            }
+            else
+            {
+                result.add( edge );
+            }
+        }
+
+        return result;
+    }
+
+    @Override
     public Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
         final Set<ProjectRelationship<?>> skipped = new HashSet<ProjectRelationship<?>>();
@@ -217,6 +251,7 @@ public class JungEGraphDriver
         return skipped;
     }
 
+    @Override
     public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ProjectVersionRef... refs )
     {
         final PathDetectionTraversal traversal = new PathDetectionTraversal( refs );
@@ -236,6 +271,7 @@ public class JungEGraphDriver
         return traversal.getPaths();
     }
 
+    @Override
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
         final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
@@ -247,11 +283,13 @@ public class JungEGraphDriver
                          .isEmpty();
     }
 
+    @Override
     public Set<ProjectVersionRef> getAllProjects()
     {
         return new HashSet<ProjectVersionRef>( graph.getVertices() );
     }
 
+    @Override
     public void traverse( final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
         throws GraphDriverException
     {
@@ -296,11 +334,8 @@ public class JungEGraphDriver
                 {
                     if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
                     {
-                        ProjectVersionRef target = edge.getTarget();
-                        if ( target instanceof ArtifactRef )
-                        {
-                            target = ( (ArtifactRef) target ).asProjectVersionRef();
-                        }
+                        final ProjectVersionRef target = edge.getTarget()
+                                                             .asProjectVersionRef();
 
                         // FIXME: Are there cases where a traversal needs to see cycles??
                         boolean cycle = false;
@@ -349,12 +384,9 @@ public class JungEGraphDriver
                 continue;
             }
 
-            ProjectVersionRef node = path.get( path.size() - 1 )
-                                         .getTarget();
-            if ( node instanceof ArtifactRef )
-            {
-                node = ( (ArtifactRef) node ).asProjectVersionRef();
-            }
+            final ProjectVersionRef node = path.get( path.size() - 1 )
+                                               .getTarget()
+                                               .asProjectVersionRef();
 
             if ( !path.isEmpty() && ( path.get( 0 ) instanceof SelfEdge ) )
             {
@@ -404,7 +436,8 @@ public class JungEGraphDriver
 
         RelationshipUtils.filterTerminalParents( unsorted );
 
-        final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( unsorted );
+        final List<ProjectRelationship<?>> sorted =
+            new ArrayList<ProjectRelationship<?>>( imposeSelections( unsorted ) );
         Collections.sort( sorted, new RelationshipComparator() );
 
         return sorted;
@@ -427,11 +460,13 @@ public class JungEGraphDriver
             return new ArtifactRef( getTarget(), "pom", null, false );
         }
 
+        @Override
         public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
         {
             return new SelfEdge( getDeclaring().selectVersion( version ) );
         }
 
+        @Override
         public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
         {
             return new SelfEdge( getDeclaring().selectVersion( version ) );
@@ -439,6 +474,7 @@ public class JungEGraphDriver
 
     }
 
+    @Override
     public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectRelationshipFilter filter,
                                          final ProjectVersionRef... from )
         throws GraphDriverException
@@ -449,16 +485,19 @@ public class JungEGraphDriver
         return neo;
     }
 
+    @Override
     public EGraphDriver newInstance()
     {
         return new JungEGraphDriver();
     }
 
+    @Override
     public boolean containsProject( final ProjectVersionRef ref )
     {
         return graph.containsVertex( ref );
     }
 
+    @Override
     public boolean containsRelationship( final ProjectRelationship<?> rel )
     {
         return graph.containsEdge( rel );
@@ -490,42 +529,50 @@ public class JungEGraphDriver
         recomputeIncompleteSubgraphs();
     }
 
+    @Override
     public void close()
         throws IOException
     {
         // NOP; stored in memory.
     }
 
+    @Override
     public boolean isDerivedFrom( final EGraphDriver driver )
     {
         return false;
     }
 
+    @Override
     public boolean isMissing( final ProjectVersionRef project )
     {
         return !graph.containsVertex( project );
     }
 
+    @Override
     public boolean hasMissingProjects()
     {
         return !incompleteSubgraphs.isEmpty();
     }
 
+    @Override
     public Set<ProjectVersionRef> getMissingProjects()
     {
         return new HashSet<ProjectVersionRef>( incompleteSubgraphs );
     }
 
+    @Override
     public boolean hasVariableProjects()
     {
         return !variableSubgraphs.isEmpty();
     }
 
+    @Override
     public Set<ProjectVersionRef> getVariableProjects()
     {
         return new HashSet<ProjectVersionRef>( variableSubgraphs );
     }
 
+    @Override
     public boolean addCycle( final EProjectCycle cycle )
     {
         boolean changed = false;
@@ -542,11 +589,13 @@ public class JungEGraphDriver
         return changed;
     }
 
+    @Override
     public Set<EProjectCycle> getCycles()
     {
         return new HashSet<EProjectCycle>( cycles );
     }
 
+    @Override
     public boolean isCycleParticipant( final ProjectRelationship<?> rel )
     {
         for ( final EProjectCycle cycle : cycles )
@@ -560,6 +609,7 @@ public class JungEGraphDriver
         return false;
     }
 
+    @Override
     public boolean isCycleParticipant( final ProjectVersionRef ref )
     {
         for ( final EProjectCycle cycle : cycles )
@@ -573,6 +623,7 @@ public class JungEGraphDriver
         return false;
     }
 
+    @Override
     public void recomputeIncompleteSubgraphs()
     {
         for ( final ProjectVersionRef vertex : getAllProjects() )
@@ -585,11 +636,13 @@ public class JungEGraphDriver
         }
     }
 
+    @Override
     public Map<String, String> getProjectMetadata( final ProjectVersionRef ref )
     {
         return metadata.get( ref );
     }
 
+    @Override
     public void addProjectMetadata( final ProjectVersionRef ref, final String key, final String value )
     {
         if ( StringUtils.isEmpty( key ) || StringUtils.isEmpty( value ) )
@@ -615,6 +668,7 @@ public class JungEGraphDriver
         owners.add( ref );
     }
 
+    @Override
     public void addProjectMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
     {
         if ( metadata == null || metadata.isEmpty() )
@@ -644,6 +698,7 @@ public class JungEGraphDriver
                                                  "need to implement notion of a global graph in jung before this can work." );
     }
 
+    @Override
     public synchronized void reindex()
         throws GraphDriverException
     {
@@ -657,86 +712,87 @@ public class JungEGraphDriver
         }
     }
 
+    @Override
     public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
     {
         return metadataOwners.get( key );
     }
 
-    public void selectVersionFor( final ProjectVersionRef variable, final ProjectVersionRef select )
-        throws GraphDriverException
-    {
-        if ( !select.isSpecificVersion() )
-        {
-            throw new GraphDriverException( "Cannot select non-concrete version! Attempted to select: %s", select );
-        }
-
-        if ( variable.isSpecificVersion() )
-        {
-            throw new GraphDriverException(
-                                            "Cannot select version if target is already a concrete version! Attempted to select for: %s",
-                                            variable );
-        }
-
-        selected.put( variable, select );
-
-        // Don't worry about selecting for outbound edges, as those subgraphs are supposed to be the same...
-        final Collection<ProjectRelationship<?>> rels = graph.getInEdges( variable );
-        for ( final ProjectRelationship<?> rel : rels )
-        {
-
-            ProjectRelationship<?> repl;
-            if ( rel.getTarget()
-                    .asProjectVersionRef()
-                    .equals( variable ) )
-            {
-                repl = rel.selectTarget( (SingleVersion) select.getVersionSpec() );
-            }
-            else
-            {
-                continue;
-            }
-
-            graph.removeEdge( rel );
-            graph.addEdge( repl, repl.getDeclaring(), repl.getTarget()
-                                                          .asProjectVersionRef() );
-
-            replaced.put( rel, repl );
-        }
-    }
-
-    public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
-    {
-        final Map<ProjectVersionRef, ProjectVersionRef> selected =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>( this.selected );
-
-        selected.clear();
-
-        for ( final Map.Entry<ProjectRelationship<?>, ProjectRelationship<?>> entry : replaced.entrySet() )
-        {
-            final ProjectRelationship<?> rel = entry.getKey();
-            final ProjectRelationship<?> repl = entry.getValue();
-
-            graph.removeEdge( repl );
-            graph.addEdge( rel, rel.getDeclaring(), rel.getTarget()
-                                                       .asProjectVersionRef() );
-        }
-
-        for ( final ProjectVersionRef select : new HashSet<ProjectVersionRef>( selected.values() ) )
-        {
-            final Collection<ProjectRelationship<?>> edges = graph.getInEdges( select );
-            if ( edges.isEmpty() )
-            {
-                graph.removeVertex( select );
-            }
-        }
-
-        return selected;
-    }
-
-    public Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
-    {
-        return selected;
-    }
+    //    public void selectVersionFor( final ProjectVersionRef variable, final ProjectVersionRef select )
+    //        throws GraphDriverException
+    //    {
+    //        if ( !select.isSpecificVersion() )
+    //        {
+    //            throw new GraphDriverException( "Cannot select non-concrete version! Attempted to select: %s", select );
+    //        }
+    //
+    //        if ( variable.isSpecificVersion() )
+    //        {
+    //            throw new GraphDriverException(
+    //                                            "Cannot select version if target is already a concrete version! Attempted to select for: %s",
+    //                                            variable );
+    //        }
+    //
+    //        selected.put( variable, select );
+    //
+    //        // Don't worry about selecting for outbound edges, as those subgraphs are supposed to be the same...
+    //        final Collection<ProjectRelationship<?>> rels = graph.getInEdges( variable );
+    //        for ( final ProjectRelationship<?> rel : rels )
+    //        {
+    //
+    //            ProjectRelationship<?> repl;
+    //            if ( rel.getTarget()
+    //                    .asProjectVersionRef()
+    //                    .equals( variable ) )
+    //            {
+    //                repl = rel.selectTarget( (SingleVersion) select.getVersionSpec() );
+    //            }
+    //            else
+    //            {
+    //                continue;
+    //            }
+    //
+    //            graph.removeEdge( rel );
+    //            graph.addEdge( repl, repl.getDeclaring(), repl.getTarget()
+    //                                                          .asProjectVersionRef() );
+    //
+    //            replaced.put( rel, repl );
+    //        }
+    //    }
+    //
+    //    public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
+    //    {
+    //        final Map<ProjectVersionRef, ProjectVersionRef> selected =
+    //            new HashMap<ProjectVersionRef, ProjectVersionRef>( this.selected );
+    //
+    //        selected.clear();
+    //
+    //        for ( final Map.Entry<ProjectRelationship<?>, ProjectRelationship<?>> entry : replaced.entrySet() )
+    //        {
+    //            final ProjectRelationship<?> rel = entry.getKey();
+    //            final ProjectRelationship<?> repl = entry.getValue();
+    //
+    //            graph.removeEdge( repl );
+    //            graph.addEdge( rel, rel.getDeclaring(), rel.getTarget()
+    //                                                       .asProjectVersionRef() );
+    //        }
+    //
+    //        for ( final ProjectVersionRef select : new HashSet<ProjectVersionRef>( selected.values() ) )
+    //        {
+    //            final Collection<ProjectRelationship<?>> edges = graph.getInEdges( select );
+    //            if ( edges.isEmpty() )
+    //            {
+    //                graph.removeVertex( select );
+    //            }
+    //        }
+    //
+    //        return selected;
+    //    }
+    //
+    //    public Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
+    //    {
+    //        return selected;
+    //    }
 
     private static final class CycleDetectionTraversal
         extends AbstractTraversal
@@ -755,6 +811,7 @@ public class JungEGraphDriver
             return cycles;
         }
 
+        @Override
         public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
         {
@@ -799,6 +856,7 @@ public class JungEGraphDriver
             return paths;
         }
 
+        @Override
         public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
         {
@@ -817,11 +875,13 @@ public class JungEGraphDriver
         }
     }
 
+    @Override
     public Set<ProjectVersionRef> getRoots()
     {
         return new HashSet<ProjectVersionRef>( Arrays.asList( roots ) );
     }
 
+    @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
         if ( !graph.containsVertex( ref ) )
