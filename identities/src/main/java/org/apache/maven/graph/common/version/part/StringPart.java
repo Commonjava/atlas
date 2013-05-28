@@ -139,8 +139,6 @@ public class StringPart
         {
             final Integer idx = zeroCompareIndex == null ? 1 : zeroCompareIndex;
 
-            System.out.println( "my zIndex: " + idx + "\nadjusted zero-equiv. index: " + ADJ_ZERO_EQUIV_INDEX );
-
             return idx.compareTo( ADJ_ZERO_EQUIV_INDEX );
         }
         else if ( part instanceof NumericPart )
