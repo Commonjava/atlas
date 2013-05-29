@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -18,29 +19,32 @@ public class RootedNodesCollector
 
     public Direction direction = Direction.OUTGOING;
 
-    public RootedNodesCollector( final Node start, final ProjectRelationshipFilter filter, final boolean checkExistence )
+    public RootedNodesCollector( final Node start, final NeoGraphSession session,
+                                 final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
-        super( start, filter, checkExistence );
+        super( start, session, filter, checkExistence );
         logEnabled = true;
     }
 
-    public RootedNodesCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
-                                 final boolean checkExistence )
+    public RootedNodesCollector( final Set<Node> startNodes, final NeoGraphSession session,
+                                 final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
-        super( startNodes, filter, checkExistence );
+        super( startNodes, session, filter, checkExistence );
         logEnabled = true;
     }
 
-    private RootedNodesCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
-                                  final boolean checkExistence, final Direction direction )
+    private RootedNodesCollector( final Set<Node> startNodes, final NeoGraphSession session,
+                                  final ProjectRelationshipFilter filter, final boolean checkExistence,
+                                  final Direction direction )
     {
-        super( startNodes, filter, checkExistence, direction );
+        super( startNodes, session, filter, checkExistence, direction );
         logEnabled = true;
     }
 
+    @Override
     public PathExpander reverse()
     {
-        return new RootedNodesCollector( startNodes, filter, checkExistence, direction.reverse() );
+        return new RootedNodesCollector( startNodes, session, filter, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()
@@ -53,6 +57,7 @@ public class RootedNodesCollector
         return found;
     }
 
+    @Override
     public Iterator<Node> iterator()
     {
         return found.iterator();

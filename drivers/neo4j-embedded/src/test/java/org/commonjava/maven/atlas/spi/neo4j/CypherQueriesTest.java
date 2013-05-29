@@ -12,6 +12,7 @@ import org.apache.maven.graph.common.version.VersionUtils;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
 import org.commonjava.util.logging.Log4jUtil;
@@ -55,7 +56,7 @@ public class CypherQueriesTest
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), fixture.newDriverInstance() )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), fixture.newDriverInstance() )
                 .withDependencies( 
                     new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                     new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
@@ -98,7 +99,7 @@ public class CypherQueriesTest
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), fixture.newDriverInstance() )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), fixture.newDriverInstance() )
                 .withDependencies( 
                     new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                     new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )

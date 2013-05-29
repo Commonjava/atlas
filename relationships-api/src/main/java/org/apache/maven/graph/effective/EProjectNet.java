@@ -68,8 +68,6 @@ public interface EProjectNet
 
     Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs );
 
-    boolean isDerivedFrom( EProjectNet net );
-
     EProjectGraph getGraph( ProjectRelationshipFilter filter, EProjectKey key )
         throws GraphDriverException;
 

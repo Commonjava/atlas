@@ -1,12 +1,18 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.DESELECTED_FOR;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SELECTED_FOR;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.idListingContains;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isSelectionOnly;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectRelationship;
+
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
+import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -35,27 +41,34 @@ public abstract class AbstractAtlasCollector<T>
 
     protected final boolean checkExistence;
 
-    protected AbstractAtlasCollector( final Node start, final ProjectRelationshipFilter filter,
-                                      final boolean checkExistence )
+    protected NeoGraphSession session;
+
+    protected AbstractAtlasCollector( final Node start, final NeoGraphSession session,
+                                      final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), filter, checkExistence );
+        this( Collections.singleton( start ), session, filter, checkExistence );
+        this.session = session;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
-                                      final boolean checkExistence )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final NeoGraphSession session,
+                                      final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
         this.startNodes = startNodes;
+        this.session = session;
         this.filter = filter;
         this.checkExistence = checkExistence;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
-                                      final boolean checkExistence, final Direction direction )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final NeoGraphSession session,
+                                      final ProjectRelationshipFilter filter, final boolean checkExistence,
+                                      final Direction direction )
     {
-        this( startNodes, filter, checkExistence );
+        this( startNodes, session, filter, checkExistence );
+        this.session = session;
         this.direction = direction;
     }
 
+    @Override
     @SuppressWarnings( "rawtypes" )
     public final Iterable<Relationship> expand( final Path path, final BranchState state )
     {
@@ -100,15 +113,23 @@ public abstract class AbstractAtlasCollector<T>
         for ( final Relationship r : path.relationships() )
         {
             log( "Checking relationship for acceptance: %s", r );
-            if ( !startNodes.isEmpty() && Conversions.idListingContains( Conversions.DESELECTED_FOR, r, startNodes ) )
+            if ( session != null )
             {
-                log( "Found relationship in path that was deselected: %s", r );
-                return false;
+                if ( idListingContains( DESELECTED_FOR, r, session.getSessionId() ) )
+                {
+                    log( "Found relationship in path that was deselected: %s", r );
+                    return false;
+                }
+                else if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, session.getSessionId() ) )
+                {
+                    log( "Found relationship in path that was not selected and is marked as selection-only: %s", r );
+                    return false;
+                }
             }
 
             if ( f != null )
             {
-                final ProjectRelationship<?> rel = Conversions.toProjectRelationship( r );
+                final ProjectRelationship<?> rel = toProjectRelationship( r );
                 if ( !f.accept( rel ) )
                 {
                     log( "Filter rejected relationship: %s", rel );
@@ -123,6 +144,7 @@ public abstract class AbstractAtlasCollector<T>
         return true;
     }
 
+    @Override
     public final Evaluation evaluate( final Path path )
     {
         return Evaluation.INCLUDE_AND_CONTINUE;

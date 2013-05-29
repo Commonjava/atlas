@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -15,27 +16,29 @@ public class RootedRelationshipsCollector
     extends AbstractAtlasCollector<Relationship>
 {
 
-    public RootedRelationshipsCollector( final Node start, final ProjectRelationshipFilter filter,
-                                         final boolean checkExistence )
+    public RootedRelationshipsCollector( final Node start, final NeoGraphSession session,
+                                         final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
-        super( start, filter, checkExistence );
+        super( start, session, filter, checkExistence );
     }
 
-    public RootedRelationshipsCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
-                                         final boolean checkExistence )
+    public RootedRelationshipsCollector( final Set<Node> startNodes, final NeoGraphSession session,
+                                         final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
-        super( startNodes, filter, checkExistence );
+        super( startNodes, session, filter, checkExistence );
     }
 
-    private RootedRelationshipsCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
-                                          final boolean checkExistence, final Direction direction )
+    private RootedRelationshipsCollector( final Set<Node> startNodes, final NeoGraphSession session,
+                                          final ProjectRelationshipFilter filter, final boolean checkExistence,
+                                          final Direction direction )
     {
-        super( startNodes, filter, checkExistence, direction );
+        super( startNodes, session, filter, checkExistence, direction );
     }
 
+    @Override
     public PathExpander reverse()
     {
-        return new RootedRelationshipsCollector( startNodes, filter, checkExistence, direction.reverse() );
+        return new RootedRelationshipsCollector( startNodes, session, filter, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()
@@ -48,6 +51,7 @@ public class RootedRelationshipsCollector
         return found;
     }
 
+    @Override
     public Iterator<Relationship> iterator()
     {
         return found.iterator();

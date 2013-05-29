@@ -17,6 +17,7 @@
 package org.commonjava.maven.atlas.tck.effective;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
@@ -30,6 +31,8 @@ import org.apache.maven.graph.common.version.VersionUtils;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
+import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.junit.Test;
 
@@ -51,7 +54,7 @@ public abstract class SubGraphSelectionTCK
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
                 .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
                 .build();
@@ -83,7 +86,7 @@ public abstract class SubGraphSelectionTCK
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
                 .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
                 .build();
@@ -121,42 +124,61 @@ public abstract class SubGraphSelectionTCK
 
     @Test
     //    @Ignore
-    public void selectVersionForVariableSubgraph_SelectionsContextualToRoots()
+    public void selectVersionForVariableSubgraph_SelectionsContextualToSession()
         throws Exception
     {
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
-        final ProjectVersionRef project2 = new ProjectVersionRef( "org.my", "project", "1.0.1" );
         final ProjectVersionRef varDep = new ProjectVersionRef( "org.other", "dep", "1.0-SNAPSHOT" );
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
-        final EGraphDriver rootDriver = newDriverInstance();
         final URI source = sourceURI();
+
+        final EGraphDriver rootDriver = newDriverInstance();
+        final EGraphSession session = rootDriver.createSession( new EGraphSessionConfiguration().withSource( source ) );
+        final EGraphSession session2 = rootDriver.createSession( new EGraphSessionConfiguration().withSource( source ) );
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), rootDriver )
+            new EProjectGraph.Builder( session, new EProjectKey( source, project ), rootDriver )
                 .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
                 .build();
 
+        // This should get all the relationships from the first graph, but with a different session selections should NOT be reflected in this graph as well.
         final EProjectGraph graph2 =
-            new EProjectGraph.Builder( new EProjectKey( source, project2 ), rootDriver )
-                .withDependencies( new DependencyRelationship( source, project2, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, varDep,   new ArtifactRef( varD2,  null, null, false ), null, 0, false ) )
+            new EProjectGraph.Builder( session2, new EProjectKey( source, project ), rootDriver )
                 .build();
         /* @formatter:on */
 
-        Set<ProjectVersionRef> variables = graph2.getVariableSubgraphs();
+        Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );
-
-        final ProjectVersionRef selDep = graph.selectVersionFor( varDep, selected );
-        assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph2.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        final Set<ProjectVersionRef> incomplete = graph2.getIncompleteSubgraphs();
+        // Select a concrete version for the session associated with the FIRST graph.
+        // Second graph session should remain unchanged.
+        final ProjectVersionRef selDep = session.selectVersion( varDep, selected );
+
+        assertThat( session.getSelectedVersion( varDep ), equalTo( selected ) );
+        assertThat( session2.getSelectedVersion( varDep ), nullValue() );
+
+        assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
+
+        assertThat( selDep.asProjectVersionRef()
+                          .equals( varDep.asProjectVersionRef() ), equalTo( false ) );
+
+        variables = graph.getVariableSubgraphs();
+        assertThat( variables.contains( varDep ), equalTo( false ) );
+
+        variables = graph2.getVariableSubgraphs();
+        assertThat( variables.contains( varDep ), equalTo( true ) );
+
+        Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
+        assertThat( incomplete.contains( selDep ), equalTo( true ) );
+
+        incomplete = graph2.getIncompleteSubgraphs();
         assertThat( incomplete.contains( selDep ), equalTo( false ) );
     }
 

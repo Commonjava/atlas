@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -17,30 +18,32 @@ public class ConnectingPathsCollector
 
     private final Set<Node> endNodes;
 
-    public ConnectingPathsCollector( final Node start, final Node end, final ProjectRelationshipFilter filter,
-                                     final boolean checkExistence )
+    public ConnectingPathsCollector( final Node start, final Node end, final NeoGraphSession session,
+                                     final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), Collections.singleton( end ), filter, checkExistence );
+        this( Collections.singleton( start ), Collections.singleton( end ), session, filter, checkExistence );
     }
 
     public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes,
-                                     final ProjectRelationshipFilter filter, final boolean checkExistence )
+                                     final NeoGraphSession session, final ProjectRelationshipFilter filter,
+                                     final boolean checkExistence )
     {
-        super( startNodes, filter, checkExistence );
+        super( startNodes, session, filter, checkExistence );
         this.endNodes = endNodes;
     }
 
     private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes,
-                                      final ProjectRelationshipFilter filter, final boolean checkExistence,
-                                      final Direction direction )
+                                      final NeoGraphSession session, final ProjectRelationshipFilter filter,
+                                      final boolean checkExistence, final Direction direction )
     {
-        super( startNodes, filter, checkExistence, direction );
+        super( startNodes, session, filter, checkExistence, direction );
         this.endNodes = endNodes;
     }
 
+    @Override
     public PathExpander reverse()
     {
-        return new ConnectingPathsCollector( startNodes, endNodes, filter, checkExistence, direction.reverse() );
+        return new ConnectingPathsCollector( startNodes, endNodes, session, filter, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()
@@ -53,6 +56,7 @@ public class ConnectingPathsCollector
         return found;
     }
 
+    @Override
     public Iterator<Path> iterator()
     {
         return found.iterator();

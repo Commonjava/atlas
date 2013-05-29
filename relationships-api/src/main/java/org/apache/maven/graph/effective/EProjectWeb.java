@@ -127,6 +127,7 @@ public class EProjectWeb
         this.superNets.add( parent );
     }
 
+    @Override
     public List<EProjectNet> getSuperNets()
     {
         return superNets;
@@ -135,6 +136,7 @@ public class EProjectWeb
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#getAllRelationships()
      */
+    @Override
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
         return new HashSet<ProjectRelationship<?>>( driver.getAllRelationships() );
@@ -143,6 +145,7 @@ public class EProjectWeb
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#isComplete()
      */
+    @Override
     public boolean isComplete()
     {
         return !driver.hasMissingProjects();
@@ -151,6 +154,7 @@ public class EProjectWeb
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#isConcrete()
      */
+    @Override
     public boolean isConcrete()
     {
         return !driver.hasVariableProjects();
@@ -159,6 +163,7 @@ public class EProjectWeb
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#getIncompleteSubgraphs()
      */
+    @Override
     public Set<ProjectVersionRef> getIncompleteSubgraphs()
     {
         return Collections.unmodifiableSet( driver.getMissingProjects() );
@@ -167,6 +172,7 @@ public class EProjectWeb
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#getVariableSubgraphs()
      */
+    @Override
     public Set<ProjectVersionRef> getVariableSubgraphs()
     {
         return Collections.unmodifiableSet( driver.getVariableProjects() );
@@ -191,6 +197,7 @@ public class EProjectWeb
                      .isEmpty();
     }
 
+    @Override
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
     {
         if ( rels == null )
@@ -239,7 +246,8 @@ public class EProjectWeb
     public void connect( final EProjectWeb otherWeb )
         throws GraphDriverException
     {
-        if ( !otherWeb.isDerivedFrom( this ) )
+        if ( !otherWeb.getDriver()
+                      .isDerivedFrom( getDriver() ) )
         {
             addAll( otherWeb.getExactAllRelationships() );
         }
@@ -279,31 +287,37 @@ public class EProjectWeb
         return driver.getRoots();
     }
 
+    @Override
     public Set<ProjectRelationship<?>> getExactAllRelationships()
     {
         return getAllRelationships();
     }
 
+    @Override
     public boolean isCycleParticipant( final ProjectVersionRef ref )
     {
         return driver.isCycleParticipant( ref );
     }
 
+    @Override
     public boolean isCycleParticipant( final ProjectRelationship<?> rel )
     {
         return driver.isCycleParticipant( rel );
     }
 
+    @Override
     public void addCycle( final EProjectCycle cycle )
     {
         driver.addCycle( cycle );
     }
 
+    @Override
     public Set<EProjectCycle> getCycles()
     {
         return driver.getCycles();
     }
 
+    @Override
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
         final Collection<? extends ProjectRelationship<?>> rels =
@@ -316,22 +330,20 @@ public class EProjectWeb
         return new HashSet<ProjectRelationship<?>>( rels );
     }
 
+    @Override
     public EGraphDriver getDriver()
     {
         return driver;
     }
 
-    public boolean isDerivedFrom( final EProjectNet net )
-    {
-        return driver.isDerivedFrom( net.getDriver() );
-    }
-
+    @Override
     public EProjectGraph getGraph( final EProjectKey key )
         throws GraphDriverException
     {
         return getGraph( null, key );
     }
 
+    @Override
     public EProjectGraph getGraph( final ProjectRelationshipFilter filter, final EProjectKey key )
         throws GraphDriverException
     {
@@ -343,12 +355,14 @@ public class EProjectWeb
         return null;
     }
 
+    @Override
     public EProjectWeb getWeb( final EProjectKey... keys )
         throws GraphDriverException
     {
         return getWeb( null, keys );
     }
 
+    @Override
     public EProjectWeb getWeb( final ProjectRelationshipFilter filter, final EProjectKey... keys )
         throws GraphDriverException
     {
@@ -363,42 +377,50 @@ public class EProjectWeb
         return new EProjectWeb( session, this, filter, keys );
     }
 
+    @Override
     public boolean containsGraph( final EProjectKey key )
     {
         return driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() );
     }
 
+    @Override
     public Set<ProjectVersionRef> getAllProjects()
     {
         return driver.getAllProjects();
     }
 
+    @Override
     public Map<String, String> getMetadata( final EProjectKey key )
     {
         return driver.getProjectMetadata( key.getProject() );
     }
 
+    @Override
     public void addMetadata( final EProjectKey key, final String name, final String value )
     {
         driver.addProjectMetadata( key.getProject(), name, value );
     }
 
+    @Override
     public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
     {
         driver.addProjectMetadata( key.getProject(), metadata );
     }
 
+    @Override
     public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
     {
         return driver.getProjectsWithMetadata( key );
     }
 
+    @Override
     public void reindex()
         throws GraphDriverException
     {
         driver.reindex();
     }
 
+    @Override
     public boolean connectFor( final EProjectKey key )
         throws GraphDriverException
     {
@@ -423,6 +445,7 @@ public class EProjectWeb
         return false;
     }
 
+    @Override
     public void connect( final EProjectGraph graph )
         throws GraphDriverException
     {
@@ -430,7 +453,8 @@ public class EProjectWeb
         {
             connectFor( graph.getKey() );
         }
-        else if ( !graph.isDerivedFrom( this ) )
+        else if ( !graph.getDriver()
+                        .isDerivedFrom( getDriver() ) )
         {
             addAll( graph.getExactAllRelationships() );
             for ( final EProjectNet net : getSuperNets() )
@@ -440,33 +464,39 @@ public class EProjectWeb
         }
     }
 
+    @Override
     public ProjectVersionRef selectVersionFor( final ProjectVersionRef variable, final SingleVersion version )
         throws GraphDriverException
     {
         return session.selectVersion( variable, version );
     }
 
+    @Override
     public Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
         throws GraphDriverException
     {
         return session.clearVersionSelections();
     }
 
+    @Override
     public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... projectVersionRefs )
     {
         return driver.getAllPathsTo( projectVersionRefs );
     }
 
+    @Override
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
         return driver.introducesCycle( rel );
     }
 
+    @Override
     public EGraphSession getSession()
     {
         return session;
     }
 
+    @Override
     @SuppressWarnings( "unchecked" )
     public EProjectWeb filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
@@ -474,6 +504,7 @@ public class EProjectWeb
         return new EProjectWeb( session, this, filter, getRoots().toArray( new ProjectVersionRef[] {} ) );
     }
 
+    @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
         driver.addDisconnectedProject( ref );

@@ -27,15 +27,14 @@ import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 
 public interface EGraphDriver
     extends Closeable
 {
-
-    EGraphDriver newInstance()
-        throws GraphDriverException;
 
     void reindex()
         throws GraphDriverException;
@@ -97,10 +96,17 @@ public interface EGraphDriver
     EGraphDriver newInstanceFrom( EProjectNet net, ProjectRelationshipFilter filter, ProjectVersionRef... refs )
         throws GraphDriverException;
 
+    EGraphDriver newInstance( EGraphSession session, EProjectNet net, ProjectRelationshipFilter filter,
+                              ProjectVersionRef... refs )
+        throws GraphDriverException;
+
     Set<ProjectVersionRef> getProjectsWithMetadata( String key );
 
     Set<ProjectVersionRef> getRoots();
 
     void addDisconnectedProject( ProjectVersionRef ref );
+
+    EGraphSession createSession( EGraphSessionConfiguration config )
+        throws GraphDriverException;
 
 }

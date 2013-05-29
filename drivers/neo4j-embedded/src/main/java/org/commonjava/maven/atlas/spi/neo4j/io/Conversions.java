@@ -43,6 +43,7 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.maven.atlas.spi.neo4j.effective.NodeType;
 import org.commonjava.util.logging.Logger;
@@ -116,8 +117,26 @@ public final class Conversions
 
     public static final String POM_LOCATION_URI = "pom_location_uri";
 
+    public static final String SESSION_ACCESS_DATE = "last_access";
+
+    public static final String SELECTION_PREFIX = "rel_selection_";
+
+    private static final int SELECTION_PREFIX_LEN = SELECTION_PREFIX.length();
+
+    public static final String SELECTION_ONLY = "_selection_only";
+
     private Conversions()
     {
+    }
+
+    public static void toSessionProperties( final EGraphSessionConfiguration config, final Node sessionNode )
+    {
+        updateLastAccess( sessionNode );
+    }
+
+    public static void updateLastAccess( final Node sessionNode )
+    {
+        sessionNode.setProperty( SESSION_ACCESS_DATE, System.currentTimeMillis() );
     }
 
     public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
@@ -649,26 +668,60 @@ public final class Conversions
         return false;
     }
 
-    public static void markSelectedFor( final Relationship relationship, final Node root )
+    public static void markSelectionOnly( final Relationship rel, final boolean value )
     {
-        LOGGER.debug( "Marking selected: %s for root: %s", getStringProperty( GAV, relationship.getEndNode() ),
-                      getStringProperty( GAV, root ) );
-        addToIdListing( root.getId(), SELECTED_FOR, relationship );
-        removeFromIdListing( root.getId(), DESELECTED_FOR, relationship );
+        rel.setProperty( SELECTION_ONLY, value );
     }
 
-    public static void markDeselectedFor( final Relationship relationship, final Node root )
+    public static boolean isSelectionOnly( final Relationship rel )
     {
-        LOGGER.debug( "Marking de-selected: %s for root: %s", getStringProperty( GAV, relationship.getEndNode() ),
-                      getStringProperty( GAV, root ) );
-        removeFromIdListing( root.getId(), SELECTED_FOR, relationship );
-        addToIdListing( root.getId(), DESELECTED_FOR, relationship );
+        return getBooleanProperty( SELECTION_ONLY, rel, false );
+    }
+
+    public static void markSelection( final Relationship from, final Relationship to, final Node session )
+    {
+        LOGGER.debug( "Marking selected: %s for session: %s", getStringProperty( GAV, to.getEndNode() ),
+                      session.getId() );
+
+        addToIdListing( session.getId(), SELECTED_FOR, to );
+        removeFromIdListing( session.getId(), DESELECTED_FOR, to );
+
+        markDeselected( from, session );
+
+        session.setProperty( SELECTION_PREFIX + from.getId(), to.getId() );
+    }
+
+    public static void markDeselected( final Relationship rel, final Node session )
+    {
+        LOGGER.debug( "Marking de-selected: %s for session: %s", getStringProperty( GAV, rel.getEndNode() ),
+                      session.getId() );
+
+        removeFromIdListing( session.getId(), SELECTED_FOR, rel );
+        addToIdListing( session.getId(), DESELECTED_FOR, rel );
+    }
+
+    public static Map<Long, Long> getSelections( final Node session )
+    {
+        final Map<Long, Long> result = new HashMap<Long, Long>();
+        for ( final String key : session.getPropertyKeys() )
+        {
+            if ( key.startsWith( SELECTION_PREFIX ) && key.length() > SELECTION_PREFIX_LEN )
+            {
+                final Long k = Long.parseLong( key.substring( SELECTION_PREFIX_LEN ) );
+                final Long v = (Long) session.getProperty( key );
+
+                result.put( k, v );
+            }
+        }
+
+        return result;
     }
 
     public static void removeSelectionAnnotationsFor( final Relationship relationship, final Node root )
     {
         LOGGER.debug( "%s: removing ALL selection annotations for: %s",
                       getStringProperty( GAV, relationship.getEndNode() ), getStringProperty( GAV, root ) );
+
         removeFromIdListing( root.getId(), SELECTED_FOR, relationship );
         removeFromIdListing( root.getId(), DESELECTED_FOR, relationship );
     }

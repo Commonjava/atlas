@@ -31,6 +31,7 @@ import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
@@ -50,7 +51,7 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, myRef, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, myRef, newDriverInstance() )
             .withParent( new ParentRelationship( source, myRef, parentRef ) )
             .withDirectProjectRelationships( new EProjectRelationships.Builder( source, parentRef ).withParent( grandRef ).build() )
             .build();
@@ -100,7 +101,7 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, myRef, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, myRef, newDriverInstance() )
             .withParent( new ParentRelationship( source, myRef, parentRef ) )
             .withDirectProjectRelationships( new EProjectRelationships.Builder( source, parentRef ).withParent( grandRef ).build() )
             .build();
@@ -142,7 +143,7 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, myRef, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, myRef, newDriverInstance() )
             .withParent( new ParentRelationship( source, myRef, parentRef ) )
             .withDependencies(
                   new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),

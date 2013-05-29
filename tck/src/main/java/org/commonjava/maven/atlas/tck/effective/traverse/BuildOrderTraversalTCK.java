@@ -34,6 +34,7 @@ import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.BuildOrderTraversal;
 import org.apache.maven.graph.effective.traverse.model.BuildOrder;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
@@ -60,7 +61,7 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, c, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
             .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false )
             )
@@ -100,7 +101,7 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, c, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
             .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false )
             )
@@ -143,7 +144,7 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, c, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
             .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false ),
                                new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
@@ -185,7 +186,7 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, c, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
             .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
                                new DependencyRelationship( source, c, new ArtifactRef( d, null, null, false ), DependencyScope.test, 1, false ),
@@ -228,7 +229,7 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, c, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
             .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false, d.asProjectRef() ),
                                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
                                new DependencyRelationship( source, b, new ArtifactRef( d, null, null, false ), DependencyScope.runtime, 1, false )
@@ -272,7 +273,7 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( source, c, newDriverInstance() )
+        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
             .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false ),
                                new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false )

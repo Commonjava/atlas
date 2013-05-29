@@ -24,14 +24,16 @@ import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToProje
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToRelationships;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getInjectedCycles;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getMetadataMap;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getSelections;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getStringProperty;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.id;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isCloneFor;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isConnected;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markConnected;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markCycleInjection;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markDeselectedFor;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markSelectedFor;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markDeselected;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markSelection;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.markSelectionOnly;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.removeSelectionAnnotationsFor;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.setMetadata;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toNodeProperties;
@@ -46,37 +48,35 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
-import org.apache.maven.graph.common.version.VersionSpec;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.filter.AbstractAggregatingFilter;
 import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.AbstractFilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.traverse.TraversalType;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.AtlasCollector;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.ConnectingPathsCollector;
-import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.EndGAVsPathsCollector;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.EndNodesCollector;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.MembershipWrappedTraversalEvaluator;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.RootedNodesCollector;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.RootedRelationshipsCollector;
-import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.SelectionFinderAtlasCollector;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.spi.neo4j.io.NodeIdProjector;
 import org.commonjava.util.logging.Logger;
@@ -97,7 +97,7 @@ import org.neo4j.kernel.Traversal;
 import org.neo4j.kernel.Uniqueness;
 
 public abstract class AbstractNeo4JEGraphDriver
-    implements Runnable, GloballyBackedGraphDriver, Neo4JEGraphDriver
+    implements Runnable, Neo4JEGraphDriver
 {
 
     private final Logger logger = new Logger( getClass() );
@@ -144,7 +144,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private final Set<Node> roots = new HashSet<Node>();
 
-    private final List<AbstractNeo4JEGraphDriver> ancestry = new ArrayList<AbstractNeo4JEGraphDriver>();
+    private boolean derived = false;
 
     private boolean useShutdownHook;
 
@@ -152,17 +152,20 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private ExecutionEngine queryEngine;
 
-    protected AbstractNeo4JEGraphDriver( final AbstractNeo4JEGraphDriver driver,
+    private NeoGraphSession session;
+
+    protected AbstractNeo4JEGraphDriver( final AbstractNeo4JEGraphDriver driver, final NeoGraphSession session,
                                          final ProjectRelationshipFilter filter, final ProjectVersionRef... rootRefs )
         throws GraphDriverException
     {
+
         //        logger.debug( "Creating new graph driver, derived from parent: %s with roots: %s and filter: %s", driver,
         //                     join( rootRefs, ", " ), filter );
 
+        this.session = session;
         this.filter = filter;
         this.graph = driver.graph;
-        this.ancestry.addAll( driver.ancestry );
-        this.ancestry.add( driver );
+        derived = true;
 
         if ( rootRefs.length > 0 )
         {
@@ -318,7 +321,8 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
 
-            final RootedRelationshipsCollector checker = new RootedRelationshipsCollector( roots, filter, false );
+            final RootedRelationshipsCollector checker =
+                new RootedRelationshipsCollector( roots, session, filter, false );
             collectAtlasRelationships( checker, roots );
 
             for ( final Relationship r : checker )
@@ -369,7 +373,7 @@ public abstract class AbstractNeo4JEGraphDriver
             return null;
         }
 
-        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, filter, false );
+        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, session, filter, false );
 
         collectAtlasRelationships( checker, roots );
 
@@ -457,8 +461,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 }
                 else
                 {
-                    // Not SKIPPED per se...just already logged.
-                    //                    skipped.add( rel );
+                    markSelectionOnly( relHits.next(), false );
                 }
             }
 
@@ -539,7 +542,7 @@ public abstract class AbstractNeo4JEGraphDriver
             return Collections.emptySet();
         }
 
-        final ConnectingPathsCollector checker = new ConnectingPathsCollector( to, from, filter, false );
+        final ConnectingPathsCollector checker = new ConnectingPathsCollector( to, from, session, filter, false );
         collectAtlasRelationships( checker, Collections.singleton( to ) );
 
         return checker.getFoundPaths();
@@ -615,7 +618,7 @@ public abstract class AbstractNeo4JEGraphDriver
         Iterable<Node> nodes = null;
         if ( roots != null && !roots.isEmpty() )
         {
-            final RootedNodesCollector agg = new RootedNodesCollector( roots, filter, false );
+            final RootedNodesCollector agg = new RootedNodesCollector( roots, session, filter, false );
             collectAtlasRelationships( agg, roots );
             nodes = agg;
         }
@@ -634,7 +637,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( roots != null && !roots.isEmpty() )
         {
-            final RootedNodesCollector agg = new RootedNodesCollector( roots, filter, false );
+            final RootedNodesCollector agg = new RootedNodesCollector( roots, session, filter, false );
             collectAtlasRelationships( agg, roots );
             return agg.getFoundNodes();
         }
@@ -872,7 +875,8 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         logger.debug( "Checking for path between roots: %s and target node: %s", join( roots, "," ), node.getId() );
-        final EndNodesCollector checker = new EndNodesCollector( roots, Collections.singleton( node ), filter, false );
+        final EndNodesCollector checker =
+            new EndNodesCollector( roots, Collections.singleton( node ), session, filter, false );
 
         collectAtlasRelationships( checker, roots );
         return checker.hasFoundNodes();
@@ -900,7 +904,7 @@ public abstract class AbstractNeo4JEGraphDriver
     public synchronized void close()
         throws IOException
     {
-        if ( ancestry.isEmpty() )
+        if ( !derived )
         {
             if ( graph != null )
             {
@@ -933,12 +937,6 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             new Logger( getClass() ).error( "Failed to shutdown graph database. Reason: %s", e, e.getMessage() );
         }
-    }
-
-    @Override
-    public boolean isDerivedFrom( final EGraphDriver driver )
-    {
-        return driver == this || ancestry.contains( driver );
     }
 
     @SuppressWarnings( "unused" )
@@ -986,7 +984,7 @@ public abstract class AbstractNeo4JEGraphDriver
     private Set<ProjectVersionRef> getIndexedProjects( final Iterable<Node> hits )
     {
         final Set<Node> nodes = toSet( hits );
-        final EndNodesCollector checker = new EndNodesCollector( roots, nodes, filter, false );
+        final EndNodesCollector checker = new EndNodesCollector( roots, nodes, session, filter, false );
 
         collectAtlasRelationships( checker, roots );
 
@@ -1005,7 +1003,7 @@ public abstract class AbstractNeo4JEGraphDriver
     private boolean hasIndexedProjects( final Iterable<Node> hits )
     {
         final Set<Node> nodes = toSet( hits );
-        final EndNodesCollector checker = new EndNodesCollector( roots, nodes, filter, true );
+        final EndNodesCollector checker = new EndNodesCollector( roots, nodes, session, filter, true );
 
         collectAtlasRelationships( checker, roots );
 
@@ -1446,28 +1444,13 @@ public abstract class AbstractNeo4JEGraphDriver
         return new HashSet<ProjectVersionRef>( convertToProjects( connected ) );
     }
 
-    public void selectVersionFor( final ProjectVersionRef variable, final ProjectVersionRef select )
+    public void selectVersionFor( final ProjectVersionRef variable, final SingleVersion select, final long sessionNode )
         throws GraphDriverException
     {
         logger.debug( "\n\n\n\nSELECT: %s for: %s\n\n\n\n", select, variable );
-        if ( roots == null || roots.isEmpty() )
+        if ( !select.isConcrete() )
         {
-            throw new GraphDriverException(
-                                            "Cannot manage version selections unless current network has one or more root projects." );
-        }
-
-        final VersionSpec selected = select.getVersionSpec();
-        if ( selected.isSingle() )
-        {
-            final SingleVersion sv = selected.getSingleVersion();
-            if ( !sv.isConcrete() )
-            {
-                throw new GraphDriverException( "Cannot select non-concrete version! Attempted to select: %s", select );
-            }
-        }
-        else
-        {
-            throw new GraphDriverException( "Cannot select compound version! Attempted to select: %s", select );
+            throw new GraphDriverException( "Cannot select non-concrete version! Attempted to select: %s", select );
         }
 
         if ( variable.isRelease() )
@@ -1477,28 +1460,28 @@ public abstract class AbstractNeo4JEGraphDriver
                                             variable );
         }
 
-        final EndGAVsPathsCollector checker =
-            new EndGAVsPathsCollector( roots, Collections.singleton( variable ), filter, false );
+        final Node node = getNode( variable );
+        final Iterable<Relationship> rels = node.getRelationships( Direction.INCOMING );
 
-        collectAtlasRelationships( checker, roots );
-
-        for ( final Path p : checker )
+        for ( final Relationship r : rels )
         {
-            final Relationship from = p.lastRelationship();
-            final ProjectRelationship<?> rel = toProjectRelationship( from );
-            final ProjectRelationship<?> sel = rel.selectTarget( (SingleVersion) select.getVersionSpec() );
+            final ProjectRelationship<?> rel = toProjectRelationship( r );
+            final ProjectRelationship<?> sel = rel.selectTarget( select );
 
-            selectRelationship( p.startNode(), from, sel );
+            selectRelationship( sessionNode, r, sel );
         }
     }
 
-    private Relationship selectRelationship( final Node root, final Relationship from, final ProjectRelationship<?> toPR )
+    private Relationship selectRelationship( final long sessionId, final Relationship from,
+                                             final ProjectRelationship<?> toPR )
     {
         //        logger.info( "\n\n\n\nSELECT: %s\n\n\n\n", toPR );
         Relationship to = null;
         Transaction tx = null;
         try
         {
+            final Node sessionNode = graph.getNodeById( sessionId );
+
             final RelationshipIndex relIdx = graph.index()
                                                   .forRelationships( ALL_RELATIONSHIPS );
 
@@ -1512,8 +1495,6 @@ public abstract class AbstractNeo4JEGraphDriver
             final IndexHits<Relationship> hits = relIdx.get( RELATIONSHIP_ID, toId );
             if ( hits.size() < 1 )
             {
-                fromNode = getNode( toPR.getDeclaring() );
-
                 Node toNode = getNode( toPR.getTarget()
                                            .asProjectVersionRef() );
 
@@ -1521,6 +1502,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 {
                     toNode = newProjectNode( toPR.getTarget()
                                                  .asProjectVersionRef() );
+
                     //                    logger.info( "Created node %s for selected project version: %s", toNode, toPR.getTarget()
                     //                                                                                                 .asProjectVersionRef() );
                 }
@@ -1529,12 +1511,12 @@ public abstract class AbstractNeo4JEGraphDriver
                 //                             fromNode, toNode );
 
                 to = fromNode.createRelationshipTo( toNode, from.getType() );
+                markSelectionOnly( to, true );
 
                 cloneRelationshipProperties( from, to );
                 relIdx.add( to, RELATIONSHIP_ID, toId );
 
                 markConnected( fromNode, true );
-                markSelectedFor( to, root );
             }
             else
             {
@@ -1543,7 +1525,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 fromNode = to.getStartNode();
             }
 
-            markDeselectedFor( from, root );
+            markSelection( from, to, sessionNode );
 
             tx.success();
         }
@@ -1560,144 +1542,67 @@ public abstract class AbstractNeo4JEGraphDriver
         return to;
     }
 
-    public Map<ProjectVersionRef, ProjectVersionRef> clearSelectedVersions()
-        throws GraphDriverException
+    public void clearSelectedVersions( final long sessionId )
     {
-        final Set<SelectionInfo> infos = getSelectionInfo();
-
-        final Map<ProjectVersionRef, ProjectVersionRef> clearedMap = createVariableToSelectedMap( infos );
-
-        //        logger.info( "Got variable -> selected mappings:\n\n", join( clearedMap.entrySet(), "\n" ) );
-
         Transaction tx = null;
-        final Set<Long> deleted = new HashSet<Long>();
         try
         {
-            for ( final SelectionInfo info : infos )
-            {
-                logger.debug( "Clearing selection:\nSelected: %s\nVariable: %s", info.getSelectedRelationship()
-                                                                                     .getEndNode()
-                                                                                     .getProperty( Conversions.GAV ),
-                              info.getVariableRelationship()
-                                  .getEndNode()
-                                  .getProperty( Conversions.GAV ) );
+            tx = graph.beginTx();
 
-                if ( tx == null )
-                {
-                    tx = graph.beginTx();
-                }
+            clearSelectedVersions( sessionId, tx );
 
-                final long srId = info.getSelectedRelationship()
-                                      .getId();
-                final long vrId = info.getVariableRelationship()
-                                      .getId();
-                if ( deleted.contains( srId ) || deleted.contains( vrId ) )
-                {
-                    logger.debug( "Selected- or Variable-relationship already deleted:\n  selected: %s\n    deleted? %s\n  variable: %s\n    deleted? %s.\nContinuing to next mapping.",
-                                  info.getSelectedRelationship(), deleted.contains( srId ),
-                                  info.getVariableRelationship(), deleted.contains( vrId ) );
-                    continue;
-                }
-
-                if ( isCloneFor( info.getSelectedRelationship(), info.getVariableRelationship() ) )
-                {
-                    logger.debug( "Deleting cloned relationship from previous selection operation: %s",
-                                  info.getSelectedRelationship() );
-                    deleted.add( srId );
-                    info.getSelectedRelationship()
-                        .delete();
-                }
-
-                for ( final Node root : roots )
-                {
-                    removeSelectionAnnotationsFor( info.getVariableRelationship(), root );
-                    if ( !deleted.contains( srId ) )
-                    {
-                        logger.debug( "Removing selection annotations for previously selected: %s",
-                                      info.getSelectedRelationship() );
-                        markDeselectedFor( info.getSelectedRelationship(), root );
-                        //                        removeSelectionAnnotationsFor( info.sr, root );
-                    }
-                }
-            }
-
-            if ( tx != null )
-            {
-                tx.success();
-            }
+            tx.success();
         }
         finally
         {
-            if ( tx != null )
+            tx.finish();
+        }
+    }
+
+    public void clearSelectedVersions( final long sessionId, final Transaction tx )
+    {
+        final Node sessionNode = graph.getNodeById( sessionId );
+        final Map<Long, Long> selections = getSelections( sessionNode );
+
+        final Set<Long> deleted = new HashSet<Long>();
+        for ( final Entry<Long, Long> entry : selections.entrySet() )
+        {
+            final Long fromId = entry.getKey();
+            final Relationship from = graph.getRelationshipById( fromId );
+
+            final Long toId = entry.getValue();
+            final Relationship to = graph.getRelationshipById( toId );
+
+            logger.debug( "Clearing selection:\nSelected: %s\nVariable: %s", to.getEndNode()
+                                                                               .getProperty( Conversions.GAV ),
+                          from.getEndNode()
+                              .getProperty( Conversions.GAV ) );
+
+            if ( deleted.contains( toId ) || deleted.contains( fromId ) )
             {
-                tx.finish();
+                logger.debug( "Selected- or Variable-relationship already deleted:\n  selected: %s\n    deleted? %s\n  variable: %s\n    deleted? %s.\nContinuing to next mapping.",
+                              to, deleted.contains( toId ), from, deleted.contains( fromId ) );
+                continue;
+            }
+
+            // TODO: If something else starts making use of this relationship, we need to clear this flag!!
+            if ( isCloneFor( to, from ) )
+            {
+                logger.debug( "Deleting cloned relationship from previous selection operation: %s", to );
+
+                deleted.add( toId );
+                to.delete();
+            }
+
+            removeSelectionAnnotationsFor( from, sessionNode );
+            if ( !deleted.contains( toId ) )
+            {
+                logger.debug( "Removing selection annotations for previously selected: %s", to );
+
+                markDeselected( to, sessionNode );
+                //                        removeSelectionAnnotationsFor( info.sr, root );
             }
         }
-
-        return clearedMap;
-    }
-
-    public Map<ProjectVersionRef, ProjectVersionRef> getSelectedVersions()
-        throws GraphDriverException
-    {
-        final Set<SelectionInfo> infos = getSelectionInfo();
-        return createVariableToSelectedMap( infos );
-    }
-
-    private Map<ProjectVersionRef, ProjectVersionRef> createVariableToSelectedMap( final Set<SelectionInfo> infos )
-    {
-        final Map<ProjectVersionRef, ProjectVersionRef> result =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>( infos.size() );
-
-        for ( final SelectionInfo info : infos )
-        {
-            result.put( toProjectVersionRef( info.getVariable() ), toProjectVersionRef( info.getSelected() ) );
-        }
-
-        return result;
-    }
-
-    public Set<SelectionInfo> getSelectionInfo()
-        throws GraphDriverException
-    {
-        if ( roots == null || roots.isEmpty() )
-        {
-            throw new GraphDriverException(
-                                            "Cannot manage version selections unless current network has one or more root projects." );
-        }
-
-        final SelectionFinderAtlasCollector collector = new SelectionFinderAtlasCollector( roots, filter );
-        collectAtlasRelationships( collector, roots );
-
-        return collector.getSelectionInfos();
-
-        //        final Map<String, Object> params = new HashMap<String, Object>();
-        //        params.put( "roots", roots );
-        //
-        //        final ExecutionResult result = execute( CYPHER_SELECTION_RETRIEVAL, params );
-        //
-        //        final Iterator<Map<String, Object>> mapIt = result.iterator();
-        //
-        //        final Set<SelectionInfo> selected = new HashSet<SelectionInfo>();
-        //        while ( mapIt.hasNext() )
-        //        {
-        //            final Map<String, Object> record = mapIt.next();
-        //            final Node v = (Node) record.get( "v" );
-        //            final Node s = (Node) record.get( "s" );
-        //            final Relationship sr = (Relationship) record.get( "r1" );
-        //            final Relationship vr = (Relationship) record.get( "r2" );
-        //
-        //            if ( s == null || vr == null || sr == null )
-        //            {
-        //                logger.error( "Found de-selected: %s with missing selected project, variable relationship, or selected relationship!",
-        //                              ( v.hasProperty( GAV ) ? v.getProperty( GAV ) + "(" + v.getId() + ")" : v.getId() ) );
-        //                continue;
-        //            }
-        //
-        //            selected.add( new SelectionInfo( v, vr, s, sr ) );
-        //        }
-        //
-        //        return selected;
     }
 
     @Override
@@ -1717,6 +1622,53 @@ public abstract class AbstractNeo4JEGraphDriver
                 tx.finish();
             }
         }
+    }
+
+    @Override
+    public EGraphSession createSession( final EGraphSessionConfiguration config )
+        throws GraphDriverException
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node sessionNode = graph.createNode();
+            Conversions.toSessionProperties( config, sessionNode );
+
+            tx.success();
+
+            return new NeoGraphSession( sessionNode.getId(), this, config );
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    void deleteSession( final long sessionId )
+    {
+        Transaction tx = null;
+        try
+        {
+            tx = graph.beginTx();
+
+            clearSelectedVersions( sessionId, tx );
+
+            final Node sessionNode = graph.getNodeById( sessionId );
+
+            sessionNode.delete();
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public boolean isDerivedFrom( final EGraphDriver driver )
+    {
+        return ( driver instanceof AbstractNeo4JEGraphDriver );
     }
 
 }

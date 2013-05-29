@@ -32,6 +32,7 @@ import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
 import org.junit.Test;
@@ -53,7 +54,7 @@ public abstract class CycleDetectionTCK
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
                 .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ) )
                 .build();
@@ -77,7 +78,7 @@ public abstract class CycleDetectionTCK
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
                 .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) )
@@ -110,7 +111,7 @@ public abstract class CycleDetectionTCK
 
         /* @formatter:off */
         final EProjectGraph graph =
-            new EProjectGraph.Builder( new EProjectKey( source, project ), newDriverInstance() )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
                 .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, dep2,  new ArtifactRef( dep,  null, null, false ), null, 0, false ) )
@@ -156,14 +157,14 @@ public abstract class CycleDetectionTCK
         // a --> b --> c --> a
         // d --> e --> c --> a --> b --> c
         final EProjectGraph graph1 =
-            new EProjectGraph.Builder( new EProjectKey( source, a ), driver )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, a ), driver )
                 .withDependencies( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, b,  new ArtifactRef( c,  null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
                 .build();
         
         final EProjectGraph graph2 =
-                new EProjectGraph.Builder( new EProjectKey( source, d ), driver )
+                new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, d ), driver )
                     .withDependencies( new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
                                        new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
                     .build();
@@ -219,14 +220,14 @@ public abstract class CycleDetectionTCK
         final EGraphDriver driver = newDriverInstance();
         
         final EProjectGraph graph1 =
-            new EProjectGraph.Builder( new EProjectKey( source, a ), driver )
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, a ), driver )
                 .withDependencies( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                    new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
                 .withPlugins( new PluginRelationship( source, b,  c, 0, false ) )
                 .build();
         
         final EProjectGraph graph2 =
-                new EProjectGraph.Builder( new EProjectKey( source, d ), driver )
+                new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, d ), driver )
                     .withDependencies( new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
                                        new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
                     .withFilter( new DependencyFilter() )

@@ -27,6 +27,7 @@ import java.util.List;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.util.logging.Logger;
@@ -47,13 +48,20 @@ public abstract class EProjectGraphTCK
         final URI source = sourceURI();
 
         final EGraphDriver driver = newDriverInstance();
-        final EProjectGraph root = new EProjectGraph.Builder( source, r, driver ).build();
+        final EProjectGraph root =
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, r, driver ).build();
         final EProjectGraph parent =
-            new EProjectGraph.Builder( source, p, driver ).withParent( new ParentRelationship( source, p, r ) )
-                                                          .build();
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, p, driver ).withParent( new ParentRelationship(
+                                                                                                                                                      source,
+                                                                                                                                                      p,
+                                                                                                                                                      r ) )
+                                                                                                                 .build();
         final EProjectGraph child =
-            new EProjectGraph.Builder( source, c, driver ).withParent( new ParentRelationship( source, c, p ) )
-                                                          .build();
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, driver ).withParent( new ParentRelationship(
+                                                                                                                                                      source,
+                                                                                                                                                      c,
+                                                                                                                                                      p ) )
+                                                                                                                 .build();
         parent.connect( root );
         child.connect( parent );
 

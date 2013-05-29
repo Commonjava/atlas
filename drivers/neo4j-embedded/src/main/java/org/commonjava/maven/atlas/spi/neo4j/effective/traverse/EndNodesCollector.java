@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -17,30 +18,31 @@ public class EndNodesCollector
 
     private final Set<Node> endNodes;
 
-    public EndNodesCollector( final Node start, final Node end, final ProjectRelationshipFilter filter,
-                              final boolean checkExistence )
-    {
-        this( Collections.singleton( start ), Collections.singleton( end ), filter, checkExistence );
-    }
-
-    public EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes,
+    public EndNodesCollector( final Node start, final Node end, final NeoGraphSession session,
                               final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
-        super( startNodes, filter, checkExistence );
+        this( Collections.singleton( start ), Collections.singleton( end ), session, filter, checkExistence );
+    }
+
+    public EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes, final NeoGraphSession session,
+                              final ProjectRelationshipFilter filter, final boolean checkExistence )
+    {
+        super( startNodes, session, filter, checkExistence );
         this.endNodes = endNodes;
     }
 
-    private EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes,
+    private EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes, final NeoGraphSession session,
                                final ProjectRelationshipFilter filter, final boolean checkExistence,
                                final Direction direction )
     {
-        super( startNodes, filter, checkExistence, direction );
+        super( startNodes, session, filter, checkExistence, direction );
         this.endNodes = endNodes;
     }
 
+    @Override
     public PathExpander reverse()
     {
-        return new EndNodesCollector( startNodes, endNodes, filter, checkExistence, direction.reverse() );
+        return new EndNodesCollector( startNodes, endNodes, session, filter, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundNodes()
@@ -53,6 +55,7 @@ public class EndNodesCollector
         return found;
     }
 
+    @Override
     public Iterator<Node> iterator()
     {
         return found.iterator();

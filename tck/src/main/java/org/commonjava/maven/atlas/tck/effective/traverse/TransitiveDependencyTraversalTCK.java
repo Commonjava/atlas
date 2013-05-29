@@ -30,6 +30,7 @@ import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.EProjectRelationships;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.TransitiveDependencyTraversal;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
@@ -44,7 +45,9 @@ public abstract class TransitiveDependencyTraversalTCK
     {
         final URI source = sourceURI();
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( source, root, newDriverInstance() );
+        final EProjectGraph.Builder pgBuilder =
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
+                                       newDriverInstance() );
 
         final DependencyRelationship depL1 = dependency( source, root, "other.group", "dep-L1", "1.0.1", 0 );
         final DependencyRelationship depL2 =
@@ -84,7 +87,9 @@ public abstract class TransitiveDependencyTraversalTCK
         final URI source = sourceURI();
 
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( source, root, newDriverInstance() );
+        final EProjectGraph.Builder pgBuilder =
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
+                                       newDriverInstance() );
 
         final DependencyRelationship depL1A = dependency( source, root, "other.group", "dep-L1", "1.0.1", 0 );
         final DependencyRelationship depL1B = dependency( source, root, "foo", "dep-L2", "1.1.1", 1 );
@@ -127,7 +132,9 @@ public abstract class TransitiveDependencyTraversalTCK
         final URI source = sourceURI();
 
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( source, root, newDriverInstance() );
+        final EProjectGraph.Builder pgBuilder =
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
+                                       newDriverInstance() );
 
         final DependencyRelationship depL1A = dependency( source, root, "other.group", "dep-L1", "1.0.1", 0 );
         final DependencyRelationship depL2 =
@@ -179,7 +186,9 @@ public abstract class TransitiveDependencyTraversalTCK
         final URI source = sourceURI();
 
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder = new EProjectGraph.Builder( source, root, newDriverInstance() );
+        final EProjectGraph.Builder pgBuilder =
+            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
+                                       newDriverInstance() );
 
         final DependencyRelationship depL1A = dependency( source, root, "other.group", "dep-L1", "1.1.1", 0 );
 

@@ -43,6 +43,7 @@ import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.rel.RelationshipComparator;
 import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
 import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.AbstractTraversal;
 import org.apache.maven.graph.effective.traverse.FilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
@@ -89,11 +90,11 @@ public class JungEGraphDriver
     }
 
     public JungEGraphDriver( final JungEGraphDriver from, final ProjectRelationshipFilter filter,
-                             final EProjectNet net, final ProjectVersionRef... roots )
+                             final EProjectNet net, final EGraphSession session, final ProjectVersionRef... roots )
         throws GraphDriverException
     {
         this.roots = roots;
-        this.session = net.getSession();
+        this.session = session == null ? net.getSession() : session;
         Collection<ProjectRelationship<?>> rels;
         if ( filter != null && roots.length > 0 )
         {
@@ -479,16 +480,21 @@ public class JungEGraphDriver
                                          final ProjectVersionRef... from )
         throws GraphDriverException
     {
-        final JungEGraphDriver neo = new JungEGraphDriver( this, filter, net, from );
+        final JungEGraphDriver neo = new JungEGraphDriver( this, filter, net, null, from );
         neo.restrictProjectMembership( Arrays.asList( from ) );
 
         return neo;
     }
 
     @Override
-    public EGraphDriver newInstance()
+    public EGraphDriver newInstance( final EGraphSession session, final EProjectNet net,
+                                     final ProjectRelationshipFilter filter, final ProjectVersionRef... from )
+        throws GraphDriverException
     {
-        return new JungEGraphDriver();
+        final JungEGraphDriver neo = new JungEGraphDriver( this, filter, net, null, from );
+        neo.restrictProjectMembership( Arrays.asList( from ) );
+
+        return neo;
     }
 
     @Override
@@ -888,6 +894,13 @@ public class JungEGraphDriver
         {
             graph.addVertex( ref );
         }
+    }
+
+    @Override
+    public EGraphSession createSession( final EGraphSessionConfiguration config )
+        throws GraphDriverException
+    {
+        return new JungEGraphSession( this, config );
     }
 
 }
