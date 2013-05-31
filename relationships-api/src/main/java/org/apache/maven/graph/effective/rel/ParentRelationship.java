@@ -18,6 +18,7 @@ package org.apache.maven.graph.effective.rel;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Collection;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
@@ -44,6 +45,12 @@ public final class ParentRelationship
         super( source, RelationshipType.PARENT, declaring, target, 0 );
     }
 
+    public ParentRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
+                               final ProjectVersionRef target )
+    {
+        super( sources, RelationshipType.PARENT, declaring, target, 0 );
+    }
+
     @Override
     public String toString()
     {
@@ -61,6 +68,7 @@ public final class ParentRelationship
         return getDeclaring().equals( getTarget() );
     }
 
+    @Override
     public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
     {
         ProjectVersionRef d = getDeclaring();
@@ -69,9 +77,10 @@ public final class ParentRelationship
 
         d = d.selectVersion( version );
 
-        return new ParentRelationship( getSource(), d, self ? d : t );
+        return new ParentRelationship( getSources(), d, self ? d : t );
     }
 
+    @Override
     public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring();
@@ -80,7 +89,7 @@ public final class ParentRelationship
 
         t = t.selectVersion( version );
 
-        return new ParentRelationship( getSource(), self ? t : d, t );
+        return new ParentRelationship( getSources(), self ? t : d, t );
     }
 
 }

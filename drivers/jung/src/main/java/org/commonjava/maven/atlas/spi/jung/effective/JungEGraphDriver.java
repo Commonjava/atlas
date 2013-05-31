@@ -17,8 +17,11 @@
 package org.commonjava.maven.atlas.spi.jung.effective;
 
 import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.maven.graph.effective.util.RelationshipUtils.POM_ROOT_URI;
+import static org.apache.maven.graph.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -177,6 +180,47 @@ public class JungEGraphDriver
         {
             final ProjectVersionRef target = edge.getTarget();
             final SingleVersion selected = session.getSelectedVersion( target );
+            final Set<URI> sources = session.getActiveSources();
+            if ( sources != null && !sources.isEmpty() )
+            {
+                Set<URI> s = edge.getSources();
+                if ( s == null )
+                {
+                    s = Collections.singleton( UNKNOWN_SOURCE_URI );
+                }
+
+                boolean found = false;
+                for ( final URI uri : s )
+                {
+                    if ( sources.contains( uri ) )
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if ( !found )
+                {
+                    //                    log( "Found relationship in path with de-selected source-repository URI: %s", edge );
+                    continue;
+                }
+            }
+
+            final Set<URI> pomLocations = session.getActivePomLocations();
+            if ( pomLocations != null && !pomLocations.isEmpty() )
+            {
+                URI pomLocation = edge.getPomLocation();
+                if ( pomLocation == null )
+                {
+                    pomLocation = POM_ROOT_URI;
+                }
+                if ( !pomLocations.contains( pomLocation ) )
+                {
+                    //                    log( "Found relationship in path with de-selected pom-location URI: %s", edge );
+                    continue;
+                }
+            }
+
             if ( selected != null )
             {
                 result.add( edge.selectTarget( selected ) );
@@ -218,9 +262,17 @@ public class JungEGraphDriver
                 graph.addVertex( target );
             }
 
-            if ( !graph.containsEdge( rel ) )
+            final List<ProjectRelationship<?>> edges =
+                new ArrayList<ProjectRelationship<?>>( graph.findEdgeSet( rel.getDeclaring(), target ) );
+            if ( !edges.contains( rel ) )
             {
                 graph.addEdge( rel, rel.getDeclaring(), target );
+            }
+            else
+            {
+                final int idx = edges.indexOf( rel );
+                final ProjectRelationship<?> existing = edges.get( idx );
+                existing.addSources( rel.getSources() );
             }
 
             incompleteSubgraphs.remove( rel.getDeclaring() );
@@ -452,7 +504,7 @@ public class JungEGraphDriver
 
         SelfEdge( final ProjectVersionRef ref )
         {
-            super( null, null, ref, ref, 0 );
+            super( (URI) null, null, ref, ref, 0 );
         }
 
         @Override

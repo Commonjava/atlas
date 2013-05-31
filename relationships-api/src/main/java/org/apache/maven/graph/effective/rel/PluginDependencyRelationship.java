@@ -18,6 +18,7 @@ package org.apache.maven.graph.effective.rel;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Collection;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
@@ -49,6 +50,14 @@ public final class PluginDependencyRelationship
         this.plugin = plugin;
     }
 
+    public PluginDependencyRelationship( final Collection<URI> sources, final URI pomLocation,
+                                         final ProjectVersionRef declaring, final ProjectRef plugin,
+                                         final ArtifactRef target, final int index, final boolean managed )
+    {
+        super( sources, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
+        this.plugin = plugin;
+    }
+
     public final ProjectRef getPlugin()
     {
         return plugin;
@@ -57,7 +66,7 @@ public final class PluginDependencyRelationship
     @Override
     public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new PluginDependencyRelationship( getSource(), getPomLocation(), projectRef, plugin, getTarget(),
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), projectRef, plugin, getTarget(),
                                                  getIndex(), isManaged() );
     }
 
@@ -118,22 +127,24 @@ public final class PluginDependencyRelationship
         return getTarget();
     }
 
+    @Override
     public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring().selectVersion( version );
         final ArtifactRef t = getTarget();
 
-        return new PluginDependencyRelationship( getSource(), getPomLocation(), d, getPlugin(), t, getIndex(),
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
                                                  isManaged() );
     }
 
+    @Override
     public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring();
         ArtifactRef t = getTarget();
         t = new ArtifactRef( t.selectVersion( version ), t.getType(), t.getClassifier(), t.isOptional() );
 
-        return new PluginDependencyRelationship( getSource(), getPomLocation(), d, getPlugin(), t, getIndex(),
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
                                                  isManaged() );
     }
 

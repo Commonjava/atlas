@@ -18,6 +18,7 @@ package org.apache.maven.graph.effective.rel;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Collection;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
@@ -37,6 +38,12 @@ public final class ExtensionRelationship
         super( source, RelationshipType.EXTENSION, declaring, target, index );
     }
 
+    public ExtensionRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
+                                  final ProjectVersionRef target, final int index )
+    {
+        super( sources, RelationshipType.EXTENSION, declaring, target, index );
+    }
+
     @Override
     public String toString()
     {
@@ -49,20 +56,22 @@ public final class ExtensionRelationship
         return new ArtifactRef( getTarget(), null, null, false );
     }
 
+    @Override
     public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring().selectVersion( version );
         final ProjectVersionRef t = getTarget();
 
-        return new ExtensionRelationship( getSource(), d, t, getIndex() );
+        return new ExtensionRelationship( getSources(), d, t, getIndex() );
     }
 
+    @Override
     public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring();
         final ProjectVersionRef t = getTarget().selectVersion( version );
 
-        return new ExtensionRelationship( getSource(), d, t, getIndex() );
+        return new ExtensionRelationship( getSources(), d, t, getIndex() );
     }
 
 }

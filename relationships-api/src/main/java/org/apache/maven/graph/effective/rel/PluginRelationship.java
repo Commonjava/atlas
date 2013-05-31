@@ -18,6 +18,7 @@ package org.apache.maven.graph.effective.rel;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Collection;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
@@ -60,6 +61,14 @@ public final class PluginRelationship
         this.reporting = reporting;
     }
 
+    public PluginRelationship( final Collection<URI> sources, final URI pomLocation, final ProjectVersionRef declaring,
+                               final ProjectVersionRef target, final int index, final boolean managed,
+                               final boolean reporting )
+    {
+        super( sources, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed );
+        this.reporting = reporting;
+    }
+
     public final boolean isReporting()
     {
         return reporting;
@@ -68,8 +77,8 @@ public final class PluginRelationship
     @Override
     public synchronized ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new PluginRelationship( getSource(), getPomLocation(), projectRef, getTarget(), getIndex(), isManaged(),
-                                       reporting );
+        return new PluginRelationship( getSources(), getPomLocation(), projectRef, getTarget(), getIndex(),
+                                       isManaged(), reporting );
     }
 
     @Override
@@ -117,20 +126,22 @@ public final class PluginRelationship
         return new ArtifactRef( getTarget(), "maven-plugin", null, false );
     }
 
+    @Override
     public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring().selectVersion( version );
         final ProjectVersionRef t = getTarget();
 
-        return new PluginRelationship( getSource(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
+        return new PluginRelationship( getSources(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
     }
 
+    @Override
     public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring();
         final ProjectVersionRef t = getTarget().selectVersion( version );
 
-        return new PluginRelationship( getSource(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
+        return new PluginRelationship( getSources(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
     }
 
 }

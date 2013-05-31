@@ -1,13 +1,21 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 
+import static org.apache.maven.graph.effective.util.RelationshipUtils.POM_ROOT_URI;
+import static org.apache.maven.graph.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.DESELECTED_FOR;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.POM_LOCATION_URI;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SELECTED_FOR;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SOURCE_URI;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getURIListProperty;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getURIProperty;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.idListingContains;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isSelectionOnly;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectRelationship;
 
+import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
@@ -120,10 +128,43 @@ public abstract class AbstractAtlasCollector<T>
                     log( "Found relationship in path that was deselected: %s", r );
                     return false;
                 }
-                else if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, session.getSessionId() ) )
+
+                if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, session.getSessionId() ) )
                 {
                     log( "Found relationship in path that was not selected and is marked as selection-only: %s", r );
                     return false;
+                }
+
+                final Set<URI> sources = session.getActiveSources();
+                if ( sources != null && !sources.isEmpty() )
+                {
+                    final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
+                    boolean found = false;
+                    for ( final URI uri : s )
+                    {
+                        if ( sources.contains( uri ) )
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if ( !found )
+                    {
+                        log( "Found relationship in path with de-selected source-repository URI: %s", r );
+                        return false;
+                    }
+                }
+
+                final Set<URI> pomLocations = session.getActivePomLocations();
+                if ( pomLocations != null && !pomLocations.isEmpty() )
+                {
+                    final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
+                    if ( !pomLocations.contains( pomLocation ) )
+                    {
+                        log( "Found relationship in path with de-selected pom-location URI: %s", r );
+                        return false;
+                    }
                 }
             }
 

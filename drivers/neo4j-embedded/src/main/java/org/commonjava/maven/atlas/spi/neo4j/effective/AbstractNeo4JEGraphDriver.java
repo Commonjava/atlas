@@ -19,6 +19,8 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SOURCE_URI;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.addToURIListProperty;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.cloneRelationshipProperties;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToProjects;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToRelationships;
@@ -461,7 +463,10 @@ public abstract class AbstractNeo4JEGraphDriver
                 }
                 else
                 {
-                    markSelectionOnly( relHits.next(), false );
+                    final Relationship r = relHits.next();
+
+                    addToURIListProperty( rel.getSources(), SOURCE_URI, r );
+                    markSelectionOnly( r, false );
                 }
             }
 

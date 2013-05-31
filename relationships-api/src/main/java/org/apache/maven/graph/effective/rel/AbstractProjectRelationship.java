@@ -22,6 +22,12 @@ import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
@@ -33,7 +39,7 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
 
     private static final long serialVersionUID = 1L;
 
-    private URI source;
+    private final List<URI> sources = new ArrayList<URI>();
 
     private final RelationshipType type;
 
@@ -55,27 +61,63 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
     protected AbstractProjectRelationship( final URI source, final RelationshipType type,
                                            final ProjectVersionRef declaring, final T target, final int index )
     {
-        this( source, POM_ROOT_URI, type, declaring, target, index, false );
+        this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, false );
+    }
+
+    protected AbstractProjectRelationship( final Collection<URI> sources, final RelationshipType type,
+                                           final ProjectVersionRef declaring, final T target, final int index )
+    {
+        this( sources, POM_ROOT_URI, type, declaring, target, index, false );
     }
 
     protected AbstractProjectRelationship( final URI source, final RelationshipType type,
                                            final ProjectVersionRef declaring, final T target, final int index,
                                            final boolean managed )
     {
-        this( source, POM_ROOT_URI, type, declaring, target, index, managed );
+        this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, managed );
+    }
+
+    protected AbstractProjectRelationship( final Collection<URI> sources, final RelationshipType type,
+                                           final ProjectVersionRef declaring, final T target, final int index,
+                                           final boolean managed )
+    {
+        this( sources, POM_ROOT_URI, type, declaring, target, index, managed );
     }
 
     protected AbstractProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type,
                                            final ProjectVersionRef declaring, final T target, final int index )
     {
-        this( source, pomLocation, type, declaring, target, index, false );
+        this( Collections.singleton( source ), pomLocation, type, declaring, target, index, false );
+    }
+
+    protected AbstractProjectRelationship( final Collection<URI> sources, final URI pomLocation,
+                                           final RelationshipType type, final ProjectVersionRef declaring,
+                                           final T target, final int index )
+    {
+        this( sources, pomLocation, type, declaring, target, index, false );
     }
 
     protected AbstractProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type,
                                            final ProjectVersionRef declaring, final T target, final int index,
                                            final boolean managed )
     {
-        this.source = source;
+        this( Collections.singleton( source ), pomLocation, type, declaring, target, index, managed );
+    }
+
+    protected AbstractProjectRelationship( final Collection<URI> sources, final URI pomLocation,
+                                           final RelationshipType type, final ProjectVersionRef declaring,
+                                           final T target, final int index, final boolean managed )
+    {
+        if ( sources == null )
+        {
+            throw new NullPointerException( "Source URIs cannot be null" );
+        }
+
+        for ( final URI source : sources )
+        {
+            addSource( source );
+        }
+
         this.pomLocation = pomLocation;
         if ( declaring == null || target == null )
         {
@@ -90,33 +132,40 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         this.managed = managed;
     }
 
+    @Override
     public final boolean isManaged()
     {
         return managed;
     }
 
+    @Override
     public final int getIndex()
     {
         return index;
     }
 
+    @Override
     public final RelationshipType getType()
     {
         return type;
     }
 
+    @Override
     public final ProjectVersionRef getDeclaring()
     {
         return declaring;
     }
 
+    @Override
     public final T getTarget()
     {
         return target;
     }
 
+    @Override
     public abstract ArtifactRef getTargetArtifact();
 
+    @Override
     @SuppressWarnings( "unchecked" )
     public synchronized ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef )
     {
@@ -145,8 +194,12 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
 
         try
         {
-            return cloneUsesLocation ? cloneCtor.newInstance( source, pomLocation, projectRef, target )
-                            : cloneCtor.newInstance( source, projectRef, target );
+            final ProjectRelationship<T> result =
+                cloneUsesLocation ? cloneCtor.newInstance( sources.get( 0 ), pomLocation, projectRef, target )
+                                : cloneCtor.newInstance( sources.get( 0 ), projectRef, target );
+
+            result.addSources( sources );
+            return result;
         }
         catch ( final InstantiationException e )
         {
@@ -222,16 +275,46 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         return true;
     }
 
-    public final void setSource( final URI source )
+    @Override
+    public final void addSource( final URI source )
     {
-        this.source = source;
+        if ( source == null )
+        {
+            return;
+        }
+
+        if ( !sources.contains( source ) )
+        {
+            this.sources.add( source );
+        }
     }
 
-    public final URI getSource()
+    @Override
+    public final void addSources( final Collection<URI> sources )
     {
-        return source;
+        if ( sources == null )
+        {
+            return;
+        }
+
+        for ( final URI source : sources )
+        {
+            if ( source == null )
+            {
+                continue;
+            }
+
+            addSource( source );
+        }
     }
 
+    @Override
+    public final Set<URI> getSources()
+    {
+        return new HashSet<URI>( sources );
+    }
+
+    @Override
     public final URI getPomLocation()
     {
         return pomLocation;

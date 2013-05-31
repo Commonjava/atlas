@@ -19,6 +19,7 @@ package org.apache.maven.graph.effective.rel;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -58,6 +59,25 @@ public final class DependencyRelationship
         this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
     }
 
+    public DependencyRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
+                                   final ArtifactRef target, final DependencyScope scope, final int index,
+                                   final boolean managed, final ProjectRef... excludes )
+    {
+        super( sources, RelationshipType.DEPENDENCY, declaring, target, index, managed );
+        this.scope = scope == null ? DependencyScope.compile : scope;
+        this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
+    }
+
+    public DependencyRelationship( final Collection<URI> sources, final URI pomLocation,
+                                   final ProjectVersionRef declaring, final ArtifactRef target,
+                                   final DependencyScope scope, final int index, final boolean managed,
+                                   final ProjectRef... excludes )
+    {
+        super( sources, pomLocation, RelationshipType.DEPENDENCY, declaring, target, index, managed );
+        this.scope = scope == null ? DependencyScope.compile : scope;
+        this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
+    }
+
     public final DependencyScope getScope()
     {
         return scope;
@@ -66,7 +86,7 @@ public final class DependencyRelationship
     @Override
     public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new DependencyRelationship( getSource(), getPomLocation(), projectRef, getTarget(), scope, getIndex(),
+        return new DependencyRelationship( getSources(), getPomLocation(), projectRef, getTarget(), scope, getIndex(),
                                            isManaged() );
     }
 
@@ -120,22 +140,24 @@ public final class DependencyRelationship
         return excludes;
     }
 
+    @Override
     public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring().selectVersion( version );
         final ArtifactRef t = getTarget();
 
-        return new DependencyRelationship( getSource(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
+        return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
                                            getExcludes().toArray( new ProjectRef[] {} ) );
     }
 
+    @Override
     public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version )
     {
         final ProjectVersionRef d = getDeclaring();
         ArtifactRef t = getTarget();
         t = new ArtifactRef( t.selectVersion( version ), t.getType(), t.getClassifier(), t.isOptional() );
 
-        return new DependencyRelationship( getSource(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
+        return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
                                            getExcludes().toArray( new ProjectRef[] {} ) );
     }
 

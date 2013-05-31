@@ -18,6 +18,8 @@ package org.apache.maven.graph.effective.rel;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.util.Collection;
+import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
@@ -46,9 +48,11 @@ public interface ProjectRelationship<T extends ProjectVersionRef>
 
     boolean isManaged();
 
-    URI getSource();
+    Set<URI> getSources();
 
-    void setSource( URI source );
+    void addSource( URI source );
+
+    void addSources( Collection<URI> sources );
 
     URI getPomLocation();
 

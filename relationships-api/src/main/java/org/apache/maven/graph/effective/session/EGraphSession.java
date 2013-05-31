@@ -47,6 +47,16 @@ public abstract class EGraphSession
         return id;
     }
 
+    public final Set<URI> getActivePomLocations()
+    {
+        return activePomLocations;
+    }
+
+    public final Set<URI> getActiveSources()
+    {
+        return activeSources;
+    }
+
     public final Iterable<URI> activePomLocations()
     {
         return activePomLocations;

@@ -248,8 +248,7 @@ public final class Conversions
     public static void toRelationshipProperties( final ProjectRelationship<?> rel, final Relationship relationship )
     {
         relationship.setProperty( INDEX, rel.getIndex() );
-        relationship.setProperty( SOURCE_URI, rel.getSource()
-                                                 .toString() );
+        relationship.setProperty( SOURCE_URI, toStringArray( rel.getSources() ) );
         relationship.setProperty( POM_LOCATION_URI, rel.getPomLocation()
                                                        .toString() );
 
@@ -308,6 +307,22 @@ public final class Conversions
         }
     }
 
+    public static String[] toStringArray( final Collection<?> sources )
+    {
+        final Set<String> result = new LinkedHashSet<String>( sources.size() );
+        for ( final Object object : sources )
+        {
+            if ( object == null )
+            {
+                continue;
+            }
+
+            result.add( object.toString() );
+        }
+
+        return result.toArray( new String[result.size()] );
+    }
+
     public static ProjectRelationship<?> toProjectRelationship( final Relationship rel )
     {
         if ( rel == null )
@@ -335,27 +350,8 @@ public final class Conversions
         final ProjectVersionRef from = toProjectVersionRef( rel.getStartNode() );
         final ProjectVersionRef to = toProjectVersionRef( rel.getEndNode() );
         final int index = getIntegerProperty( INDEX, rel );
-        String uri = getStringProperty( SOURCE_URI, rel );
-        URI source;
-        try
-        {
-            source = new URI( uri );
-        }
-        catch ( final URISyntaxException e )
-        {
-            source = UNKNOWN_SOURCE_URI;
-        }
-
-        uri = getStringProperty( POM_LOCATION_URI, rel );
-        URI pomLocation;
-        try
-        {
-            pomLocation = new URI( uri );
-        }
-        catch ( final URISyntaxException e )
-        {
-            pomLocation = POM_ROOT_URI;
-        }
+        final List<URI> source = getURIListProperty( SOURCE_URI, rel, UNKNOWN_SOURCE_URI );
+        final URI pomLocation = getURIProperty( POM_LOCATION_URI, rel, POM_ROOT_URI );
 
         ProjectRelationship<?> result = null;
         switch ( mapper.atlasType() )
@@ -467,6 +463,71 @@ public final class Conversions
             return (String) container.getProperty( prop );
         }
         return null;
+    }
+
+    public static List<URI> getURIListProperty( final String prop, final PropertyContainer container,
+                                                final URI defaultValue )
+    {
+        final List<URI> result = new ArrayList<URI>();
+
+        if ( container.hasProperty( prop ) )
+        {
+            final String[] uris = (String[]) container.getProperty( prop );
+            for ( final String uri : uris )
+            {
+                try
+                {
+                    final URI u = new URI( uri );
+                    if ( !result.contains( u ) )
+                    {
+                        result.add( u );
+                    }
+                }
+                catch ( final URISyntaxException e )
+                {
+                }
+            }
+        }
+
+        if ( defaultValue != null && result.isEmpty() )
+        {
+            result.add( defaultValue );
+        }
+
+        return result;
+    }
+
+    public static void addToURIListProperty( final Collection<URI> uris, final String prop,
+                                             final PropertyContainer container )
+    {
+        final List<URI> existing = getURIListProperty( prop, container, null );
+        for ( final URI uri : uris )
+        {
+            if ( !existing.contains( uri ) )
+            {
+                existing.add( uri );
+            }
+        }
+
+        container.setProperty( prop, toStringArray( existing ) );
+    }
+
+    public static URI getURIProperty( final String prop, final PropertyContainer container, final URI defaultValue )
+    {
+        URI result = defaultValue;
+
+        if ( container.hasProperty( prop ) )
+        {
+            try
+            {
+                result = new URI( (String) container.getProperty( prop ) );
+            }
+            catch ( final URISyntaxException e )
+            {
+            }
+        }
+
+        return result;
     }
 
     public static Boolean getBooleanProperty( final String prop, final PropertyContainer container )
