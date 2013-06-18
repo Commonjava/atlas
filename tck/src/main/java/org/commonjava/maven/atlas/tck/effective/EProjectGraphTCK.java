@@ -25,11 +25,12 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.EProjectDirectRelationships;
 import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
-import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.commonjava.util.logging.Logger;
 import org.junit.Test;
 
@@ -37,6 +38,7 @@ public abstract class EProjectGraphTCK
     extends AbstractSPI_TCK
 {
 
+    @SuppressWarnings( "unused" )
     @Test
     public void connectThreeGraphsWithParentInterrelationships()
         throws Exception
@@ -47,23 +49,77 @@ public abstract class EProjectGraphTCK
 
         final URI source = sourceURI();
 
-        final EGraphDriver driver = newDriverInstance();
-        final EProjectGraph root =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, r, driver ).build();
-        final EProjectGraph parent =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, p, driver ).withParent( new ParentRelationship(
-                                                                                                                                                      source,
-                                                                                                                                                      p,
-                                                                                                                                                      r ) )
-                                                                                                                 .build();
-        final EProjectGraph child =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, driver ).withParent( new ParentRelationship(
-                                                                                                                                                      source,
-                                                                                                                                                      c,
-                                                                                                                                                      p ) )
-                                                                                                                 .build();
-        parent.connect( root );
-        child.connect( parent );
+        final EGraphSession session = simpleSession();
+        /* @formatter:off */
+        final EProjectGraph root = getManager().createGraph( 
+                session, 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, r ) ).build()
+        );
+        
+        final EProjectGraph parent = getManager().createGraph( 
+                session, 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, p ) )
+                    .withParent( new ParentRelationship( source, p, r ) )
+                    .build()
+        );
+        
+        final EProjectGraph child = getManager().createGraph(
+                session,
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
+                    .withParent( new ParentRelationship( source, c, p ) )
+                    .build()
+        );
+        /* @formatter:on */
+
+        assertThat( child.isComplete(), equalTo( true ) );
+
+        final AncestryTraversal ancestryTraversal = new AncestryTraversal();
+        child.traverse( ancestryTraversal );
+
+        final List<ProjectVersionRef> ancestry = ancestryTraversal.getAncestry();
+        new Logger( getClass() ).info( "Ancestry: %s", ancestry );
+
+        assertThat( ancestry, notNullValue() );
+        assertThat( ancestry.size(), equalTo( 3 ) );
+
+        final Iterator<ProjectVersionRef> iterator = ancestry.iterator();
+        assertThat( iterator.next(), equalTo( c ) );
+        assertThat( iterator.next(), equalTo( p ) );
+        assertThat( iterator.next(), equalTo( r ) );
+    }
+
+    @SuppressWarnings( "unused" )
+    @Test
+    public void connectThreeGraphsWithParentInterrelationships_WrongOrder()
+        throws Exception
+    {
+        final ProjectVersionRef r = new ProjectVersionRef( "org.test", "root", "1" );
+        final ProjectVersionRef p = new ProjectVersionRef( "org.test", "parent", "1.0" );
+        final ProjectVersionRef c = new ProjectVersionRef( "org.test", "child", "1.0" );
+
+        final URI source = sourceURI();
+
+        final EGraphSession session = simpleSession();
+        /* @formatter:off */
+        final EProjectGraph child = getManager().createGraph(
+                session,
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
+                    .withParent( new ParentRelationship( source, c, p ) )
+                    .build()
+        );
+        
+        final EProjectGraph parent = getManager().createGraph( 
+                session, 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, p ) )
+                    .withParent( new ParentRelationship( source, p, r ) )
+                    .build()
+        );
+        
+        final EProjectGraph root = getManager().createGraph( 
+                session, 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, r ) ).build()
+        );
+        /* @formatter:on */
 
         assertThat( child.isComplete(), equalTo( true ) );
 

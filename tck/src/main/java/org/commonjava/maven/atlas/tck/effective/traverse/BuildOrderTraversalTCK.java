@@ -21,6 +21,7 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,12 +30,13 @@ import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.EProjectDirectRelationships;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.filter.DependencyFilter;
+import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.BuildOrderTraversal;
 import org.apache.maven.graph.effective.traverse.model.BuildOrder;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
@@ -61,11 +63,10 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
-            .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                               new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false )
-            )
-           .build();
+        getManager().storeRelationships( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                                       new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false ) );
+        
+        final EProjectGraph graph = getManager().getGraph( simpleSession(), c );
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
@@ -81,6 +82,7 @@ public abstract class BuildOrderTraversalTCK
         assertRelativeOrder( relativeOrder, buildOrder );
     }
 
+    @SuppressWarnings( "unchecked" )
     @Test
     //@Ignore
     public void simpleDependencyBuildOrder_includeDepParent()
@@ -101,12 +103,17 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
-            .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                               new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false )
-            )
-            .withExactRelationships( new ParentRelationship( source, b, p ) )
-            .build();
+        final EProjectGraph graph = getManager().createGraph( 
+                simpleSession(), 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
+                    .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ) )
+                    .build()
+        );
+        
+        graph.addAll( Arrays.asList( 
+                new ParentRelationship( source, b, p ),
+                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false )
+        ) );
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
@@ -144,13 +151,18 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
-            .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                               new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false ),
-                               new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
-            )
-            .withPlugins( new PluginRelationship( source, c, pb, 0, false ) )
-            .build();
+        final EProjectGraph graph = getManager().createGraph( 
+                simpleSession(), 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
+                    .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ) )
+                    .withPlugins( new PluginRelationship( source, c, pb, 0, false ) )
+                    .build()
+        );
+        
+        graph.addAll( Arrays.asList( 
+                new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false ),
+                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false )
+        ) );
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
@@ -186,15 +198,21 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
-            .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                               new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
-                               new DependencyRelationship( source, c, new ArtifactRef( d, null, null, false ), DependencyScope.test, 1, false ),
-                               new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), DependencyScope.runtime, 0, false ),
-                               new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
-            )
-            .withPlugins( new PluginRelationship( source, c, pb, 0, false ) )
-            .build();
+        final EProjectGraph graph = getManager().createGraph( 
+                  simpleSession(), 
+                  new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
+                      .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, c, new ArtifactRef( d, null, null, false ), DependencyScope.test, 1, false )
+                      )
+                      .withPlugins( new PluginRelationship( source, c, pb, 0, false ) )
+                      .build()
+        );
+        
+        graph.addAll( Arrays.asList(
+                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
+                new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), DependencyScope.runtime, 0, false ),
+                new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
+        ));
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
@@ -229,12 +247,18 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
-            .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false, d.asProjectRef() ),
-                               new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
-                               new DependencyRelationship( source, b, new ArtifactRef( d, null, null, false ), DependencyScope.runtime, 1, false )
-            )
-            .build();
+        final EProjectGraph graph = getManager().createGraph( 
+                  simpleSession(), 
+                  new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
+                      .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false, d )
+                      )
+                      .build()
+        );
+        
+        graph.addAll( Arrays.asList(
+                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
+                new DependencyRelationship( source, b, new ArtifactRef( d, null, null, false ), DependencyScope.runtime, 1, false )
+        ));
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
@@ -246,7 +270,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
-        //        new Logger( getClass() ).info( "Build order: %s", buildOrder );
+        logger.info( "Build order: %s", buildOrder );
         assertThat( buildOrder.size(), equalTo( 3 ) );
 
         assertRelativeOrder( relativeOrder, buildOrder );
@@ -273,13 +297,19 @@ public abstract class BuildOrderTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, c, newDriverInstance() )
-            .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                               new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false ),
-                               new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
-            )
-            .withPlugins( new PluginRelationship( source, c, pb, 0, false ) )
-            .build();
+        final EProjectGraph graph = getManager().createGraph( 
+                  simpleSession(), 
+                  new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
+                      .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false )
+                      )
+                      .withPlugins( new PluginRelationship( source, c, pb, 0, false ) )
+                      .build()
+        );
+        
+        graph.addAll( Arrays.asList(
+                new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), DependencyScope.runtime, 0, false ),
+                new DependencyRelationship( source, pb, new ArtifactRef( pa, null, null, false ), null, 0, false )
+        ));
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()

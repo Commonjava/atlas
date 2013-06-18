@@ -20,8 +20,6 @@ import static org.apache.maven.graph.effective.util.RelationshipUtils.filterTerm
 
 import java.io.Serializable;
 import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -30,122 +28,104 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
-import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.rel.ExtensionRelationship;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
-import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.session.EGraphSession;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
+import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.commonjava.util.logging.Logger;
 
 public class EProjectGraph
-    implements EProjectNet, KeyedProjectRelationshipCollection, Serializable
+    implements EProjectNet, Serializable
 {
 
     private static final long serialVersionUID = 1L;
 
     private final Logger logger = new Logger( getClass() );
 
-    private final EProjectKey key;
+    private final ProjectVersionRef project;
+
+    private final Set<URI> sources;
 
     private final EGraphDriver driver;
 
-    private final List<EProjectNet> superNets = new ArrayList<EProjectNet>();
+    private final EProjectNetView view;
 
-    private final EGraphSession session;
-
-    public EProjectGraph( final EGraphSession session, final EProjectNet parent, final EProjectKey key )
-        throws GraphDriverException
+    public EProjectGraph( final EGraphSession session, final EGraphDriver driver, final ProjectVersionRef ref )
     {
-        this.session = session;
-        this.key = key;
-        this.driver = parent.getDriver()
-                            .newInstanceFrom( this, null, key.getProject() );
-
-        this.superNets.addAll( parent.getSuperNets() );
-        this.superNets.add( parent );
+        this.view = new EProjectNetView( session, ref );
+        this.project = ref;
+        sources = session.getActiveSources();
+        this.driver = driver;
     }
 
-    public EProjectGraph( final EGraphSession session, final EProjectNet parent,
-                          final ProjectRelationshipFilter filter, final EProjectKey key )
-        throws GraphDriverException
+    public EProjectGraph( final EGraphSession session, final EGraphDriver driver,
+                          final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
     {
-        this.session = session;
-        this.key = key;
-        this.driver = parent.getDriver()
-                            .newInstanceFrom( this, filter, key.getProject() );
-
-        this.superNets.addAll( parent.getSuperNets() );
-        this.superNets.add( parent );
+        this.view = new EProjectNetView( session, filter, ref );
+        this.project = ref;
+        this.sources = session.getActiveSources();
+        this.driver = driver;
     }
 
-    public EProjectGraph( final EGraphSession session, final EProjectRelationships relationships,
-                          final ProjectRelationshipFilter filter, final EGraphDriver driver )
-        throws GraphDriverException
+    //    public EProjectGraph( final EGraphSession session, final EProjectRelationships relationships,
+    //                          final ProjectRelationshipFilter filter, final EGraphDriver driver )
+    //        throws GraphDriverException
+    //    {
+    //        this.session = session;
+    //        final EProjectKey key = relationships.getKey();
+    //
+    //        this.project = key.getProject();
+    //        this.sources = Collections.singleton( key.getSource() );
+    //        this.driver = driver.newInstance( session, null, filter, key.getProject() );
+    //
+    //        add( relationships );
+    //    }
+    //
+    //    // TODO: If we construct like this based on contents of another graph, will we lose that graph's list of variable subgraphs??
+    //    public EProjectGraph( final EGraphSession session, final EProjectKey key,
+    //                          final Collection<ProjectRelationship<?>> relationships,
+    //                          final Collection<EProjectRelationships> projectRelationships,
+    //                          final Set<EProjectCycle> cycles, final ProjectRelationshipFilter filter,
+    //                          final EGraphDriver driver )
+    //        throws GraphDriverException
+    //    {
+    //        // NOTE: It does make sense to allow analysis of snapshots...it just requires different standards for mutability.
+    //        //        final VersionSpec version = key.getProject()
+    //        //                        .getVersionSpec();
+    //        //
+    //        //        if ( !version.isConcrete() )
+    //        //        {
+    //        //            throw new IllegalArgumentException(
+    //        //                                                "Cannot build project graph rooted on non-concrete version of a project! Version is: "
+    //        //                                                    + version );
+    //        //        }
+    //
+    //        this.session = session;
+    //        this.project = key.getProject();
+    //        this.sources = Collections.singleton( key.getSource() );
+    //        this.driver = driver.newInstance( session, this, filter, key.getProject() );
+    //        if ( cycles != null )
+    //        {
+    //            for ( final EProjectCycle cycle : cycles )
+    //            {
+    //                driver.addCycle( cycle );
+    //            }
+    //        }
+    //
+    //        addAll( relationships );
+    //        for ( final EProjectRelationships project : projectRelationships )
+    //        {
+    //            add( project );
+    //        }
+    //    }
+
+    public Set<URI> getSources()
     {
-        this.session = session;
-        this.key = relationships.getKey();
-        this.driver = driver.newInstanceFrom( null, filter, key.getProject() );
-
-        add( relationships );
-    }
-
-    // TODO: If we construct like this based on contents of another graph, will we lose that graph's list of variable subgraphs??
-    public EProjectGraph( final EGraphSession session, final EProjectKey key,
-                          final Collection<ProjectRelationship<?>> relationships,
-                          final Collection<EProjectRelationships> projectRelationships,
-                          final Set<EProjectCycle> cycles, final ProjectRelationshipFilter filter,
-                          final EGraphDriver driver )
-        throws GraphDriverException
-    {
-        // NOTE: It does make sense to allow analysis of snapshots...it just requires different standards for mutability.
-        //        final VersionSpec version = key.getProject()
-        //                        .getVersionSpec();
-        //
-        //        if ( !version.isConcrete() )
-        //        {
-        //            throw new IllegalArgumentException(
-        //                                                "Cannot build project graph rooted on non-concrete version of a project! Version is: "
-        //                                                    + version );
-        //        }
-
-        this.session = session;
-        this.key = key;
-        this.driver = driver.newInstance( session, this, filter, key.getProject() );
-        if ( cycles != null )
-        {
-            for ( final EProjectCycle cycle : cycles )
-            {
-                driver.addCycle( cycle );
-            }
-        }
-
-        addAll( relationships );
-        for ( final EProjectRelationships project : projectRelationships )
-        {
-            add( project );
-        }
-    }
-
-    @Override
-    public List<EProjectNet> getSuperNets()
-    {
-        return superNets;
-    }
-
-    @Override
-    public EProjectKey getKey()
-    {
-        return key;
+        return sources;
     }
 
     public Set<ProjectRelationship<?>> getFirstOrderRelationships()
@@ -158,13 +138,13 @@ public class EProjectGraph
 
     public Set<ProjectRelationship<?>> getExactFirstOrderRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( driver.getRelationshipsDeclaredBy( getRoot() ) );
+        return new HashSet<ProjectRelationship<?>>( driver.getRelationshipsDeclaredBy( view, getRoot() ) );
     }
 
     @Override
     public Set<ProjectRelationship<?>> getExactAllRelationships()
     {
-        final Collection<ProjectRelationship<?>> rels = driver.getAllRelationships();
+        final Collection<ProjectRelationship<?>> rels = driver.getAllRelationships( view );
         if ( rels == null )
         {
             return null;
@@ -176,7 +156,7 @@ public class EProjectGraph
     @Override
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
-        logger.info( "Retrieving all relationships in graph: %s", key.getProject() );
+        logger.info( "Retrieving all relationships in graph: %s", project );
         final Set<ProjectRelationship<?>> rels = getExactAllRelationships();
         filterTerminalParents( rels );
 
@@ -186,304 +166,358 @@ public class EProjectGraph
     @Override
     public boolean isComplete()
     {
-        return !driver.hasMissingProjects();
+        return !driver.hasMissingProjects( view );
     }
 
     @Override
     public boolean isConcrete()
     {
-        return !driver.hasVariableProjects();
+        return !driver.hasVariableProjects( view );
     }
 
     @Override
     public Set<ProjectVersionRef> getIncompleteSubgraphs()
     {
-        return Collections.unmodifiableSet( driver.getMissingProjects() );
+        return Collections.unmodifiableSet( driver.getMissingProjects( view ) );
     }
 
     @Override
     public Set<ProjectVersionRef> getVariableSubgraphs()
     {
-        return Collections.unmodifiableSet( driver.getVariableProjects() );
+        return Collections.unmodifiableSet( driver.getVariableProjects( view ) );
     }
 
-    public static final class Builder
-    {
-        private final EProjectKey key;
+    //    public static final class Builder
+    //    {
+    //        private final ProjectVersionRef root;
+    //
+    //        private final Set<URI> sources = new HashSet<URI>();
+    //
+    //        private final Set<ProjectRelationship<?>> relationships = new HashSet<ProjectRelationship<?>>();
+    //
+    //        private final Set<EProjectRelationships> projects = new HashSet<EProjectRelationships>();
+    //
+    //        private Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+    //
+    //        private final EGraphDriver driver;
+    //
+    //        private ProjectRelationshipFilter filter;
+    //
+    //        private final EGraphSession session;
+    //
+    //        private final URI rootSource;
+    //
+    //        public Builder( final EGraphSessionConfiguration config, final EProjectRelationships rels,
+    //                        final EGraphDriver driver )
+    //            throws GraphDriverException
+    //        {
+    //            this.session = driver.createSession( config );
+    //            this.driver = driver;
+    //            this.root = rels.getKey()
+    //                            .getProject();
+    //            this.rootSource = rels.getKey()
+    //                                  .getSource();
+    //            this.sources.add( rels.getKey()
+    //                                  .getSource() );
+    //            addFromDirectRelationships( rels );
+    //        }
+    //
+    //        public Builder( final EGraphSessionConfiguration config, final URI source, final ProjectVersionRef projectRef,
+    //                        final EGraphDriver driver, final String... activeProfiles )
+    //            throws GraphDriverException
+    //        {
+    //            this.session = driver.createSession( config );
+    //            this.driver = driver;
+    //            this.root = projectRef;
+    //            this.rootSource = source;
+    //            this.sources.add( source );
+    //        }
+    //
+    //        public Builder( final EGraphSessionConfiguration config, final EProjectKey key, final EGraphDriver driver )
+    //            throws GraphDriverException
+    //        {
+    //            this.session = driver.createSession( config );
+    //            this.root = key.getProject();
+    //            this.rootSource = key.getSource();
+    //            this.sources.add( key.getSource() );
+    //            this.driver = driver;
+    //        }
+    //
+    //        public Builder( final EGraphSession session, final EProjectRelationships rels, final EGraphDriver driver )
+    //            throws GraphDriverException
+    //        {
+    //            this.session = session;
+    //            this.driver = driver;
+    //            this.root = rels.getKey()
+    //                            .getProject();
+    //            this.rootSource = rels.getKey()
+    //                                  .getSource();
+    //            this.sources.add( rels.getKey()
+    //                                  .getSource() );
+    //            addFromDirectRelationships( rels );
+    //        }
+    //
+    //        public Builder( final EGraphSession session, final URI source, final ProjectVersionRef projectRef,
+    //                        final EGraphDriver driver, final String... activeProfiles )
+    //            throws GraphDriverException
+    //        {
+    //            this.session = session;
+    //            this.driver = driver;
+    //            this.root = projectRef;
+    //            this.rootSource = source;
+    //            this.sources.add( source );
+    //        }
+    //
+    //        public Builder( final EGraphSession session, final EProjectKey key, final EGraphDriver driver )
+    //            throws GraphDriverException
+    //        {
+    //            this.session = session;
+    //            this.root = key.getProject();
+    //            this.rootSource = key.getSource();
+    //            this.sources.add( key.getSource() );
+    //            this.driver = driver;
+    //        }
+    //
+    //        public Builder withFilter( final ProjectRelationshipFilter filter )
+    //        {
+    //            this.filter = filter;
+    //            return this;
+    //        }
+    //
+    //        public Builder withParent( final ParentRelationship parent )
+    //        {
+    //            if ( parent.getDeclaring()
+    //                       .equals( root ) )
+    //            {
+    //                relationships.add( parent );
+    //            }
+    //            else
+    //            {
+    //                relationships.add( parent.cloneFor( root ) );
+    //            }
+    //            return this;
+    //        }
+    //
+    //        public Builder withDirectProjectRelationships( final EProjectRelationships... rels )
+    //        {
+    //            return withDirectProjectRelationships( Arrays.asList( rels ) );
+    //        }
+    //
+    //        public Builder withDirectProjectRelationships( final Collection<EProjectRelationships> rels )
+    //        {
+    //            for ( final EProjectRelationships relationships : rels )
+    //            {
+    //                this.sources.add( relationships.getKey()
+    //                                               .getSource() );
+    //                if ( relationships.getKey()
+    //                                  .getProject()
+    //                                  .equals( root ) )
+    //                {
+    //                    addFromDirectRelationships( relationships );
+    //                }
+    //                else
+    //                {
+    //                    this.projects.add( relationships );
+    //                }
+    //            }
+    //
+    //            return this;
+    //        }
+    //
+    //        private void addFromDirectRelationships( final EProjectRelationships relationships )
+    //        {
+    //            this.relationships.clear();
+    //            this.relationships.add( relationships.getParent() );
+    //            this.relationships.addAll( relationships.getDependencies() );
+    //            this.relationships.addAll( relationships.getManagedDependencies() );
+    //
+    //            this.relationships.addAll( relationships.getPlugins() );
+    //            this.relationships.addAll( relationships.getManagedPlugins() );
+    //
+    //            this.relationships.addAll( relationships.getExtensions() );
+    //
+    //            if ( relationships.getPluginDependencies() != null )
+    //            {
+    //                for ( final Map.Entry<PluginRelationship, List<PluginDependencyRelationship>> entry : relationships.getPluginDependencies()
+    //                                                                                                                   .entrySet() )
+    //                {
+    //                    if ( entry.getValue() != null )
+    //                    {
+    //                        this.relationships.addAll( entry.getValue() );
+    //                    }
+    //                }
+    //            }
+    //        }
+    //
+    //        public Builder withDependencies( final List<DependencyRelationship> rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( rels );
+    //            return this;
+    //        }
+    //
+    //        private void addSources( final Iterable<? extends ProjectRelationship<?>> rels )
+    //        {
+    //            for ( final ProjectRelationship<?> rel : rels )
+    //            {
+    //                this.sources.addAll( rel.getSources() );
+    //            }
+    //        }
+    //
+    //        private <T extends ProjectRelationship<?>> void addSources( final T... rels )
+    //        {
+    //            for ( final ProjectRelationship<?> rel : rels )
+    //            {
+    //                this.sources.addAll( rel.getSources() );
+    //            }
+    //        }
+    //
+    //        public Builder withDependencies( final DependencyRelationship... rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( Arrays.asList( rels ) );
+    //            return this;
+    //        }
+    //
+    //        public Builder withPlugins( final Collection<PluginRelationship> rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( rels );
+    //            return this;
+    //        }
+    //
+    //        public Builder withPlugins( final PluginRelationship... rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( Arrays.asList( rels ) );
+    //            return this;
+    //        }
+    //
+    //        public Builder withPluginLevelDependencies( final Collection<PluginDependencyRelationship> rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( rels );
+    //            return this;
+    //        }
+    //
+    //        public Builder withPluginLevelDependencies( final PluginDependencyRelationship... rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( Arrays.asList( rels ) );
+    //            return this;
+    //        }
+    //
+    //        public Builder withExtensions( final Collection<ExtensionRelationship> rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( rels );
+    //            return this;
+    //        }
+    //
+    //        public Builder withExtensions( final ExtensionRelationship... rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( Arrays.asList( rels ) );
+    //            return this;
+    //        }
+    //
+    //        public Builder withExactRelationships( final Collection<ProjectRelationship<?>> rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( rels );
+    //            return this;
+    //        }
+    //
+    //        public Builder withExactRelationships( final ProjectRelationship<?>... rels )
+    //        {
+    //            addSources( rels );
+    //            this.relationships.addAll( Arrays.asList( rels ) );
+    //            return this;
+    //        }
+    //
+    //        public Builder withRelationships( final Collection<ProjectRelationship<?>> rels )
+    //        {
+    //            addSources( rels );
+    //            final Set<PluginDependencyRelationship> pluginDepRels = new HashSet<PluginDependencyRelationship>();
+    //            for ( final ProjectRelationship<?> rel : rels )
+    //            {
+    //                switch ( rel.getType() )
+    //                {
+    //                    case DEPENDENCY:
+    //                    {
+    //                        final DependencyRelationship dr = (DependencyRelationship) rel;
+    //                        withDependencies( dr );
+    //
+    //                        break;
+    //                    }
+    //                    case PLUGIN:
+    //                    {
+    //                        final PluginRelationship pr = (PluginRelationship) rel;
+    //                        withPlugins( pr );
+    //
+    //                        break;
+    //                    }
+    //                    case EXTENSION:
+    //                    {
+    //                        withExtensions( (ExtensionRelationship) rel );
+    //                        break;
+    //                    }
+    //                    case PLUGIN_DEP:
+    //                    {
+    //                        // load all plugin relationships first.
+    //                        pluginDepRels.add( (PluginDependencyRelationship) rel );
+    //                        break;
+    //                    }
+    //                    case PARENT:
+    //                    {
+    //                        withParent( (ParentRelationship) rel );
+    //                        break;
+    //                    }
+    //                }
+    //            }
+    //
+    //            withPluginLevelDependencies( pluginDepRels );
+    //
+    //            return this;
+    //        }
+    //
+    //        public EProjectGraph build()
+    //            throws GraphDriverException
+    //        {
+    //            boolean foundParent = false;
+    //            for ( final ProjectRelationship<?> rel : relationships )
+    //            {
+    //                if ( rel instanceof ParentRelationship && rel.getDeclaring()
+    //                                                             .equals( root ) )
+    //                {
+    //                    foundParent = true;
+    //                    break;
+    //                }
+    //            }
+    //
+    //            final EProjectKey key = new EProjectKey( rootSource, root );
+    //            if ( !foundParent )
+    //            {
+    //                relationships.add( new ParentRelationship( key.getSource(), key.getProject() ) );
+    //            }
+    //
+    //            return new EProjectGraph( session, key, relationships, projects, cycles, filter, driver );
+    //        }
+    //
+    //        public Builder withCycles( final Set<EProjectCycle> cycles )
+    //        {
+    //            if ( cycles != null )
+    //            {
+    //                this.cycles = cycles;
+    //            }
+    //
+    //            return this;
+    //        }
+    //
+    //    }
 
-        private final Set<ProjectRelationship<?>> relationships = new HashSet<ProjectRelationship<?>>();
-
-        private final Set<EProjectRelationships> projects = new HashSet<EProjectRelationships>();
-
-        private Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
-
-        private final EGraphDriver driver;
-
-        private ProjectRelationshipFilter filter;
-
-        private final EGraphSession session;
-
-        public Builder( final EGraphSessionConfiguration config, final EProjectRelationships rels,
-                        final EGraphDriver driver )
-            throws GraphDriverException
-        {
-            this.session = driver.createSession( config );
-            this.driver = driver;
-            this.key = rels.getKey();
-            addFromDirectRelationships( rels );
-        }
-
-        public Builder( final EGraphSessionConfiguration config, final URI source, final ProjectVersionRef projectRef,
-                        final EGraphDriver driver, final String... activeProfiles )
-            throws GraphDriverException
-        {
-            this.session = driver.createSession( config );
-            this.driver = driver;
-            this.key = new EProjectKey( source, projectRef );
-        }
-
-        public Builder( final EGraphSessionConfiguration config, final EProjectKey key, final EGraphDriver driver )
-            throws GraphDriverException
-        {
-            this.session = driver.createSession( config );
-            this.key = key;
-            this.driver = driver;
-        }
-
-        public Builder( final EGraphSession session, final EProjectRelationships rels, final EGraphDriver driver )
-            throws GraphDriverException
-        {
-            this.session = session;
-            this.driver = driver;
-            this.key = rels.getKey();
-            addFromDirectRelationships( rels );
-        }
-
-        public Builder( final EGraphSession session, final URI source, final ProjectVersionRef projectRef,
-                        final EGraphDriver driver, final String... activeProfiles )
-            throws GraphDriverException
-        {
-            this.session = session;
-            this.driver = driver;
-            this.key = new EProjectKey( source, projectRef );
-        }
-
-        public Builder( final EGraphSession session, final EProjectKey key, final EGraphDriver driver )
-            throws GraphDriverException
-        {
-            this.session = session;
-            this.key = key;
-            this.driver = driver;
-        }
-
-        public Builder withFilter( final ProjectRelationshipFilter filter )
-        {
-            this.filter = filter;
-            return this;
-        }
-
-        public Builder withParent( final ParentRelationship parent )
-        {
-            if ( parent.getDeclaring()
-                       .equals( key.getProject() ) )
-            {
-                relationships.add( parent );
-            }
-            else
-            {
-                relationships.add( parent.cloneFor( key.getProject() ) );
-            }
-            return this;
-        }
-
-        public Builder withDirectProjectRelationships( final EProjectRelationships... rels )
-        {
-            return withDirectProjectRelationships( Arrays.asList( rels ) );
-        }
-
-        public Builder withDirectProjectRelationships( final Collection<EProjectRelationships> rels )
-        {
-            for ( final EProjectRelationships relationships : rels )
-            {
-                if ( relationships.getKey()
-                                  .equals( key ) )
-                {
-                    addFromDirectRelationships( relationships );
-                }
-                else
-                {
-                    this.projects.add( relationships );
-                }
-            }
-
-            return this;
-        }
-
-        private void addFromDirectRelationships( final EProjectRelationships relationships )
-        {
-            this.relationships.clear();
-            this.relationships.add( relationships.getParent() );
-            this.relationships.addAll( relationships.getDependencies() );
-            this.relationships.addAll( relationships.getManagedDependencies() );
-
-            this.relationships.addAll( relationships.getPlugins() );
-            this.relationships.addAll( relationships.getManagedPlugins() );
-
-            this.relationships.addAll( relationships.getExtensions() );
-
-            if ( relationships.getPluginDependencies() != null )
-            {
-                for ( final Map.Entry<PluginRelationship, List<PluginDependencyRelationship>> entry : relationships.getPluginDependencies()
-                                                                                                                   .entrySet() )
-                {
-                    if ( entry.getValue() != null )
-                    {
-                        this.relationships.addAll( entry.getValue() );
-                    }
-                }
-            }
-        }
-
-        public Builder withDependencies( final List<DependencyRelationship> rels )
-        {
-            this.relationships.addAll( rels );
-            return this;
-        }
-
-        public Builder withDependencies( final DependencyRelationship... rels )
-        {
-            this.relationships.addAll( Arrays.asList( rels ) );
-            return this;
-        }
-
-        public Builder withPlugins( final Collection<PluginRelationship> rels )
-        {
-            this.relationships.addAll( rels );
-            return this;
-        }
-
-        public Builder withPlugins( final PluginRelationship... rels )
-        {
-            this.relationships.addAll( Arrays.asList( rels ) );
-            return this;
-        }
-
-        public Builder withPluginLevelDependencies( final Collection<PluginDependencyRelationship> rels )
-        {
-            this.relationships.addAll( rels );
-            return this;
-        }
-
-        public Builder withPluginLevelDependencies( final PluginDependencyRelationship... rels )
-        {
-            this.relationships.addAll( Arrays.asList( rels ) );
-            return this;
-        }
-
-        public Builder withExtensions( final Collection<ExtensionRelationship> rels )
-        {
-            this.relationships.addAll( rels );
-            return this;
-        }
-
-        public Builder withExtensions( final ExtensionRelationship... rels )
-        {
-            this.relationships.addAll( Arrays.asList( rels ) );
-            return this;
-        }
-
-        public Builder withExactRelationships( final Collection<ProjectRelationship<?>> relationships )
-        {
-            this.relationships.addAll( relationships );
-            return this;
-        }
-
-        public Builder withExactRelationships( final ProjectRelationship<?>... relationships )
-        {
-            this.relationships.addAll( Arrays.asList( relationships ) );
-            return this;
-        }
-
-        public Builder withRelationships( final Collection<ProjectRelationship<?>> relationships )
-        {
-            final Set<PluginDependencyRelationship> pluginDepRels = new HashSet<PluginDependencyRelationship>();
-            for ( final ProjectRelationship<?> rel : relationships )
-            {
-                switch ( rel.getType() )
-                {
-                    case DEPENDENCY:
-                    {
-                        final DependencyRelationship dr = (DependencyRelationship) rel;
-                        withDependencies( dr );
-
-                        break;
-                    }
-                    case PLUGIN:
-                    {
-                        final PluginRelationship pr = (PluginRelationship) rel;
-                        withPlugins( pr );
-
-                        break;
-                    }
-                    case EXTENSION:
-                    {
-                        withExtensions( (ExtensionRelationship) rel );
-                        break;
-                    }
-                    case PLUGIN_DEP:
-                    {
-                        // load all plugin relationships first.
-                        pluginDepRels.add( (PluginDependencyRelationship) rel );
-                        break;
-                    }
-                    case PARENT:
-                    {
-                        withParent( (ParentRelationship) rel );
-                        break;
-                    }
-                }
-            }
-
-            withPluginLevelDependencies( pluginDepRels );
-
-            return this;
-        }
-
-        public EProjectGraph build()
-            throws GraphDriverException
-        {
-            boolean foundParent = false;
-            for ( final ProjectRelationship<?> rel : relationships )
-            {
-                if ( rel instanceof ParentRelationship && rel.getDeclaring()
-                                                             .equals( key.getProject() ) )
-                {
-                    foundParent = true;
-                    break;
-                }
-            }
-
-            if ( !foundParent )
-            {
-                relationships.add( new ParentRelationship( key.getSource(), key.getProject(), key.getProject() ) );
-            }
-
-            return new EProjectGraph( session, key, relationships, projects, cycles, filter, driver );
-        }
-
-        public Builder withCycles( final Set<EProjectCycle> cycles )
-        {
-            if ( cycles != null )
-            {
-                this.cycles = cycles;
-            }
-
-            return this;
-        }
-
-    }
-
-    public Set<ProjectRelationship<?>> add( final EProjectRelationships rels )
+    public Set<ProjectRelationship<?>> add( final EProjectDirectRelationships rels )
+        throws GraphDriverException
     {
         return addAll( rels.getExactAllRelationships() );
     }
@@ -507,6 +541,7 @@ public class EProjectGraph
 
     @Override
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
+        throws GraphDriverException
     {
         if ( rels == null )
         {
@@ -527,53 +562,9 @@ public class EProjectGraph
         return result;
     }
 
-    @Override
-    public boolean connectFor( final EProjectKey key )
-        throws GraphDriverException
-    {
-        final EGraphDriver driver = getDriver();
-        if ( driver instanceof GloballyBackedGraphDriver )
-        {
-            if ( ( (GloballyBackedGraphDriver) driver ).includeGraph( key.getProject() ) )
-            {
-                for ( final EProjectNet net : getSuperNets() )
-                {
-                    final EGraphDriver d = net.getDriver();
-                    if ( d instanceof GloballyBackedGraphDriver )
-                    {
-                        ( (GloballyBackedGraphDriver) d ).includeGraph( key.getProject() );
-                    }
-                }
-
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    @Override
-    public void connect( final EProjectGraph graph )
-        throws GraphDriverException
-    {
-        if ( getDriver() instanceof GloballyBackedGraphDriver )
-        {
-            connectFor( graph.getKey() );
-        }
-        else if ( !graph.getDriver()
-                        .isDerivedFrom( getDriver() ) )
-        {
-            addAll( graph.getExactAllRelationships() );
-            for ( final EProjectNet net : getSuperNets() )
-            {
-                net.addAll( graph.getExactAllRelationships() );
-            }
-        }
-    }
-
     public ProjectVersionRef getRoot()
     {
-        return key.getProject();
+        return project;
     }
 
     public void traverse( final ProjectNetTraversal traversal )
@@ -585,7 +576,7 @@ public class EProjectGraph
     protected void traverse( final ProjectVersionRef ref, final ProjectNetTraversal traversal )
         throws GraphDriverException
     {
-        driver.traverse( traversal, this, ref );
+        driver.traverse( view, traversal, this, ref );
     }
 
     @Override
@@ -625,13 +616,13 @@ public class EProjectGraph
     @Override
     public Set<EProjectCycle> getCycles()
     {
-        return driver.getCycles();
+        return driver.getCycles( view );
     }
 
     @Override
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
-        final Collection<? extends ProjectRelationship<?>> rels = driver.getRelationshipsTargeting( ref );
+        final Collection<? extends ProjectRelationship<?>> rels = driver.getRelationshipsTargeting( view, ref );
         if ( rels == null )
         {
             return null;
@@ -646,87 +637,89 @@ public class EProjectGraph
         return driver;
     }
 
-    @Override
-    public EProjectGraph getGraph( final EProjectKey key )
-        throws GraphDriverException
-    {
-        return getGraph( null, key );
-    }
-
-    @Override
-    public EProjectGraph getGraph( final ProjectRelationshipFilter filter, final EProjectKey key )
-        throws GraphDriverException
-    {
-        if ( driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() ) )
-        {
-            return new EProjectGraph( session, this, filter, key );
-        }
-
-        return null;
-    }
-
-    @Override
-    public EProjectWeb getWeb( final EProjectKey... keys )
-        throws GraphDriverException
-    {
-        return getWeb( null, keys );
-    }
-
-    @Override
-    public EProjectWeb getWeb( final ProjectRelationshipFilter filter, final EProjectKey... keys )
-        throws GraphDriverException
-    {
-        for ( final EProjectKey key : keys )
-        {
-            if ( !driver.containsProject( key.getProject() ) || driver.isMissing( key.getProject() ) )
-            {
-                return null;
-            }
-        }
-
-        return new EProjectWeb( session, this, filter, keys );
-    }
+    //    @Override
+    //    public EProjectGraph getGraph( final ProjectVersionRef ref, final EGraphSession session )
+    //        throws GraphDriverException
+    //    {
+    //        return getGraph( null, ref, session );
+    //    }
+    //
+    //    @Override
+    //    public EProjectGraph getGraph( final ProjectRelationshipFilter filter, final ProjectVersionRef ref,
+    //                                   final EGraphSession session )
+    //        throws GraphDriverException
+    //    {
+    //        if ( driver.containsProject( view, ref ) && !driver.isMissing( view, ref ) )
+    //        {
+    //            return new EProjectGraph( session, this, filter, ref );
+    //        }
+    //
+    //        return null;
+    //    }
+    //
+    //    @Override
+    //    public EProjectWeb getWeb( final EGraphSession session, final ProjectVersionRef... refs )
+    //        throws GraphDriverException
+    //    {
+    //        return getWeb( session, null, refs );
+    //    }
+    //
+    //    @Override
+    //    public EProjectWeb getWeb( final EGraphSession session, final ProjectRelationshipFilter filter,
+    //                               final ProjectVersionRef... refs )
+    //        throws GraphDriverException
+    //    {
+    //        for ( final ProjectVersionRef ref : refs )
+    //        {
+    //            if ( !driver.containsProject( ref ) || driver.isMissing( ref ) )
+    //            {
+    //                return null;
+    //            }
+    //        }
+    //
+    //        return new EProjectWeb( session, this, filter, refs );
+    //    }
 
     @Override
     public EGraphSession getSession()
     {
-        return session;
+        return view.getSession();
     }
 
     @Override
-    public boolean containsGraph( final EProjectKey key )
+    public boolean containsGraph( final ProjectVersionRef ref )
     {
-        return driver.containsProject( key.getProject() ) && !driver.isMissing( key.getProject() );
+        return driver.containsProject( view, ref ) && !driver.isMissing( view, ref );
     }
 
     @Override
     public Set<ProjectVersionRef> getAllProjects()
     {
-        return driver.getAllProjects();
+        return driver.getAllProjects( view );
     }
 
     @Override
-    public Map<String, String> getMetadata( final EProjectKey key )
+    public Map<String, String> getMetadata( final ProjectVersionRef ref )
     {
-        return driver.getProjectMetadata( key.getProject() );
+        return driver.getMetadata( ref );
     }
 
     @Override
     public void addMetadata( final EProjectKey key, final String name, final String value )
     {
-        driver.addProjectMetadata( key.getProject(), name, value );
+        driver.addMetadata( key.getProject(), name, value );
     }
 
     @Override
     public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
     {
-        driver.addProjectMetadata( key.getProject(), metadata );
+        driver.addMetadata( key.getProject(), metadata );
     }
 
     @Override
     public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
     {
-        return driver.getProjectsWithMetadata( key );
+        return driver.getProjectsWithMetadata( view, key );
     }
 
     @Override
@@ -736,30 +729,30 @@ public class EProjectGraph
         driver.reindex();
     }
 
-    @Override
-    public ProjectVersionRef selectVersionFor( final ProjectVersionRef variable, final SingleVersion version )
-        throws GraphDriverException
-    {
-        return session.selectVersion( variable, version );
-    }
-
-    @Override
-    public Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
-        throws GraphDriverException
-    {
-        return session.clearVersionSelections();
-    }
+    //    @Override
+    //    public ProjectVersionRef selectVersionFor( final ProjectVersionRef variable, final SingleVersion version )
+    //        throws GraphDriverException
+    //    {
+    //        return session.selectVersion( variable, version );
+    //    }
+    //
+    //    @Override
+    //    public Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
+    //        throws GraphDriverException
+    //    {
+    //        return session.clearVersionSelections();
+    //    }
 
     @Override
     public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs )
     {
-        return driver.getAllPathsTo( refs );
+        return driver.getAllPathsTo( view, refs );
     }
 
     @Override
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
-        return driver.introducesCycle( rel );
+        return driver.introducesCycle( view, rel );
     }
 
     @Override
@@ -767,7 +760,7 @@ public class EProjectGraph
     public EProjectGraph filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectGraph( session, this, filter, key );
+        return new EProjectGraph( view.getSession(), driver, filter, project );
     }
 
     @Override
@@ -779,6 +772,6 @@ public class EProjectGraph
     @Override
     public String toString()
     {
-        return String.format( "EProjectGraph [key: %s, session: %s]", key, session );
+        return String.format( "EProjectGraph [root: %s, session: %s]", project, view.getSession() );
     }
 }

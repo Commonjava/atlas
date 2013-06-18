@@ -4,7 +4,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
+import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -19,21 +20,19 @@ public class RootedNodesCollector
 
     public Direction direction = Direction.OUTGOING;
 
-    public RootedNodesCollector( final Node start, final NeoGraphSession session,
-                                 final ProjectRelationshipFilter filter, final boolean checkExistence )
+    public RootedNodesCollector( final Node start, final EProjectNetView view, final boolean checkExistence )
     {
-        super( start, session, filter, checkExistence );
+        super( start, view.getSession(), view.getFilter(), checkExistence );
         logEnabled = true;
     }
 
-    public RootedNodesCollector( final Set<Node> startNodes, final NeoGraphSession session,
-                                 final ProjectRelationshipFilter filter, final boolean checkExistence )
+    public RootedNodesCollector( final Set<Node> startNodes, final EProjectNetView view, final boolean checkExistence )
     {
-        super( startNodes, session, filter, checkExistence );
+        super( startNodes, view.getSession(), view.getFilter(), checkExistence );
         logEnabled = true;
     }
 
-    private RootedNodesCollector( final Set<Node> startNodes, final NeoGraphSession session,
+    private RootedNodesCollector( final Set<Node> startNodes, final EGraphSession session,
                                   final ProjectRelationshipFilter filter, final boolean checkExistence,
                                   final Direction direction )
     {

@@ -22,7 +22,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -34,81 +33,75 @@ public interface EProjectNet
     extends EProjectRelationshipCollection
 {
 
-    Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
+    <T extends ProjectRelationship<?>> Set<T> addAll( Collection<T> rels )
         throws GraphDriverException;
-
-    ProjectVersionRef selectVersionFor( ProjectVersionRef variable, SingleVersion version )
-        throws GraphDriverException;
-
-    EGraphDriver getDriver();
-
-    EGraphSession getSession();
-
-    boolean isComplete();
-
-    boolean isConcrete();
-
-    Set<ProjectVersionRef> getIncompleteSubgraphs();
-
-    Set<ProjectVersionRef> getVariableSubgraphs();
-
-    //    void recomputeIncompleteSubgraphs();
-
-    Set<EProjectCycle> getCycles();
-
-    boolean introducesCycle( ProjectRelationship<?> rel );
 
     void addCycle( final EProjectCycle cycle );
 
-    boolean isCycleParticipant( ProjectRelationship<?> rel );
-
-    boolean isCycleParticipant( ProjectVersionRef ref );
-
-    Set<ProjectRelationship<?>> getRelationshipsTargeting( ProjectVersionRef ref );
-
-    Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs );
-
-    EProjectGraph getGraph( ProjectRelationshipFilter filter, EProjectKey key )
-        throws GraphDriverException;
-
-    EProjectGraph getGraph( EProjectKey key )
-        throws GraphDriverException;
-
-    EProjectWeb getWeb( EProjectKey... keys )
-        throws GraphDriverException;
-
-    EProjectWeb getWeb( ProjectRelationshipFilter filter, EProjectKey... keys )
-        throws GraphDriverException;
-
-    boolean containsGraph( EProjectKey eProjectKey );
-
-    Set<ProjectVersionRef> getAllProjects();
-
-    //    Set<ProjectRelationship<?>> getAllRelationships();
-
-    Map<String, String> getMetadata( EProjectKey key );
+    void addDisconnectedProject( ProjectVersionRef ref );
 
     void addMetadata( EProjectKey key, String name, String value );
 
     void addMetadata( EProjectKey key, Map<String, String> metadata );
 
-    List<EProjectNet> getSuperNets();
+    //    Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
+    //        throws GraphDriverException;
 
-    <T extends ProjectRelationship<?>> Set<T> addAll( Collection<T> rels );
+    boolean containsGraph( ProjectVersionRef ref );
+
+    <T extends EProjectNet> T filteredInstance( ProjectRelationshipFilter filter )
+        throws GraphDriverException;
+
+    boolean introducesCycle( ProjectRelationship<?> rel );
+
+    boolean isComplete();
+
+    boolean isConcrete();
+
+    //    void recomputeIncompleteSubgraphs();
+
+    boolean isCycleParticipant( ProjectRelationship<?> rel );
+
+    boolean isCycleParticipant( ProjectVersionRef ref );
+
+    Set<EProjectCycle> getCycles();
+
+    EGraphDriver getDriver();
+
+    EGraphSession getSession();
+
+    Set<ProjectVersionRef> getIncompleteSubgraphs();
+
+    Set<ProjectVersionRef> getVariableSubgraphs();
+
+    Set<ProjectRelationship<?>> getRelationshipsTargeting( ProjectVersionRef ref );
+
+    Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs );
+
+    //    EProjectGraph getGraph( ProjectRelationshipFilter filter, ProjectVersionRef ref, EGraphSession session )
+    //        throws GraphDriverException;
+    //
+    //    EProjectGraph getGraph( ProjectVersionRef ref, EGraphSession session )
+    //        throws GraphDriverException;
+    //
+    //    EProjectWeb getWeb( EGraphSession session, ProjectVersionRef... refs )
+    //        throws GraphDriverException;
+    //
+    //    EProjectWeb getWeb( EGraphSession session, ProjectRelationshipFilter filter, ProjectVersionRef... refs )
+    //        throws GraphDriverException;
+
+    Set<ProjectVersionRef> getAllProjects();
+
+    //    Set<ProjectRelationship<?>> getAllRelationships();
+
+    Map<String, String> getMetadata( ProjectVersionRef ref );
 
     Set<ProjectVersionRef> getProjectsWithMetadata( String key );
 
     void reindex()
         throws GraphDriverException;
 
-    boolean connectFor( EProjectKey key )
-        throws GraphDriverException;
+    //    ProjectVersionRef selectVersionFor( ProjectVersionRef variable, SingleVersion version )
+    //        throws GraphDriverException;
 
-    void connect( EProjectGraph graph )
-        throws GraphDriverException;
-
-    <T extends EProjectNet> T filteredInstance( ProjectRelationshipFilter filter )
-        throws GraphDriverException;
-
-    void addDisconnectedProject( ProjectVersionRef ref );
 }

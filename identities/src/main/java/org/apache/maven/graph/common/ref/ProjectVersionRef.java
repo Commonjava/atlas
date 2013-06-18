@@ -89,21 +89,19 @@ public class ProjectVersionRef
         return versionString;
     }
 
-    public ProjectRef asProjectRef()
-    {
-        return new ProjectRef( getGroupId(), getArtifactId() );
-    }
-
+    @Override
     public boolean isRelease()
     {
         return getVersionSpec().isRelease();
     }
 
+    @Override
     public boolean isSpecificVersion()
     {
         return getVersionSpec().isSingle();
     }
 
+    @Override
     public boolean matchesVersion( final SingleVersion version )
     {
         return getVersionSpec().contains( version );
@@ -115,6 +113,7 @@ public class ProjectVersionRef
         return selectVersion( single );
     }
 
+    @Override
     public ProjectVersionRef selectVersion( final SingleVersion version )
     {
         final VersionSpec versionSpec = getVersionSpec();
@@ -137,6 +136,7 @@ public class ProjectVersionRef
         return new ProjectVersionRef( groupId, artifactId, version );
     }
 
+    @Override
     public synchronized VersionSpec getVersionSpec()
     {
         if ( versionSpec == null )
@@ -220,16 +220,19 @@ public class ProjectVersionRef
         return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getVersionString() );
     }
 
+    @Override
     public boolean isCompound()
     {
         return !getVersionSpec().isSingle();
     }
 
+    @Override
     public boolean isSnapshot()
     {
         return getVersionSpec().isSnapshot();
     }
 
+    @Override
     public synchronized String getVersionString()
     {
         if ( versionString == null )

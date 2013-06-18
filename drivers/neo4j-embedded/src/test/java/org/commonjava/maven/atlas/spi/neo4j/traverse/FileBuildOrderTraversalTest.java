@@ -17,7 +17,7 @@
 package org.commonjava.maven.atlas.spi.neo4j.traverse;
 
 import org.apache.log4j.Level;
-import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.apache.maven.graph.effective.EGraphManager;
 import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
 import org.commonjava.maven.atlas.tck.effective.traverse.BuildOrderTraversalTCK;
 import org.commonjava.util.logging.Log4jUtil;
@@ -30,6 +30,8 @@ public class FileBuildOrderTraversalTest
     @Rule
     public FileDriverFixture fixture = new FileDriverFixture();
 
+    private EGraphManager manager;
+
     @BeforeClass
     public static void logging()
     {
@@ -37,9 +39,15 @@ public class FileBuildOrderTraversalTest
     }
 
     @Override
-    protected EGraphDriver newDriverInstance()
+    protected synchronized EGraphManager getManager()
         throws Exception
     {
-        return fixture.newDriverInstance();
+        if ( manager == null )
+        {
+            manager = new EGraphManager( fixture.newDriverInstance() );
+        }
+
+        return manager;
     }
+
 }

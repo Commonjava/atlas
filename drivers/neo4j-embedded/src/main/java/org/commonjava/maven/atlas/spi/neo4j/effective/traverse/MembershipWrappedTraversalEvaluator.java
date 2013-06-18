@@ -23,7 +23,6 @@ import java.util.Set;
 
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
-import org.commonjava.maven.atlas.spi.neo4j.effective.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
@@ -41,7 +40,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final Logger logger = new Logger( getClass() );
 
-    private final AbstractNeo4JEGraphDriver driver;
+    private final Set<Long> rootIds;
 
     private final ProjectNetTraversal traversal;
 
@@ -73,10 +72,10 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private int evalPreChecks = 0;
 
-    public MembershipWrappedTraversalEvaluator( final AbstractNeo4JEGraphDriver driver,
-                                                final ProjectNetTraversal traversal, final int pass )
+    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal,
+                                                final int pass )
     {
-        this.driver = driver;
+        this.rootIds = rootIds;
         this.traversal = traversal;
         this.pass = pass;
     }
@@ -84,7 +83,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     private MembershipWrappedTraversalEvaluator( final MembershipWrappedTraversalEvaluator<STATE> ev,
                                                  final boolean reversedExpander )
     {
-        this.driver = ev.driver;
+        this.rootIds = ev.rootIds;
         this.traversal = ev.traversal;
         this.pass = ev.pass;
         this.reversedExpander = reversedExpander;
@@ -102,6 +101,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                      evalPreChecks );
     }
 
+    @Override
     public Evaluation evaluate( final Path path )
     {
         evalHits++;
@@ -136,7 +136,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             return Evaluation.EXCLUDE_AND_PRUNE;
         }
 
-        final Set<Long> roots = driver.getRootIds();
+        final Set<Long> roots = rootIds;
         if ( roots == null || roots.isEmpty() || roots.contains( path.startNode()
                                                                      .getId() ) )
         {
@@ -182,6 +182,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         return Evaluation.EXCLUDE_AND_PRUNE;
     }
 
+    @Override
     public Iterable<Relationship> expand( final Path path, final BranchState<STATE> state )
     {
         expHits++;
@@ -190,7 +191,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         //        logger.info( "START expansion for: %s", path );
 
         // TODO: Is node(0) appropriate to see??
-        final Set<Long> roots = driver.getRootIds();
+        final Set<Long> roots = rootIds;
         if ( node.getId() != 0 && roots != null && roots.isEmpty() && !roots.contains( path.startNode()
                                                                                            .getId() ) )
         {
@@ -283,6 +284,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         return rels;
     }
 
+    @Override
     public PathExpander<STATE> reverse()
     {
         return new MembershipWrappedTraversalEvaluator<STATE>( this, true );

@@ -11,7 +11,6 @@ import java.util.Set;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.spi.GraphDriverException;
-import org.apache.maven.graph.spi.effective.EGraphDriver;
 
 public abstract class EGraphSession
 {
@@ -23,23 +22,15 @@ public abstract class EGraphSession
     private final Map<ProjectVersionRef, SingleVersion> selectedVersions =
         new HashMap<ProjectVersionRef, SingleVersion>();
 
-    private final EGraphDriver driver;
-
     private final String id;
 
     private boolean open = true;
 
-    protected EGraphSession( final String id, final EGraphDriver driver, final EGraphSessionConfiguration config )
+    protected EGraphSession( final String id, final EGraphSessionConfiguration config )
     {
         this.id = id;
-        this.driver = driver;
         this.activePomLocations = config.getActivePomLocations();
         this.activeSources = config.getActivePomLocations();
-    }
-
-    public final EGraphDriver getDriver()
-    {
-        return driver;
     }
 
     public final String getId()
@@ -121,7 +112,6 @@ public abstract class EGraphSession
     {
         final int prime = 31;
         int result = 1;
-        result = prime + result + ( ( driver == null ) ? 0 : driver.hashCode() );
         result =
             prime * result + ( ( activePomLocations == null ) ? 0 : new HashSet<URI>( activePomLocations ).hashCode() );
         result = prime * result + ( ( activeSources == null ) ? 0 : new HashSet<URI>( activeSources ).hashCode() );
@@ -144,17 +134,6 @@ public abstract class EGraphSession
             return false;
         }
         final EGraphSession other = (EGraphSession) obj;
-        if ( driver == null )
-        {
-            if ( other.driver != null )
-            {
-                return false;
-            }
-        }
-        else if ( !driver.equals( other.driver ) )
-        {
-            return false;
-        }
 
         if ( activePomLocations == null )
         {

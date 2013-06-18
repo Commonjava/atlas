@@ -54,6 +54,11 @@ public class ProjectRef
         return artifactId;
     }
 
+    public ProjectRef asProjectRef()
+    {
+        return new ProjectRef( getGroupId(), getArtifactId() );
+    }
+
     @Override
     public String toString()
     {
@@ -97,6 +102,7 @@ public class ProjectRef
         return true;
     }
 
+    @Override
     public int compareTo( final ProjectRef o )
     {
         int comp = groupId.compareTo( o.groupId );

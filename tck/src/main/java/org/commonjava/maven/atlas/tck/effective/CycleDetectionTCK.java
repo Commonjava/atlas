@@ -29,12 +29,9 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectGraph;
 import org.apache.maven.graph.effective.filter.DependencyFilter;
-import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
-import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.apache.maven.graph.spi.effective.GloballyBackedGraphDriver;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.junit.Test;
 
 public abstract class CycleDetectionTCK
@@ -53,12 +50,12 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
         /* @formatter:off */
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ) )
-                .build();
+        getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ) );
         
+        final EGraphSession session = simpleSession();
+        final EProjectGraph graph = getManager().getGraph( session, project );
+
         final boolean introduces = graph.introducesCycle( new DependencyRelationship( source, dep,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
@@ -77,13 +74,13 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
         /* @formatter:off */
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) )
-                .build();
+        getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
+
+        final EGraphSession session = simpleSession();
+        final EProjectGraph graph = getManager().getGraph( session, project );
 
         final Set<EProjectCycle> cycles = graph.getCycles();
         System.out.println( "Cycles:\n\n" + join( cycles, "\n" ) );
@@ -110,13 +107,13 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
         /* @formatter:off */
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), newDriverInstance() )
-                .withDependencies( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, dep2,  new ArtifactRef( dep,  null, null, false ), null, 0, false ) )
-                .build();
+        getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, dep2,  new ArtifactRef( dep,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
+
+        final EGraphSession session = simpleSession();
+        final EProjectGraph graph = getManager().getGraph( session, project );
 
         final Set<EProjectCycle> cycles = graph.getCycles();
         System.out.println( "Cycles:\n\n" + join( cycles, "\n" ) );
@@ -138,14 +135,6 @@ public abstract class CycleDetectionTCK
     {
         final URI source = sourceURI();
 
-        final EGraphDriver driver = newDriverInstance();
-        if ( !( driver instanceof GloballyBackedGraphDriver ) )
-        {
-            System.out.println( "SKIP; driver is not globally-backed: " + driver.getClass()
-                                                                                .getName() );
-            return;
-        }
-
         final ProjectVersionRef a = new ProjectVersionRef( "project", "A", "1.0" );
         final ProjectVersionRef b = new ProjectVersionRef( "project", "B", "1.0" );
         final ProjectVersionRef c = new ProjectVersionRef( "project", "C", "1.0" );
@@ -156,20 +145,16 @@ public abstract class CycleDetectionTCK
         /* @formatter:off */
         // a --> b --> c --> a
         // d --> e --> c --> a --> b --> c
-        final EProjectGraph graph1 =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, a ), driver )
-                .withDependencies( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, b,  new ArtifactRef( c,  null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
-                .build();
-        
-        final EProjectGraph graph2 =
-                new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, d ), driver )
-                    .withDependencies( new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
-                                       new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
-                    .build();
-                    
+        getManager().storeRelationships( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, b,  new ArtifactRef( c,  null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
+
+        final EGraphSession session = simpleSession();
+        final EProjectGraph graph1 = getManager().getGraph( session, a );
+        final EProjectGraph graph2 = getManager().getGraph( session, d );
 
         final Set<EProjectCycle> cycles1 = graph1.getCycles();
         System.out.println( "Graph 1 Cycles:\n\n" + join( cycles1, "\n" ) );
@@ -217,23 +202,17 @@ public abstract class CycleDetectionTCK
         /* @formatter:off */
         // a --> b --> c --> a
         // d --> e --> c --> a --> b --> c
-        final EGraphDriver driver = newDriverInstance();
-        
-        final EProjectGraph graph1 =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, a ), driver )
-                .withDependencies( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
-                                   new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ) )
-                .withPlugins( new PluginRelationship( source, b,  c, 0, false ) )
-                .build();
-        
-        final EProjectGraph graph2 =
-                new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, d ), driver )
-                    .withDependencies( new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
-                                       new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) )
-                    .withFilter( new DependencyFilter() )
-                    .build();
-                    
+        getManager().storeRelationships( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ),
+                                         new PluginRelationship( source, b,  c, 0, false ),
+                                         new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, e, new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
+
+        final EGraphSession session = simpleSession();
+        final EProjectGraph graph1 = getManager().getGraph( session, a );
+        final EProjectGraph graph2 = getManager().getGraph( session, d )
+                                                 .filteredInstance( new DependencyFilter() );
 
         final Set<EProjectCycle> cycles1 = graph1.getCycles();
         System.out.println( "Graph 1 Cycles:\n\n" + join( cycles1, "\n" ) );

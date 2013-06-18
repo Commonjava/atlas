@@ -20,18 +20,19 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.EProjectDirectRelationships;
 import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.EProjectRelationships;
+import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
@@ -51,10 +52,8 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, myRef, newDriverInstance() )
-            .withParent( new ParentRelationship( source, myRef, parentRef ) )
-            .withDirectProjectRelationships( new EProjectRelationships.Builder( source, parentRef ).withParent( grandRef ).build() )
-            .build();
+        final EProjectGraph graph = getManager().createGraph( simpleSession(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
+        graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ) ) );
         /* @formatter:on */
 
         final Set<ProjectVersionRef> projects = graph.getAllProjects();
@@ -101,10 +100,8 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, myRef, newDriverInstance() )
-            .withParent( new ParentRelationship( source, myRef, parentRef ) )
-            .withDirectProjectRelationships( new EProjectRelationships.Builder( source, parentRef ).withParent( grandRef ).build() )
-            .build();
+        final EProjectGraph graph = getManager().createGraph( simpleSession(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
+        graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ) ) );
         /* @formatter:on */
 
         final AncestryTraversal ancestry = new AncestryTraversal();
@@ -132,6 +129,7 @@ public abstract class AncestryTraversalTCK
 
     }
 
+    @SuppressWarnings( "unchecked" )
     @Test
     public void traverseTwoAncestors_IgnoreNonParentRelationships()
         throws Exception
@@ -143,7 +141,7 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, myRef, newDriverInstance() )
+        final EProjectGraph graph = getManager().createGraph( simpleSession(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) )
             .withParent( new ParentRelationship( source, myRef, parentRef ) )
             .withDependencies(
                   new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),
@@ -155,16 +153,20 @@ public abstract class AncestryTraversalTCK
             )
             .withExtensions(
                 new ExtensionRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0 )
-            )
-            .withDirectProjectRelationships( 
-                 new EProjectRelationships.Builder( source, parentRef )
-                     .withParent( new ParentRelationship( source, parentRef, grandRef ) )
-                     .withDependencies( 
-                        new DependencyRelationship( source, parentRef, new ArtifactRef( new ProjectVersionRef( "other.group", "utils", "3-1" ), null, null, false ), null, 0, false )
-                     )
-                     .build()
-            )
-            .build();
+            ).build()
+        );
+        
+        graph.addAll( Arrays.asList( 
+                new ParentRelationship( source, parentRef, grandRef ), 
+                new DependencyRelationship( 
+                        source, 
+                        parentRef, 
+                        new ArtifactRef( new ProjectVersionRef( "other.group", "utils", "3-1" ), null, null, false ), 
+                        null, 
+                        0, 
+                        false 
+                ) 
+        ) );
         /* @formatter:on */
 
         final AncestryTraversal ancestry = new AncestryTraversal();

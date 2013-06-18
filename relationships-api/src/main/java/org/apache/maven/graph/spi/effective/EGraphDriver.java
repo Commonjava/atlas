@@ -23,11 +23,10 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
@@ -36,16 +35,19 @@ public interface EGraphDriver
     extends Closeable
 {
 
-    void reindex()
-        throws GraphDriverException;
+    /* 
+     * #########################
+     * Mutations are viewless
+     * #########################
+     */
 
-    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( ProjectVersionRef root );
+    boolean addCycle( EProjectCycle cycle );
 
-    Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( ProjectVersionRef root );
+    void addDisconnectedProject( ProjectVersionRef ref );
 
-    Collection<ProjectRelationship<?>> getAllRelationships();
+    void addMetadata( ProjectVersionRef ref, String key, String value );
 
-    Set<List<ProjectRelationship<?>>> getAllPathsTo( ProjectVersionRef... projectVersionRefs );
+    void addMetadata( ProjectVersionRef ref, Map<String, String> metadata );
 
     /**
      * Add the given relationships. Skip/return those that introduce cycles.
@@ -54,59 +56,74 @@ public interface EGraphDriver
      */
     Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel );
 
-    boolean introducesCycle( ProjectRelationship<?> rel );
+    void clearSelectedVersionsFor( String id );
 
-    Set<ProjectVersionRef> getAllProjects();
+    void deRegisterSession( String id );
 
-    void traverse( ProjectNetTraversal traversal, EProjectNet net, ProjectVersionRef root )
+    String registerNewSession( EGraphSessionConfiguration config )
         throws GraphDriverException;
 
-    boolean containsProject( ProjectVersionRef ref );
-
-    boolean containsRelationship( ProjectRelationship<?> rel );
-
-    boolean isDerivedFrom( EGraphDriver driver );
-
-    boolean isMissing( ProjectVersionRef project );
-
-    boolean hasMissingProjects();
-
-    Set<ProjectVersionRef> getMissingProjects();
-
-    boolean hasVariableProjects();
-
-    Set<ProjectVersionRef> getVariableProjects();
-
-    boolean addCycle( EProjectCycle cycle );
-
-    Set<EProjectCycle> getCycles();
-
-    boolean isCycleParticipant( ProjectRelationship<?> rel );
-
-    boolean isCycleParticipant( ProjectVersionRef ref );
-
-    void recomputeIncompleteSubgraphs();
-
-    Map<String, String> getProjectMetadata( ProjectVersionRef ref );
-
-    void addProjectMetadata( ProjectVersionRef ref, String key, String value );
-
-    void addProjectMetadata( ProjectVersionRef ref, Map<String, String> metadata );
-
-    EGraphDriver newInstanceFrom( EProjectNet net, ProjectRelationshipFilter filter, ProjectVersionRef... refs )
+    void recomputeIncompleteSubgraphs()
         throws GraphDriverException;
 
-    EGraphDriver newInstance( EGraphSession session, EProjectNet net, ProjectRelationshipFilter filter,
-                              ProjectVersionRef... refs )
+    void reindex()
         throws GraphDriverException;
 
-    Set<ProjectVersionRef> getProjectsWithMetadata( String key );
+    void selectVersionFor( ProjectVersionRef ref, SingleVersion version, String id );
 
-    Set<ProjectVersionRef> getRoots();
+    /* 
+     * ################################################
+     * Queries require a view
+     * ---
+     * View param is first to support vararg methods
+     * ################################################
+     */
 
-    void addDisconnectedProject( ProjectVersionRef ref );
+    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( EProjectNetView view,
+                                                                             ProjectVersionRef root );
 
-    EGraphSession createSession( EGraphSessionConfiguration config )
+    Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( EProjectNetView view, ProjectVersionRef root );
+
+    Collection<ProjectRelationship<?>> getAllRelationships( EProjectNetView view );
+
+    Set<List<ProjectRelationship<?>>> getAllPathsTo( EProjectNetView view, ProjectVersionRef... projectVersionRefs );
+
+    boolean introducesCycle( EProjectNetView view, ProjectRelationship<?> rel );
+
+    Set<ProjectVersionRef> getAllProjects( EProjectNetView view );
+
+    void traverse( EProjectNetView view, ProjectNetTraversal traversal, EProjectNet net, ProjectVersionRef root )
         throws GraphDriverException;
+
+    boolean containsProject( EProjectNetView view, ProjectVersionRef ref );
+
+    boolean containsRelationship( EProjectNetView view, ProjectRelationship<?> rel );
+
+    boolean isMissing( EProjectNetView view, ProjectVersionRef project );
+
+    boolean hasMissingProjects( EProjectNetView view );
+
+    Set<ProjectVersionRef> getMissingProjects( EProjectNetView view );
+
+    boolean hasVariableProjects( EProjectNetView view );
+
+    Set<ProjectVersionRef> getVariableProjects( EProjectNetView view );
+
+    Set<EProjectCycle> getCycles( EProjectNetView view );
+
+    boolean isCycleParticipant( EProjectNetView view, ProjectRelationship<?> rel );
+
+    boolean isCycleParticipant( EProjectNetView view, ProjectVersionRef ref );
+
+    Map<String, String> getMetadata( ProjectVersionRef ref );
+
+    //    EGraphDriver newInstanceFrom( EProjectNet net, ProjectRelationshipFilter filter, ProjectVersionRef... refs )
+    //        throws GraphDriverException;
+    //
+    //    EGraphDriver newInstance( EGraphSession session, EProjectNet net, ProjectRelationshipFilter filter,
+    //                              ProjectVersionRef... refs )
+    //        throws GraphDriverException;
+
+    Set<ProjectVersionRef> getProjectsWithMetadata( EProjectNetView view, String key );
 
 }

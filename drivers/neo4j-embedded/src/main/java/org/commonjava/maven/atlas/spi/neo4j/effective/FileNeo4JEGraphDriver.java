@@ -18,12 +18,6 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 
 import java.io.File;
 
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectNet;
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.session.EGraphSession;
-import org.apache.maven.graph.spi.GraphDriverException;
-import org.apache.maven.graph.spi.effective.EGraphDriver;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
 public class FileNeo4JEGraphDriver
@@ -42,42 +36,42 @@ public class FileNeo4JEGraphDriver
         super( new GraphDatabaseFactory().newEmbeddedDatabase( dbPath.getAbsolutePath() ), useShutdownHook );
     }
 
-    private FileNeo4JEGraphDriver( final FileNeo4JEGraphDriver driver, final NeoGraphSession session,
-                                   final ProjectRelationshipFilter filter, final ProjectVersionRef... refs )
-        throws GraphDriverException
-    {
-        super( driver, session, filter, refs );
-    }
-
-    @Override
-    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectRelationshipFilter filter,
-                                         final ProjectVersionRef... refs )
-        throws GraphDriverException
-    {
-        final FileNeo4JEGraphDriver driver =
-            new FileNeo4JEGraphDriver( this, getNeoSession( net.getSession() ), filter, refs );
-        return driver;
-    }
-
-    private NeoGraphSession getNeoSession( final EGraphSession session )
-        throws GraphDriverException
-    {
-        if ( !( session instanceof NeoGraphSession ) )
-        {
-            throw new GraphDriverException( "Session of type: %s is incompatible with driver: %s!", session.getClass()
-                                                                                                           .getName(),
-                                            getClass().getName() );
-        }
-
-        return (NeoGraphSession) session;
-    }
-
-    @Override
-    public EGraphDriver newInstance( final EGraphSession session, final EProjectNet net,
-                                     final ProjectRelationshipFilter filter, final ProjectVersionRef... refs )
-        throws GraphDriverException
-    {
-        return new FileNeo4JEGraphDriver( this, getNeoSession( session ), filter, refs );
-    }
+    //    private FileNeo4JEGraphDriver( final FileNeo4JEGraphDriver driver, final NeoGraphSession session,
+    //                                   final ProjectRelationshipFilter filter, final ProjectVersionRef... refs )
+    //        throws GraphDriverException
+    //    {
+    //        super( driver, session, filter, refs );
+    //    }
+    //
+    //    @Override
+    //    public EGraphDriver newInstanceFrom( final EProjectNet net, final ProjectRelationshipFilter filter,
+    //                                         final ProjectVersionRef... refs )
+    //        throws GraphDriverException
+    //    {
+    //        final FileNeo4JEGraphDriver driver =
+    //            new FileNeo4JEGraphDriver( this, getNeoSession( net.getSession() ), filter, refs );
+    //        return driver;
+    //    }
+    //
+    //    private NeoGraphSession getNeoSession( final EGraphSession session )
+    //        throws GraphDriverException
+    //    {
+    //        if ( !( session instanceof NeoGraphSession ) )
+    //        {
+    //            throw new GraphDriverException( "Session of type: %s is incompatible with driver: %s!", session.getClass()
+    //                                                                                                           .getName(),
+    //                                            getClass().getName() );
+    //        }
+    //
+    //        return (NeoGraphSession) session;
+    //    }
+    //
+    //    @Override
+    //    public EGraphDriver newInstance( final EGraphSession session, final EProjectNet net,
+    //                                     final ProjectRelationshipFilter filter, final ProjectVersionRef... refs )
+    //        throws GraphDriverException
+    //    {
+    //        return new FileNeo4JEGraphDriver( this, getNeoSession( session ), filter, refs );
+    //    }
 
 }

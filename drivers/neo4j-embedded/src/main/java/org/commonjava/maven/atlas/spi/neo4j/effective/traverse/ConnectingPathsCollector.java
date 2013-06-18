@@ -5,7 +5,8 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
+import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -18,22 +19,21 @@ public class ConnectingPathsCollector
 
     private final Set<Node> endNodes;
 
-    public ConnectingPathsCollector( final Node start, final Node end, final NeoGraphSession session,
-                                     final ProjectRelationshipFilter filter, final boolean checkExistence )
-    {
-        this( Collections.singleton( start ), Collections.singleton( end ), session, filter, checkExistence );
-    }
-
-    public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes,
-                                     final NeoGraphSession session, final ProjectRelationshipFilter filter,
+    public ConnectingPathsCollector( final Node start, final Node end, final EProjectNetView view,
                                      final boolean checkExistence )
     {
-        super( startNodes, session, filter, checkExistence );
+        this( Collections.singleton( start ), Collections.singleton( end ), view, checkExistence );
+    }
+
+    public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final EProjectNetView view,
+                                     final boolean checkExistence )
+    {
+        super( startNodes, view.getSession(), view.getFilter(), checkExistence );
         this.endNodes = endNodes;
     }
 
     private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes,
-                                      final NeoGraphSession session, final ProjectRelationshipFilter filter,
+                                      final EGraphSession session, final ProjectRelationshipFilter filter,
                                       final boolean checkExistence, final Direction direction )
     {
         super( startNodes, session, filter, checkExistence, direction );

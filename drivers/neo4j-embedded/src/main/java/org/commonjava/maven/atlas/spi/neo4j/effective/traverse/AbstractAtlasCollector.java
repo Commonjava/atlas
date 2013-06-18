@@ -20,7 +20,7 @@ import java.util.Set;
 
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.spi.neo4j.effective.NeoGraphSession;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -49,16 +49,16 @@ public abstract class AbstractAtlasCollector<T>
 
     protected final boolean checkExistence;
 
-    protected NeoGraphSession session;
+    protected EGraphSession session;
 
-    protected AbstractAtlasCollector( final Node start, final NeoGraphSession session,
+    protected AbstractAtlasCollector( final Node start, final EGraphSession session,
                                       final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
         this( Collections.singleton( start ), session, filter, checkExistence );
         this.session = session;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final NeoGraphSession session,
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final EGraphSession session,
                                       final ProjectRelationshipFilter filter, final boolean checkExistence )
     {
         this.startNodes = startNodes;
@@ -67,7 +67,7 @@ public abstract class AbstractAtlasCollector<T>
         this.checkExistence = checkExistence;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final NeoGraphSession session,
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final EGraphSession session,
                                       final ProjectRelationshipFilter filter, final boolean checkExistence,
                                       final Direction direction )
     {
@@ -123,13 +123,14 @@ public abstract class AbstractAtlasCollector<T>
             log( "Checking relationship for acceptance: %s", r );
             if ( session != null )
             {
-                if ( idListingContains( DESELECTED_FOR, r, session.getSessionId() ) )
+                final long sessionId = Long.parseLong( session.getId() );
+                if ( idListingContains( DESELECTED_FOR, r, sessionId ) )
                 {
                     log( "Found relationship in path that was deselected: %s", r );
                     return false;
                 }
 
-                if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, session.getSessionId() ) )
+                if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, sessionId ) )
                 {
                     log( "Found relationship in path that was not selected and is marked as selection-only: %s", r );
                     return false;

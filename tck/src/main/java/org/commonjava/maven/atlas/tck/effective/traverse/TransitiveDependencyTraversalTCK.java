@@ -22,15 +22,15 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
+import java.util.Arrays;
 import java.util.List;
 
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.effective.EProjectDirectRelationships;
 import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.EProjectRelationships;
-import org.apache.maven.graph.effective.rel.DependencyRelationship;
+import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.TransitiveDependencyTraversal;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
@@ -45,24 +45,21 @@ public abstract class TransitiveDependencyTraversalTCK
     {
         final URI source = sourceURI();
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
-                                       newDriverInstance() );
+        final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
+        final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
 
-        final DependencyRelationship depL1 = dependency( source, root, "other.group", "dep-L1", "1.0.1", 0 );
-        final DependencyRelationship depL2 =
-            dependency( source, depL1.getTarget()
-                                     .asProjectVersionRef(), "foo", "dep-L2", "1.1.1", 0 );
-
-        pgBuilder.withDependencies( depL1 );
-
-        final EProjectRelationships depL1Rels =
-            new EProjectRelationships.Builder( source, depL1.getTarget()
-                                                            .asProjectVersionRef() ).withDependencies( depL2 )
-                                                                                    .build();
-        pgBuilder.withDirectProjectRelationships( depL1Rels );
-
-        final EProjectGraph graph = pgBuilder.build();
+        /* @formatter:off */
+        final EProjectGraph graph = getManager().createGraph( 
+                simpleSession(), 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
+                    .withDependencies( dependency( source, root, d1, 0 ) )
+                    .build() 
+        );
+        
+        graph.addAll( Arrays.asList(
+                dependency( source, d1, d2, 0 )
+        ));
+        /* @formatter:on */
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
         graph.traverse( depTraversal );
@@ -87,25 +84,25 @@ public abstract class TransitiveDependencyTraversalTCK
         final URI source = sourceURI();
 
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
-                                       newDriverInstance() );
+        final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
+        final ProjectVersionRef d2a = projectVersion( "foo", "dep-L2", "1.1.1" );
+        final ProjectVersionRef d2b = projectVersion( "foo", "dep-L2", "1.0" );
 
-        final DependencyRelationship depL1A = dependency( source, root, "other.group", "dep-L1", "1.0.1", 0 );
-        final DependencyRelationship depL1B = dependency( source, root, "foo", "dep-L2", "1.1.1", 1 );
-        final DependencyRelationship depL2 =
-            dependency( source, depL1A.getTarget()
-                                      .asProjectVersionRef(), "foo", "dep-L2", "1.0", 0 );
-
-        pgBuilder.withDependencies( depL1A, depL1B );
-
-        final EProjectRelationships depL1Rels =
-            new EProjectRelationships.Builder( source, depL1A.getTarget()
-                                                             .asProjectVersionRef() ).withDependencies( depL2 )
-                                                                                     .build();
-        pgBuilder.withDirectProjectRelationships( depL1Rels );
-
-        final EProjectGraph graph = pgBuilder.build();
+        /* @formatter:off */
+        final EProjectGraph graph = getManager().createGraph( 
+                simpleSession(), 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
+                    .withDependencies( 
+                        dependency( source, root, d1, 0 ),
+                        dependency( source, root, d2a, 1 )
+                    )
+                    .build() 
+        );
+        
+        graph.addAll( Arrays.asList(
+                dependency( source, d1, d2b, 0 )
+        ));
+        /* @formatter:on */
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
         graph.traverse( depTraversal );
@@ -132,34 +129,27 @@ public abstract class TransitiveDependencyTraversalTCK
         final URI source = sourceURI();
 
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
-                                       newDriverInstance() );
-
-        final DependencyRelationship depL1A = dependency( source, root, "other.group", "dep-L1", "1.0.1", 0 );
-        final DependencyRelationship depL2 =
-            dependency( source, depL1A.getTarget()
-                                      .asProjectVersionRef(), "foo", "dep-L2", "1.0", 0 );
-
         final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
+        final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
+        final ProjectVersionRef d2a = projectVersion( "foo", "dep-L2", "1.1.1" );
+        final ProjectVersionRef d2b = projectVersion( "foo", "dep-L2", "1.0" );
 
-        pgBuilder.withDependencies( depL1A );
-        pgBuilder.withParent( new ParentRelationship( source, root, parent ) );
-
-        final EProjectRelationships depL1Rels =
-            new EProjectRelationships.Builder( source, depL1A.getTarget()
-                                                             .asProjectVersionRef() ).withDependencies( depL2 )
-                                                                                     .build();
-
-        final DependencyRelationship depL1B = dependency( source, parent, "foo", "dep-L2", "1.1.1", 1 );
-
-        final EProjectRelationships parentRels =
-            new EProjectRelationships.Builder( source, parent ).withDependencies( depL1B )
-                                                               .build();
-
-        pgBuilder.withDirectProjectRelationships( parentRels, depL1Rels );
-
-        final EProjectGraph graph = pgBuilder.build();
+        /* @formatter:off */
+        final EProjectGraph graph = getManager().createGraph( 
+                simpleSession(), 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
+                    .withDependencies( 
+                        dependency( source, root, d1, 0 )
+                    )
+                    .withParent( new ParentRelationship( source, root, parent ) )
+                    .build() 
+        );
+        
+        graph.addAll( Arrays.asList(
+                dependency( source, parent, d2a, 0 ),
+                dependency( source, d1, d2b, 0 )
+        ));
+        /* @formatter:on */
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
         graph.traverse( depTraversal );
@@ -186,26 +176,25 @@ public abstract class TransitiveDependencyTraversalTCK
         final URI source = sourceURI();
 
         final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final EProjectGraph.Builder pgBuilder =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), source, root,
-                                       newDriverInstance() );
-
-        final DependencyRelationship depL1A = dependency( source, root, "other.group", "dep-L1", "1.1.1", 0 );
-
         final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
+        final ProjectVersionRef d1a = projectVersion( "other.group", "dep-L1", "1.1.1" );
+        final ProjectVersionRef d1b = projectVersion( "other.group", "dep-L1", "1.0" );
 
-        pgBuilder.withDependencies( depL1A );
-        pgBuilder.withParent( new ParentRelationship( source, root, parent ) );
-
-        final DependencyRelationship depL1B = dependency( source, parent, "other.group", "dep-L1", "1.0", 1 );
-
-        final EProjectRelationships parentRels =
-            new EProjectRelationships.Builder( source, parent ).withDependencies( depL1B )
-                                                               .build();
-
-        pgBuilder.withDirectProjectRelationships( parentRels );
-
-        final EProjectGraph graph = pgBuilder.build();
+        /* @formatter:off */
+        final EProjectGraph graph = getManager().createGraph( 
+                simpleSession(), 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
+                    .withDependencies( 
+                        dependency( source, root, d1a, 0 )
+                    )
+                    .withParent( new ParentRelationship( source, root, parent ) )
+                    .build() 
+        );
+        
+        graph.addAll( Arrays.asList(
+                dependency( source, parent, d1b, 0 )
+        ));
+        /* @formatter:on */
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
         graph.traverse( depTraversal );

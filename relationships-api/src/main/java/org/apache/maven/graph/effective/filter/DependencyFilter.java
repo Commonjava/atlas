@@ -54,7 +54,10 @@ public class DependencyFilter
         this.scopeTransitivity = scopeTransitivity;
         if ( excludes != null )
         {
-            this.excludes.addAll( excludes );
+            for ( final ProjectRef pr : excludes )
+            {
+                this.excludes.add( pr.asProjectRef() );
+            }
         }
     }
 
@@ -74,7 +77,10 @@ public class DependencyFilter
             final Set<ProjectRef> excl = parentRel.getExcludes();
             if ( excl != null && !excl.isEmpty() )
             {
-                excludes.addAll( excl );
+                for ( final ProjectRef pr : excl )
+                {
+                    this.excludes.add( pr.asProjectRef() );
+                }
             }
         }
     }
@@ -109,6 +115,7 @@ public class DependencyFilter
         return true;
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         DependencyRelationship dr = null;
@@ -120,6 +127,7 @@ public class DependencyFilter
         return new DependencyFilter( this, dr );
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )

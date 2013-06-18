@@ -9,9 +9,10 @@ import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.VersionUtils;
+import org.apache.maven.graph.effective.EGraphManager;
 import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
+import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
@@ -31,6 +32,8 @@ public class CypherQueriesTest
     @Rule
     public TestName naming = new TestName();
 
+    private EGraphManager manager;
+
     private URI sourceURI()
         throws URISyntaxException
     {
@@ -43,6 +46,17 @@ public class CypherQueriesTest
         Log4jUtil.configure( Level.DEBUG );
     }
 
+    protected synchronized EGraphManager getManager()
+        throws Exception
+    {
+        if ( manager == null )
+        {
+            manager = new EGraphManager( fixture.newDriverInstance() );
+        }
+
+        return manager;
+    }
+
     @Test
     public void projectsWithVariableFlag_PartialQuery()
         throws Exception
@@ -53,17 +67,18 @@ public class CypherQueriesTest
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
+        final EGraphSession session =
+            getManager().createSession( new EGraphSessionConfiguration().withSource( source ) );
 
         /* @formatter:off */
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), fixture.newDriverInstance() )
-                .withDependencies( 
-                    new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                    new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
-                )
-            .build();
+        getManager().storeRelationships(
+            new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+            new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
+        );
+        
+        final EProjectGraph graph = getManager().getGraph( session, project );
 
-        graph.selectVersionFor( varDep, selected );
+        session.selectVersion( varDep, selected );
         
         final String cypher = "START a=node(1) "
             + "\nMATCH p=(a)-[:M_PLUGIN_DEP|C_PLUGIN|PARENT|EXTENSION|M_DEPENDENCY|M_PLUGIN|C_PLUGIN_DEP|C_DEPENDENCY*]->(n) "
@@ -96,17 +111,18 @@ public class CypherQueriesTest
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
+        final EGraphSession session =
+            getManager().createSession( new EGraphSessionConfiguration().withSource( source ) );
 
         /* @formatter:off */
-        final EProjectGraph graph =
-            new EProjectGraph.Builder( new EGraphSessionConfiguration().withSource( source ), new EProjectKey( source, project ), fixture.newDriverInstance() )
-                .withDependencies( 
-                    new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                    new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
-                )
-            .build();
+        getManager().storeRelationships(
+            new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+            new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
+        );
+        
+        final EProjectGraph graph = getManager().getGraph( session, project );
 
-        graph.selectVersionFor( varDep, selected );
+        session.selectVersion( varDep, selected );
         
         final String cypher = "START a=node(1) "
             + "\nMATCH p=(a)-[:M_PLUGIN_DEP|C_PLUGIN|PARENT|EXTENSION|M_DEPENDENCY|M_PLUGIN|C_PLUGIN_DEP|C_DEPENDENCY*]->(n) "

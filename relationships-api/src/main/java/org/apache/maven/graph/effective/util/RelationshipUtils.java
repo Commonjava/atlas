@@ -52,15 +52,26 @@ public final class RelationshipUtils
 
     public static final URI POM_ROOT_URI;
 
+    public static URI ANY_SOURCE_URI;
+
     static
     {
         try
         {
-            UNKNOWN_SOURCE_URI = new URI( "repo:unknown" );
+            ANY_SOURCE_URI = new URI( "any:any" );
         }
         catch ( final URISyntaxException e )
         {
-            throw new IllegalStateException( "Cannot construct unknown-source URI: 'repo:unknown'" );
+            throw new IllegalStateException( "Cannot construct any-source URI: 'any:any'" );
+        }
+
+        try
+        {
+            UNKNOWN_SOURCE_URI = new URI( "unknown:unknown" );
+        }
+        catch ( final URISyntaxException e )
+        {
+            throw new IllegalStateException( "Cannot construct unknown-source URI: 'unknown:unknown'" );
         }
 
         try

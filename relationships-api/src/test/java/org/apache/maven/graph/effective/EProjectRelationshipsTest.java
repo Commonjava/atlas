@@ -55,7 +55,7 @@ public class EProjectRelationshipsTest
         final ProjectVersionRef p = new ProjectVersionRef( "org.apache.maven", "maven-core", "3.0.3" );
         final URI source = testURI();
 
-        final EProjectRelationships.Builder prb = new EProjectRelationships.Builder( source, p );
+        final EProjectDirectRelationships.Builder prb = new EProjectDirectRelationships.Builder( source, p );
 
         final ProjectVersionRef parent = new ProjectVersionRef( "org.apache.maven", "maven", "3.0.3" );
         final ParentRelationship parentRel = new ParentRelationship( source, p, parent );
@@ -85,7 +85,7 @@ public class EProjectRelationshipsTest
         prb.withPlugins( jarp, comp );
         prb.withExtensions( wag );
 
-        final EProjectRelationships rels = prb.build();
+        final EProjectDirectRelationships rels = prb.build();
 
         final Set<ProjectRelationship<?>> all = rels.getAllRelationships();
 

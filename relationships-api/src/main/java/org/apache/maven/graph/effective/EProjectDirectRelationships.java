@@ -42,8 +42,8 @@ import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 
-public class EProjectRelationships
-    implements EProjectRelationshipCollection, KeyedProjectRelationshipCollection, Serializable
+public class EProjectDirectRelationships
+    implements EProjectRelationshipCollection, Serializable
 {
 
     private static final long serialVersionUID = 1L;
@@ -64,7 +64,7 @@ public class EProjectRelationships
 
     private final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies;
 
-    public EProjectRelationships( final EProjectKey key, final ParentRelationship parent,
+    public EProjectDirectRelationships( final EProjectKey key, final ParentRelationship parent,
                                   final List<DependencyRelationship> dependencies,
                                   final List<PluginRelationship> plugins,
                                   final List<DependencyRelationship> managedDependencies,
@@ -143,6 +143,7 @@ public class EProjectRelationships
         return pluginDependencies.get( pr );
     }
 
+    @Override
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
         final Set<ProjectRelationship<?>> rels = getExactAllRelationships();
@@ -151,6 +152,7 @@ public class EProjectRelationships
         return rels;
     }
 
+    @Override
     public Set<ProjectRelationship<?>> getExactAllRelationships()
     {
         final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
@@ -202,14 +204,14 @@ public class EProjectRelationships
             this.key = key;
         }
 
-        public EProjectRelationships build()
+        public EProjectDirectRelationships build()
         {
             if ( parent == null )
             {
                 parent = new ParentRelationship( key.getSource(), key.getProject() );
             }
 
-            return new EProjectRelationships( key, parent, dependencies, plugins, managedDependencies, managedPlugins,
+            return new EProjectDirectRelationships( key, parent, dependencies, plugins, managedDependencies, managedPlugins,
                                               extensions, pluginDependencies );
         }
 
