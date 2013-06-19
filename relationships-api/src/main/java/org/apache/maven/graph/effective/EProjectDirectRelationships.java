@@ -64,13 +64,14 @@ public class EProjectDirectRelationships
 
     private final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies;
 
-    public EProjectDirectRelationships( final EProjectKey key, final ParentRelationship parent,
-                                  final List<DependencyRelationship> dependencies,
-                                  final List<PluginRelationship> plugins,
-                                  final List<DependencyRelationship> managedDependencies,
-                                  final List<PluginRelationship> managedPlugins,
-                                  final List<ExtensionRelationship> extensions,
-                                  final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies )
+    public EProjectDirectRelationships( final EProjectKey key,
+                                        final ParentRelationship parent,
+                                        final List<DependencyRelationship> dependencies,
+                                        final List<PluginRelationship> plugins,
+                                        final List<DependencyRelationship> managedDependencies,
+                                        final List<PluginRelationship> managedPlugins,
+                                        final List<ExtensionRelationship> extensions,
+                                        final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies )
     {
         this.key = key;
         this.parent = parent;
@@ -211,8 +212,8 @@ public class EProjectDirectRelationships
                 parent = new ParentRelationship( key.getSource(), key.getProject() );
             }
 
-            return new EProjectDirectRelationships( key, parent, dependencies, plugins, managedDependencies, managedPlugins,
-                                              extensions, pluginDependencies );
+            return new EProjectDirectRelationships( key, parent, dependencies, plugins, managedDependencies,
+                                                    managedPlugins, extensions, pluginDependencies );
         }
 
         public Builder withParent( final ProjectVersionRef parent )
@@ -466,6 +467,11 @@ public class EProjectDirectRelationships
         {
             withExtensions( new ExtensionRelationship( key.getSource(), key.getProject(), ref, getNextExtensionIndex() ) );
             return this;
+        }
+
+        public ProjectVersionRef getProjectRef()
+        {
+            return key.getProject();
         }
 
     }
