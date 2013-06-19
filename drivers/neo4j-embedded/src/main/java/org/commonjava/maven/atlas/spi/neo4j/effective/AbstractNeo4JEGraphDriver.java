@@ -318,6 +318,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         Transaction tx = graph.beginTx();
         final Set<ProjectRelationship<?>> skipped = new HashSet<ProjectRelationship<?>>();
+
         try
         {
             for ( final ProjectRelationship<?> rel : rels )
@@ -369,10 +370,11 @@ public abstract class AbstractNeo4JEGraphDriver
                         logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, ids[0],
                                       ids[1] );
 
-                        final Relationship relationship =
-                            from.createRelationshipTo( to, GraphRelType.map( rel.getType(), rel.isManaged() ) );
+                        final GraphRelType grt = GraphRelType.map( rel.getType(), rel.isManaged() );
 
-                        logger.debug( "New relationship is: %s", relationship );
+                        final Relationship relationship = from.createRelationshipTo( to, grt );
+
+                        logger.debug( "New relationship is: %s with type: %s", relationship, grt );
 
                         toRelationshipProperties( rel, relationship );
                         relIdx.add( relationship, RELATIONSHIP_ID, relId );
@@ -392,7 +394,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 }
             }
 
-            //            logger.debug( "Committing graph transaction." );
+            logger.debug( "Committing graph transaction." );
             tx.success();
         }
         finally
@@ -403,16 +405,19 @@ public abstract class AbstractNeo4JEGraphDriver
         tx = graph.beginTx();
         try
         {
+            logger.debug( "Analyzing for new cycles..." );
             for ( final ProjectRelationship<?> rel : rels )
             {
                 if ( skipped.contains( rel ) )
                 {
+                    logger.debug( "SKIP: %s", rel );
                     continue;
                 }
 
                 final Relationship r = getRelationship( rel );
                 if ( r == null || markCycle( rel, r ) )
                 {
+                    logger.debug( "Relationship %s not stored, or cycle introduced by: %s", r, rel );
                     skipped.add( rel );
                 }
             }
@@ -700,7 +705,8 @@ public abstract class AbstractNeo4JEGraphDriver
         final Index<Node> idx = graph.index()
                                      .forNodes( ALL_NODES );
 
-        final IndexHits<Node> hits = idx.get( GAV, ref.toString() );
+        final IndexHits<Node> hits = idx.get( GAV, ref.asProjectVersionRef()
+                                                      .toString() );
 
         final Node node = hits.hasNext() ? hits.next() : null;
 
@@ -1613,6 +1619,8 @@ public abstract class AbstractNeo4JEGraphDriver
                                                                  final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
     {
+        logger.debug( "Finding relationships targeting: %s (filter: %s, managed: %s, types: %s)", to, view.getFilter(),
+                      includeManagedInfo, Arrays.asList( types ) );
         final Node node = getNode( to );
         if ( node == null )
         {
@@ -1629,6 +1637,8 @@ public abstract class AbstractNeo4JEGraphDriver
             }
         }
 
+        logger.debug( "Using graph-relationship types: %s", grts );
+
         final Iterable<Relationship> relationships =
             node.getRelationships( Direction.INCOMING, grts.toArray( new GraphRelType[grts.size()] ) );
 
@@ -1637,6 +1647,7 @@ public abstract class AbstractNeo4JEGraphDriver
             final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
             for ( final Relationship r : relationships )
             {
+                logger.debug( "Examining relationship: %s", r );
                 if ( TraversalUtils.acceptedInView( r, view ) )
                 {
                     final ProjectRelationship<?> rel = toProjectRelationship( r );
