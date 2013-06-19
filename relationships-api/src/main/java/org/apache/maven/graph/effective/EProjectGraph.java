@@ -774,4 +774,11 @@ public class EProjectGraph
     {
         return String.format( "EProjectGraph [root: %s, session: %s]", project, view.getSession() );
     }
+
+    @Override
+    public boolean isMissing( final ProjectVersionRef ref )
+    {
+        return driver.isMissing( view, ref );
+    }
+
 }

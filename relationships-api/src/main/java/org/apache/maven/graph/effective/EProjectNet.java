@@ -101,6 +101,8 @@ public interface EProjectNet
     void reindex()
         throws GraphDriverException;
 
+    boolean isMissing( ProjectVersionRef ref );
+
     //    ProjectVersionRef selectVersionFor( ProjectVersionRef variable, SingleVersion version )
     //        throws GraphDriverException;
 

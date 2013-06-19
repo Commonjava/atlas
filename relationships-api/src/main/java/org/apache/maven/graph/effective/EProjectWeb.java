@@ -46,7 +46,6 @@ public class EProjectWeb
 
     EProjectWeb( final EGraphSession session, final EGraphDriver driver, final ProjectRelationshipFilter filter,
                  final ProjectVersionRef... refs )
-        throws GraphDriverException
     {
         this.view = new EProjectNetView( session, filter, refs );
         this.driver = driver;
@@ -386,5 +385,11 @@ public class EProjectWeb
     public String toString()
     {
         return String.format( "EProjectWeb [roots: %s, session=%s]", view.getRoots(), view.getSession() );
+    }
+
+    @Override
+    public boolean isMissing( final ProjectVersionRef ref )
+    {
+        return driver.isMissing( view, ref );
     }
 }

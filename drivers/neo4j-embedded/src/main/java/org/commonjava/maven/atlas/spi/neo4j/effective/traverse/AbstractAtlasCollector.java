@@ -1,26 +1,12 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 
-import static org.apache.maven.graph.effective.util.RelationshipUtils.POM_ROOT_URI;
-import static org.apache.maven.graph.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.DESELECTED_FOR;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.POM_LOCATION_URI;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SELECTED_FOR;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SOURCE_URI;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getURIListProperty;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getURIProperty;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.idListingContains;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isSelectionOnly;
-import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectRelationship;
+import static org.commonjava.maven.atlas.spi.neo4j.effective.traverse.TraversalUtils.acceptedInView;
 
-import java.net.URI;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -45,34 +31,28 @@ public abstract class AbstractAtlasCollector<T>
 
     protected final Set<Long> seen = new HashSet<Long>();
 
-    protected final ProjectRelationshipFilter filter;
-
     protected final boolean checkExistence;
 
-    protected EGraphSession session;
+    protected EProjectNetView view;
 
-    protected AbstractAtlasCollector( final Node start, final EGraphSession session,
-                                      final ProjectRelationshipFilter filter, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Node start, final EProjectNetView view, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), session, filter, checkExistence );
-        this.session = session;
+        this( Collections.singleton( start ), view, checkExistence );
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final EGraphSession session,
-                                      final ProjectRelationshipFilter filter, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final EProjectNetView view,
+                                      final boolean checkExistence )
     {
         this.startNodes = startNodes;
-        this.session = session;
-        this.filter = filter;
+        this.view = view;
         this.checkExistence = checkExistence;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final EGraphSession session,
-                                      final ProjectRelationshipFilter filter, final boolean checkExistence,
-                                      final Direction direction )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final EProjectNetView view,
+                                      final boolean checkExistence, final Direction direction )
     {
-        this( startNodes, session, filter, checkExistence );
-        this.session = session;
+        this( startNodes, view, checkExistence );
+        this.view = view;
         this.direction = direction;
     }
 
@@ -117,73 +97,7 @@ public abstract class AbstractAtlasCollector<T>
 
     protected boolean accept( final Path path )
     {
-        ProjectRelationshipFilter f = filter;
-        for ( final Relationship r : path.relationships() )
-        {
-            log( "Checking relationship for acceptance: %s", r );
-            if ( session != null )
-            {
-                final long sessionId = Long.parseLong( session.getId() );
-                if ( idListingContains( DESELECTED_FOR, r, sessionId ) )
-                {
-                    log( "Found relationship in path that was deselected: %s", r );
-                    return false;
-                }
-
-                if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, sessionId ) )
-                {
-                    log( "Found relationship in path that was not selected and is marked as selection-only: %s", r );
-                    return false;
-                }
-
-                final Set<URI> sources = session.getActiveSources();
-                if ( sources != null && !sources.isEmpty() )
-                {
-                    final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
-                    boolean found = false;
-                    for ( final URI uri : s )
-                    {
-                        if ( sources.contains( uri ) )
-                        {
-                            found = true;
-                            break;
-                        }
-                    }
-
-                    if ( !found )
-                    {
-                        log( "Found relationship in path with de-selected source-repository URI: %s", r );
-                        return false;
-                    }
-                }
-
-                final Set<URI> pomLocations = session.getActivePomLocations();
-                if ( pomLocations != null && !pomLocations.isEmpty() )
-                {
-                    final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
-                    if ( !pomLocations.contains( pomLocation ) )
-                    {
-                        log( "Found relationship in path with de-selected pom-location URI: %s", r );
-                        return false;
-                    }
-                }
-            }
-
-            if ( f != null )
-            {
-                final ProjectRelationship<?> rel = toProjectRelationship( r );
-                if ( !f.accept( rel ) )
-                {
-                    log( "Filter rejected relationship: %s", rel );
-                    return false;
-                }
-
-                f = f.getChildFilter( rel );
-            }
-        }
-
-        log( "Path accepted: %s", path );
-        return true;
+        return acceptedInView( path, view );
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.EProjectCycle;
@@ -125,5 +126,11 @@ public interface EGraphDriver
     //        throws GraphDriverException;
 
     Set<ProjectVersionRef> getProjectsWithMetadata( EProjectNetView view, String key );
+
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( EProjectNetView eProjectNetView, ProjectVersionRef from,
+                                                            boolean includeManagedInfo, RelationshipType... types );
+
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( EProjectNetView eProjectNetView, ProjectVersionRef to,
+                                                          boolean includeManagedInfo, RelationshipType... types );
 
 }

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.graph.common.DependencyScope;
@@ -32,6 +33,8 @@ import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
+import org.apache.maven.graph.effective.filter.AbstractAggregatingFilter;
+import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
 import org.apache.maven.graph.effective.filter.AnyFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
@@ -435,6 +438,39 @@ public final class RelationshipUtils
     {
         return new DependencyRelationship( source, pomLocation, owner, artifact( dep, type, classifier, optional ),
                                            null, index, false );
+    }
+
+    public static Set<RelationshipType> getRelationshipTypes( final ProjectRelationshipFilter filter )
+    {
+        if ( filter == null )
+        {
+            return new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) );
+        }
+
+        final Set<RelationshipType> result = new HashSet<RelationshipType>();
+
+        if ( filter instanceof AbstractTypedFilter )
+        {
+            final AbstractTypedFilter typedFilter = (AbstractTypedFilter) filter;
+            result.addAll( typedFilter.getRelationshipTypes() );
+            result.addAll( typedFilter.getDescendantRelationshipTypes() );
+        }
+        else if ( filter instanceof AbstractAggregatingFilter )
+        {
+            final List<? extends ProjectRelationshipFilter> filters =
+                ( (AbstractAggregatingFilter) filter ).getFilters();
+
+            for ( final ProjectRelationshipFilter f : filters )
+            {
+                result.addAll( getRelationshipTypes( f ) );
+            }
+        }
+        else
+        {
+            result.addAll( Arrays.asList( RelationshipType.values() ) );
+        }
+
+        return result;
     }
 
 }

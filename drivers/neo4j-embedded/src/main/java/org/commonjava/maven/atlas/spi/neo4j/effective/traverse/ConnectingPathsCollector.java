@@ -4,8 +4,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -28,22 +26,21 @@ public class ConnectingPathsCollector
     public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final EProjectNetView view,
                                      final boolean checkExistence )
     {
-        super( startNodes, view.getSession(), view.getFilter(), checkExistence );
+        super( startNodes, view, checkExistence );
         this.endNodes = endNodes;
     }
 
-    private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes,
-                                      final EGraphSession session, final ProjectRelationshipFilter filter,
+    private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final EProjectNetView view,
                                       final boolean checkExistence, final Direction direction )
     {
-        super( startNodes, session, filter, checkExistence, direction );
+        super( startNodes, view, checkExistence, direction );
         this.endNodes = endNodes;
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new ConnectingPathsCollector( startNodes, endNodes, session, filter, checkExistence, direction.reverse() );
+        return new ConnectingPathsCollector( startNodes, endNodes, view, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

@@ -5,8 +5,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.session.EGraphSession;
+import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -20,32 +19,30 @@ public class EndGAVsPathsCollector
 
     private final Set<ProjectVersionRef> endRefs;
 
-    public EndGAVsPathsCollector( final Node start, final ProjectVersionRef end, final EGraphSession session,
-                                  final ProjectRelationshipFilter filter, final boolean checkExistence )
+    public EndGAVsPathsCollector( final Node start, final ProjectVersionRef end, final EProjectNetView view,
+                                  final boolean checkExistence )
     {
-        this( Collections.singleton( start ), Collections.singleton( end ), session, filter, checkExistence );
+        this( Collections.singleton( start ), Collections.singleton( end ), view, checkExistence );
     }
 
     public EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs,
-                                  final EGraphSession session, final ProjectRelationshipFilter filter,
-                                  final boolean checkExistence )
+                                  final EProjectNetView view, final boolean checkExistence )
     {
-        super( startNodes, session, filter, checkExistence );
+        super( startNodes, view, checkExistence );
         this.endRefs = endRefs;
     }
 
     private EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs,
-                                   final EGraphSession session, final ProjectRelationshipFilter filter,
-                                   final boolean checkExistence, final Direction direction )
+                                   final EProjectNetView view, final boolean checkExistence, final Direction direction )
     {
-        super( startNodes, session, filter, checkExistence, direction );
+        super( startNodes, view, checkExistence, direction );
         this.endRefs = endRefs;
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new EndGAVsPathsCollector( startNodes, endRefs, session, filter, checkExistence, direction.reverse() );
+        return new EndGAVsPathsCollector( startNodes, endRefs, view, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

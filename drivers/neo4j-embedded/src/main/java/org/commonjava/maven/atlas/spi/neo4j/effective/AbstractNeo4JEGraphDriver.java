@@ -17,6 +17,7 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective;
 
 import static org.apache.commons.lang.StringUtils.join;
+import static org.commonjava.maven.atlas.spi.neo4j.effective.traverse.TraversalUtils.getGraphRelTypes;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SOURCE_URI;
@@ -61,8 +62,6 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
-import org.apache.maven.graph.effective.filter.AbstractAggregatingFilter;
-import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
@@ -77,6 +76,7 @@ import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.EndNodesCollector
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.MembershipWrappedTraversalEvaluator;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.RootedNodesCollector;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.RootedRelationshipsCollector;
+import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.TraversalUtils;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.cypher.javacompat.ExecutionEngine;
@@ -660,7 +660,7 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( traversal instanceof AbstractFilteringTraversal )
         {
             final ProjectRelationshipFilter rootFilter = ( (AbstractFilteringTraversal) traversal ).getRootFilter();
-            relTypes.addAll( getRelTypes( rootFilter ) );
+            relTypes.addAll( getGraphRelTypes( rootFilter ) );
         }
         else
         {
@@ -668,80 +668,6 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         return relTypes;
-    }
-
-    private Set<GraphRelType> getRelTypes( final ProjectRelationshipFilter filter )
-    {
-        if ( filter == null )
-        {
-            return GraphRelType.atlasRelationshipTypes();
-        }
-
-        final Set<GraphRelType> result = new HashSet<GraphRelType>();
-
-        if ( filter instanceof AbstractTypedFilter )
-        {
-            final AbstractTypedFilter typedFilter = (AbstractTypedFilter) filter;
-            final Set<RelationshipType> types = typedFilter.getRelationshipTypes();
-            for ( final RelationshipType rt : types )
-            {
-                if ( typedFilter.isManagedInfoIncluded() )
-                {
-                    final GraphRelType grt = GraphRelType.map( rt, true );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
-                }
-
-                if ( typedFilter.isConcreteInfoIncluded() )
-                {
-                    final GraphRelType grt = GraphRelType.map( rt, false );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
-                }
-            }
-
-            final Set<RelationshipType> dTypes = typedFilter.getDescendantRelationshipTypes();
-            for ( final RelationshipType rt : dTypes )
-            {
-                if ( typedFilter.isManagedInfoIncluded() )
-                {
-                    final GraphRelType grt = GraphRelType.map( rt, true );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
-                }
-
-                if ( typedFilter.isConcreteInfoIncluded() )
-                {
-                    final GraphRelType grt = GraphRelType.map( rt, false );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
-                }
-            }
-        }
-        else if ( filter instanceof AbstractAggregatingFilter )
-        {
-            final List<? extends ProjectRelationshipFilter> filters =
-                ( (AbstractAggregatingFilter) filter ).getFilters();
-
-            for ( final ProjectRelationshipFilter f : filters )
-            {
-                result.addAll( getRelTypes( f ) );
-            }
-        }
-        else
-        {
-            result.addAll( GraphRelType.atlasRelationshipTypes() );
-        }
-
-        return result;
     }
 
     private void printCaller( final String label )
@@ -995,7 +921,7 @@ public abstract class AbstractNeo4JEGraphDriver
         TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL );
         //                                                    .sort( new PathComparator() );
 
-        final Set<GraphRelType> relTypes = getRelTypes( view.getFilter() );
+        final Set<GraphRelType> relTypes = getGraphRelTypes( view.getFilter() );
         for ( final GraphRelType grt : relTypes )
         {
             description.relationships( grt, Direction.OUTGOING );
@@ -1633,6 +1559,98 @@ public abstract class AbstractNeo4JEGraphDriver
     private long getSessionNodeId( final String sessionId )
     {
         return Long.parseLong( sessionId );
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final EProjectNetView view,
+                                                                   final ProjectVersionRef from,
+                                                                   final boolean includeManagedInfo,
+                                                                   final RelationshipType... types )
+    {
+        final Node node = getNode( from );
+        if ( node == null )
+        {
+            return null;
+        }
+
+        final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
+        for ( final RelationshipType relType : types )
+        {
+            grts.add( GraphRelType.map( relType, false ) );
+            if ( includeManagedInfo )
+            {
+                grts.add( GraphRelType.map( relType, true ) );
+            }
+        }
+
+        final Iterable<Relationship> relationships =
+            node.getRelationships( Direction.OUTGOING, grts.toArray( new GraphRelType[grts.size()] ) );
+
+        if ( relationships != null )
+        {
+            final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
+            for ( final Relationship r : relationships )
+            {
+                if ( TraversalUtils.acceptedInView( r, view ) )
+                {
+                    final ProjectRelationship<?> rel = toProjectRelationship( r );
+                    if ( rel != null )
+                    {
+                        result.add( rel );
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        return null;
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final EProjectNetView view,
+                                                                 final ProjectVersionRef to,
+                                                                 final boolean includeManagedInfo,
+                                                                 final RelationshipType... types )
+    {
+        final Node node = getNode( to );
+        if ( node == null )
+        {
+            return null;
+        }
+
+        final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
+        for ( final RelationshipType relType : types )
+        {
+            grts.add( GraphRelType.map( relType, false ) );
+            if ( includeManagedInfo )
+            {
+                grts.add( GraphRelType.map( relType, true ) );
+            }
+        }
+
+        final Iterable<Relationship> relationships =
+            node.getRelationships( Direction.INCOMING, grts.toArray( new GraphRelType[grts.size()] ) );
+
+        if ( relationships != null )
+        {
+            final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
+            for ( final Relationship r : relationships )
+            {
+                if ( TraversalUtils.acceptedInView( r, view ) )
+                {
+                    final ProjectRelationship<?> rel = toProjectRelationship( r );
+                    if ( rel != null )
+                    {
+                        result.add( rel );
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        return null;
     }
 
 }

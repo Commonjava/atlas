@@ -3,8 +3,10 @@ package org.apache.maven.graph.effective.session;
 import static org.apache.commons.lang.StringUtils.join;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -22,15 +24,40 @@ public abstract class EGraphSession
     private final Map<ProjectVersionRef, SingleVersion> selectedVersions =
         new HashMap<ProjectVersionRef, SingleVersion>();
 
+    private final Map<String, Object> properties = new HashMap<String, Object>();
+
     private final String id;
 
     private boolean open = true;
+
+    private final List<GraphSessionListener> listeners = new ArrayList<GraphSessionListener>();
 
     protected EGraphSession( final String id, final EGraphSessionConfiguration config )
     {
         this.id = id;
         this.activePomLocations = config.getActivePomLocations();
         this.activeSources = config.getActivePomLocations();
+    }
+
+    public Object setProperty( final String key, final Object value )
+    {
+        return properties.put( key, value );
+    }
+
+    public Object removeProperty( final String key )
+    {
+        return properties.remove( key );
+    }
+
+    public <T> T getProperty( final String key, final Class<T> type )
+    {
+        final Object value = properties.get( key );
+        if ( value != null )
+        {
+            return type.cast( value );
+        }
+
+        return null;
     }
 
     public final String getId()
@@ -70,7 +97,7 @@ public abstract class EGraphSession
         final SingleVersion old = selectedVersions.put( ref, version );
         if ( old == null || !old.equals( version ) )
         {
-            selectionAdded( ref, version );
+            fireSelectionAdded( ref, version );
         }
 
         final ProjectVersionRef updated = ref.selectVersion( version );
@@ -78,13 +105,14 @@ public abstract class EGraphSession
     }
 
     public final Map<ProjectVersionRef, SingleVersion> clearVersionSelections()
+        throws GraphDriverException
     {
         checkOpen();
         final Map<ProjectVersionRef, SingleVersion> old =
             new HashMap<ProjectVersionRef, SingleVersion>( selectedVersions );
 
         selectedVersions.clear();
-        selectionsCleared();
+        fireSelectionsCleared();
 
         return old;
     }
@@ -166,8 +194,35 @@ public abstract class EGraphSession
         if ( open )
         {
             clearVersionSelections();
-            sessionClosed();
+            fireSessionClosed();
             open = false;
+        }
+    }
+
+    private void fireSessionClosed()
+        throws GraphDriverException
+    {
+        for ( final GraphSessionListener listener : listeners )
+        {
+            listener.sessionClosed( this );
+        }
+    }
+
+    private void fireSelectionAdded( final ProjectVersionRef ref, final SingleVersion version )
+        throws GraphDriverException
+    {
+        for ( final GraphSessionListener listener : listeners )
+        {
+            listener.selectionAdded( this, ref, version );
+        }
+    }
+
+    private void fireSelectionsCleared()
+        throws GraphDriverException
+    {
+        for ( final GraphSessionListener listener : listeners )
+        {
+            listener.selectionsCleared( this );
         }
     }
 
@@ -184,17 +239,12 @@ public abstract class EGraphSession
         }
     }
 
-    protected void selectionAdded( final ProjectVersionRef ref, final SingleVersion version )
-        throws GraphDriverException
+    public void addListener( final GraphSessionListener listener )
     {
-    }
-
-    protected void sessionClosed()
-    {
-    }
-
-    protected void selectionsCleared()
-    {
+        if ( !listeners.contains( listener ) )
+        {
+            listeners.add( listener );
+        }
     }
 
 }

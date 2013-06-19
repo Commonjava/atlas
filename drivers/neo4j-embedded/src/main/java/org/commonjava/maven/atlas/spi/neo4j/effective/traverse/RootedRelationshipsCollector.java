@@ -3,8 +3,6 @@ package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -19,26 +17,25 @@ public class RootedRelationshipsCollector
 
     public RootedRelationshipsCollector( final Node start, final EProjectNetView view, final boolean checkExistence )
     {
-        super( start, view.getSession(), view.getFilter(), checkExistence );
+        super( start, view, checkExistence );
     }
 
     public RootedRelationshipsCollector( final Set<Node> startNodes, final EProjectNetView view,
                                          final boolean checkExistence )
     {
-        super( startNodes, view.getSession(), view.getFilter(), checkExistence );
+        super( startNodes, view, checkExistence );
     }
 
-    private RootedRelationshipsCollector( final Set<Node> startNodes, final EGraphSession session,
-                                          final ProjectRelationshipFilter filter, final boolean checkExistence,
-                                          final Direction direction )
+    private RootedRelationshipsCollector( final Set<Node> startNodes, final EProjectNetView view,
+                                          final boolean checkExistence, final Direction direction )
     {
-        super( startNodes, session, filter, checkExistence, direction );
+        super( startNodes, view, checkExistence, direction );
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new RootedRelationshipsCollector( startNodes, session, filter, checkExistence, direction.reverse() );
+        return new RootedRelationshipsCollector( startNodes, view, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

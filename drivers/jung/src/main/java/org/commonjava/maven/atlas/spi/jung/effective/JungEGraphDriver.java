@@ -23,6 +23,7 @@ import static org.apache.maven.graph.effective.util.RelationshipUtils.UNKNOWN_SO
 import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
@@ -972,22 +974,73 @@ public class JungEGraphDriver
     @Override
     public void selectVersionFor( final ProjectVersionRef ref, final SingleVersion version, final String id )
     {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void clearSelectedVersionsFor( final String id )
     {
-        // TODO Auto-generated method stub
-
     }
 
     @Override
     public void deRegisterSession( final String id )
     {
-        // TODO Auto-generated method stub
+    }
 
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final EProjectNetView view,
+                                                                   final ProjectVersionRef from,
+                                                                   final boolean includeManagedInfo,
+                                                                   final RelationshipType... types )
+    {
+        return getMatchingRelationships( graph.getOutEdges( from ), view, includeManagedInfo, types );
+    }
+
+    private Set<ProjectRelationship<?>> getMatchingRelationships( final Collection<ProjectRelationship<?>> edges,
+                                                                  final EProjectNetView view,
+                                                                  final boolean includeManagedInfo,
+                                                                  final RelationshipType... types )
+    {
+        if ( edges == null )
+        {
+            return null;
+        }
+
+        final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>( edges.size() );
+
+        final List<RelationshipType> typeList = Arrays.asList( types );
+        Collections.sort( typeList );
+
+        for ( final ProjectRelationship<?> rel : edges )
+        {
+            if ( !typeList.isEmpty() && !typeList.contains( rel.getType() ) )
+            {
+                continue;
+            }
+
+            if ( view.getFilter() != null && !view.getFilter()
+                                                  .accept( rel ) )
+            {
+                continue;
+            }
+
+            if ( !includeManagedInfo && rel.isManaged() )
+            {
+                continue;
+            }
+
+            rels.add( rel );
+        }
+
+        return rels;
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final EProjectNetView view,
+                                                                 final ProjectVersionRef to,
+                                                                 final boolean includeManagedInfo,
+                                                                 final RelationshipType... types )
+    {
+        return getMatchingRelationships( graph.getInEdges( to ), view, includeManagedInfo, types );
     }
 
 }
