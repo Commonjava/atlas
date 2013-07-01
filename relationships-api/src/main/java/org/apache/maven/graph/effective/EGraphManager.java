@@ -15,14 +15,20 @@ import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.apache.maven.graph.effective.workspace.GraphWorkspaceListener;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.commonjava.util.logging.Logger;
 
 public class EGraphManager
     implements Closeable, GraphWorkspaceListener
 {
+
+    private static final String TEMP_WS = "is-temporary";
+
+    private final Logger logger = new Logger( getClass() );
 
     private final EGraphDriver rootDriver;
 
@@ -41,7 +47,7 @@ public class EGraphManager
         return rootDriver.addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
     }
 
-    public EProjectGraph createGraph( final GraphWorkspace session, final EProjectDirectRelationships rels )
+    public EProjectGraph createGraph( final GraphWorkspace workspace, final EProjectDirectRelationships rels )
     {
         final ProjectVersionRef project = rels.getKey()
                                               .getProject();
@@ -49,15 +55,15 @@ public class EGraphManager
         rootDriver.addRelationships( rels.getExactAllRelationships()
                                          .toArray( new ProjectRelationship[] {} ) );
 
-        return getGraph( session, null, project );
+        return getGraph( workspace, null, project );
     }
 
-    public EProjectGraph getGraph( final GraphWorkspace session, final ProjectVersionRef project )
+    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectVersionRef project )
     {
-        return getGraph( session, null, project );
+        return getGraph( workspace, null, project );
     }
 
-    public EProjectGraph getGraph( final GraphWorkspace session, final ProjectRelationshipFilter filter,
+    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
                                    final ProjectVersionRef project )
     {
         if ( !rootDriver.containsProject( GLOBAL, project ) || rootDriver.isMissing( GLOBAL, project ) )
@@ -65,28 +71,28 @@ public class EGraphManager
             return null;
         }
 
-        return new EProjectGraph( session, rootDriver, filter, project );
+        return new EProjectGraph( workspace, rootDriver, filter, project );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace session, final Collection<ProjectVersionRef> refs )
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( session, null,
+        return getWeb( workspace, null,
                        refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace session, final ProjectRelationshipFilter filter,
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
                                final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( session, null,
+        return getWeb( workspace, null,
                        refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace session, final ProjectVersionRef... refs )
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectVersionRef... refs )
     {
-        return getWeb( session, null, refs );
+        return getWeb( workspace, null, refs );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace session, final ProjectRelationshipFilter filter,
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
                                final ProjectVersionRef... refs )
     {
         for ( final ProjectVersionRef ref : refs )
@@ -97,13 +103,32 @@ public class EGraphManager
             }
         }
 
-        return new EProjectWeb( session, rootDriver, filter, refs );
+        return new EProjectWeb( workspace, rootDriver, filter, refs );
     }
 
     public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
-        return new GraphWorkspace( rootDriver.registerNewSession( config ), config ).addListener( this );
+        return rootDriver.createWorkspace( config )
+                         .addListener( this );
+    }
+
+    public void deleteWorkspace( final String id )
+        throws GraphDriverException
+    {
+        rootDriver.deleteWorkspace( id );
+    }
+
+    public GraphWorkspace getWorkspace( final String id )
+        throws GraphDriverException
+    {
+        final GraphWorkspace ws = rootDriver.loadWorkspace( id );
+        if ( ws != null )
+        {
+            ws.addListener( this );
+        }
+
+        return ws;
     }
 
     public boolean containsGraph( final ProjectVersionRef ref )
@@ -116,15 +141,15 @@ public class EGraphManager
         return rootDriver.containsProject( view, ref );
     }
 
-    public boolean containsGraph( final GraphWorkspace session, final ProjectVersionRef ref )
+    public boolean containsGraph( final GraphWorkspace workspace, final ProjectVersionRef ref )
     {
-        return containsGraph( new GraphView( session ), ref );
+        return containsGraph( new GraphView( workspace ), ref );
     }
 
-    public boolean containsGraph( final GraphWorkspace session, final ProjectRelationshipFilter filter,
+    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
                                   final ProjectVersionRef ref )
     {
-        return containsGraph( new GraphView( session, filter ), ref );
+        return containsGraph( new GraphView( workspace, filter ), ref );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
@@ -141,20 +166,20 @@ public class EGraphManager
         return rootDriver.getDirectRelationshipsTo( view, to, includeManagedInfo, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphWorkspace session,
+    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphWorkspace workspace,
                                                                     final ProjectVersionRef from,
                                                                     final boolean includeManagedInfo,
                                                                     final RelationshipType... types )
     {
-        return findDirectRelationshipsFrom( new GraphView( session ), from, includeManagedInfo, types );
+        return findDirectRelationshipsFrom( new GraphView( workspace ), from, includeManagedInfo, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphWorkspace session,
+    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphWorkspace workspace,
                                                                   final ProjectVersionRef to,
                                                                   final boolean includeManagedInfo,
                                                                   final RelationshipType... types )
     {
-        return findDirectRelationshipsTo( new GraphView( session ), to, includeManagedInfo, types );
+        return findDirectRelationshipsTo( new GraphView( workspace ), to, includeManagedInfo, types );
     }
 
     public Set<ProjectVersionRef> getAllProjects( final GraphView view )
@@ -162,9 +187,9 @@ public class EGraphManager
         return rootDriver.getAllProjects( view );
     }
 
-    public Set<ProjectVersionRef> getAllProjects( final GraphWorkspace session )
+    public Set<ProjectVersionRef> getAllProjects( final GraphWorkspace workspace )
     {
-        return getAllProjects( new GraphView( session ) );
+        return getAllProjects( new GraphView( workspace ) );
     }
 
     public Set<ProjectVersionRef> getAllProjects()
@@ -177,9 +202,9 @@ public class EGraphManager
         return rootDriver.getMissingProjects( view );
     }
 
-    public Set<ProjectVersionRef> getAllIncompleteSubgraphs( final GraphWorkspace session )
+    public Set<ProjectVersionRef> getAllIncompleteSubgraphs( final GraphWorkspace workspace )
     {
-        return getAllIncompleteSubgraphs( new GraphView( session ) );
+        return getAllIncompleteSubgraphs( new GraphView( workspace ) );
     }
 
     public Set<ProjectVersionRef> getAllIncompleteSubgraphs()
@@ -192,9 +217,9 @@ public class EGraphManager
         return rootDriver.getVariableProjects( view );
     }
 
-    public Set<ProjectVersionRef> getAllVariableSubgraphs( final GraphWorkspace session )
+    public Set<ProjectVersionRef> getAllVariableSubgraphs( final GraphWorkspace workspace )
     {
-        return getAllVariableSubgraphs( new GraphView( session ) );
+        return getAllVariableSubgraphs( new GraphView( workspace ) );
     }
 
     public Set<ProjectVersionRef> getAllVariableSubgraphs()
@@ -228,9 +253,9 @@ public class EGraphManager
         return getProjectsWithMetadata( GLOBAL, key );
     }
 
-    public Set<ProjectVersionRef> getProjectsWithMetadata( final GraphWorkspace session, final String key )
+    public Set<ProjectVersionRef> getProjectsWithMetadata( final GraphWorkspace workspace, final String key )
     {
-        return getProjectsWithMetadata( new GraphView( session ), key );
+        return getProjectsWithMetadata( new GraphView( workspace ), key );
     }
 
     public Set<ProjectVersionRef> getProjectsWithMetadata( final GraphView view, final String key )
@@ -251,29 +276,56 @@ public class EGraphManager
     }
 
     @Override
-    public void selectionAdded( final GraphWorkspace session, final ProjectVersionRef ref, final SingleVersion version )
+    public void selectionAdded( final GraphWorkspace workspace, final ProjectVersionRef ref, final SingleVersion version )
         throws GraphDriverException
     {
-        rootDriver.selectVersionFor( ref, version, session.getId() );
+        rootDriver.selectVersionFor( ref, version, workspace.getId() );
     }
 
     @Override
-    public void sessionClosed( final GraphWorkspace session )
-        throws GraphDriverException
+    public void closed( final GraphWorkspace workspace )
     {
-        rootDriver.deRegisterSession( session.getId() );
+        if ( workspace.getProperty( TEMP_WS, Boolean.class, Boolean.FALSE ) )
+        {
+            rootDriver.deleteWorkspace( workspace.getId() );
+        }
+        else
+        {
+            try
+            {
+                rootDriver.storeWorkspace( workspace );
+            }
+            catch ( final GraphDriverException e )
+            {
+                logger.error( "Failed to store updates for workspace: %s. Reason: %s", e, workspace, e.getMessage() );
+            }
+        }
     }
 
     @Override
-    public void selectionsCleared( final GraphWorkspace session )
-        throws GraphDriverException
+    public void selectionsCleared( final GraphWorkspace workspace )
     {
-        rootDriver.clearSelectedVersionsFor( session.getId() );
+        rootDriver.clearSelectedVersionsFor( workspace.getId() );
     }
 
-    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphWorkspace session )
+    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphWorkspace workspace )
     {
-        return rootDriver.getProjectsMatching( projectRef, new GraphView( session ) );
+        return rootDriver.getProjectsMatching( projectRef, new GraphView( workspace ) );
+    }
+
+    @Override
+    public void accessed( final GraphWorkspace ws )
+    {
+        // TODO: periodic loop to update last-access for eventual workspace-expiration logic...especially for temporary workspaces.
+    }
+
+    public GraphWorkspace createTemporaryWorkspace( final GraphWorkspaceConfiguration config )
+        throws GraphDriverException
+    {
+        final GraphWorkspace ws = createWorkspace( config );
+        ws.setProperty( TEMP_WS, Boolean.TRUE );
+
+        return ws;
     }
 
 }

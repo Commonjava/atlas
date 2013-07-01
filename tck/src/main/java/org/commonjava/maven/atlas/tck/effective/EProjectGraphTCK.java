@@ -27,10 +27,10 @@ import java.util.List;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectDirectRelationships;
 import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.commonjava.util.logging.Logger;
 import org.junit.Test;
 

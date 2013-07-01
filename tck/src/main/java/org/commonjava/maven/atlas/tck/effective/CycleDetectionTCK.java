@@ -28,10 +28,10 @@ import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.junit.Test;
 
 public abstract class CycleDetectionTCK

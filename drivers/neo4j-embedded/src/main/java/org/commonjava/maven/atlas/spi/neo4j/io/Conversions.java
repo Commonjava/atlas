@@ -43,6 +43,7 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.maven.atlas.spi.neo4j.effective.NodeType;
@@ -119,7 +120,7 @@ public final class Conversions
 
     public static final String POM_LOCATION_URI = "pom_location_uri";
 
-    public static final String SESSION_ACCESS_DATE = "last_access";
+    public static final String LAST_ACCESS_DATE = "last_access";
 
     public static final String SELECTION_PREFIX = "rel_selection_";
 
@@ -131,14 +132,33 @@ public final class Conversions
     {
     }
 
-    public static void toSessionProperties( final GraphWorkspaceConfiguration config, final Node sessionNode )
+    public static void toNodeProperties( final GraphWorkspace workspace, final Node node )
     {
-        updateLastAccess( sessionNode );
+        node.setProperty( LAST_ACCESS_DATE, workspace.getLastAccess() );
+
+        node.setProperty( SOURCE_URI, toStringArray( workspace.getActiveSources() ) );
+        node.setProperty( POM_LOCATION_URI, toStringArray( workspace.getActivePomLocations() ) );
     }
 
-    public static void updateLastAccess( final Node sessionNode )
+    public static GraphWorkspace toWorkspace( final Node node )
     {
-        sessionNode.setProperty( SESSION_ACCESS_DATE, System.currentTimeMillis() );
+        if ( node == null )
+        {
+            return null;
+        }
+
+        if ( !isType( node, NodeType.WORKSPACE ) )
+        {
+            throw new IllegalArgumentException( "Node " + node.getId() + " is not a workspace reference." );
+        }
+
+        final List<URI> sources = getURIListProperty( SOURCE_URI, node, UNKNOWN_SOURCE_URI );
+        final List<URI> pomLocations = getURIListProperty( POM_LOCATION_URI, node, POM_ROOT_URI );
+        final long lastAccess = getLongProperty( LAST_ACCESS_DATE, node, System.currentTimeMillis() );
+
+        return new GraphWorkspace( Long.toString( node.getId() ),
+                                   new GraphWorkspaceConfiguration().withPomLocations( pomLocations )
+                                                                    .withSources( sources ), lastAccess );
     }
 
     public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
@@ -559,6 +579,16 @@ public final class Conversions
             return (Integer) container.getProperty( prop );
         }
         return null;
+    }
+
+    public static Long getLongProperty( final String prop, final PropertyContainer container, final long defaultValue )
+    {
+        if ( container.hasProperty( prop ) )
+        {
+            return (Long) container.getProperty( prop );
+        }
+
+        return defaultValue;
     }
 
     public static void setMetadata( final String key, final String value, final PropertyContainer container )

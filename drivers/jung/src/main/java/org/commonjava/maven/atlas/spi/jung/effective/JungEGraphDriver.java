@@ -42,7 +42,6 @@ import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.GraphView;
-import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.AbstractProjectRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
@@ -52,6 +51,7 @@ import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
 import org.apache.maven.graph.effective.traverse.AbstractTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.util.RelationshipUtils;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
@@ -85,7 +85,9 @@ public class JungEGraphDriver
     private final Map<ProjectVersionRef, Map<String, String>> metadata =
         new HashMap<ProjectVersionRef, Map<String, String>>();
 
-    private transient Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+    private final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+
+    private final Map<String, GraphWorkspace> workspaces = new HashMap<String, GraphWorkspace>();
 
     //    public JungEGraphDriver( final JungEGraphDriver from, final ProjectRelationshipFilter filter,
     //                             final EProjectNet net, final EGraphSession workspace, final ProjectVersionRef... roots )
@@ -295,7 +297,7 @@ public class JungEGraphDriver
             final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
             dfsTraverse( GraphView.GLOBAL, traversal, 0, rel.getTarget()
-                                                                  .asProjectVersionRef() );
+                                                            .asProjectVersionRef() );
 
             final List<EProjectCycle> cycles = traversal.getCycles();
 
@@ -398,9 +400,8 @@ public class JungEGraphDriver
         dfsIterate( view, root, traversal, new LinkedList<ProjectRelationship<?>>(), pass );
     }
 
-    private void dfsIterate( final GraphView view, final ProjectVersionRef node,
-                             final ProjectNetTraversal traversal, final LinkedList<ProjectRelationship<?>> path,
-                             final int pass )
+    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal,
+                             final LinkedList<ProjectRelationship<?>> path, final int pass )
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
         if ( edges != null )
@@ -983,13 +984,6 @@ public class JungEGraphDriver
     }
 
     @Override
-    public String registerNewSession( final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
-    {
-        return Long.toString( System.currentTimeMillis() );
-    }
-
-    @Override
     public void selectVersionFor( final ProjectVersionRef ref, final SingleVersion version, final String id )
     {
     }
@@ -1000,13 +994,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public void deRegisterSession( final String id )
-    {
-    }
-
-    @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view,
-                                                                   final ProjectVersionRef from,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo,
                                                                    final RelationshipType... types )
     {
@@ -1053,8 +1041,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view,
-                                                                 final ProjectVersionRef to,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
                                                                  final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
     {
@@ -1062,10 +1049,38 @@ public class JungEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef,
-                                                       final GraphView eProjectNetView )
+    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphView eProjectNetView )
     {
         return byGA.containsKey( projectRef ) ? byGA.get( projectRef ) : Collections.<ProjectVersionRef> emptySet();
+    }
+
+    @Override
+    public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
+        throws GraphDriverException
+    {
+        final GraphWorkspace ws = new GraphWorkspace( Long.toString( System.currentTimeMillis() ), config );
+        workspaces.put( ws.getId(), ws );
+        return ws;
+    }
+
+    @Override
+    public void deleteWorkspace( final String id )
+    {
+        workspaces.remove( id );
+    }
+
+    @Override
+    public void storeWorkspace( final GraphWorkspace workspace )
+        throws GraphDriverException
+    {
+        // passed by reference, so automatically updated.
+    }
+
+    @Override
+    public GraphWorkspace loadWorkspace( final String id )
+        throws GraphDriverException
+    {
+        return workspaces.get( id );
     }
 
 }

@@ -21,7 +21,7 @@ import java.net.URISyntaxException;
 import java.util.Date;
 
 import org.apache.maven.graph.effective.EGraphManager;
-import org.apache.maven.graph.effective.GraphWorkspace;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.util.logging.Logger;
 import org.junit.After;

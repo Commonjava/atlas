@@ -19,11 +19,11 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
 import org.apache.maven.graph.effective.GraphView;
-import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.filter.AbstractAggregatingFilter;
 import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Path;

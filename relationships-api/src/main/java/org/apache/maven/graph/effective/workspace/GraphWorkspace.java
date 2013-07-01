@@ -1,4 +1,4 @@
-package org.apache.maven.graph.effective;
+package org.apache.maven.graph.effective.workspace;
 
 import static org.apache.commons.lang.StringUtils.join;
 
@@ -12,8 +12,6 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
-import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
-import org.apache.maven.graph.effective.workspace.GraphWorkspaceListener;
 import org.apache.maven.graph.spi.GraphDriverException;
 
 public final class GraphWorkspace
@@ -34,25 +32,45 @@ public final class GraphWorkspace
 
     private final List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
 
-    GraphWorkspace( final String id, final GraphWorkspaceConfiguration config )
+    private long lastAccess = System.currentTimeMillis();
+
+    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config )
     {
         this.id = id;
         this.activePomLocations = config.getActivePomLocations();
         this.activeSources = config.getActivePomLocations();
     }
 
+    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final long lastAccess )
+    {
+        this.id = id;
+        this.activePomLocations = config.getActivePomLocations();
+        this.activeSources = config.getActivePomLocations();
+        this.lastAccess = lastAccess;
+    }
+
+    public long getLastAccess()
+    {
+        return lastAccess;
+    }
+
+    /** NOTE: Non-durable!
+     */
     public Object setProperty( final String key, final Object value )
     {
+        fireAccessed();
         return properties.put( key, value );
     }
 
     public Object removeProperty( final String key )
     {
+        fireAccessed();
         return properties.remove( key );
     }
 
     public <T> T getProperty( final String key, final Class<T> type )
     {
+        fireAccessed();
         final Object value = properties.get( key );
         if ( value != null )
         {
@@ -62,6 +80,18 @@ public final class GraphWorkspace
         return null;
     }
 
+    public <T> T getProperty( final String key, final Class<T> type, final T def )
+    {
+        fireAccessed();
+        final Object value = properties.get( key );
+        if ( value != null )
+        {
+            return type.cast( value );
+        }
+
+        return def;
+    }
+
     public final String getId()
     {
         return id;
@@ -69,21 +99,25 @@ public final class GraphWorkspace
 
     public final Set<URI> getActivePomLocations()
     {
+        fireAccessed();
         return activePomLocations;
     }
 
     public final Set<URI> getActiveSources()
     {
+        fireAccessed();
         return activeSources;
     }
 
     public final Iterable<URI> activePomLocations()
     {
+        fireAccessed();
         return activePomLocations;
     }
 
     public final Iterable<URI> activeSources()
     {
+        fireAccessed();
         return activeSources;
     }
 
@@ -102,18 +136,19 @@ public final class GraphWorkspace
             fireSelectionAdded( ref, version );
         }
 
+        fireAccessed();
         final ProjectVersionRef updated = ref.selectVersion( version );
         return updated;
     }
 
     public final Map<ProjectVersionRef, SingleVersion> clearVersionSelections()
-        throws GraphDriverException
     {
         checkOpen();
         final Map<ProjectVersionRef, SingleVersion> old =
             new HashMap<ProjectVersionRef, SingleVersion>( selectedVersions );
 
         selectedVersions.clear();
+        fireAccessed();
         fireSelectionsCleared();
 
         return old;
@@ -122,18 +157,20 @@ public final class GraphWorkspace
     public final SingleVersion getSelectedVersion( final ProjectVersionRef ref )
     {
         checkOpen();
+        fireAccessed();
         return selectedVersions.get( ref.asProjectVersionRef() );
     }
 
     public final Map<ProjectVersionRef, SingleVersion> getVersionSelections()
     {
+        fireAccessed();
         return selectedVersions;
     }
 
     @Override
     public String toString()
     {
-        return String.format( "EGraphSession (activePomLocations=[%s], activeSources=[%s])",
+        return String.format( "GraphWorkspace (id=%s, activePomLocations=[%s], activeSources=[%s])",
                               join( activePomLocations, ", " ), join( activeSources, ", " ) );
     }
 
@@ -191,22 +228,29 @@ public final class GraphWorkspace
     }
 
     public final synchronized void close()
-        throws GraphDriverException
     {
         if ( open )
         {
             clearVersionSelections();
-            fireSessionClosed();
+            fireClosed();
             open = false;
         }
     }
 
-    private void fireSessionClosed()
-        throws GraphDriverException
+    private void fireClosed()
     {
         for ( final GraphWorkspaceListener listener : listeners )
         {
-            listener.sessionClosed( this );
+            listener.closed( this );
+        }
+    }
+
+    private void fireAccessed()
+    {
+        lastAccess = System.currentTimeMillis();
+        for ( final GraphWorkspaceListener listener : listeners )
+        {
+            listener.accessed( this );
         }
     }
 
@@ -220,7 +264,6 @@ public final class GraphWorkspace
     }
 
     private void fireSelectionsCleared()
-        throws GraphDriverException
     {
         for ( final GraphWorkspaceListener listener : listeners )
         {

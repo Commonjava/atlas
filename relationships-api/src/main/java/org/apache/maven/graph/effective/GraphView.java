@@ -7,6 +7,7 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 
 public class GraphView
 {

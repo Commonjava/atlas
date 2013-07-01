@@ -70,6 +70,7 @@ import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.AbstractFilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.traverse.TraversalType;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.AtlasCollector;
@@ -921,8 +922,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return ids;
     }
 
-    private void collectAtlasRelationships( final GraphView view, final AtlasCollector<?> checker,
-                                            final Set<Node> from )
+    private void collectAtlasRelationships( final GraphView view, final AtlasCollector<?> checker, final Set<Node> from )
     {
         if ( from == null || from.isEmpty() )
         {
@@ -1365,7 +1365,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Node node = getNode( variable );
         final Iterable<Relationship> rels = node.getRelationships( Direction.INCOMING );
 
-        final long sid = getSessionNodeId( sessionId );
+        final long sid = getWorkspaceNodeId( sessionId );
         for ( final Relationship r : rels )
         {
             final ProjectRelationship<?> rel = toProjectRelationship( r );
@@ -1453,7 +1453,7 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             tx = graph.beginTx();
 
-            clearSelectedVersions( getSessionNodeId( sessionId ), tx );
+            clearSelectedVersions( getWorkspaceNodeId( sessionId ), tx );
 
             tx.success();
         }
@@ -1529,56 +1529,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public String registerNewSession( final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
-    {
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            final Node sessionNode = graph.createNode();
-            Conversions.toSessionProperties( config, sessionNode );
-
-            tx.success();
-
-            return Long.toString( sessionNode.getId() );
-        }
-        finally
-        {
-            tx.finish();
-        }
-    }
-
-    @Override
-    public void deRegisterSession( final String sessionId )
-    {
-        Transaction tx = null;
-        try
-        {
-            tx = graph.beginTx();
-
-            final long sid = getSessionNodeId( sessionId );
-            clearSelectedVersions( sid, tx );
-
-            final Node sessionNode = graph.getNodeById( sid );
-
-            sessionNode.delete();
-
-            tx.success();
-        }
-        finally
-        {
-            tx.finish();
-        }
-    }
-
-    private long getSessionNodeId( final String sessionId )
-    {
-        return Long.parseLong( sessionId );
-    }
-
-    @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view,
-                                                                   final ProjectVersionRef from,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo,
                                                                    final RelationshipType... types )
     {
@@ -1623,8 +1574,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view,
-                                                                 final ProjectVersionRef to,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
                                                                  final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
     {
@@ -1674,13 +1624,94 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef,
-                                                       final GraphView eProjectNetView )
+    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphView eProjectNetView )
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( BY_GA_IDX )
                                           .query( GA, projectRef.toString() );
         return new HashSet<ProjectVersionRef>( convertToProjects( hits ) );
+    }
+
+    @Override
+    public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
+        throws GraphDriverException
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node wsNode = graph.createNode();
+            final GraphWorkspace ws = new GraphWorkspace( Long.toString( wsNode.getId() ), config );
+
+            Conversions.toNodeProperties( ws, wsNode );
+
+            tx.success();
+
+            return ws;
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public void deleteWorkspace( final String id )
+    {
+        Transaction tx = null;
+        try
+        {
+            tx = graph.beginTx();
+
+            final long sid = getWorkspaceNodeId( id );
+            clearSelectedVersions( sid, tx );
+
+            final Node wsNode = graph.getNodeById( sid );
+
+            wsNode.delete();
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    private long getWorkspaceNodeId( final String id )
+    {
+        return Long.parseLong( id );
+    }
+
+    @Override
+    public void storeWorkspace( final GraphWorkspace workspace )
+        throws GraphDriverException
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node wsNode = graph.getNodeById( getWorkspaceNodeId( workspace.getId() ) );
+            Conversions.toNodeProperties( workspace, wsNode );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public GraphWorkspace loadWorkspace( final String id )
+        throws GraphDriverException
+    {
+        final long nid = getWorkspaceNodeId( id );
+        final Node node = graph.getNodeById( nid );
+        if ( node == null )
+        {
+            return null;
+        }
+
+        return Conversions.toWorkspace( node );
     }
 
 }

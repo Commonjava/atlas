@@ -31,6 +31,7 @@ import org.apache.maven.graph.effective.EProjectNet;
 import org.apache.maven.graph.effective.GraphView;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.apache.maven.graph.spi.GraphDriverException;
 
@@ -61,9 +62,15 @@ public interface EGraphDriver
 
     void clearSelectedVersionsFor( String id );
 
-    void deRegisterSession( String id );
+    void deleteWorkspace( String id );
 
-    String registerNewSession( GraphWorkspaceConfiguration config )
+    GraphWorkspace createWorkspace( GraphWorkspaceConfiguration config )
+        throws GraphDriverException;
+
+    void storeWorkspace( GraphWorkspace workspace )
+        throws GraphDriverException;
+
+    GraphWorkspace loadWorkspace( String id )
         throws GraphDriverException;
 
     void recomputeIncompleteSubgraphs()
@@ -82,8 +89,7 @@ public interface EGraphDriver
      * ################################################
      */
 
-    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( GraphView view,
-                                                                             ProjectVersionRef root );
+    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( GraphView view, ProjectVersionRef root );
 
     Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( GraphView view, ProjectVersionRef root );
 

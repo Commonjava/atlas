@@ -29,8 +29,8 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.VersionUtils;
 import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
+import org.apache.maven.graph.effective.workspace.GraphWorkspace;
 import org.junit.Test;
 
 public abstract class SubGraphSelectionTCK
