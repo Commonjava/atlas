@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.maven.graph.spi.effective.EProjectNetView;
+import org.apache.maven.graph.effective.GraphView;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -33,14 +33,14 @@ public abstract class AbstractAtlasCollector<T>
 
     protected final boolean checkExistence;
 
-    protected EProjectNetView view;
+    protected GraphView view;
 
-    protected AbstractAtlasCollector( final Node start, final EProjectNetView view, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence )
     {
         this( Collections.singleton( start ), view, checkExistence );
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final EProjectNetView view,
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view,
                                       final boolean checkExistence )
     {
         this.startNodes = startNodes;
@@ -48,7 +48,7 @@ public abstract class AbstractAtlasCollector<T>
         this.checkExistence = checkExistence;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final EProjectNetView view,
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view,
                                       final boolean checkExistence, final Direction direction )
     {
         this( startNodes, view, checkExistence );

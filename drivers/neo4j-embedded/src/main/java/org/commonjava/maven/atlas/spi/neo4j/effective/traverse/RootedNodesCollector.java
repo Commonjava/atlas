@@ -3,7 +3,7 @@ package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.graph.spi.effective.EProjectNetView;
+import org.apache.maven.graph.effective.GraphView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -18,19 +18,19 @@ public class RootedNodesCollector
 
     public Direction direction = Direction.OUTGOING;
 
-    public RootedNodesCollector( final Node start, final EProjectNetView view, final boolean checkExistence )
+    public RootedNodesCollector( final Node start, final GraphView view, final boolean checkExistence )
     {
         super( start, view, checkExistence );
         logEnabled = true;
     }
 
-    public RootedNodesCollector( final Set<Node> startNodes, final EProjectNetView view, final boolean checkExistence )
+    public RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
     {
         super( startNodes, view, checkExistence );
         logEnabled = true;
     }
 
-    private RootedNodesCollector( final Set<Node> startNodes, final EProjectNetView view, final boolean checkExistence,
+    private RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence,
                                   final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );

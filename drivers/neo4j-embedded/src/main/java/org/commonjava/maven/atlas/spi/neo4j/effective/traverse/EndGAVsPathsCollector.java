@@ -5,7 +5,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.spi.effective.EProjectNetView;
+import org.apache.maven.graph.effective.GraphView;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -19,21 +19,21 @@ public class EndGAVsPathsCollector
 
     private final Set<ProjectVersionRef> endRefs;
 
-    public EndGAVsPathsCollector( final Node start, final ProjectVersionRef end, final EProjectNetView view,
+    public EndGAVsPathsCollector( final Node start, final ProjectVersionRef end, final GraphView view,
                                   final boolean checkExistence )
     {
         this( Collections.singleton( start ), Collections.singleton( end ), view, checkExistence );
     }
 
     public EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs,
-                                  final EProjectNetView view, final boolean checkExistence )
+                                  final GraphView view, final boolean checkExistence )
     {
         super( startNodes, view, checkExistence );
         this.endRefs = endRefs;
     }
 
     private EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs,
-                                   final EProjectNetView view, final boolean checkExistence, final Direction direction )
+                                   final GraphView view, final boolean checkExistence, final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );
         this.endRefs = endRefs;

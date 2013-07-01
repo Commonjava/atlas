@@ -27,9 +27,9 @@ import java.util.List;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectDirectRelationships;
 import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.traverse.AncestryTraversal;
 import org.commonjava.util.logging.Logger;
 import org.junit.Test;
@@ -49,7 +49,7 @@ public abstract class EProjectGraphTCK
 
         final URI source = sourceURI();
 
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
         /* @formatter:off */
         final EProjectGraph root = getManager().createGraph( 
                 session, 
@@ -99,7 +99,7 @@ public abstract class EProjectGraphTCK
 
         final URI source = sourceURI();
 
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
         /* @formatter:off */
         final EProjectGraph child = getManager().createGraph(
                 session,

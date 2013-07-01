@@ -28,10 +28,10 @@ import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.filter.DependencyFilter;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.junit.Test;
 
 public abstract class CycleDetectionTCK
@@ -53,7 +53,7 @@ public abstract class CycleDetectionTCK
         getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ) );
         
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
         final EProjectGraph graph = getManager().getGraph( session, project );
 
         final boolean introduces = graph.introducesCycle( new DependencyRelationship( source, dep,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
@@ -79,7 +79,7 @@ public abstract class CycleDetectionTCK
                                          new DependencyRelationship( source, dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
         final EProjectGraph graph = getManager().getGraph( session, project );
 
         final Set<EProjectCycle> cycles = graph.getCycles();
@@ -112,7 +112,7 @@ public abstract class CycleDetectionTCK
                                          new DependencyRelationship( source, dep2,  new ArtifactRef( dep,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
         final EProjectGraph graph = getManager().getGraph( session, project );
 
         final Set<EProjectCycle> cycles = graph.getCycles();
@@ -152,7 +152,7 @@ public abstract class CycleDetectionTCK
                                          new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
         final EProjectGraph graph1 = getManager().getGraph( session, a );
         final EProjectGraph graph2 = getManager().getGraph( session, d );
 
@@ -209,7 +209,7 @@ public abstract class CycleDetectionTCK
                                          new DependencyRelationship( source, e, new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
         final EProjectGraph graph1 = getManager().getGraph( session, a );
         final EProjectGraph graph2 = getManager().getGraph( session, d )
                                                  .filteredInstance( new DependencyFilter() );

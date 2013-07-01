@@ -21,8 +21,8 @@ import java.net.URISyntaxException;
 import java.util.Date;
 
 import org.apache.maven.graph.effective.EGraphManager;
-import org.apache.maven.graph.effective.session.EGraphSession;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
+import org.apache.maven.graph.effective.GraphWorkspace;
+import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
@@ -41,10 +41,10 @@ public abstract class AbstractSPI_TCK
         return new URI( "test:repo:" + naming.getMethodName() );
     }
 
-    protected EGraphSession simpleSession()
+    protected GraphWorkspace simpleSession()
         throws Exception
     {
-        return getManager().createSession( new EGraphSessionConfiguration().withSource( sourceURI() ) );
+        return getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( sourceURI() ) );
     }
 
     protected final Logger logger = new Logger( getClass() );

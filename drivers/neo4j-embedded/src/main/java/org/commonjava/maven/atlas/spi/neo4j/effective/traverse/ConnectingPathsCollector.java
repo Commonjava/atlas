@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.graph.spi.effective.EProjectNetView;
+import org.apache.maven.graph.effective.GraphView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -17,20 +17,20 @@ public class ConnectingPathsCollector
 
     private final Set<Node> endNodes;
 
-    public ConnectingPathsCollector( final Node start, final Node end, final EProjectNetView view,
+    public ConnectingPathsCollector( final Node start, final Node end, final GraphView view,
                                      final boolean checkExistence )
     {
         this( Collections.singleton( start ), Collections.singleton( end ), view, checkExistence );
     }
 
-    public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final EProjectNetView view,
+    public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view,
                                      final boolean checkExistence )
     {
         super( startNodes, view, checkExistence );
         this.endNodes = endNodes;
     }
 
-    private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final EProjectNetView view,
+    private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view,
                                       final boolean checkExistence, final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );

@@ -29,8 +29,8 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.common.version.VersionUtils;
 import org.apache.maven.graph.effective.EProjectGraph;
+import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.junit.Test;
 
 public abstract class SubGraphSelectionTCK
@@ -48,7 +48,7 @@ public abstract class SubGraphSelectionTCK
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
 
         /* @formatter:off */
         getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
@@ -80,7 +80,7 @@ public abstract class SubGraphSelectionTCK
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final EGraphSession session = simpleSession();
+        final GraphWorkspace session = simpleSession();
 
         /* @formatter:off */
         getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
@@ -130,8 +130,8 @@ public abstract class SubGraphSelectionTCK
         final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final EGraphSession session = simpleSession();
-        final EGraphSession session2 = simpleSession();
+        final GraphWorkspace session = simpleSession();
+        final GraphWorkspace session2 = simpleSession();
 
         /* @formatter:off */
         getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),

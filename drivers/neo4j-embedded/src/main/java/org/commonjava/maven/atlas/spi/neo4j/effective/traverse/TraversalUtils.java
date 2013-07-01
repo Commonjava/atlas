@@ -18,12 +18,12 @@ import java.util.List;
 import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
+import org.apache.maven.graph.effective.GraphView;
+import org.apache.maven.graph.effective.GraphWorkspace;
 import org.apache.maven.graph.effective.filter.AbstractAggregatingFilter;
 import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
-import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Path;
@@ -38,14 +38,14 @@ public final class TraversalUtils
     {
     }
 
-    public static boolean acceptedInView( final Path path, final EProjectNetView view )
+    public static boolean acceptedInView( final Path path, final GraphView view )
     {
         ProjectRelationshipFilter f = view.getFilter();
-        final EGraphSession session = view.getSession();
+        final GraphWorkspace workspace = view.getWorkspace();
 
         for ( final Relationship r : path.relationships() )
         {
-            if ( !accepted( r, f, session ) )
+            if ( !accepted( r, f, workspace ) )
             {
                 return false;
             }
@@ -61,31 +61,31 @@ public final class TraversalUtils
         return true;
     }
 
-    public static boolean acceptedInView( final Relationship r, final EProjectNetView view )
+    public static boolean acceptedInView( final Relationship r, final GraphView view )
     {
-        return accepted( r, view.getFilter(), view.getSession() );
+        return accepted( r, view.getFilter(), view.getWorkspace() );
     }
 
     private static boolean accepted( final Relationship r, final ProjectRelationshipFilter f,
-                                     final EGraphSession session )
+                                     final GraphWorkspace workspace )
     {
         logger.debug( "Checking relationship for acceptance: %s", r );
-        if ( session != null )
+        if ( workspace != null )
         {
-            final long sessionId = Long.parseLong( session.getId() );
-            if ( idListingContains( DESELECTED_FOR, r, sessionId ) )
+            final long workspaceId = Long.parseLong( workspace.getId() );
+            if ( idListingContains( DESELECTED_FOR, r, workspaceId ) )
             {
                 logger.debug( "Found relationship in path that was deselected: %s", r );
                 return false;
             }
 
-            if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, sessionId ) )
+            if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, workspaceId ) )
             {
                 logger.debug( "Found relationship in path that was not selected and is marked as selection-only: %s", r );
                 return false;
             }
 
-            final Set<URI> sources = session.getActiveSources();
+            final Set<URI> sources = workspace.getActiveSources();
             if ( sources != null && !sources.isEmpty() )
             {
                 final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
@@ -106,7 +106,7 @@ public final class TraversalUtils
                 }
             }
 
-            final Set<URI> pomLocations = session.getActivePomLocations();
+            final Set<URI> pomLocations = workspace.getActivePomLocations();
             if ( pomLocations != null && !pomLocations.isEmpty() )
             {
                 final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );

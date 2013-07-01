@@ -1,4 +1,4 @@
-package org.apache.maven.graph.effective.session;
+package org.apache.maven.graph.effective;
 
 import static org.apache.commons.lang.StringUtils.join;
 
@@ -12,9 +12,11 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
+import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
+import org.apache.maven.graph.effective.workspace.GraphWorkspaceListener;
 import org.apache.maven.graph.spi.GraphDriverException;
 
-public abstract class EGraphSession
+public final class GraphWorkspace
 {
 
     private final Set<URI> activePomLocations;
@@ -30,9 +32,9 @@ public abstract class EGraphSession
 
     private boolean open = true;
 
-    private final List<GraphSessionListener> listeners = new ArrayList<GraphSessionListener>();
+    private final List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
 
-    protected EGraphSession( final String id, final EGraphSessionConfiguration config )
+    GraphWorkspace( final String id, final GraphWorkspaceConfiguration config )
     {
         this.id = id;
         this.activePomLocations = config.getActivePomLocations();
@@ -161,7 +163,7 @@ public abstract class EGraphSession
         {
             return false;
         }
-        final EGraphSession other = (EGraphSession) obj;
+        final GraphWorkspace other = (GraphWorkspace) obj;
 
         if ( activePomLocations == null )
         {
@@ -202,7 +204,7 @@ public abstract class EGraphSession
     private void fireSessionClosed()
         throws GraphDriverException
     {
-        for ( final GraphSessionListener listener : listeners )
+        for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.sessionClosed( this );
         }
@@ -211,7 +213,7 @@ public abstract class EGraphSession
     private void fireSelectionAdded( final ProjectVersionRef ref, final SingleVersion version )
         throws GraphDriverException
     {
-        for ( final GraphSessionListener listener : listeners )
+        for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.selectionAdded( this, ref, version );
         }
@@ -220,7 +222,7 @@ public abstract class EGraphSession
     private void fireSelectionsCleared()
         throws GraphDriverException
     {
-        for ( final GraphSessionListener listener : listeners )
+        for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.selectionsCleared( this );
         }
@@ -239,12 +241,14 @@ public abstract class EGraphSession
         }
     }
 
-    public void addListener( final GraphSessionListener listener )
+    public GraphWorkspace addListener( final GraphWorkspaceListener listener )
     {
         if ( !listeners.contains( listener ) )
         {
             listeners.add( listener );
         }
+
+        return this;
     }
 
 }

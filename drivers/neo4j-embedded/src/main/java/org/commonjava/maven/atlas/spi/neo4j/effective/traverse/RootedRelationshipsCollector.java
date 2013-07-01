@@ -3,7 +3,7 @@ package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.graph.spi.effective.EProjectNetView;
+import org.apache.maven.graph.effective.GraphView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -15,18 +15,18 @@ public class RootedRelationshipsCollector
     extends AbstractAtlasCollector<Relationship>
 {
 
-    public RootedRelationshipsCollector( final Node start, final EProjectNetView view, final boolean checkExistence )
+    public RootedRelationshipsCollector( final Node start, final GraphView view, final boolean checkExistence )
     {
         super( start, view, checkExistence );
     }
 
-    public RootedRelationshipsCollector( final Set<Node> startNodes, final EProjectNetView view,
+    public RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view,
                                          final boolean checkExistence )
     {
         super( startNodes, view, checkExistence );
     }
 
-    private RootedRelationshipsCollector( final Set<Node> startNodes, final EProjectNetView view,
+    private RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view,
                                           final boolean checkExistence, final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );

@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 
 import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.spi.neo4j.effective.traverse.TraversalUtils.getGraphRelTypes;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SOURCE_URI;
@@ -58,18 +59,19 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
+import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
+import org.apache.maven.graph.effective.GraphView;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.AbstractFilteringTraversal;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.effective.traverse.TraversalType;
+import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.apache.maven.graph.spi.GraphDriverException;
-import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.AtlasCollector;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.ConnectingPathsCollector;
 import org.commonjava.maven.atlas.spi.neo4j.effective.traverse.EndNodesCollector;
@@ -103,7 +105,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String ALL_RELATIONSHIPS = "all_relationships";
 
-    private static final String ALL_NODES = "all_nodes";
+    private static final String BY_GAV_IDX = "by_gav";
+
+    private static final String BY_GA_IDX = "by_ga";
 
     private static final String CYCLE_INJECTION_IDX = "cycle_injections";
 
@@ -173,7 +177,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final Logger logger = new Logger( getClass() );
         logger.info( "Loaded approximately %d nodes.", graph.index()
-                                                            .forNodes( ALL_NODES )
+                                                            .forNodes( BY_GAV_IDX )
                                                             .query( GAV, "*" )
                                                             .size() );
 
@@ -184,7 +188,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final EProjectNetView view,
+    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final GraphView view,
                                                                                     final ProjectVersionRef ref )
     {
         checkClosed();
@@ -195,7 +199,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         final Index<Node> index = graph.index()
-                                       .forNodes( ALL_NODES );
+                                       .forNodes( BY_GAV_IDX );
         final IndexHits<Node> hits = index.get( GAV, ref.toString() );
 
         if ( hits.hasNext() )
@@ -217,13 +221,13 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final EProjectNetView view,
+    public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final GraphView view,
                                                                                    final ProjectVersionRef ref )
     {
         checkClosed();
 
         final Index<Node> index = graph.index()
-                                       .forNodes( ALL_NODES );
+                                       .forNodes( BY_GAV_IDX );
         final IndexHits<Node> hits = index.get( GAV, ref.toString() );
 
         if ( hits.hasNext() )
@@ -237,7 +241,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Collection<ProjectRelationship<?>> getAllRelationships( final EProjectNetView view )
+    public Collection<ProjectRelationship<?>> getAllRelationships( final GraphView view )
     {
         final Set<Node> roots = getRoots( view );
         if ( roots != null && !roots.isEmpty() )
@@ -278,7 +282,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final EProjectNetView view, final ProjectVersionRef... refs )
+    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final GraphView view, final ProjectVersionRef... refs )
     {
         // NOTE: using global lookup here to avoid checking for paths, which we're going to collect below.
         final Set<Node> nodes = new HashSet<Node>( refs.length );
@@ -326,7 +330,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 logger.debug( "Adding relationship: %s", rel );
 
                 final Index<Node> index = graph.index()
-                                               .forNodes( ALL_NODES );
+                                               .forNodes( BY_GAV_IDX );
 
                 final ProjectVersionRef declaring = rel.getDeclaring();
                 final ProjectVersionRef target = rel.getTarget()
@@ -440,7 +444,7 @@ public abstract class AbstractNeo4JEGraphDriver
         //            return false;
         //        }
 
-        final Set<Path> cycles = getIntroducedCycles( EProjectNetView.GLOBAL, rel );
+        final Set<Path> cycles = getIntroducedCycles( GraphView.GLOBAL, rel );
         if ( cycles != null && !cycles.isEmpty() )
         {
             markCycleInjection( relationship, cycles );
@@ -457,12 +461,12 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean introducesCycle( final EProjectNetView view, final ProjectRelationship<?> rel )
+    public boolean introducesCycle( final GraphView view, final ProjectRelationship<?> rel )
     {
         return !getIntroducedCycles( view, rel ).isEmpty();
     }
 
-    private Set<Path> getIntroducedCycles( final EProjectNetView view, final ProjectRelationship<?> rel )
+    private Set<Path> getIntroducedCycles( final GraphView view, final ProjectRelationship<?> rel )
     {
         //        logger.info( "\n\n\n\nCHECKING FOR CYCLES INTRODUCED BY: %s\n\n\n\n", rel );
 
@@ -526,8 +530,13 @@ public abstract class AbstractNeo4JEGraphDriver
         final String gav = ref.toString();
 
         graph.index()
-             .forNodes( ALL_NODES )
+             .forNodes( BY_GAV_IDX )
              .add( node, GAV, gav );
+
+        graph.index()
+             .forNodes( BY_GA_IDX )
+             .add( node, GA, ref.asProjectRef()
+                                .toString() );
 
         graph.index()
              .forNodes( MISSING_NODES_IDX )
@@ -545,7 +554,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getAllProjects( final EProjectNetView view )
+    public Set<ProjectVersionRef> getAllProjects( final GraphView view )
     {
         final Set<Node> roots = getRoots( view );
         Iterable<Node> nodes = null;
@@ -558,7 +567,7 @@ public abstract class AbstractNeo4JEGraphDriver
         else
         {
             final IndexHits<Node> hits = graph.index()
-                                              .forNodes( ALL_NODES )
+                                              .forNodes( BY_GAV_IDX )
                                               .query( GAV, "*" );
             nodes = hits;
         }
@@ -566,7 +575,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return new HashSet<ProjectVersionRef>( convertToProjects( nodes ) );
     }
 
-    private Set<Node> getAllProjectNodes( final EProjectNetView view )
+    private Set<Node> getAllProjectNodes( final GraphView view )
     {
         final Set<Node> roots = getRoots( view );
         if ( roots != null && !roots.isEmpty() )
@@ -578,14 +587,14 @@ public abstract class AbstractNeo4JEGraphDriver
         else
         {
             final IndexHits<Node> hits = graph.index()
-                                              .forNodes( ALL_NODES )
+                                              .forNodes( BY_GAV_IDX )
                                               .query( GAV, "*" );
             return toSet( hits );
         }
     }
 
     @Override
-    public void traverse( final EProjectNetView view, final ProjectNetTraversal traversal, final EProjectNet net,
+    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net,
                           final ProjectVersionRef root )
         throws GraphDriverException
     {
@@ -681,13 +690,13 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean containsProject( final EProjectNetView view, final ProjectVersionRef ref )
+    public boolean containsProject( final GraphView view, final ProjectVersionRef ref )
     {
         return getNode( view, ref ) != null;
     }
 
     @Override
-    public boolean containsRelationship( final EProjectNetView view, final ProjectRelationship<?> rel )
+    public boolean containsRelationship( final GraphView view, final ProjectRelationship<?> rel )
     {
         return getRelationship( rel ) != null;
     }
@@ -698,12 +707,12 @@ public abstract class AbstractNeo4JEGraphDriver
         return getNode( null, ref );
     }
 
-    public Node getNode( final EProjectNetView view, final ProjectVersionRef ref )
+    public Node getNode( final GraphView view, final ProjectVersionRef ref )
     {
         checkClosed();
 
         final Index<Node> idx = graph.index()
-                                     .forNodes( ALL_NODES );
+                                     .forNodes( BY_GAV_IDX );
 
         final IndexHits<Node> hits = idx.get( GAV, ref.asProjectVersionRef()
                                                       .toString() );
@@ -721,14 +730,14 @@ public abstract class AbstractNeo4JEGraphDriver
         return node;
     }
 
-    private boolean hasPathTo( final EProjectNetView view, final Node node )
+    private boolean hasPathTo( final GraphView view, final Node node )
     {
         if ( node == null )
         {
             return false;
         }
 
-        final EProjectNetView v = view == null ? EProjectNetView.GLOBAL : view;
+        final GraphView v = view == null ? GraphView.GLOBAL : view;
 
         final Set<Node> roots = getRoots( v );
         if ( roots == null || roots.isEmpty() )
@@ -804,10 +813,10 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean isMissing( final EProjectNetView view, final ProjectVersionRef ref )
+    public boolean isMissing( final GraphView view, final ProjectVersionRef ref )
     {
         final IndexHits<Node> hits = graph.index()
-                                          .forNodes( ALL_NODES )
+                                          .forNodes( BY_GAV_IDX )
                                           .get( GAV, ref.toString() );
 
         if ( hits.size() > 0 )
@@ -819,7 +828,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean hasMissingProjects( final EProjectNetView view )
+    public boolean hasMissingProjects( final GraphView view )
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( MISSING_NODES_IDX )
@@ -829,7 +838,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getMissingProjects( final EProjectNetView view )
+    public Set<ProjectVersionRef> getMissingProjects( final GraphView view )
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( MISSING_NODES_IDX )
@@ -839,7 +848,7 @@ public abstract class AbstractNeo4JEGraphDriver
         //        return getAllFlaggedProjects( CONNECTED, false );
     }
 
-    private Set<ProjectVersionRef> getIndexedProjects( final EProjectNetView view, final Iterable<Node> hits )
+    private Set<ProjectVersionRef> getIndexedProjects( final GraphView view, final Iterable<Node> hits )
     {
         final Set<Node> nodes = toSet( hits );
         final Set<Node> roots = getRoots( view );
@@ -859,7 +868,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return refs;
     }
 
-    private boolean hasIndexedProjects( final EProjectNetView view, final Iterable<Node> hits )
+    private boolean hasIndexedProjects( final GraphView view, final Iterable<Node> hits )
     {
         final Set<Node> nodes = toSet( hits );
         final Set<Node> roots = getRoots( view );
@@ -870,7 +879,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return checker.hasFoundNodes();
     }
 
-    private Set<Node> getRoots( final EProjectNetView view )
+    private Set<Node> getRoots( final GraphView view )
     {
         final Set<ProjectVersionRef> rootRefs = view.getRoots();
         if ( rootRefs == null || rootRefs.isEmpty() )
@@ -891,7 +900,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return nodes;
     }
 
-    private Set<Long> getRootIds( final EProjectNetView view )
+    private Set<Long> getRootIds( final GraphView view )
     {
         final Set<ProjectVersionRef> rootRefs = view.getRoots();
         if ( rootRefs == null || rootRefs.isEmpty() )
@@ -912,7 +921,7 @@ public abstract class AbstractNeo4JEGraphDriver
         return ids;
     }
 
-    private void collectAtlasRelationships( final EProjectNetView view, final AtlasCollector<?> checker,
+    private void collectAtlasRelationships( final GraphView view, final AtlasCollector<?> checker,
                                             final Set<Node> from )
     {
         if ( from == null || from.isEmpty() )
@@ -948,7 +957,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean hasVariableProjects( final EProjectNetView view )
+    public boolean hasVariableProjects( final GraphView view )
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( VARIABLE_NODES_IDX )
@@ -958,7 +967,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getVariableProjects( final EProjectNetView view )
+    public Set<ProjectVersionRef> getVariableProjects( final GraphView view )
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( VARIABLE_NODES_IDX )
@@ -977,7 +986,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<EProjectCycle> getCycles( final EProjectNetView view )
+    public Set<EProjectCycle> getCycles( final GraphView view )
     {
         printCaller( "GET-CYCLES" );
 
@@ -1084,7 +1093,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean isCycleParticipant( final EProjectNetView view, final ProjectRelationship<?> rel )
+    public boolean isCycleParticipant( final GraphView view, final ProjectRelationship<?> rel )
     {
         for ( final EProjectCycle cycle : getCycles( view ) )
         {
@@ -1098,7 +1107,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean isCycleParticipant( final EProjectNetView view, final ProjectVersionRef ref )
+    public boolean isCycleParticipant( final GraphView view, final ProjectVersionRef ref )
     {
         for ( final EProjectCycle cycle : getCycles( view ) )
         {
@@ -1284,7 +1293,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Transaction tx = graph.beginTx();
         try
         {
-            final Iterable<Node> nodes = getAllProjectNodes( EProjectNetView.GLOBAL );
+            final Iterable<Node> nodes = getAllProjectNodes( GraphView.GLOBAL );
             for ( final Node node : nodes )
             {
                 final String gav = getStringProperty( GAV, node );
@@ -1316,7 +1325,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getProjectsWithMetadata( final EProjectNetView view, final String key )
+    public Set<ProjectVersionRef> getProjectsWithMetadata( final GraphView view, final String key )
     {
         final IndexHits<Node> nodes = graph.index()
                                            .forNodes( METADATA_INDEX_PREFIX + key )
@@ -1503,7 +1512,7 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
-        if ( !containsProject( EProjectNetView.GLOBAL, ref ) )
+        if ( !containsProject( GraphView.GLOBAL, ref ) )
         {
             final Transaction tx = graph.beginTx();
             try
@@ -1520,7 +1529,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public String registerNewSession( final EGraphSessionConfiguration config )
+    public String registerNewSession( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
         final Transaction tx = graph.beginTx();
@@ -1568,7 +1577,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final EProjectNetView view,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view,
                                                                    final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo,
                                                                    final RelationshipType... types )
@@ -1614,7 +1623,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final EProjectNetView view,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view,
                                                                  final ProjectVersionRef to,
                                                                  final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
@@ -1662,6 +1671,16 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         return null;
+    }
+
+    @Override
+    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef,
+                                                       final GraphView eProjectNetView )
+    {
+        final IndexHits<Node> hits = graph.index()
+                                          .forNodes( BY_GA_IDX )
+                                          .query( GA, projectRef.toString() );
+        return new HashSet<ProjectVersionRef>( convertToProjects( hits ) );
     }
 
 }

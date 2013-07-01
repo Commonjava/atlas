@@ -31,11 +31,9 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.apache.maven.graph.spi.effective.EProjectNetView;
 import org.commonjava.util.logging.Logger;
 
 public class EProjectGraph
@@ -52,20 +50,20 @@ public class EProjectGraph
 
     private final EGraphDriver driver;
 
-    private final EProjectNetView view;
+    private final GraphView view;
 
-    public EProjectGraph( final EGraphSession session, final EGraphDriver driver, final ProjectVersionRef ref )
+    public EProjectGraph( final GraphWorkspace session, final EGraphDriver driver, final ProjectVersionRef ref )
     {
-        this.view = new EProjectNetView( session, ref );
+        this.view = new GraphView( session, ref );
         this.project = ref;
         sources = session.getActiveSources();
         this.driver = driver;
     }
 
-    public EProjectGraph( final EGraphSession session, final EGraphDriver driver,
+    public EProjectGraph( final GraphWorkspace session, final EGraphDriver driver,
                           final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
     {
-        this.view = new EProjectNetView( session, filter, ref );
+        this.view = new GraphView( session, filter, ref );
         this.project = ref;
         this.sources = session.getActiveSources();
         this.driver = driver;
@@ -681,9 +679,9 @@ public class EProjectGraph
     //    }
 
     @Override
-    public EGraphSession getSession()
+    public GraphWorkspace getSession()
     {
-        return view.getSession();
+        return view.getWorkspace();
     }
 
     @Override
@@ -760,7 +758,7 @@ public class EProjectGraph
     public EProjectGraph filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectGraph( view.getSession(), driver, filter, project );
+        return new EProjectGraph( view.getWorkspace(), driver, filter, project );
     }
 
     @Override
@@ -772,7 +770,7 @@ public class EProjectGraph
     @Override
     public String toString()
     {
-        return String.format( "EProjectGraph [root: %s, session: %s]", project, view.getSession() );
+        return String.format( "EProjectGraph [root: %s, session: %s]", project, view.getWorkspace() );
     }
 
     @Override

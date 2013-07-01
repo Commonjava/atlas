@@ -28,11 +28,9 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
-import org.apache.maven.graph.spi.effective.EProjectNetView;
 
 public class EProjectWeb
     implements EProjectNet, Serializable
@@ -42,18 +40,18 @@ public class EProjectWeb
 
     private final EGraphDriver driver;
 
-    private final EProjectNetView view;
+    private final GraphView view;
 
-    EProjectWeb( final EGraphSession session, final EGraphDriver driver, final ProjectRelationshipFilter filter,
+    EProjectWeb( final GraphWorkspace session, final EGraphDriver driver, final ProjectRelationshipFilter filter,
                  final ProjectVersionRef... refs )
     {
-        this.view = new EProjectNetView( session, filter, refs );
+        this.view = new GraphView( session, filter, refs );
         this.driver = driver;
     }
 
-    public EProjectWeb( final EGraphSession session, final EGraphDriver driver )
+    public EProjectWeb( final GraphWorkspace session, final EGraphDriver driver )
     {
-        this.view = new EProjectNetView( session );
+        this.view = new GraphView( session );
         this.driver = driver;
     }
 
@@ -362,9 +360,9 @@ public class EProjectWeb
     }
 
     @Override
-    public EGraphSession getSession()
+    public GraphWorkspace getSession()
     {
-        return view.getSession();
+        return view.getWorkspace();
     }
 
     @Override
@@ -372,7 +370,7 @@ public class EProjectWeb
     public EProjectWeb filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectWeb( view.getSession(), driver, filter, getRoots().toArray( new ProjectVersionRef[] {} ) );
+        return new EProjectWeb( view.getWorkspace(), driver, filter, getRoots().toArray( new ProjectVersionRef[] {} ) );
     }
 
     @Override
@@ -384,7 +382,7 @@ public class EProjectWeb
     @Override
     public String toString()
     {
-        return String.format( "EProjectWeb [roots: %s, session=%s]", view.getRoots(), view.getSession() );
+        return String.format( "EProjectWeb [roots: %s, session=%s]", view.getRoots(), view.getWorkspace() );
     }
 
     @Override

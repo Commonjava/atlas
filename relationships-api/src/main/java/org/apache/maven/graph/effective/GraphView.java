@@ -1,4 +1,4 @@
-package org.apache.maven.graph.spi.effective;
+package org.apache.maven.graph.effective;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -7,47 +7,46 @@ import java.util.Set;
 
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.session.EGraphSession;
 
-public class EProjectNetView
+public class GraphView
 {
 
-    public static final EProjectNetView GLOBAL = new EProjectNetView( null );
+    public static final GraphView GLOBAL = new GraphView( null );
 
     private final Set<ProjectVersionRef> roots = new HashSet<ProjectVersionRef>();
 
-    private final EGraphSession session;
+    private final GraphWorkspace workspace;
 
     private final ProjectRelationshipFilter filter;
 
-    public EProjectNetView( final EGraphSession session, final ProjectRelationshipFilter filter,
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
                             final Collection<ProjectVersionRef> roots )
     {
         this.filter = filter;
         this.roots.addAll( roots );
-        this.session = session;
+        this.workspace = workspace;
     }
 
-    public EProjectNetView( final EGraphSession session, final ProjectRelationshipFilter filter,
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
                             final ProjectVersionRef... roots )
     {
         this.filter = filter;
         this.roots.addAll( Arrays.asList( roots ) );
-        this.session = session;
+        this.workspace = workspace;
     }
 
-    public EProjectNetView( final EGraphSession session, final Collection<ProjectVersionRef> roots )
+    public GraphView( final GraphWorkspace workspace, final Collection<ProjectVersionRef> roots )
     {
         this.filter = null;
         this.roots.addAll( roots );
-        this.session = session;
+        this.workspace = workspace;
     }
 
-    public EProjectNetView( final EGraphSession session, final ProjectVersionRef... roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectVersionRef... roots )
     {
         this.filter = null;
         this.roots.addAll( Arrays.asList( roots ) );
-        this.session = session;
+        this.workspace = workspace;
     }
 
     public ProjectRelationshipFilter getFilter()
@@ -60,9 +59,9 @@ public class EProjectNetView
         return roots;
     }
 
-    public EGraphSession getSession()
+    public GraphWorkspace getWorkspace()
     {
-        return session;
+        return workspace;
     }
 
 }

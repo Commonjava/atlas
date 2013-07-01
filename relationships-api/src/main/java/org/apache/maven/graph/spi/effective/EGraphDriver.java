@@ -23,13 +23,15 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.maven.graph.common.RelationshipType;
+import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.effective.EProjectCycle;
 import org.apache.maven.graph.effective.EProjectNet;
+import org.apache.maven.graph.effective.GraphView;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
 import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
+import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.apache.maven.graph.spi.GraphDriverException;
 
 public interface EGraphDriver
@@ -61,7 +63,7 @@ public interface EGraphDriver
 
     void deRegisterSession( String id );
 
-    String registerNewSession( EGraphSessionConfiguration config )
+    String registerNewSession( GraphWorkspaceConfiguration config )
         throws GraphDriverException;
 
     void recomputeIncompleteSubgraphs()
@@ -80,57 +82,52 @@ public interface EGraphDriver
      * ################################################
      */
 
-    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( EProjectNetView view,
+    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( GraphView view,
                                                                              ProjectVersionRef root );
 
-    Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( EProjectNetView view, ProjectVersionRef root );
+    Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( GraphView view, ProjectVersionRef root );
 
-    Collection<ProjectRelationship<?>> getAllRelationships( EProjectNetView view );
+    Collection<ProjectRelationship<?>> getAllRelationships( GraphView view );
 
-    Set<List<ProjectRelationship<?>>> getAllPathsTo( EProjectNetView view, ProjectVersionRef... projectVersionRefs );
+    Set<List<ProjectRelationship<?>>> getAllPathsTo( GraphView view, ProjectVersionRef... projectVersionRefs );
 
-    boolean introducesCycle( EProjectNetView view, ProjectRelationship<?> rel );
+    boolean introducesCycle( GraphView view, ProjectRelationship<?> rel );
 
-    Set<ProjectVersionRef> getAllProjects( EProjectNetView view );
+    Set<ProjectVersionRef> getAllProjects( GraphView view );
 
-    void traverse( EProjectNetView view, ProjectNetTraversal traversal, EProjectNet net, ProjectVersionRef root )
+    void traverse( GraphView view, ProjectNetTraversal traversal, EProjectNet net, ProjectVersionRef root )
         throws GraphDriverException;
 
-    boolean containsProject( EProjectNetView view, ProjectVersionRef ref );
+    boolean containsProject( GraphView view, ProjectVersionRef ref );
 
-    boolean containsRelationship( EProjectNetView view, ProjectRelationship<?> rel );
+    boolean containsRelationship( GraphView view, ProjectRelationship<?> rel );
 
-    boolean isMissing( EProjectNetView view, ProjectVersionRef project );
+    boolean isMissing( GraphView view, ProjectVersionRef project );
 
-    boolean hasMissingProjects( EProjectNetView view );
+    boolean hasMissingProjects( GraphView view );
 
-    Set<ProjectVersionRef> getMissingProjects( EProjectNetView view );
+    Set<ProjectVersionRef> getMissingProjects( GraphView view );
 
-    boolean hasVariableProjects( EProjectNetView view );
+    boolean hasVariableProjects( GraphView view );
 
-    Set<ProjectVersionRef> getVariableProjects( EProjectNetView view );
+    Set<ProjectVersionRef> getVariableProjects( GraphView view );
 
-    Set<EProjectCycle> getCycles( EProjectNetView view );
+    Set<EProjectCycle> getCycles( GraphView view );
 
-    boolean isCycleParticipant( EProjectNetView view, ProjectRelationship<?> rel );
+    boolean isCycleParticipant( GraphView view, ProjectRelationship<?> rel );
 
-    boolean isCycleParticipant( EProjectNetView view, ProjectVersionRef ref );
+    boolean isCycleParticipant( GraphView view, ProjectVersionRef ref );
 
     Map<String, String> getMetadata( ProjectVersionRef ref );
 
-    //    EGraphDriver newInstanceFrom( EProjectNet net, ProjectRelationshipFilter filter, ProjectVersionRef... refs )
-    //        throws GraphDriverException;
-    //
-    //    EGraphDriver newInstance( EGraphSession session, EProjectNet net, ProjectRelationshipFilter filter,
-    //                              ProjectVersionRef... refs )
-    //        throws GraphDriverException;
+    Set<ProjectVersionRef> getProjectsWithMetadata( GraphView view, String key );
 
-    Set<ProjectVersionRef> getProjectsWithMetadata( EProjectNetView view, String key );
-
-    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( EProjectNetView eProjectNetView, ProjectVersionRef from,
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from,
                                                             boolean includeManagedInfo, RelationshipType... types );
 
-    Set<ProjectRelationship<?>> getDirectRelationshipsTo( EProjectNetView eProjectNetView, ProjectVersionRef to,
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to,
                                                           boolean includeManagedInfo, RelationshipType... types );
+
+    Set<ProjectVersionRef> getProjectsMatching( ProjectRef projectRef, GraphView eProjectNetView );
 
 }

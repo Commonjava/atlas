@@ -43,7 +43,7 @@ import org.apache.maven.graph.effective.rel.ParentRelationship;
 import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
 import org.apache.maven.graph.effective.rel.PluginRelationship;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSessionConfiguration;
+import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.maven.atlas.spi.neo4j.effective.NodeType;
 import org.commonjava.util.logging.Logger;
@@ -66,6 +66,8 @@ public final class Conversions
     public static final String VERSION = "version";
 
     public static final String GAV = "gav";
+
+    public static final String GA = "ga";
 
     public static final String INDEX = "index";
 
@@ -129,7 +131,7 @@ public final class Conversions
     {
     }
 
-    public static void toSessionProperties( final EGraphSessionConfiguration config, final Node sessionNode )
+    public static void toSessionProperties( final GraphWorkspaceConfiguration config, final Node sessionNode )
     {
         updateLastAccess( sessionNode );
     }

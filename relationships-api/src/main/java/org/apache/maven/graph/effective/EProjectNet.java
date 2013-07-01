@@ -25,7 +25,6 @@ import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.ref.EProjectKey;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.session.EGraphSession;
 import org.apache.maven.graph.spi.GraphDriverException;
 import org.apache.maven.graph.spi.effective.EGraphDriver;
 
@@ -68,7 +67,7 @@ public interface EProjectNet
 
     EGraphDriver getDriver();
 
-    EGraphSession getSession();
+    GraphWorkspace getSession();
 
     Set<ProjectVersionRef> getIncompleteSubgraphs();
 
