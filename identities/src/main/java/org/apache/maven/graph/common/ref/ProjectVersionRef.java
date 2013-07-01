@@ -110,11 +110,23 @@ public class ProjectVersionRef
     public ProjectVersionRef selectVersion( final String version )
     {
         final SingleVersion single = VersionUtils.createSingleVersion( version );
-        return selectVersion( single );
+        return selectVersion( single, false );
+    }
+
+    public ProjectVersionRef selectVersion( final String version, final boolean force )
+    {
+        final SingleVersion single = VersionUtils.createSingleVersion( version );
+        return selectVersion( single, force );
     }
 
     @Override
     public ProjectVersionRef selectVersion( final SingleVersion version )
+    {
+        return selectVersion( version, false );
+    }
+
+    @Override
+    public ProjectVersionRef selectVersion( final SingleVersion version, final boolean force )
     {
         final VersionSpec versionSpec = getVersionSpec();
         if ( versionSpec.equals( version ) )
@@ -122,7 +134,7 @@ public class ProjectVersionRef
             return this;
         }
 
-        if ( !versionSpec.contains( version ) )
+        if ( !force && !versionSpec.contains( version ) )
         {
             throw new IllegalArgumentException( "Specified version: " + version.renderStandard()
                 + " is not contained in spec: " + versionSpec.renderStandard() );

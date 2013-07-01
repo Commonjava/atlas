@@ -199,7 +199,7 @@ public class JungEGraphDriver
                 boolean found = false;
                 for ( final URI uri : s )
                 {
-                    if ( sources.contains( uri ) )
+                    if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
                     {
                         found = true;
                         break;
@@ -989,8 +989,9 @@ public class JungEGraphDriver
     }
 
     @Override
-    public void clearSelectedVersionsFor( final String id )
+    public boolean clearSelectedVersionsFor( final String id )
     {
+        return true;
     }
 
     @Override
@@ -1064,9 +1065,9 @@ public class JungEGraphDriver
     }
 
     @Override
-    public void deleteWorkspace( final String id )
+    public boolean deleteWorkspace( final String id )
     {
-        workspaces.remove( id );
+        return workspaces.remove( id ) != null;
     }
 
     @Override

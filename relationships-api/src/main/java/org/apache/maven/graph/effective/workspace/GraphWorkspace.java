@@ -1,11 +1,9 @@
 package org.apache.maven.graph.effective.workspace;
 
-import static org.apache.commons.lang.StringUtils.join;
-
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -17,36 +15,135 @@ import org.apache.maven.graph.spi.GraphDriverException;
 public final class GraphWorkspace
 {
 
-    private final Set<URI> activePomLocations;
+    private final GraphWorkspaceConfiguration config;
 
-    private final Set<URI> activeSources;
+    private Map<ProjectVersionRef, SingleVersion> selectedVersions = new HashMap<ProjectVersionRef, SingleVersion>();
 
-    private final Map<ProjectVersionRef, SingleVersion> selectedVersions =
-        new HashMap<ProjectVersionRef, SingleVersion>();
+    private final transient Map<String, Object> properties = new HashMap<String, Object>();
 
-    private final Map<String, Object> properties = new HashMap<String, Object>();
-
-    private final String id;
+    private String id;
 
     private boolean open = true;
 
-    private final List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
+    private final transient List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
 
     private long lastAccess = System.currentTimeMillis();
 
     public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config )
     {
         this.id = id;
-        this.activePomLocations = config.getActivePomLocations();
-        this.activeSources = config.getActivePomLocations();
+        this.config = config;
     }
 
     public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final long lastAccess )
     {
         this.id = id;
-        this.activePomLocations = config.getActivePomLocations();
-        this.activeSources = config.getActivePomLocations();
+        this.config = config;
         this.lastAccess = lastAccess;
+    }
+
+    protected void setLastAccess( final long lastAccess )
+    {
+        this.lastAccess = lastAccess;
+    }
+
+    protected void setId( final String id )
+    {
+        this.id = id;
+    }
+
+    protected void setSelectedVersions( final Map<ProjectVersionRef, SingleVersion> selections )
+    {
+        this.selectedVersions = selections;
+    }
+
+    public void touch()
+    {
+        fireAccessed();
+    }
+
+    public GraphWorkspace addActivePomLocation( final URI location )
+    {
+        final int before = config.getActivePomLocationCount();
+
+        config.withPomLocations( location );
+
+        if ( config.getActivePomLocationCount() != before )
+        {
+            fireAccessed();
+        }
+
+        return this;
+    }
+
+    public GraphWorkspace addActivePomLocations( final Collection<URI> locations )
+    {
+        final int before = config.getActivePomLocationCount();
+
+        config.withPomLocations( locations );
+
+        if ( config.getActivePomLocationCount() != before )
+        {
+            fireAccessed();
+        }
+
+        return this;
+    }
+
+    public GraphWorkspace addActivePomLocations( final URI... locations )
+    {
+        final int before = config.getActivePomLocationCount();
+
+        config.withPomLocations( locations );
+
+        if ( config.getActivePomLocationCount() != before )
+        {
+            fireAccessed();
+        }
+
+        return this;
+    }
+
+    public GraphWorkspace addActiveSources( final Collection<URI> sources )
+    {
+        final int before = config.getActiveSourceCount();
+
+        config.withSources( sources );
+
+        if ( config.getActiveSourceCount() != before )
+        {
+            fireAccessed();
+        }
+
+        return this;
+    }
+
+    public GraphWorkspace addActiveSources( final URI... sources )
+    {
+        final int before = config.getActiveSourceCount();
+
+        config.withSources( sources );
+
+        if ( config.getActiveSourceCount() != before )
+        {
+            fireAccessed();
+        }
+
+        return this;
+    }
+
+    public GraphWorkspace addActiveSource( final URI source )
+    {
+        final int before = config.getActiveSourceCount();
+
+        config.withSources( source );
+
+        if ( config.getActiveSourceCount() != before )
+        {
+            fireAccessed();
+        }
+
+        return this;
     }
 
     public long getLastAccess()
@@ -100,25 +197,25 @@ public final class GraphWorkspace
     public final Set<URI> getActivePomLocations()
     {
         fireAccessed();
-        return activePomLocations;
+        return config.getActivePomLocations();
     }
 
     public final Set<URI> getActiveSources()
     {
         fireAccessed();
-        return activeSources;
+        return config.getActiveSources();
     }
 
     public final Iterable<URI> activePomLocations()
     {
         fireAccessed();
-        return activePomLocations;
+        return config.getActivePomLocations();
     }
 
     public final Iterable<URI> activeSources()
     {
         fireAccessed();
-        return activeSources;
+        return config.getActiveSources();
     }
 
     public final ProjectVersionRef selectVersion( final ProjectVersionRef ref, final SingleVersion version )
@@ -137,7 +234,7 @@ public final class GraphWorkspace
         }
 
         fireAccessed();
-        final ProjectVersionRef updated = ref.selectVersion( version );
+        final ProjectVersionRef updated = ref.selectVersion( version, config.isForceVersions() );
         return updated;
     }
 
@@ -170,19 +267,13 @@ public final class GraphWorkspace
     @Override
     public String toString()
     {
-        return String.format( "GraphWorkspace (id=%s, activePomLocations=[%s], activeSources=[%s])",
-                              join( activePomLocations, ", " ), join( activeSources, ", " ) );
+        return String.format( "GraphWorkspace (id=%s, config=[%s])", config );
     }
 
     @Override
     public final int hashCode()
     {
-        final int prime = 31;
-        int result = 1;
-        result =
-            prime * result + ( ( activePomLocations == null ) ? 0 : new HashSet<URI>( activePomLocations ).hashCode() );
-        result = prime * result + ( ( activeSources == null ) ? 0 : new HashSet<URI>( activeSources ).hashCode() );
-        return result;
+        return 31 * id.hashCode();
     }
 
     @Override
@@ -200,30 +291,13 @@ public final class GraphWorkspace
         {
             return false;
         }
-        final GraphWorkspace other = (GraphWorkspace) obj;
 
-        if ( activePomLocations == null )
-        {
-            if ( other.activePomLocations != null )
-            {
-                return false;
-            }
-        }
-        else if ( !new HashSet<URI>( activePomLocations ).equals( new HashSet<URI>( other.activePomLocations ) ) )
+        final GraphWorkspace other = (GraphWorkspace) obj;
+        if ( !id.equals( other.id ) )
         {
             return false;
         }
-        if ( activeSources == null )
-        {
-            if ( other.activeSources != null )
-            {
-                return false;
-            }
-        }
-        else if ( !new HashSet<URI>( activeSources ).equals( new HashSet<URI>( other.activeSources ) ) )
-        {
-            return false;
-        }
+
         return true;
     }
 

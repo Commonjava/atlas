@@ -60,9 +60,9 @@ public interface EGraphDriver
      */
     Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel );
 
-    void clearSelectedVersionsFor( String id );
+    boolean clearSelectedVersionsFor( String id );
 
-    void deleteWorkspace( String id );
+    boolean deleteWorkspace( String id );
 
     GraphWorkspace createWorkspace( GraphWorkspaceConfiguration config )
         throws GraphDriverException;

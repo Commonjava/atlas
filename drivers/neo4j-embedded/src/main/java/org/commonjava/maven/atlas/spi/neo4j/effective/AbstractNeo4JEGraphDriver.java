@@ -1446,16 +1446,18 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void clearSelectedVersionsFor( final String sessionId )
+    public boolean clearSelectedVersionsFor( final String sessionId )
     {
         Transaction tx = null;
         try
         {
             tx = graph.beginTx();
 
-            clearSelectedVersions( getWorkspaceNodeId( sessionId ), tx );
+            final boolean result = clearSelectedVersions( getWorkspaceNodeId( sessionId ), tx );
 
             tx.success();
+
+            return result;
         }
         finally
         {
@@ -1463,10 +1465,15 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
-    private void clearSelectedVersions( final long sessionId, final Transaction tx )
+    private boolean clearSelectedVersions( final long sessionId, final Transaction tx )
     {
-        final Node sessionNode = graph.getNodeById( sessionId );
-        final Map<Long, Long> selections = getSelections( sessionNode );
+        final Node node = graph.getNodeById( sessionId );
+        if ( node == null )
+        {
+            return false;
+        }
+
+        final Map<Long, Long> selections = getSelections( node );
 
         final Set<Long> deleted = new HashSet<Long>();
         for ( final Entry<Long, Long> entry : selections.entrySet() )
@@ -1498,15 +1505,17 @@ public abstract class AbstractNeo4JEGraphDriver
                 to.delete();
             }
 
-            removeSelectionAnnotationsFor( from, sessionNode );
+            removeSelectionAnnotationsFor( from, node );
             if ( !deleted.contains( toId ) )
             {
                 logger.debug( "Removing selection annotations for previously selected: %s", to );
 
-                markDeselected( to, sessionNode );
+                markDeselected( to, node );
                 //                        removeSelectionAnnotationsFor( info.sr, root );
             }
         }
+
+        return true;
     }
 
     @Override
@@ -1655,19 +1664,24 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void deleteWorkspace( final String id )
+    public boolean deleteWorkspace( final String id )
     {
         Transaction tx = null;
         try
         {
             tx = graph.beginTx();
 
-            final long sid = getWorkspaceNodeId( id );
-            clearSelectedVersions( sid, tx );
+            final long nid = getWorkspaceNodeId( id );
+            final Node wsNode = graph.getNodeById( nid );
+            if ( wsNode == null )
+            {
+                return false;
+            }
 
-            final Node wsNode = graph.getNodeById( sid );
-
-            wsNode.delete();
+            if ( clearSelectedVersions( nid, tx ) )
+            {
+                wsNode.delete();
+            }
 
             tx.success();
         }
@@ -1675,6 +1689,8 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             tx.finish();
         }
+
+        return true;
     }
 
     private long getWorkspaceNodeId( final String id )

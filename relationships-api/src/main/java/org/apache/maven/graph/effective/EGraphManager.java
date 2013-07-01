@@ -113,10 +113,9 @@ public class EGraphManager
                          .addListener( this );
     }
 
-    public void deleteWorkspace( final String id )
-        throws GraphDriverException
+    public boolean deleteWorkspace( final String id )
     {
-        rootDriver.deleteWorkspace( id );
+        return rootDriver.deleteWorkspace( id );
     }
 
     public GraphWorkspace getWorkspace( final String id )

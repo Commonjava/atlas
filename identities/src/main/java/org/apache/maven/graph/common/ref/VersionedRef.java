@@ -39,6 +39,12 @@ public interface VersionedRef<T>
 
     String getVersionString();
 
+    T selectVersion( String version );
+
+    T selectVersion( String version, boolean force );
+
     T selectVersion( SingleVersion version );
+
+    T selectVersion( SingleVersion version, boolean force );
 
 }

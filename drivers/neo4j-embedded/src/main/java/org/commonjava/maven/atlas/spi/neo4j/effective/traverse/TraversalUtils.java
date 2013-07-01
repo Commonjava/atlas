@@ -24,6 +24,7 @@ import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
 import org.apache.maven.graph.effective.workspace.GraphWorkspace;
+import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Path;
@@ -92,7 +93,7 @@ public final class TraversalUtils
                 boolean found = false;
                 for ( final URI uri : s )
                 {
-                    if ( sources.contains( uri ) )
+                    if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
                     {
                         found = true;
                         break;
