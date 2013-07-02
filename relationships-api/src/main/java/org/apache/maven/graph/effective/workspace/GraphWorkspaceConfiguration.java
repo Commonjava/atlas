@@ -110,7 +110,10 @@ public final class GraphWorkspaceConfiguration
             result += activePomLocations.hashCode();
         }
 
-        result -= activeSources.hashCode();
+        if ( activeSources != null )
+        {
+            result -= activeSources.hashCode();
+        }
 
         return result;
     }

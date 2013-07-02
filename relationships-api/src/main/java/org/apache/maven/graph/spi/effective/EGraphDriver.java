@@ -136,4 +136,6 @@ public interface EGraphDriver
 
     Set<ProjectVersionRef> getProjectsMatching( ProjectRef projectRef, GraphView eProjectNetView );
 
+    Set<GraphWorkspace> loadAllWorkspaces();
+
 }

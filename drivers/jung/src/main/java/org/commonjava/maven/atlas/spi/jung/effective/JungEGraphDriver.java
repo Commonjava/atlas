@@ -1084,4 +1084,10 @@ public class JungEGraphDriver
         return workspaces.get( id );
     }
 
+    @Override
+    public Set<GraphWorkspace> loadAllWorkspaces()
+    {
+        return new HashSet<GraphWorkspace>( workspaces.values() );
+    }
+
 }

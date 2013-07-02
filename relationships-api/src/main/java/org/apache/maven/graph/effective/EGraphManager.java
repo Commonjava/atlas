@@ -130,6 +130,11 @@ public class EGraphManager
         return ws;
     }
 
+    public Set<GraphWorkspace> getAllWorkspaces()
+    {
+        return rootDriver.loadAllWorkspaces();
+    }
+
     public boolean containsGraph( final ProjectVersionRef ref )
     {
         return containsGraph( GLOBAL, ref );

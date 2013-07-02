@@ -128,12 +128,16 @@ public final class Conversions
 
     public static final String SELECTION_ONLY = "_selection_only";
 
+    public static final String WS_ID = "wsid";
+
     private Conversions()
     {
     }
 
     public static void toNodeProperties( final GraphWorkspace workspace, final Node node )
     {
+        node.setProperty( NODE_TYPE, NodeType.WORKSPACE.name() );
+
         node.setProperty( LAST_ACCESS_DATE, workspace.getLastAccess() );
 
         node.setProperty( SOURCE_URI, toStringArray( workspace.getActiveSources() ) );
@@ -159,6 +163,31 @@ public final class Conversions
         return new GraphWorkspace( Long.toString( node.getId() ),
                                    new GraphWorkspaceConfiguration().withPomLocations( pomLocations )
                                                                     .withSources( sources ), lastAccess );
+    }
+
+    public static Set<GraphWorkspace> convertToWorkspaces( final Iterable<Node> nodes )
+    {
+        final Set<GraphWorkspace> refs = new HashSet<GraphWorkspace>();
+        for ( final Node node : nodes )
+        {
+            LOGGER.info( "Processing node for workspaces: %s", node );
+            if ( node.getId() == 0 )
+            {
+                LOGGER.info( "root node, skipping." );
+                continue;
+            }
+
+            if ( !Conversions.isType( node, NodeType.WORKSPACE ) )
+            {
+                final String nt = getStringProperty( NODE_TYPE, node );
+                LOGGER.info( "Not a workspace node: %s. Type: %s", node, nt );
+                continue;
+            }
+
+            refs.add( Conversions.toWorkspace( node ) );
+        }
+
+        return refs;
     }
 
     public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )

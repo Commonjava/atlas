@@ -306,8 +306,8 @@ public final class GraphWorkspace
         if ( open )
         {
             clearVersionSelections();
-            fireClosed();
             open = false;
+            fireClosed();
         }
     }
 

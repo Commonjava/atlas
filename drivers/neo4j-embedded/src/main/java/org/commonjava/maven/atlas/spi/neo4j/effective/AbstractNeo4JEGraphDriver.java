@@ -22,10 +22,12 @@ import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SOURCE_URI;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.WS_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.addToURIListProperty;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.cloneRelationshipProperties;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToProjects;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToRelationships;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToWorkspaces;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getInjectedCycles;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getMetadataMap;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getSelections;
@@ -109,6 +111,8 @@ public abstract class AbstractNeo4JEGraphDriver
     private static final String BY_GAV_IDX = "by_gav";
 
     private static final String BY_GA_IDX = "by_ga";
+
+    private static final String ALL_WORKSPACES = "all_workspaces";
 
     private static final String CYCLE_INJECTION_IDX = "cycle_injections";
 
@@ -1653,6 +1657,10 @@ public abstract class AbstractNeo4JEGraphDriver
 
             Conversions.toNodeProperties( ws, wsNode );
 
+            graph.index()
+                 .forNodes( ALL_WORKSPACES )
+                 .add( wsNode, WS_ID, ws.getId() );
+
             tx.success();
 
             return ws;
@@ -1680,6 +1688,10 @@ public abstract class AbstractNeo4JEGraphDriver
 
             if ( clearSelectedVersions( nid, tx ) )
             {
+                graph.index()
+                     .forNodes( ALL_WORKSPACES )
+                     .remove( wsNode );
+
                 wsNode.delete();
             }
 
@@ -1728,6 +1740,14 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         return Conversions.toWorkspace( node );
+    }
+
+    @Override
+    public Set<GraphWorkspace> loadAllWorkspaces()
+    {
+        return convertToWorkspaces( graph.index()
+                                         .forNodes( ALL_WORKSPACES )
+                                         .query( WS_ID, "*" ) );
     }
 
 }
