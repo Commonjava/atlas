@@ -142,7 +142,7 @@ public class EGraphManager
 
     public boolean containsGraph( final GraphView view, final ProjectVersionRef ref )
     {
-        return rootDriver.containsProject( view, ref );
+        return rootDriver.containsProject( view, ref ) && !rootDriver.isMissing( view, ref );
     }
 
     public boolean containsGraph( final GraphWorkspace workspace, final ProjectVersionRef ref )

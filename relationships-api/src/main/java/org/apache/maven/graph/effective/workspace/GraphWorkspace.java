@@ -267,7 +267,7 @@ public final class GraphWorkspace
     @Override
     public String toString()
     {
-        return String.format( "GraphWorkspace (id=%s, config=[%s])", config );
+        return String.format( "GraphWorkspace (id=%s, config=[%s])", id, config );
     }
 
     @Override

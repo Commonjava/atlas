@@ -175,4 +175,11 @@ public final class GraphWorkspaceConfiguration
         return activeSources == null ? 0 : activeSources.size();
     }
 
+    @Override
+    public String toString()
+    {
+        return String.format( "GraphWorkspaceConfiguration [activePomLocations=%s, activeSources=%s, forceVersions=%s]",
+                              activePomLocations, activeSources, forceVersions );
+    }
+
 }

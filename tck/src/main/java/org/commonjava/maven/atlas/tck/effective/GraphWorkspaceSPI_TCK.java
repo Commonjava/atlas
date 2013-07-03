@@ -15,6 +15,25 @@ public abstract class GraphWorkspaceSPI_TCK
 {
 
     @Test
+    public void createWorkspaceAndRetrieveById()
+        throws Exception
+    {
+        final GraphWorkspace ws = getManager().createWorkspace( new GraphWorkspaceConfiguration() );
+
+        assertThat( ws, notNullValue() );
+
+        logger.info( "Created workspace: %s", ws );
+
+        final GraphWorkspace result = getManager().getWorkspace( ws.getId() );
+
+        logger.info( "Retrieved all workspaces: %s", result );
+
+        assertThat( result, notNullValue() );
+        assertThat( result.getId(), equalTo( ws.getId() ) );
+        assertThat( result.equals( ws ), equalTo( true ) );
+    }
+
+    @Test
     public void createWorkspaceAndFindInAllWorkspacesListing()
         throws Exception
     {
