@@ -19,7 +19,6 @@ package org.apache.maven.graph.effective;
 import static org.apache.maven.graph.effective.util.RelationshipUtils.filterTerminalParents;
 
 import java.io.Serializable;
-import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -47,8 +46,6 @@ public class EProjectGraph
 
     private final ProjectVersionRef project;
 
-    private final Set<URI> sources;
-
     private final EGraphDriver driver;
 
     private final GraphView view;
@@ -57,7 +54,6 @@ public class EProjectGraph
     {
         this.view = new GraphView( session, ref );
         this.project = ref;
-        sources = session.getActiveSources();
         this.driver = driver;
     }
 
@@ -66,7 +62,6 @@ public class EProjectGraph
     {
         this.view = new GraphView( session, filter, ref );
         this.project = ref;
-        this.sources = session.getActiveSources();
         this.driver = driver;
     }
 
@@ -121,11 +116,6 @@ public class EProjectGraph
     //            add( project );
     //        }
     //    }
-
-    public Set<URI> getSources()
-    {
-        return sources;
-    }
 
     public Set<ProjectRelationship<?>> getFirstOrderRelationships()
     {
