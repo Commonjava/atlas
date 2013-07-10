@@ -81,6 +81,8 @@ public interface EGraphDriver
 
     void selectVersionFor( ProjectVersionRef ref, SingleVersion version, String id );
 
+    void selectVersionForAll( ProjectRef ref, SingleVersion version, String id );
+
     /* 
      * ################################################
      * Queries require a view

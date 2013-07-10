@@ -20,6 +20,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.apache.maven.graph.effective.filter.AnyFilter;
 import org.apache.maven.graph.effective.filter.NoneFilter;
 import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
 import org.apache.maven.graph.effective.rel.ProjectRelationship;
@@ -34,7 +35,7 @@ public abstract class AbstractFilteringTraversal
 
     protected AbstractFilteringTraversal()
     {
-        rootFilter = null;
+        rootFilter = new AnyFilter();
     }
 
     protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter )
@@ -91,6 +92,7 @@ public abstract class AbstractFilteringTraversal
         return ok;
     }
 
+    @Override
     public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                              final int pass )
     {

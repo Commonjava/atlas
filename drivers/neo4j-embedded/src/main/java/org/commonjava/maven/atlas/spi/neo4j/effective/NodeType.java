@@ -19,6 +19,6 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 public enum NodeType
 {
 
-    PROJECT, CYCLE, WORKSPACE;
+    PROJECT, CYCLE, WORKSPACE, GA_SELECTIONS;
 
 }

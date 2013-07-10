@@ -44,7 +44,11 @@ public interface ProjectRelationship<T extends ProjectVersionRef>
 
     ProjectRelationship<T> selectDeclaring( SingleVersion version );
 
+    ProjectRelationship<T> selectDeclaring( SingleVersion version, boolean force );
+
     ProjectRelationship<T> selectTarget( SingleVersion version );
+
+    ProjectRelationship<T> selectTarget( SingleVersion version, boolean force );
 
     boolean isManaged();
 

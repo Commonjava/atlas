@@ -130,7 +130,13 @@ public final class PluginDependencyRelationship
     @Override
     public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version )
     {
-        final ProjectVersionRef d = getDeclaring().selectVersion( version );
+        return selectDeclaring( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version, final boolean force )
+    {
+        final ProjectVersionRef d = getDeclaring().selectVersion( version, force );
         final ArtifactRef t = getTarget();
 
         return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
@@ -140,9 +146,15 @@ public final class PluginDependencyRelationship
     @Override
     public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version )
     {
+        return selectTarget( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version, final boolean force )
+    {
         final ProjectVersionRef d = getDeclaring();
         ArtifactRef t = getTarget();
-        t = new ArtifactRef( t.selectVersion( version ), t.getType(), t.getClassifier(), t.isOptional() );
+        t = new ArtifactRef( t.selectVersion( version, force ), t.getType(), t.getClassifier(), t.isOptional() );
 
         return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
                                                  isManaged() );

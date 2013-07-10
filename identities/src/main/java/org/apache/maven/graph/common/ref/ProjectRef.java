@@ -62,7 +62,7 @@ public class ProjectRef
     @Override
     public String toString()
     {
-        return String.format( "%s:%s:*", groupId, artifactId );
+        return String.format( "%s:%s", groupId, artifactId );
     }
 
     @Override

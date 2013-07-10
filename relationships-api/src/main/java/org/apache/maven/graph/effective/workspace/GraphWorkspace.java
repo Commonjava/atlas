@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
 import org.apache.maven.graph.common.version.SingleVersion;
 import org.apache.maven.graph.spi.GraphDriverException;
@@ -18,6 +19,8 @@ public final class GraphWorkspace
     private final GraphWorkspaceConfiguration config;
 
     private Map<ProjectVersionRef, SingleVersion> selectedVersions = new HashMap<ProjectVersionRef, SingleVersion>();
+
+    private Map<ProjectRef, SingleVersion> wildcardSelectedVersions = new HashMap<ProjectRef, SingleVersion>();
 
     private final transient Map<String, Object> properties = new HashMap<String, Object>();
 
@@ -55,6 +58,11 @@ public final class GraphWorkspace
     protected void setSelectedVersions( final Map<ProjectVersionRef, SingleVersion> selections )
     {
         this.selectedVersions = selections;
+    }
+
+    protected void setWildcardSelectedVersions( final Map<ProjectRef, SingleVersion> selections )
+    {
+        this.wildcardSelectedVersions = selections;
     }
 
     public void touch()
@@ -238,6 +246,24 @@ public final class GraphWorkspace
         return updated;
     }
 
+    public final void selectVersionForAll( final ProjectRef ref, final SingleVersion version )
+        throws GraphDriverException
+    {
+        checkOpen();
+        if ( !version.isConcrete() )
+        {
+            throw new IllegalArgumentException( "You cannot select a non-concrete version!" );
+        }
+
+        final SingleVersion old = wildcardSelectedVersions.put( ref, version );
+        if ( old == null || !old.equals( version ) )
+        {
+            fireWildcardSelectionAdded( ref, version );
+        }
+
+        fireAccessed();
+    }
+
     public final Map<ProjectVersionRef, SingleVersion> clearVersionSelections()
     {
         checkOpen();
@@ -255,7 +281,14 @@ public final class GraphWorkspace
     {
         checkOpen();
         fireAccessed();
-        return selectedVersions.get( ref.asProjectVersionRef() );
+        SingleVersion version = selectedVersions.get( ref.asProjectVersionRef() );
+
+        if ( version == null )
+        {
+            version = wildcardSelectedVersions.get( ref.asProjectRef() );
+        }
+
+        return version;
     }
 
     public final Map<ProjectVersionRef, SingleVersion> getVersionSelections()
@@ -328,6 +361,15 @@ public final class GraphWorkspace
         }
     }
 
+    private void fireWildcardSelectionAdded( final ProjectRef ref, final SingleVersion version )
+        throws GraphDriverException
+    {
+        for ( final GraphWorkspaceListener listener : listeners )
+        {
+            listener.wildcardSelectionAdded( this, ref, version );
+        }
+    }
+
     private void fireSelectionAdded( final ProjectVersionRef ref, final SingleVersion version )
         throws GraphDriverException
     {
@@ -366,6 +408,21 @@ public final class GraphWorkspace
         }
 
         return this;
+    }
+
+    public boolean hasSelection( final ProjectVersionRef ref )
+    {
+        return selectedVersions.containsKey( ref );
+    }
+
+    public boolean hasSelectionForAll( final ProjectRef ref )
+    {
+        return wildcardSelectedVersions.containsKey( ref );
+    }
+
+    public boolean isForceVersions()
+    {
+        return config.isForceVersions();
     }
 
 }

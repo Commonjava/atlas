@@ -143,7 +143,13 @@ public final class DependencyRelationship
     @Override
     public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version )
     {
-        final ProjectVersionRef d = getDeclaring().selectVersion( version );
+        return selectDeclaring( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ArtifactRef> selectDeclaring( final SingleVersion version, final boolean force )
+    {
+        final ProjectVersionRef d = getDeclaring().selectVersion( version, force );
         final ArtifactRef t = getTarget();
 
         return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
@@ -153,9 +159,15 @@ public final class DependencyRelationship
     @Override
     public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version )
     {
+        return selectTarget( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ArtifactRef> selectTarget( final SingleVersion version, final boolean force )
+    {
         final ProjectVersionRef d = getDeclaring();
         ArtifactRef t = getTarget();
-        t = new ArtifactRef( t.selectVersion( version ), t.getType(), t.getClassifier(), t.isOptional() );
+        t = new ArtifactRef( t.selectVersion( version, force ), t.getType(), t.getClassifier(), t.isOptional() );
 
         return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
                                            getExcludes().toArray( new ProjectRef[] {} ) );

@@ -287,6 +287,14 @@ public class EGraphManager
     }
 
     @Override
+    public void wildcardSelectionAdded( final GraphWorkspace workspace, final ProjectRef ref,
+                                        final SingleVersion version )
+        throws GraphDriverException
+    {
+        rootDriver.selectVersionForAll( ref, version, workspace.getId() );
+    }
+
+    @Override
     public void closed( final GraphWorkspace workspace )
     {
         if ( workspace.getProperty( TEMP_WS, Boolean.class, Boolean.FALSE ) )
@@ -330,6 +338,12 @@ public class EGraphManager
         ws.setProperty( TEMP_WS, Boolean.TRUE );
 
         return ws;
+    }
+
+    public void storeWorkspace( final GraphWorkspace ws )
+        throws GraphDriverException
+    {
+        rootDriver.storeWorkspace( ws );
     }
 
 }

@@ -37,6 +37,8 @@ import org.apache.maven.graph.common.DependencyScope;
 import org.apache.maven.graph.common.ref.ArtifactRef;
 import org.apache.maven.graph.common.ref.ProjectRef;
 import org.apache.maven.graph.common.ref.ProjectVersionRef;
+import org.apache.maven.graph.common.version.SingleVersion;
+import org.apache.maven.graph.common.version.VersionUtils;
 import org.apache.maven.graph.effective.rel.DependencyRelationship;
 import org.apache.maven.graph.effective.rel.ExtensionRelationship;
 import org.apache.maven.graph.effective.rel.ParentRelationship;
@@ -120,6 +122,8 @@ public final class Conversions
 
     public static final String POM_LOCATION_URI = "pom_location_uri";
 
+    public static final String FORCE_VERSION_SELECTIONS = "force_selections";
+
     public static final String LAST_ACCESS_DATE = "last_access";
 
     public static final String SELECTION_PREFIX = "rel_selection_";
@@ -128,10 +132,49 @@ public final class Conversions
 
     public static final String SELECTION_ONLY = "_selection_only";
 
+    public static final String SELECTION_FOR_PREFIX = "selection_for_";
+
+    public static final int SELECTION_FOR_PREFIX_LEN = SELECTED_FOR.length();
+
     public static final String WS_ID = "wsid";
 
     private Conversions()
     {
+    }
+
+    public static void toSelectionNodeProperties( final String wsId, final ProjectRef ref, final SingleVersion version,
+                                                  final Node node )
+    {
+        node.setProperty( GA, ref.toString() );
+        node.setProperty( NODE_TYPE, NodeType.GA_SELECTIONS.name() );
+        node.setProperty( SELECTION_FOR_PREFIX + wsId, version.renderStandard() );
+    }
+
+    public static Map<String, SingleVersion> getWorkspaceSelections( final Node node )
+    {
+        if ( node == null )
+        {
+            return null;
+        }
+
+        if ( !isType( node, NodeType.WORKSPACE ) )
+        {
+            throw new IllegalArgumentException( "Node " + node.getId() + " is not a ga-selections reference." );
+        }
+
+        final Map<String, SingleVersion> selections = new HashMap<String, SingleVersion>();
+        final Iterable<String> keys = node.getPropertyKeys();
+        for ( final String key : keys )
+        {
+            if ( key.startsWith( SELECTION_FOR_PREFIX ) )
+            {
+                final String wsid = key.substring( SELECTION_FOR_PREFIX_LEN );
+                final SingleVersion version = VersionUtils.createSingleVersion( (String) node.getProperty( key ) );
+                selections.put( wsid, version );
+            }
+        }
+
+        return selections;
     }
 
     public static void toNodeProperties( final GraphWorkspace workspace, final Node node )
@@ -142,6 +185,7 @@ public final class Conversions
 
         node.setProperty( SOURCE_URI, toStringArray( workspace.getActiveSources() ) );
         node.setProperty( POM_LOCATION_URI, toStringArray( workspace.getActivePomLocations() ) );
+        node.setProperty( FORCE_VERSION_SELECTIONS, workspace.isForceVersions() );
     }
 
     public static GraphWorkspace toWorkspace( final Node node )
@@ -159,9 +203,11 @@ public final class Conversions
         final List<URI> sources = getURIListProperty( SOURCE_URI, node, UNKNOWN_SOURCE_URI );
         final List<URI> pomLocations = getURIListProperty( POM_LOCATION_URI, node, POM_ROOT_URI );
         final long lastAccess = getLongProperty( LAST_ACCESS_DATE, node, System.currentTimeMillis() );
+        final boolean force = getBooleanProperty( FORCE_VERSION_SELECTIONS, node, true );
 
         return new GraphWorkspace( Long.toString( node.getId() ),
-                                   new GraphWorkspaceConfiguration().withPomLocations( pomLocations )
+                                   new GraphWorkspaceConfiguration().withForcedVersions( force )
+                                                                    .withPomLocations( pomLocations )
                                                                     .withSources( sources ), lastAccess );
     }
 
@@ -788,6 +834,14 @@ public final class Conversions
         }
 
         return false;
+    }
+
+    public static void clearCloneStatus( final Relationship relationship )
+    {
+        if ( relationship.hasProperty( CLONE_OF ) )
+        {
+            relationship.removeProperty( CLONE_OF );
+        }
     }
 
     public static void markSelectionOnly( final Relationship rel, final boolean value )

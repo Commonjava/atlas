@@ -129,7 +129,13 @@ public final class PluginRelationship
     @Override
     public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
     {
-        final ProjectVersionRef d = getDeclaring().selectVersion( version );
+        return selectDeclaring( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version, final boolean force )
+    {
+        final ProjectVersionRef d = getDeclaring().selectVersion( version, force );
         final ProjectVersionRef t = getTarget();
 
         return new PluginRelationship( getSources(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
@@ -138,8 +144,14 @@ public final class PluginRelationship
     @Override
     public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
     {
+        return selectTarget( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
+    {
         final ProjectVersionRef d = getDeclaring();
-        final ProjectVersionRef t = getTarget().selectVersion( version );
+        final ProjectVersionRef t = getTarget().selectVersion( version, force );
 
         return new PluginRelationship( getSources(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
     }

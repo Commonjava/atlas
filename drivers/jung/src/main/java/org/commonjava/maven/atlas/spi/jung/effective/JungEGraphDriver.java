@@ -542,13 +542,25 @@ public class JungEGraphDriver
         @Override
         public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
         {
-            return new SelfEdge( getDeclaring().selectVersion( version ) );
+            return selectDeclaring( version, false );
+        }
+
+        @Override
+        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version, final boolean force )
+        {
+            return new SelfEdge( getDeclaring().selectVersion( version, force ) );
         }
 
         @Override
         public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
         {
-            return new SelfEdge( getDeclaring().selectVersion( version ) );
+            return selectTarget( version, false );
+        }
+
+        @Override
+        public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
+        {
+            return new SelfEdge( getDeclaring().selectVersion( version, force ) );
         }
 
     }
@@ -985,6 +997,11 @@ public class JungEGraphDriver
 
     @Override
     public void selectVersionFor( final ProjectVersionRef ref, final SingleVersion version, final String id )
+    {
+    }
+
+    @Override
+    public void selectVersionForAll( final ProjectRef ref, final SingleVersion version, final String id )
     {
     }
 

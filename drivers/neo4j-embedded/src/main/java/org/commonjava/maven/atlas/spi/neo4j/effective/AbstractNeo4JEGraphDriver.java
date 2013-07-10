@@ -18,20 +18,24 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 
 import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.spi.neo4j.effective.traverse.TraversalUtils.getGraphRelTypes;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.FORCE_VERSION_SELECTIONS;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SOURCE_URI;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.WS_ID;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.addToURIListProperty;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.clearCloneStatus;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.cloneRelationshipProperties;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToProjects;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToRelationships;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.convertToWorkspaces;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getBooleanProperty;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getInjectedCycles;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getMetadataMap;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getSelections;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getStringProperty;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.getWorkspaceSelections;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.id;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isCloneFor;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.isConnected;
@@ -46,7 +50,9 @@ import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toNodeProperti
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectVersionRef;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toRelationshipProperties;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toSelectionNodeProperties;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toSet;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toWorkspace;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -111,6 +117,8 @@ public abstract class AbstractNeo4JEGraphDriver
     private static final String BY_GAV_IDX = "by_gav";
 
     private static final String BY_GA_IDX = "by_ga";
+
+    private static final String GA_SELECTIONS_IDX = "ga_selections";
 
     private static final String ALL_WORKSPACES = "all_workspaces";
 
@@ -341,7 +349,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 final ProjectVersionRef target = rel.getTarget()
                                                     .asProjectVersionRef();
 
-                final long[] ids = new long[2];
+                final Node[] nodes = new Node[2];
                 int i = 0;
                 for ( final ProjectVersionRef ref : new ProjectVersionRef[] { declaring, target } )
                 {
@@ -350,14 +358,13 @@ public abstract class AbstractNeo4JEGraphDriver
                     {
                         final Node node = newProjectNode( ref );
                         logger.debug( "Created project node: %s with id: %d", ref, node.getId() );
-                        ids[i] = node.getId();
+                        nodes[i] = node;
                     }
                     else
                     {
-                        ids[i] = hits.next()
-                                     .getId();
+                        nodes[i] = hits.next();
 
-                        logger.debug( "Using existing project node: %s", ids[i] );
+                        logger.debug( "Using existing project node: %s", nodes[i] );
                     }
 
                     i++;
@@ -368,16 +375,17 @@ public abstract class AbstractNeo4JEGraphDriver
 
                 final String relId = id( rel );
                 final IndexHits<Relationship> relHits = relIdx.get( RELATIONSHIP_ID, relId );
+
                 if ( relHits.size() < 1 )
                 {
-                    final Node from = graph.getNodeById( ids[0] );
+                    final Node from = nodes[0];
 
-                    if ( ids[0] != ids[1] )
+                    if ( from != nodes[1] )
                     {
-                        final Node to = graph.getNodeById( ids[1] );
+                        final Node to = nodes[1];
 
-                        logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, ids[0],
-                                      ids[1] );
+                        logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, from,
+                                      to );
 
                         final GraphRelType grt = GraphRelType.map( rel.getType(), rel.isManaged() );
 
@@ -387,17 +395,40 @@ public abstract class AbstractNeo4JEGraphDriver
 
                         toRelationshipProperties( rel, relationship );
                         relIdx.add( relationship, RELATIONSHIP_ID, relId );
+
+                        final IndexHits<Node> gaSelectionHits = graph.index()
+                                                                     .forNodes( GA_SELECTIONS_IDX )
+                                                                     .query( GA, target.asProjectRef()
+                                                                                       .toString() );
+                        if ( gaSelectionHits.hasNext() )
+                        {
+                            final Map<String, SingleVersion> workspaceSelections =
+                                getWorkspaceSelections( gaSelectionHits.next() );
+
+                            if ( workspaceSelections != null )
+                            {
+                                for ( final Entry<String, SingleVersion> entry : workspaceSelections.entrySet() )
+                                {
+                                    final String key = entry.getKey();
+                                    final SingleVersion value = entry.getValue();
+
+                                    selectRelationship( getWorkspaceNodeId( key ), relationship, value );
+                                }
+                            }
+                        }
                     }
 
                     graph.index()
                          .forNodes( MISSING_NODES_IDX )
                          .remove( from );
+
                     markConnected( from, true );
                 }
                 else
                 {
                     final Relationship r = relHits.next();
 
+                    clearCloneStatus( r );
                     addToURIListProperty( rel.getSources(), SOURCE_URI, r );
                     markSelectionOnly( r, false );
                 }
@@ -1338,7 +1369,6 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<Node> connected = new HashSet<Node>();
         for ( final Node node : nodes )
         {
-            // TODO: What about disconnected nodes discovered as part of the graph??
             if ( hasPathTo( view, node ) )
             {
                 connected.add( node );
@@ -1372,27 +1402,88 @@ public abstract class AbstractNeo4JEGraphDriver
         final long sid = getWorkspaceNodeId( sessionId );
         for ( final Relationship r : rels )
         {
-            final ProjectRelationship<?> rel = toProjectRelationship( r );
-            final ProjectRelationship<?> sel = rel.selectTarget( select );
-
-            selectRelationship( sid, r, sel );
+            selectRelationship( sid, r, select );
         }
     }
 
-    private Relationship selectRelationship( final long sessionId, final Relationship from,
-                                             final ProjectRelationship<?> toPR )
+    @Override
+    public void selectVersionForAll( final ProjectRef variable, final SingleVersion select, final String sessionId )
     {
-        //        logger.info( "\n\n\n\nSELECT: %s\n\n\n\n", toPR );
+        logger.debug( "\n\n\n\nSELECT: %s for: %s\n\n\n\n", select, variable );
+        if ( !select.isConcrete() )
+        {
+            logger.warn( "Cannot select non-concrete version! Attempted to select: %s", select );
+            return;
+        }
+
+        //        if ( variable.isRelease() )
+        //        {
+        //            logger.warn( "Cannot select version if target is already a concrete version! Attempted to select for: %s",
+        //                         variable );
+        //
+        //            return;
+        //        }
+
+        final Iterable<Node> nodes = getNodes( variable );
+        for ( final Node node : nodes )
+        {
+            final Iterable<Relationship> rels = node.getRelationships( Direction.INCOMING );
+
+            final long sid = getWorkspaceNodeId( sessionId );
+            for ( final Relationship r : rels )
+            {
+                selectRelationship( sid, r, select );
+            }
+        }
+
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final IndexHits<Node> hits = graph.index()
+                                              .forNodes( GA_SELECTIONS_IDX )
+                                              .query( GA, variable );
+            Node gaSelectionsNode;
+            if ( hits.hasNext() )
+            {
+                hits.next();
+            }
+            else
+            {
+                gaSelectionsNode = graph.createNode();
+                toSelectionNodeProperties( sessionId, variable, select, gaSelectionsNode );
+            }
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    private Iterable<Node> getNodes( final ProjectRef variable )
+    {
+        return graph.index()
+                    .forNodes( BY_GA_IDX )
+                    .query( GA, "*" );
+    }
+
+    private Relationship selectRelationship( final long wsid, final Relationship from, final SingleVersion select )
+    {
         Relationship to = null;
         Transaction tx = null;
         try
         {
-            final Node sessionNode = graph.getNodeById( sessionId );
+            final Node wsNode = graph.getNodeById( wsid );
+            final boolean force = getBooleanProperty( FORCE_VERSION_SELECTIONS, wsNode, true );
+
+            //        logger.info( "\n\n\n\nSELECT: %s\n\n\n\n", toPR );
+            final ProjectRelationship<?> rel = toProjectRelationship( from );
+
+            final ProjectRelationship<?> sel = rel.selectTarget( select, force );
 
             final RelationshipIndex relIdx = graph.index()
                                                   .forRelationships( ALL_RELATIONSHIPS );
 
-            final String toId = id( toPR );
+            final String toId = id( sel );
 
             Node fromNode = from.getStartNode();
 
@@ -1402,13 +1493,13 @@ public abstract class AbstractNeo4JEGraphDriver
             final IndexHits<Relationship> hits = relIdx.get( RELATIONSHIP_ID, toId );
             if ( hits.size() < 1 )
             {
-                Node toNode = getNode( toPR.getTarget()
-                                           .asProjectVersionRef() );
+                Node toNode = getNode( sel.getTarget()
+                                          .asProjectVersionRef() );
 
                 if ( toNode == null )
                 {
-                    toNode = newProjectNode( toPR.getTarget()
-                                                 .asProjectVersionRef() );
+                    toNode = newProjectNode( sel.getTarget()
+                                                .asProjectVersionRef() );
 
                     //                    logger.info( "Created node %s for selected project version: %s", toNode, toPR.getTarget()
                     //                                                                                                 .asProjectVersionRef() );
@@ -1432,7 +1523,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 fromNode = to.getStartNode();
             }
 
-            markSelection( from, to, sessionNode );
+            markSelection( from, to, wsNode );
 
             tx.success();
         }
@@ -1500,7 +1591,6 @@ public abstract class AbstractNeo4JEGraphDriver
                 continue;
             }
 
-            // TODO: If something else starts making use of this relationship, we need to clear this flag!!
             if ( isCloneFor( to, from ) )
             {
                 logger.debug( "Deleting cloned relationship from previous selection operation: %s", to );
@@ -1718,7 +1808,7 @@ public abstract class AbstractNeo4JEGraphDriver
         try
         {
             final Node wsNode = graph.getNodeById( getWorkspaceNodeId( workspace.getId() ) );
-            Conversions.toNodeProperties( workspace, wsNode );
+            toNodeProperties( workspace, wsNode );
 
             tx.success();
         }
@@ -1739,7 +1829,7 @@ public abstract class AbstractNeo4JEGraphDriver
             return null;
         }
 
-        return Conversions.toWorkspace( node );
+        return toWorkspace( node );
     }
 
     @Override

@@ -71,11 +71,17 @@ public final class ParentRelationship
     @Override
     public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
     {
+        return selectDeclaring( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version, final boolean force )
+    {
         ProjectVersionRef d = getDeclaring();
         final ProjectVersionRef t = getTarget();
         final boolean self = d.equals( t );
 
-        d = d.selectVersion( version );
+        d = d.selectVersion( version, force );
 
         return new ParentRelationship( getSources(), d, self ? d : t );
     }
@@ -83,11 +89,17 @@ public final class ParentRelationship
     @Override
     public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
     {
+        return selectTarget( version, false );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
+    {
         final ProjectVersionRef d = getDeclaring();
         ProjectVersionRef t = getTarget();
         final boolean self = d.equals( t );
 
-        t = t.selectVersion( version );
+        t = t.selectVersion( version, force );
 
         return new ParentRelationship( getSources(), self ? t : d, t );
     }
