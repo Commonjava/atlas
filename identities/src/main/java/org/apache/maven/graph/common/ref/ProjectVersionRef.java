@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.apache.maven.graph.common.ref;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 import java.io.Serializable;
 
 import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
@@ -71,6 +73,19 @@ public class ProjectVersionRef
         this( groupId, artifactId, null, versionString );
     }
 
+    public static ProjectVersionRef parse( final String gav )
+    {
+        final String[] parts = gav.split( ":" );
+        if ( parts.length < 3 || isEmpty( parts[0] ) || isEmpty( parts[1] ) || isEmpty( parts[2] ) )
+        {
+            throw new IllegalArgumentException(
+                                                "ProjectVersionRef must contain non-empty groupId, artifactId, AND version. (Given: '"
+                                                    + gav + "')" );
+        }
+
+        return new ProjectVersionRef( parts[0], parts[1], parts[2] );
+    }
+
     public ProjectVersionRef asProjectVersionRef()
     {
         return getClass().equals( ProjectVersionRef.class ) ? this : new ProjectVersionRef( getGroupId(),
@@ -107,12 +122,14 @@ public class ProjectVersionRef
         return getVersionSpec().contains( version );
     }
 
+    @Override
     public ProjectVersionRef selectVersion( final String version )
     {
         final SingleVersion single = VersionUtils.createSingleVersion( version );
         return selectVersion( single, false );
     }
 
+    @Override
     public ProjectVersionRef selectVersion( final String version, final boolean force )
     {
         final SingleVersion single = VersionUtils.createSingleVersion( version );

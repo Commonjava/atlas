@@ -44,6 +44,18 @@ public class ProjectRef
         this.artifactId = artifactId;
     }
 
+    public static ProjectRef parse( final String ga )
+    {
+        final String[] parts = ga.split( ":" );
+        if ( parts.length < 2 || isEmpty( parts[0] ) || isEmpty( parts[1] ) )
+        {
+            throw new IllegalArgumentException( "ProjectRef must contain non-empty groupId AND artifactId. (Given: '"
+                + ga + "')" );
+        }
+
+        return new ProjectRef( parts[0], parts[1] );
+    }
+
     public final String getGroupId()
     {
         return groupId;
