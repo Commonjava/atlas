@@ -3,7 +3,7 @@ package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.graph.effective.GraphView;
+import org.commonjava.maven.atlas.effective.GraphView;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;

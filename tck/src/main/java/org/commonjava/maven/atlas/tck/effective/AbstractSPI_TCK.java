@@ -20,9 +20,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 
-import org.apache.maven.graph.effective.EGraphManager;
-import org.apache.maven.graph.effective.workspace.GraphWorkspace;
-import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.effective.EGraphManager;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;

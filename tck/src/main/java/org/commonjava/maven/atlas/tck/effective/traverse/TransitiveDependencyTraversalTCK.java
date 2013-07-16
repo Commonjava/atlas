@@ -16,8 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.tck.effective.traverse;
 
-import static org.apache.maven.graph.common.util.IdentityUtils.projectVersion;
-import static org.apache.maven.graph.effective.util.RelationshipUtils.dependency;
+import static org.commonjava.maven.atlas.common.util.IdentityUtils.projectVersion;
+import static org.commonjava.maven.atlas.effective.util.RelationshipUtils.dependency;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
@@ -25,13 +25,13 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
-import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectDirectRelationships;
-import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.ref.EProjectKey;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.traverse.TransitiveDependencyTraversal;
+import org.commonjava.maven.atlas.common.ref.ArtifactRef;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.effective.EProjectDirectRelationships;
+import org.commonjava.maven.atlas.effective.EProjectGraph;
+import org.commonjava.maven.atlas.effective.ref.EProjectKey;
+import org.commonjava.maven.atlas.effective.rel.ParentRelationship;
+import org.commonjava.maven.atlas.effective.traverse.TransitiveDependencyTraversal;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
 

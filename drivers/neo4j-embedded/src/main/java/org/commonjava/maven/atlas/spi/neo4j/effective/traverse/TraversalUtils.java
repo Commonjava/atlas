@@ -1,7 +1,7 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 
-import static org.apache.maven.graph.effective.util.RelationshipUtils.POM_ROOT_URI;
-import static org.apache.maven.graph.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
+import static org.commonjava.maven.atlas.effective.util.RelationshipUtils.POM_ROOT_URI;
+import static org.commonjava.maven.atlas.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.DESELECTED_FOR;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.POM_LOCATION_URI;
 import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.SELECTED_FOR;
@@ -17,14 +17,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.maven.graph.common.RelationshipType;
-import org.apache.maven.graph.effective.GraphView;
-import org.apache.maven.graph.effective.filter.AbstractAggregatingFilter;
-import org.apache.maven.graph.effective.filter.AbstractTypedFilter;
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.workspace.GraphWorkspace;
-import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.common.RelationshipType;
+import org.commonjava.maven.atlas.effective.GraphView;
+import org.commonjava.maven.atlas.effective.filter.AbstractAggregatingFilter;
+import org.commonjava.maven.atlas.effective.filter.AbstractTypedFilter;
+import org.commonjava.maven.atlas.effective.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Path;

@@ -18,7 +18,7 @@ package org.commonjava.maven.atlas.spi.neo4j.fixture;
 
 import java.io.File;
 
-import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.commonjava.maven.atlas.spi.effective.EGraphDriver;
 import org.commonjava.maven.atlas.spi.neo4j.effective.FileNeo4JEGraphDriver;
 import org.commonjava.util.logging.Logger;
 import org.junit.rules.TemporaryFolder;

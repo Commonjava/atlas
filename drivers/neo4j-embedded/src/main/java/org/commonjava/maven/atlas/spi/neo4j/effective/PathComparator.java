@@ -19,8 +19,8 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 import java.util.Comparator;
 import java.util.List;
 
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.rel.RelationshipPathComparator;
+import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.effective.rel.RelationshipPathComparator;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Path;
 

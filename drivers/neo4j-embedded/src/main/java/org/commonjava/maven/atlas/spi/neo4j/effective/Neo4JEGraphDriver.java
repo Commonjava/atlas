@@ -18,10 +18,10 @@ package org.commonjava.maven.atlas.spi.neo4j.effective;
 
 import java.util.Map;
 
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.spi.GraphDriverException;
-import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.spi.GraphDriverException;
+import org.commonjava.maven.atlas.spi.effective.EGraphDriver;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;

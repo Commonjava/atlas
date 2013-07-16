@@ -24,14 +24,14 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectCycle;
-import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.filter.DependencyFilter;
-import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.common.ref.ArtifactRef;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.effective.EProjectCycle;
+import org.commonjava.maven.atlas.effective.EProjectGraph;
+import org.commonjava.maven.atlas.effective.filter.DependencyFilter;
+import org.commonjava.maven.atlas.effective.rel.DependencyRelationship;
+import org.commonjava.maven.atlas.effective.rel.PluginRelationship;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspace;
 import org.junit.Test;
 
 public abstract class CycleDetectionTCK

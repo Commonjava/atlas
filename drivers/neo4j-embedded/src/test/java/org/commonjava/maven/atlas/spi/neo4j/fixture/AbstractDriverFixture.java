@@ -20,7 +20,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.maven.graph.spi.effective.EGraphDriver;
+import org.commonjava.maven.atlas.spi.effective.EGraphDriver;
 import org.commonjava.util.logging.Logger;
 import org.junit.rules.ExternalResource;
 

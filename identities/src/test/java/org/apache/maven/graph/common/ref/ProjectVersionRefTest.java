@@ -22,8 +22,9 @@ import static org.junit.Assert.assertThat;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.maven.graph.common.version.InvalidVersionSpecificationException;
-import org.apache.maven.graph.common.version.VersionSpec;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.common.version.InvalidVersionSpecificationException;
+import org.commonjava.maven.atlas.common.version.VersionSpec;
 import org.junit.Test;
 
 public class ProjectVersionRefTest

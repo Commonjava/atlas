@@ -24,16 +24,16 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectDirectRelationships;
-import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.ref.EProjectKey;
-import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.rel.ExtensionRelationship;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.traverse.AncestryTraversal;
+import org.commonjava.maven.atlas.common.ref.ArtifactRef;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.effective.EProjectDirectRelationships;
+import org.commonjava.maven.atlas.effective.EProjectGraph;
+import org.commonjava.maven.atlas.effective.ref.EProjectKey;
+import org.commonjava.maven.atlas.effective.rel.DependencyRelationship;
+import org.commonjava.maven.atlas.effective.rel.ExtensionRelationship;
+import org.commonjava.maven.atlas.effective.rel.ParentRelationship;
+import org.commonjava.maven.atlas.effective.rel.PluginRelationship;
+import org.commonjava.maven.atlas.effective.traverse.AncestryTraversal;
 import org.commonjava.maven.atlas.tck.effective.AbstractSPI_TCK;
 import org.junit.Test;
 

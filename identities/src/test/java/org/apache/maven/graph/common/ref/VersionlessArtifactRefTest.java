@@ -3,6 +3,9 @@ package org.apache.maven.graph.common.ref;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
+import org.commonjava.maven.atlas.common.ref.ArtifactRef;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.common.ref.VersionlessArtifactRef;
 import org.junit.Test;
 
 public class VersionlessArtifactRefTest

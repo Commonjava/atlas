@@ -24,13 +24,13 @@ import java.net.URI;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.SingleVersion;
-import org.apache.maven.graph.common.version.VersionUtils;
-import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.common.ref.ArtifactRef;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.common.version.SingleVersion;
+import org.commonjava.maven.atlas.common.version.VersionUtils;
+import org.commonjava.maven.atlas.effective.EProjectGraph;
+import org.commonjava.maven.atlas.effective.rel.DependencyRelationship;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspace;
 import org.junit.Test;
 
 public abstract class SubGraphSelectionTCK

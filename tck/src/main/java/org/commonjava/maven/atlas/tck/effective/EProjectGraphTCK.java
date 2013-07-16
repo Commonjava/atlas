@@ -24,13 +24,13 @@ import java.net.URI;
 import java.util.Iterator;
 import java.util.List;
 
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.EProjectDirectRelationships;
-import org.apache.maven.graph.effective.EProjectGraph;
-import org.apache.maven.graph.effective.ref.EProjectKey;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.traverse.AncestryTraversal;
-import org.apache.maven.graph.effective.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.effective.EProjectDirectRelationships;
+import org.commonjava.maven.atlas.effective.EProjectGraph;
+import org.commonjava.maven.atlas.effective.ref.EProjectKey;
+import org.commonjava.maven.atlas.effective.rel.ParentRelationship;
+import org.commonjava.maven.atlas.effective.traverse.AncestryTraversal;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspace;
 import org.commonjava.util.logging.Logger;
 import org.junit.Test;
 

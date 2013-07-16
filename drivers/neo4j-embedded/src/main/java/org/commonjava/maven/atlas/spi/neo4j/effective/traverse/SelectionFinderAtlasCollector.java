@@ -7,8 +7,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.maven.graph.effective.filter.ProjectRelationshipFilter;
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.effective.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.spi.neo4j.effective.SelectionInfo;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Direction;

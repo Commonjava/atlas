@@ -6,8 +6,8 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Set;
 
-import org.apache.maven.graph.effective.workspace.GraphWorkspace;
-import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspaceConfiguration;
 import org.junit.Test;
 
 public abstract class GraphWorkspaceSPI_TCK

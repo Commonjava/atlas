@@ -17,8 +17,8 @@
 package org.commonjava.maven.atlas.spi.neo4j.io;
 
 import static org.apache.commons.lang.StringUtils.join;
-import static org.apache.maven.graph.effective.util.RelationshipUtils.POM_ROOT_URI;
-import static org.apache.maven.graph.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
+import static org.commonjava.maven.atlas.effective.util.RelationshipUtils.POM_ROOT_URI;
+import static org.commonjava.maven.atlas.effective.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -33,20 +33,20 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.maven.graph.common.DependencyScope;
-import org.apache.maven.graph.common.ref.ArtifactRef;
-import org.apache.maven.graph.common.ref.ProjectRef;
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.common.version.SingleVersion;
-import org.apache.maven.graph.common.version.VersionUtils;
-import org.apache.maven.graph.effective.rel.DependencyRelationship;
-import org.apache.maven.graph.effective.rel.ExtensionRelationship;
-import org.apache.maven.graph.effective.rel.ParentRelationship;
-import org.apache.maven.graph.effective.rel.PluginDependencyRelationship;
-import org.apache.maven.graph.effective.rel.PluginRelationship;
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.workspace.GraphWorkspace;
-import org.apache.maven.graph.effective.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.common.DependencyScope;
+import org.commonjava.maven.atlas.common.ref.ArtifactRef;
+import org.commonjava.maven.atlas.common.ref.ProjectRef;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.common.version.SingleVersion;
+import org.commonjava.maven.atlas.common.version.VersionUtils;
+import org.commonjava.maven.atlas.effective.rel.DependencyRelationship;
+import org.commonjava.maven.atlas.effective.rel.ExtensionRelationship;
+import org.commonjava.maven.atlas.effective.rel.ParentRelationship;
+import org.commonjava.maven.atlas.effective.rel.PluginDependencyRelationship;
+import org.commonjava.maven.atlas.effective.rel.PluginRelationship;
+import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.effective.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.spi.neo4j.effective.GraphRelType;
 import org.commonjava.maven.atlas.spi.neo4j.effective.NodeType;
 import org.commonjava.util.logging.Logger;

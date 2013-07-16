@@ -4,8 +4,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
-import org.apache.maven.graph.common.ref.ProjectVersionRef;
-import org.apache.maven.graph.effective.GraphView;
+import org.commonjava.maven.atlas.common.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.effective.GraphView;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;

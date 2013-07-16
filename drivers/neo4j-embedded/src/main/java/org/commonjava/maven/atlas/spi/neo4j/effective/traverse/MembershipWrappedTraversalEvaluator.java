@@ -21,8 +21,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import org.apache.maven.graph.effective.rel.ProjectRelationship;
-import org.apache.maven.graph.effective.traverse.ProjectNetTraversal;
+import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.effective.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.spi.neo4j.io.Conversions;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;

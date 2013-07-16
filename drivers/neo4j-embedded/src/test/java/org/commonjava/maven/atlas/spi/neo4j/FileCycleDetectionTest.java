@@ -17,7 +17,7 @@
 package org.commonjava.maven.atlas.spi.neo4j;
 
 import org.apache.log4j.Level;
-import org.apache.maven.graph.effective.EGraphManager;
+import org.commonjava.maven.atlas.effective.EGraphManager;
 import org.commonjava.maven.atlas.spi.neo4j.fixture.FileDriverFixture;
 import org.commonjava.maven.atlas.tck.effective.CycleDetectionTCK;
 import org.commonjava.util.logging.Log4jUtil;
