@@ -66,6 +66,7 @@ public class StructurePrintingTraversal
         this.relationshipPrinter = relationshipPrinter;
     }
 
+    @Override
     public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                  final int pass )
     {
@@ -152,18 +153,24 @@ public class StructurePrintingTraversal
 
                 relationshipPrinter.print( out, builder );
 
-                printLinks( out.getTarget()
-                               .asProjectVersionRef(), builder, indent, depth + 1 );
+                if ( !from.equals( out.getTarget()
+                                      .asProjectVersionRef() ) )
+                {
+                    printLinks( out.getTarget()
+                                   .asProjectVersionRef(), builder, indent, depth + 1 );
+                }
             }
         }
     }
 
+    @Override
     public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                              final int pass )
     {
         return traversal == null || traversal.preCheck( relationship, path, pass );
     }
 
+    @Override
     public void startTraverse( final int pass, final EProjectNet network )
         throws GraphDriverException
     {
@@ -173,6 +180,7 @@ public class StructurePrintingTraversal
         }
     }
 
+    @Override
     public void endTraverse( final int pass, final EProjectNet network )
         throws GraphDriverException
     {
@@ -182,6 +190,7 @@ public class StructurePrintingTraversal
         }
     }
 
+    @Override
     public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
                                final int pass )
     {
@@ -191,16 +200,19 @@ public class StructurePrintingTraversal
         }
     }
 
+    @Override
     public TraversalType getType( final int pass )
     {
         return traversal == null ? TraversalType.depth_first : traversal.getType( pass );
     }
 
+    @Override
     public int getRequiredPasses()
     {
         return traversal == null ? 1 : traversal.getRequiredPasses();
     }
 
+    @Override
     public TraversalType[] getTraversalTypes()
     {
         return traversal == null ? new TraversalType[] { TraversalType.depth_first } : traversal.getTraversalTypes();

@@ -20,16 +20,17 @@ public class RootedRelationshipsCollector
         super( start, view, checkExistence );
     }
 
-    public RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view,
-                                         final boolean checkExistence )
+    public RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
     {
         super( startNodes, view, checkExistence );
+        this.logEnabled = true;
     }
 
     private RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view,
                                           final boolean checkExistence, final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );
+        this.logEnabled = true;
     }
 
     @Override
@@ -64,9 +65,11 @@ public class RootedRelationshipsCollector
             {
                 found.add( r );
             }
+
+            return true;
         }
 
-        return true;
+        return false;
     }
 
 }

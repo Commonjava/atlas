@@ -356,6 +356,7 @@ public abstract class AbstractNeo4JEGraphDriver
                     final IndexHits<Node> hits = index.get( GAV, ref.toString() );
                     if ( !hits.hasNext() )
                     {
+                        logger.info( "Creating new node for: %s to support addition of relationship: %s", ref, rel );
                         final Node node = newProjectNode( ref );
                         nodes[i] = node;
                     }
@@ -415,6 +416,9 @@ public abstract class AbstractNeo4JEGraphDriver
                                 }
                             }
                         }
+
+                        logger.info( "Created relationship: %s (%s)", relationship,
+                                     toProjectRelationship( relationship ) );
                     }
 
                     logger.info( "Removing missing/incomplete flag from: %s (%s)", from, declaring );
@@ -427,6 +431,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 else
                 {
                     final Relationship r = relHits.next();
+                    logger.info( "Reusing existing relationship: %s (%s)", r, toProjectRelationship( r ) );
 
                     clearCloneStatus( r );
                     addToURIListProperty( rel.getSources(), SOURCE_URI, r );
@@ -969,8 +974,8 @@ public abstract class AbstractNeo4JEGraphDriver
         //        logger.info( "Traversing for aggregation using: %s from roots: %s", checker.getClass()
         //                                                                                   .getName(), from );
 
-        TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL );
-        //                                                    .sort( new PathComparator() );
+        TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
+                                                    .sort( new PathComparator() );
 
         final Set<GraphRelType> relTypes = getGraphRelTypes( view.getFilter() );
         for ( final GraphRelType grt : relTypes )
@@ -1464,7 +1469,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         return graph.index()
                     .forNodes( BY_GA_IDX )
-                    .query( GA, "*" );
+                    .query( GA, variable.toString() );
     }
 
     private Relationship selectRelationship( final long wsid, final Relationship from, final SingleVersion select )
@@ -1499,6 +1504,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
                 if ( toNode == null )
                 {
+                    logger.info( "Creating new node to deal with selection of version: %s for: %s", select, rel );
                     toNode = newProjectNode( sel.getTarget()
                                                 .asProjectVersionRef() );
 
@@ -1621,6 +1627,7 @@ public abstract class AbstractNeo4JEGraphDriver
             final Transaction tx = graph.beginTx();
             try
             {
+                logger.info( "Creating new node to account for disconnected project: %s", ref );
                 newProjectNode( ref );
 
                 tx.success();

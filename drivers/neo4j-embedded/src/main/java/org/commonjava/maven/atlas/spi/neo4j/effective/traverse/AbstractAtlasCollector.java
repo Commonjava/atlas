@@ -1,12 +1,15 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 
 import static org.commonjava.maven.atlas.spi.neo4j.effective.traverse.TraversalUtils.acceptedInView;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.GAV;
+import static org.commonjava.maven.atlas.spi.neo4j.io.Conversions.toProjectRelationship;
 
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.effective.GraphView;
+import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -71,22 +74,38 @@ public abstract class AbstractAtlasCollector<T>
             return Collections.emptySet();
         }
 
-        final Long endId = path.endNode()
-                               .getId();
-
-        if ( seen.contains( endId ) )
+        final Relationship lastRelationship = path.lastRelationship();
+        if ( lastRelationship != null )
         {
-            log( "Rejecting path; already seen it:\n\t%s", path );
-            return Collections.emptySet();
-        }
+            // NOTE: Have to use relationshipId, because multiple relationships may exist between any two GAVs.
+            // Most common is managed and unmanaged flavors of the same basic relationship (eg. dependencies).
+            final Long endId = lastRelationship.getId();
 
-        seen.add( endId );
+            if ( seen.contains( endId ) )
+            {
+                log( "Rejecting path; already seen it:\n\t%s", path );
+                return Collections.emptySet();
+            }
+
+            seen.add( endId );
+        }
 
         if ( returnChildren( path ) )
         {
-            log( "Implementation says return the children of: %s", path.endNode() );
-            return path.endNode()
-                       .getRelationships( direction );
+            final ProjectRelationship<?> rel = toProjectRelationship( path.lastRelationship() );
+            log( "Implementation says return the children of: %s (lastRel=%s)",
+                 path.endNode()
+                     .hasProperty( GAV ) ? path.endNode()
+                                               .getProperty( GAV ) : "Unknown", rel );
+
+            final Iterable<Relationship> relationships = path.endNode()
+                                                             .getRelationships( direction );
+            //            for ( final Relationship r : relationships )
+            //            {
+            //                log( "Expand included relationship: %s", toProjectRelationship( r ) );
+            //            }
+
+            return relationships;
         }
 
         return Collections.emptySet();
