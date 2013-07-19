@@ -68,7 +68,9 @@ public interface EProjectNet
 
     EGraphDriver getDriver();
 
-    GraphWorkspace getSession();
+    GraphWorkspace getWorkspace();
+
+    GraphView getView();
 
     Set<ProjectVersionRef> getIncompleteSubgraphs();
 

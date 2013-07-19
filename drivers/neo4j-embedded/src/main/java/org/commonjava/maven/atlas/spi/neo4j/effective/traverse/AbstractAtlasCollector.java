@@ -40,16 +40,15 @@ public abstract class AbstractAtlasCollector<T>
         this( Collections.singleton( start ), view, checkExistence );
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view,
-                                      final boolean checkExistence )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
     {
         this.startNodes = startNodes;
         this.view = view;
         this.checkExistence = checkExistence;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view,
-                                      final boolean checkExistence, final Direction direction )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence,
+                                      final Direction direction )
     {
         this( startNodes, view, checkExistence );
         this.view = view;

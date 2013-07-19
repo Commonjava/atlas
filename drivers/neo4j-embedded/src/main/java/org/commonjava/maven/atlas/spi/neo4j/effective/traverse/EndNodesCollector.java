@@ -1,5 +1,7 @@
 package org.commonjava.maven.atlas.spi.neo4j.effective.traverse;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
@@ -27,6 +29,9 @@ public class EndNodesCollector
     {
         super( startNodes, view, checkExistence );
         this.endNodes = endNodes;
+        logger.info( "Collector: start=(%s), end=(%s), view=(%s), checkExistence=%s", join( startNodes, ", " ),
+                     join( endNodes, ", " ), view, checkExistence );
+        //        this.logEnabled = true;
     }
 
     private EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view,
@@ -34,6 +39,7 @@ public class EndNodesCollector
     {
         super( startNodes, view, checkExistence, direction );
         this.endNodes = endNodes;
+        //        this.logEnabled = true;
     }
 
     @Override

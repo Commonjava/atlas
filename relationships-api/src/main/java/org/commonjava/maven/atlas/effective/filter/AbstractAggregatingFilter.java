@@ -43,12 +43,16 @@ public abstract class AbstractAggregatingFilter
         return filters;
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         final List<ProjectRelationshipFilter> childFilters = new ArrayList<ProjectRelationshipFilter>();
         for ( final ProjectRelationshipFilter filter : getFilters() )
         {
+            //            if ( filter.accept( parent ) )
+            //            {
             childFilters.add( filter.getChildFilter( parent ) );
+            //            }
         }
 
         return newChildFilter( childFilters );

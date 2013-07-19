@@ -340,7 +340,7 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             for ( final ProjectRelationship<?> rel : rels )
             {
-                logger.debug( "Adding relationship: %s", rel );
+                logger.info( "Adding relationship: %s", rel );
 
                 final Index<Node> index = graph.index()
                                                .forNodes( BY_GAV_IDX );
@@ -357,14 +357,13 @@ public abstract class AbstractNeo4JEGraphDriver
                     if ( !hits.hasNext() )
                     {
                         final Node node = newProjectNode( ref );
-                        logger.debug( "Created project node: %s with id: %d", ref, node.getId() );
                         nodes[i] = node;
                     }
                     else
                     {
                         nodes[i] = hits.next();
 
-                        logger.debug( "Using existing project node: %s", nodes[i] );
+                        logger.info( "Using existing project node: %s", nodes[i] );
                     }
 
                     i++;
@@ -418,6 +417,7 @@ public abstract class AbstractNeo4JEGraphDriver
                         }
                     }
 
+                    logger.info( "Removing missing/incomplete flag from: %s (%s)", from, declaring );
                     graph.index()
                          .forNodes( MISSING_NODES_IDX )
                          .remove( from );
@@ -586,6 +586,7 @@ public abstract class AbstractNeo4JEGraphDriver
                  .add( node, GAV, gav );
         }
 
+        logger.info( "Created project node: %s with id: %d", ref, node.getId() );
         return node;
     }
 

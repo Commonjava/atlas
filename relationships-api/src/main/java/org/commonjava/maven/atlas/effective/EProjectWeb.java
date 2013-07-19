@@ -361,9 +361,15 @@ public class EProjectWeb
     }
 
     @Override
-    public GraphWorkspace getSession()
+    public GraphWorkspace getWorkspace()
     {
         return view.getWorkspace();
+    }
+
+    @Override
+    public GraphView getView()
+    {
+        return view;
     }
 
     @Override

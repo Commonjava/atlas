@@ -58,7 +58,7 @@ public final class TraversalUtils
             }
         }
 
-        logger.debug( "Path accepted: %s", path );
+        logger.info( "ACCEPT: Path: %s", path );
         return true;
     }
 
@@ -70,19 +70,23 @@ public final class TraversalUtils
     private static boolean accepted( final Relationship r, final ProjectRelationshipFilter f,
                                      final GraphWorkspace workspace )
     {
-        logger.debug( "Checking relationship for acceptance: %s", r );
+        final ProjectRelationship<?> rel = toProjectRelationship( r );
+
+        debug( "Checking relationship for acceptance: %s (%s)", r, rel );
+
         if ( workspace != null )
         {
             final long workspaceId = Long.parseLong( workspace.getId() );
             if ( idListingContains( DESELECTED_FOR, r, workspaceId ) )
             {
-                logger.debug( "Found relationship in path that was deselected: %s", r );
+                debug( "REJECTED: Found relationship in path that was deselected: %s", r );
                 return false;
             }
 
             if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, workspaceId ) )
             {
-                logger.debug( "Found relationship in path that was not selected and is marked as selection-only: %s", r );
+                debug( "REJECTED: Found relationship in path that was not selected and is marked as selection-only: %s",
+                       r );
                 return false;
             }
 
@@ -102,7 +106,7 @@ public final class TraversalUtils
 
                 if ( !found )
                 {
-                    logger.debug( "Found relationship in path with de-selected source-repository URI: %s", r );
+                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s", r );
                     return false;
                 }
             }
@@ -113,7 +117,7 @@ public final class TraversalUtils
                 final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
                 if ( !pomLocations.contains( pomLocation ) )
                 {
-                    logger.debug( "Found relationship in path with de-selected pom-location URI: %s", r );
+                    debug( "REJECTED: Found relationship in path with de-selected pom-location URI: %s", r );
                     return false;
                 }
             }
@@ -121,15 +125,20 @@ public final class TraversalUtils
 
         if ( f != null )
         {
-            final ProjectRelationship<?> rel = toProjectRelationship( r );
             if ( !f.accept( rel ) )
             {
-                logger.debug( "Filter rejected relationship: %s", rel );
+                debug( "Filter: %s REJECTED relationship: %s (%s)", f, r, rel );
                 return false;
             }
         }
 
+        logger.info( "ACCEPT: %s (%s)", r, rel );
         return true;
+    }
+
+    private static void debug( final String message, final Object... params )
+    {
+        logger.debug( message, params );
     }
 
     public static Set<GraphRelType> getGraphRelTypes( final ProjectRelationshipFilter filter )
