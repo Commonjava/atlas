@@ -36,20 +36,30 @@ public class DependencyFilter
 
     private final Set<ProjectRef> excludes = new HashSet<ProjectRef>();
 
+    private final boolean useImpliedScopes;
+
     public DependencyFilter()
     {
-        this( DependencyScope.test, ScopeTransitivity.maven, false, true, null );
+        this( DependencyScope.test, ScopeTransitivity.maven, false, true, true, null );
     }
 
     public DependencyFilter( final DependencyScope scope )
     {
-        this( scope, ScopeTransitivity.maven, false, true, null );
+        this( scope, ScopeTransitivity.maven, false, true, true, null );
     }
 
     public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity,
                              final boolean includeManaged, final boolean includeConcrete, final Set<ProjectRef> excludes )
     {
+        this( scope, scopeTransitivity, includeManaged, includeConcrete, true, excludes );
+    }
+
+    public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity,
+                             final boolean includeManaged, final boolean includeConcrete,
+                             final boolean useImpliedScopes, final Set<ProjectRef> excludes )
+    {
         super( RelationshipType.DEPENDENCY, true, includeManaged, includeConcrete );
+        this.useImpliedScopes = useImpliedScopes;
         this.scope = scope == null ? DependencyScope.test : scope;
         this.scopeTransitivity = scopeTransitivity;
         if ( excludes != null )
@@ -63,26 +73,8 @@ public class DependencyFilter
 
     public DependencyFilter( final DependencyFilter parent, final DependencyRelationship parentRel )
     {
-        super( RelationshipType.DEPENDENCY, true, parent.isManagedInfoIncluded(), parent.isConcreteInfoIncluded() );
-        this.scopeTransitivity = parent.scopeTransitivity;
-        this.scope = parent.scope == null ? parent.scope : scopeTransitivity.getChildFor( parent.scope );
-
-        if ( parent.excludes != null )
-        {
-            excludes.addAll( parent.excludes );
-        }
-
-        if ( parentRel != null )
-        {
-            final Set<ProjectRef> excl = parentRel.getExcludes();
-            if ( excl != null && !excl.isEmpty() )
-            {
-                for ( final ProjectRef pr : excl )
-                {
-                    this.excludes.add( pr.asProjectRef() );
-                }
-            }
-        }
+        this( parent.scope, parent.scopeTransitivity, parent.isManagedInfoIncluded(), parent.isConcreteInfoIncluded(),
+              parent.useImpliedScopes, parentRel == null ? null : parentRel.getExcludes() );
     }
 
     @Override
@@ -97,7 +89,11 @@ public class DependencyFilter
 
         if ( scope != null )
         {
-            if ( !scope.implies( dr.getScope() ) )
+            if ( useImpliedScopes && !scope.implies( dr.getScope() ) )
+            {
+                return false;
+            }
+            else if ( !useImpliedScopes && scope != dr.getScope() )
             {
                 return false;
             }
@@ -143,6 +139,8 @@ public class DependencyFilter
           .append( isManagedInfoIncluded() )
           .append( ", concrete: " )
           .append( isConcreteInfoIncluded() );
+        sb.append( ", useImpliedScopes: " )
+          .append( isUseImpliedScopes() );
         if ( excludes != null && !excludes.isEmpty() )
         {
             sb.append( ", exclude: {" );
@@ -169,6 +167,11 @@ public class DependencyFilter
         final StringBuilder sb = new StringBuilder();
         render( sb );
         return sb.toString();
+    }
+
+    public boolean isUseImpliedScopes()
+    {
+        return useImpliedScopes;
     }
 
 }

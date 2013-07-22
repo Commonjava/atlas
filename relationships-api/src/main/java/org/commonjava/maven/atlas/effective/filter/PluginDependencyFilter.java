@@ -40,15 +40,25 @@ public class PluginDependencyFilter
     {
         super( RelationshipType.PLUGIN_DEP, RelationshipType.DEPENDENCY, includeManaged, includeConcrete );
 
-        this.plugin = plugin.getTarget()
-                            .asProjectRef();
+        this.plugin = plugin == null ? null : plugin.getTarget()
+                                                    .asProjectRef();
+    }
+
+    public PluginDependencyFilter()
+    {
+        this( null, false, true );
+    }
+
+    public PluginDependencyFilter( final boolean includeManaged, final boolean includeConcrete )
+    {
+        this( null, includeManaged, includeConcrete );
     }
 
     @Override
     public boolean doAccept( final ProjectRelationship<?> rel )
     {
         final PluginDependencyRelationship pdr = (PluginDependencyRelationship) rel;
-        if ( plugin.equals( pdr.getPlugin() ) )
+        if ( plugin == null || plugin.equals( pdr.getPlugin() ) )
         {
             if ( isManagedInfoIncluded() && pdr.isManaged() )
             {
@@ -63,11 +73,13 @@ public class PluginDependencyFilter
         return false;
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         return new DependencyFilter( DependencyScope.runtime );
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )

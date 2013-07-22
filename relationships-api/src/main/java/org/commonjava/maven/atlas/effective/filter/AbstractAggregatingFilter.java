@@ -19,12 +19,13 @@ package org.commonjava.maven.atlas.effective.filter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 import org.commonjava.maven.atlas.effective.rel.ProjectRelationship;
 
 public abstract class AbstractAggregatingFilter
-    implements ProjectRelationshipFilter
+    implements ProjectRelationshipFilter, Iterable<ProjectRelationshipFilter>
 {
     private final List<? extends ProjectRelationshipFilter> filters;
 
@@ -59,5 +60,11 @@ public abstract class AbstractAggregatingFilter
     }
 
     protected abstract AbstractAggregatingFilter newChildFilter( List<ProjectRelationshipFilter> childFilters );
+
+    @Override
+    public Iterator<ProjectRelationshipFilter> iterator()
+    {
+        return new ArrayList<ProjectRelationshipFilter>( filters ).iterator();
+    }
 
 }
