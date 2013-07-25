@@ -29,8 +29,8 @@ public class EndNodesCollector
     {
         super( startNodes, view, checkExistence );
         this.endNodes = endNodes;
-        logger.info( "Collector: start=(%s), end=(%s), view=(%s), checkExistence=%s", join( startNodes, ", " ),
-                     join( endNodes, ", " ), view, checkExistence );
+        logger.debug( "Collector: start=(%s), end=(%s), view=(%s), checkExistence=%s", join( startNodes, ", " ),
+                      join( endNodes, ", " ), view, checkExistence );
         //        this.logEnabled = true;
     }
 
