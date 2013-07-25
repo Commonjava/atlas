@@ -172,14 +172,14 @@ public final class RelationshipUtils
         return results;
     }
 
-    public static Set<ProjectRef> targets( final ProjectRelationship<?>... relationships )
+    public static Set<ProjectVersionRef> targets( final ProjectRelationship<?>... relationships )
     {
         return targets( Arrays.asList( relationships ) );
     }
 
-    public static Set<ProjectRef> targets( final Collection<ProjectRelationship<?>> relationships )
+    public static Set<ProjectVersionRef> targets( final Collection<ProjectRelationship<?>> relationships )
     {
-        final Set<ProjectRef> results = new HashSet<ProjectRef>();
+        final Set<ProjectVersionRef> results = new HashSet<ProjectVersionRef>();
         for ( final ProjectRelationship<?> rel : relationships )
         {
             results.add( rel.getTarget() );

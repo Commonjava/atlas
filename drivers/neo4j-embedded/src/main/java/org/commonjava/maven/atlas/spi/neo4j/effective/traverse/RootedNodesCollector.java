@@ -21,20 +21,20 @@ public class RootedNodesCollector
     public RootedNodesCollector( final Node start, final GraphView view, final boolean checkExistence )
     {
         super( start, view, checkExistence );
-        logEnabled = true;
+        //        logEnabled = true;
     }
 
     public RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
     {
         super( startNodes, view, checkExistence );
-        logEnabled = true;
+        //        logEnabled = true;
     }
 
     private RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence,
                                   final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );
-        logEnabled = true;
+        //        logEnabled = true;
     }
 
     @Override

@@ -23,14 +23,14 @@ public class RootedRelationshipsCollector
     public RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
     {
         super( startNodes, view, checkExistence );
-        this.logEnabled = true;
+        //        this.logEnabled = true;
     }
 
     private RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view,
                                           final boolean checkExistence, final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );
-        this.logEnabled = true;
+        //        this.logEnabled = true;
     }
 
     @Override

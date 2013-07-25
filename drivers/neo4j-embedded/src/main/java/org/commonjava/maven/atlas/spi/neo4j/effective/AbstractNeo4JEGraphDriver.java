@@ -340,7 +340,7 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             for ( final ProjectRelationship<?> rel : rels )
             {
-                logger.info( "Adding relationship: %s", rel );
+                logger.debug( "Adding relationship: %s", rel );
 
                 final Index<Node> index = graph.index()
                                                .forNodes( BY_GAV_IDX );
@@ -356,7 +356,7 @@ public abstract class AbstractNeo4JEGraphDriver
                     final IndexHits<Node> hits = index.get( GAV, ref.toString() );
                     if ( !hits.hasNext() )
                     {
-                        logger.info( "Creating new node for: %s to support addition of relationship: %s", ref, rel );
+                        logger.debug( "Creating new node for: %s to support addition of relationship: %s", ref, rel );
                         final Node node = newProjectNode( ref );
                         nodes[i] = node;
                     }
@@ -364,7 +364,7 @@ public abstract class AbstractNeo4JEGraphDriver
                     {
                         nodes[i] = hits.next();
 
-                        logger.info( "Using existing project node: %s", nodes[i] );
+                        logger.debug( "Using existing project node: %s", nodes[i] );
                     }
 
                     i++;
@@ -417,11 +417,11 @@ public abstract class AbstractNeo4JEGraphDriver
                             }
                         }
 
-                        logger.info( "Created relationship: %s (%s)", relationship,
-                                     toProjectRelationship( relationship ) );
+                        logger.debug( "Created relationship: %s (%s)", relationship,
+                                      toProjectRelationship( relationship ) );
                     }
 
-                    logger.info( "Removing missing/incomplete flag from: %s (%s)", from, declaring );
+                    logger.debug( "Removing missing/incomplete flag from: %s (%s)", from, declaring );
                     graph.index()
                          .forNodes( MISSING_NODES_IDX )
                          .remove( from );
@@ -431,7 +431,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 else
                 {
                     final Relationship r = relHits.next();
-                    logger.info( "Reusing existing relationship: %s (%s)", r, toProjectRelationship( r ) );
+                    logger.debug( "Reusing existing relationship: %s (%s)", r, toProjectRelationship( r ) );
 
                     clearCloneStatus( r );
                     addToURIListProperty( rel.getSources(), SOURCE_URI, r );
@@ -585,13 +585,13 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( ref.isVariableVersion() )
         {
-            logger.info( "Adding %s to variable-nodes index.", ref );
+            logger.debug( "Adding %s to variable-nodes index.", ref );
             graph.index()
                  .forNodes( VARIABLE_NODES_IDX )
                  .add( node, GAV, gav );
         }
 
-        logger.info( "Created project node: %s with id: %d", ref, node.getId() );
+        logger.debug( "Created project node: %s with id: %d", ref, node.getId() );
         return node;
     }
 
@@ -1504,7 +1504,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
                 if ( toNode == null )
                 {
-                    logger.info( "Creating new node to deal with selection of version: %s for: %s", select, rel );
+                    logger.debug( "Creating new node to deal with selection of version: %s for: %s", select, rel );
                     toNode = newProjectNode( sel.getTarget()
                                                 .asProjectVersionRef() );
 
@@ -1627,7 +1627,7 @@ public abstract class AbstractNeo4JEGraphDriver
             final Transaction tx = graph.beginTx();
             try
             {
-                logger.info( "Creating new node to account for disconnected project: %s", ref );
+                logger.debug( "Creating new node to account for disconnected project: %s", ref );
                 newProjectNode( ref );
 
                 tx.success();

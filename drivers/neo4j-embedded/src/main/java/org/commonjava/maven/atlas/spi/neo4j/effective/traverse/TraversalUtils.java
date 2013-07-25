@@ -58,7 +58,7 @@ public final class TraversalUtils
             }
         }
 
-        logger.info( "ACCEPT: Path: %s", path );
+        debug( "ACCEPT: Path: %s", path );
         return true;
     }
 
@@ -132,7 +132,7 @@ public final class TraversalUtils
             }
         }
 
-        logger.info( "ACCEPT: %s (%s)", r, rel );
+        debug( "ACCEPT: %s (%s)", r, rel );
         return true;
     }
 
