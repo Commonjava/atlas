@@ -16,8 +16,8 @@
  ******************************************************************************/
 package org.apache.maven.graph.common.version;
 
-import org.commonjava.maven.atlas.common.version.parse.VersionParser;
 import org.commonjava.maven.atlas.ident.version.VersionSpec;
+import org.commonjava.maven.atlas.ident.version.parse.VersionParser;
 import org.junit.Test;
 
 public class VersionParserTest

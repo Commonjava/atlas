@@ -16,9 +16,9 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident.version;
 
-import org.commonjava.maven.atlas.common.version.parse.ParseException;
-import org.commonjava.maven.atlas.common.version.parse.TokenMgrError;
-import org.commonjava.maven.atlas.common.version.parse.VersionParser;
+import org.commonjava.maven.atlas.ident.version.parse.ParseException;
+import org.commonjava.maven.atlas.ident.version.parse.TokenMgrError;
+import org.commonjava.maven.atlas.ident.version.parse.VersionParser;
 
 public final class VersionUtils
 {

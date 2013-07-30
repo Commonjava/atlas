@@ -8,11 +8,11 @@ options {
 }
 
 PARSER_BEGIN(VersionParser)
-package org.commonjava.maven.atlas.common.version.parse;
+package org.commonjava.maven.atlas.ident.version.parse;
 
-import org.commonjava.maven.atlas.common.version.*;
-import org.commonjava.maven.atlas.common.version.part.*;
-import org.commonjava.maven.atlas.common.version.transform.*;
+import org.commonjava.maven.atlas.ident.version.*;
+import org.commonjava.maven.atlas.ident.version.part.*;
+import org.commonjava.maven.atlas.ident.version.transform.*;
 import java.util.*;
 import java.text.*;
 import java.io.*;
