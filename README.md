@@ -2,7 +2,7 @@
 
 Atlas is an attempt to reimagine the artifact model that's used in Apache Maven. Starting from first principles about how artifact coordinate metadata is actually used, Atlas defines a new set of identities aimed at making different types of references to a project more explicit and intuitive. Moving beyond simple identities, Atlas also attempts to provide a simple means for capturing and working with the relationships between projects via its graphing api.
 
-Note: This project doesn't make any attempt to provide an interface for actually resolving artifacts or loading project-relationship graphs. It's only meant to supply the model and a set of associated, useful mechanisms for traversing, transforming, and filtering relationships.
+Note: This project doesn't make any attempt to provide an interface for actually resolving artifacts or discovering project-relationship graphs. It's only meant to supply the model and a set of associated, useful mechanisms for traversing, transforming, and filtering relationships.
 
 ## Basic Identities
 
@@ -24,11 +24,11 @@ In Maven, a project's release does have at least one dependable, concrete file a
 
 Common places to find ProjectVersionRef in Maven POMs are:
 
-  - Parent declaration
-  - Plugin declaraion
-  - Build extension declaration
-  - Dependency declaration (**ONLY** when the main artifact is being referenced.) This is really an ArtifactRef that relies on default values for classifier and type.
-  - Plugin-level dependency declaration (again, **ONLY** when the main artifact is being referenced.) This is really an ArtifactRef that relies on default values for classifier and type.
+  - Parent declaration (this is an implied ArtifactRef, with `type == pom` and `classifier == null`)
+  - Plugin declaraion (this is an implied ArtifactRef, with `type == maven-plugin` and `classifier == null`)
+  - Build extension declaration (this is an implied ArtifactRef, with `type == jar` and `classifier == null`)
+  - Dependency declaration (**ONLY** when the main artifact is being referenced.) This is really an ArtifactRef that relies on default values `type == jar` and `classifier == null`.
+  - Plugin-level dependency declaration (again, **ONLY** when the main artifact is being referenced.) This is really an ArtifactRef that relies on default values `type == jar` and `classifier == null`.
 
 ### Release Artifacts
 
@@ -38,7 +38,7 @@ Technically speaking, dependency declarations in Maven use five coordinate parts
 
 **Artifacts** are identified in Atlas using `ArtifactRef` with a coordinate consisting of `groupId:artifactId:version:type[:classifier]` where the default value of `type` is `jar`.
 
-The only common places to find ArtifactRef in Maven POMs are:
+The only common places to find full-blown ArtifactRef's in Maven POMs are:
 
   - Dependency declaration
   - Plugin-level dependency declaration
@@ -73,12 +73,6 @@ Atlas captures each of these relationships as a variant of its foundational `Pro
 
 The classes in this section are usually prefixes with **'E'**. This is meant to mark these classes as dealing with effective POMs. That is, the classes and relationships here don't deal with partial declarations that may be filled out through inheritance, profile activation, etc. It's assumed for now that these classes are working with complete (validatable) expressions of relationships.
 
-### Collection Key
-
-Each collection is keyed by `EProjectKey` which is a composite of `ProjectVersionRef` and `EProjectFacts`. `EProjectFacts` stores facts about the conditions under which the relationships were captured. Currently, it is only capable of tracking the list of profiles that were active at the time. Things like the list of active profiles can have a profound effect on the list of relationships that exist, so it's critical that the key for each of these relationship collections include these facts.
-
-**NOTE:** The usage of / logic related to EProjectFacts is still VERY immature. For initial development purposes, its existence has largely been ignored (defaulted to an empty set of profiles). This is mainly a TODO for future work.
-
 ### Collection Types
 
 Atlas currently defines three basic collections of relationships:
@@ -89,7 +83,7 @@ Atlas currently defines three basic collections of relationships:
 
 ### Filters
 
-Atlas provides an interface and set of basic implementations for filtering individual `ProjectRelationship` instances in a graph. They're useful for traversing or transforming networks of relationships, or could be useful outside these contexts as well.
+Atlas provides an interface and set of basic implementations for filtering individual `ProjectRelationship` instances in a graph. They're useful for traversing or transforming networks of relationships, or just to directly constrain the dependency graph instance returned from the database.
 
 ### Traversal
 
@@ -97,7 +91,28 @@ Atlas also provides an interface, two abstract base classes, and some basic impl
 
 The `ProjectNetTraversal` provides callback methods for starting and ending graph traversal, and for ending edge traversal. Additionally, and most critically, it provides a method that allows the instance to veto the traversal of any given edge. This is where most filters are used, and the simplest way to filter in a traversal is by subclassing `AbstractFilteringTraversal`. Along with these callbacks and acceptance methods, each traversal has the option of specifying how many times it needs to traverse the graph, and for each iteration, whether it needs to use depth-first or breadth-first traversal to achieve its ends.
 
-### Transformation
+### The Graph Database
 
-Finally, Atlas provides an interface and some basic implementations for transforming an `EProjectGraph` instance into another one, by applying a filter (see above). `ProjectGraphTransformer` extends `ProjectNetTraversal`, and adds the method `getTransformedGraph()`. The implementation, `FilteringGraphTransformer` extends `AbstractFilteringTraversal` and accepts a `ProjectRelationshipFilter` instance. You use these transformers by passing them into the `EProjectGraph.traverse(..)` method, just like any other traversal. However, after traversal completes, you can retrieve the transformed graph via the `getTransformedGraph()` method.
+Atlas stores relationship information in a single, global database that covers all relationships regardless of where they were discovered from, and from what part of the POM. The source URI and pom location are noted for each relationship to allow filtering later. 
 
+Since project releases in Maven are designed to be immutable, a dependency graph database composed entirely of artifacts released into public repositories should not include any overlapping information for release-level versions of artifacts. However, when snapshots are included, or the database includes staging repositories and the like, depgraph information may become overlaid in the database, producing different output depending on which sources your choices: restricting the set of source locations, or selecting specific timestamped versions for snapshots can produce variable results. 
+
+For this reason, it may not be enough to work with the unconstrained relationship data available in the graph db.
+
+### Workspaces
+
+Atlas provides durable workspaces to address the ambiguity that can build up in the graph db. These workspaces allow you to constrain results from the database in three dimensions:
+
+- source URI (the location from which the relationship was discovered)
+- POM location (allowing relationships from profiles with certain names, for instance)
+- version selection (allowing selection of snapshots, ranges, and other variable versions down to a single, concrete version)
+
+Since the workspace is durable, you have the option of building up a very sophisticated set of controls to tailor the output you want over time. Combined with the right filter, you can answer very detailed questions without even doing an explicit `traverse(..)` call at all. Atlas provides some basic CRUD support for workspaces; just enough to support durability.
+
+### EGraphManager 
+
+Most of what you need in terms of working with graphs of relationships (and workspaces for these graphs) can be done via the `org.commonjava.maven.atlas.effective.EGraphManager` class. This is designed to be a simple entry point into the graph database system, which abstracts any need to interact with the database driver beyond constructing it in the first place.
+
+### Database Drivers
+
+Atlas currently supports two different drivers for its dependency-graph database: Jung, which is an in-memory implementation, and Neo4J, which is backed by Lucene and written to disk. Selection between these drivers depends on your specific needs.
