@@ -19,8 +19,8 @@ package org.apache.maven.graph.common.version.part;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-import org.commonjava.maven.atlas.common.version.InvalidVersionSpecificationException;
-import org.commonjava.maven.atlas.common.version.part.NumericPart;
+import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
+import org.commonjava.maven.atlas.ident.version.part.NumericPart;
 import org.junit.Test;
 
 public class NumericPartTest

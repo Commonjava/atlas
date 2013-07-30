@@ -16,8 +16,8 @@
  ******************************************************************************/
 package org.apache.maven.graph.common.version;
 
-import org.commonjava.maven.atlas.common.version.SingleVersion;
-import org.commonjava.maven.atlas.common.version.VersionUtils;
+import org.commonjava.maven.atlas.ident.version.SingleVersion;
+import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.junit.Test;
 
 public class VersionUtilsTest

@@ -19,9 +19,9 @@ package org.apache.maven.graph.common.version;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-import org.commonjava.maven.atlas.common.version.InvalidVersionSpecificationException;
-import org.commonjava.maven.atlas.common.version.RangeVersionSpec;
-import org.commonjava.maven.atlas.common.version.VersionUtils;
+import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
+import org.commonjava.maven.atlas.ident.version.RangeVersionSpec;
+import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.junit.Test;
 
 public class VersionRangeTest
