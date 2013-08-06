@@ -250,6 +250,16 @@ public class EGraphManager
         rootDriver.addMetadata( key.getProject(), metadata );
     }
 
+    public void addMetadata( final ProjectVersionRef project, final String name, final String value )
+    {
+        rootDriver.addMetadata( project, name, value );
+    }
+
+    public void addMetadata( final ProjectVersionRef project, final Map<String, String> metadata )
+    {
+        rootDriver.addMetadata( project, metadata );
+    }
+
     public void reindex()
         throws GraphDriverException
     {
