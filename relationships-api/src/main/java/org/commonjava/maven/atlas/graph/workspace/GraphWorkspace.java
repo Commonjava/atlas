@@ -246,7 +246,7 @@ public final class GraphWorkspace
         return updated;
     }
 
-    public final void selectVersionForAll( final ProjectRef ref, final SingleVersion version )
+    public final boolean selectVersionForAll( final ProjectRef ref, final SingleVersion version )
         throws GraphDriverException
     {
         checkOpen();
@@ -256,12 +256,15 @@ public final class GraphWorkspace
         }
 
         final SingleVersion old = wildcardSelectedVersions.put( ref, version );
+        boolean modified = false;
         if ( old == null || !old.equals( version ) )
         {
             fireWildcardSelectionAdded( ref, version );
+            modified = true;
         }
 
         fireAccessed();
+        return modified;
     }
 
     public final Map<ProjectVersionRef, SingleVersion> clearVersionSelections()

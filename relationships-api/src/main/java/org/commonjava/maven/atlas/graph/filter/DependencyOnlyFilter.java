@@ -26,55 +26,60 @@ public class DependencyOnlyFilter
 {
 
     // if unspecified, include all dependencies.
-    private final DependencyScope scope;
+    private final DependencyScope[] scopes;
 
     private final boolean useImpliedScope;
 
     public DependencyOnlyFilter()
     {
-        this( DependencyScope.test, false, true, true );
+        this( false, true, true, DependencyScope.test );
     }
 
-    public DependencyOnlyFilter( final DependencyScope scope )
+    public DependencyOnlyFilter( final DependencyScope... scopes )
     {
-        this( scope, false, true, true );
+        this( false, true, true, scopes );
     }
 
-    public DependencyOnlyFilter( final DependencyScope scope, final boolean includeManaged,
-                                 final boolean includeConcrete, final boolean useImpliedScope )
+    public DependencyOnlyFilter( final boolean includeManaged, final boolean includeConcrete,
+                                 final boolean useImpliedScope, final DependencyScope... scopes )
     {
         super( RelationshipType.DEPENDENCY, false, includeManaged, includeConcrete );
 
-        this.scope = scope == null ? DependencyScope.test : scope;
+        this.scopes = scopes;
         this.useImpliedScope = useImpliedScope;
     }
 
     @Override
     public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        if ( this.scope == null )
+        if ( this.scopes == null || this.scopes.length < 1 )
         {
             return true;
         }
 
         final DependencyRelationship dr = (DependencyRelationship) rel;
         final DependencyScope scope = dr.getScope();
-        if ( scope == this.scope || ( useImpliedScope && this.scope.implies( scope ) ) )
+        for ( final DependencyScope s : this.scopes )
         {
-            if ( ( dr.isManaged() && isManagedInfoIncluded() ) || ( !dr.isManaged() && isConcreteInfoIncluded() ) )
+            if ( scope == s || ( useImpliedScope && s.implies( scope ) ) )
             {
-                return true;
+                if ( ( dr.isManaged() && isManagedInfoIncluded() ) || ( !dr.isManaged() && isConcreteInfoIncluded() ) )
+                {
+                    return true;
+                }
             }
         }
 
         return false;
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         return new NoneFilter();
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )
@@ -82,13 +87,26 @@ public class DependencyOnlyFilter
             sb.append( " " );
         }
 
-        sb.append( "DEPENDENCIES ONLY[scope: " );
-        sb.append( scope.realName() );
-        sb.append( ", managed: " )
+        sb.append( "DEPENDENCIES ONLY[scopes: (" );
+        boolean first = true;
+        for ( final DependencyScope scope : scopes )
+        {
+            if ( !first )
+            {
+                sb.append( ", " );
+            }
+
+            sb.append( scope.realName() );
+            first = false;
+        }
+
+        sb.append( "), managed: " )
           .append( isManagedInfoIncluded() )
           .append( ", concrete: " )
-          .append( isConcreteInfoIncluded() );
-        sb.append( "]" );
+          .append( isConcreteInfoIncluded() )
+          .append( ", implied scopes: " )
+          .append( useImpliedScope )
+          .append( "]" );
     }
 
     @Override
