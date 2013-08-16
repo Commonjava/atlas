@@ -94,6 +94,21 @@ public class ProjectVersionRef
                                                                                             getVersionStringRaw() );
     }
 
+    public ArtifactRef asPomArtifact()
+    {
+        return asArtifactRef( "pom", null, false );
+    }
+
+    public ArtifactRef asArtifactRef( final String type, final String classifier )
+    {
+        return asArtifactRef( type, classifier, false );
+    }
+
+    public ArtifactRef asArtifactRef( final String type, final String classifier, final boolean optional )
+    {
+        return new ArtifactRef( this, type, classifier, optional );
+    }
+
     VersionSpec getVersionSpecRaw()
     {
         return versionSpec;
