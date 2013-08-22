@@ -59,8 +59,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -130,6 +130,10 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String METADATA_INDEX_PREFIX = "has_metadata_";
 
+    private static final String CACHE_KEY = "cache-key";
+
+    private static final String CACHED_ALL_PROJECT_REFS = "all-project-refs";
+
     //    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
 
     /* @formatter:off */
@@ -161,6 +165,8 @@ public abstract class AbstractNeo4JEGraphDriver
     private final boolean useShutdownHook;
 
     private ExecutionEngine queryEngine;
+
+    private final Map<Long, Map<String, Object>> caches = new HashMap<>();
 
     protected AbstractNeo4JEGraphDriver( final GraphDatabaseService graph, final boolean useShutdownHook )
     {
@@ -328,6 +334,16 @@ public abstract class AbstractNeo4JEGraphDriver
         return result;
     }
 
+    private Set<Path> getPathsTo( final GraphView view, final Set<Node> nodes )
+    {
+        final Set<Node> roots = getRoots( view );
+        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, view, false );
+
+        collectAtlasRelationships( view, checker, roots );
+
+        return checker.getFoundPaths();
+    }
+
     @Override
     public Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
@@ -474,7 +490,31 @@ public abstract class AbstractNeo4JEGraphDriver
             tx.finish();
         }
 
+        updateCaches( skipped, rels );
+
         return skipped;
+    }
+
+    private void updateCaches( final Set<ProjectRelationship<?>> skipped, final ProjectRelationship<?>[] rels )
+    {
+        final Set<ProjectRelationship<?>> adds = new HashSet<>( Arrays.asList( rels ) );
+        adds.removeAll( skipped );
+
+        for ( final Entry<Long, Map<String, Object>> entry : caches.entrySet() )
+        {
+            final Map<String, Object> cacheMap = entry.getValue();
+
+            @SuppressWarnings( "unchecked" )
+            final Set<ProjectVersionRef> cachedRefs = (Set<ProjectVersionRef>) cacheMap.get( CACHED_ALL_PROJECT_REFS );
+            if ( cachedRefs != null )
+            {
+                for ( final ProjectRelationship<?> add : adds )
+                {
+                    cachedRefs.add( add.getTarget()
+                                       .asProjectVersionRef() );
+                }
+            }
+        }
     }
 
     public boolean markCycle( final ProjectRelationship<?> rel, final Relationship relationship )
@@ -734,6 +774,36 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public boolean containsProject( final GraphView view, final ProjectVersionRef ref )
     {
+        if ( view != null )
+        {
+            Long cacheKey = view.getCache( CACHE_KEY, Long.class );
+            if ( cacheKey == null )
+            {
+                do
+                {
+                    cacheKey = System.currentTimeMillis();
+                }
+                while ( caches.containsKey( cacheKey ) );
+            }
+
+            Map<String, Object> cacheMap = caches.get( cacheKey );
+            if ( cacheMap == null )
+            {
+                cacheMap = new HashMap<>();
+                caches.put( cacheKey, cacheMap );
+            }
+
+            @SuppressWarnings( "unchecked" )
+            Set<ProjectVersionRef> cachedRefs = (Set<ProjectVersionRef>) cacheMap.get( CACHED_ALL_PROJECT_REFS );
+            if ( cachedRefs == null )
+            {
+                cachedRefs = getAllProjects( view );
+                cacheMap.put( CACHED_ALL_PROJECT_REFS, cachedRefs );
+            }
+
+            return cachedRefs.contains( ref );
+        }
+
         return getNode( view, ref ) != null;
     }
 
@@ -944,20 +1014,16 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private Set<Long> getRootIds( final GraphView view )
     {
-        final Set<ProjectVersionRef> rootRefs = view.getRoots();
-        if ( rootRefs == null || rootRefs.isEmpty() )
+        final Set<Node> rootNodes = getRoots( view );
+        if ( rootNodes == null )
         {
             return null;
         }
 
-        final Set<Long> ids = new HashSet<Long>( rootRefs.size() );
-        for ( final ProjectVersionRef ref : rootRefs )
+        final Set<Long> ids = new HashSet<Long>( rootNodes.size() );
+        for ( final Node node : rootNodes )
         {
-            final Node n = getNode( view, ref );
-            if ( n != null )
-            {
-                ids.add( n.getId() );
-            }
+            ids.add( node.getId() );
         }
 
         return ids;
@@ -1035,47 +1101,56 @@ public abstract class AbstractNeo4JEGraphDriver
                                                   .forRelationships( CYCLE_INJECTION_IDX )
                                                   .query( RELATIONSHIP_ID, "*" );
 
-        final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+        final Map<Node, Relationship> targetNodes = new HashMap<>();
         for ( final Relationship hit : hits )
         {
-            if ( hasPathTo( view, hit.getStartNode() ) )
+            targetNodes.put( hit.getStartNode(), hit );
+        }
+
+        final Set<Path> paths = getPathsTo( view, targetNodes.keySet() );
+
+        final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+        for ( final Path path : paths )
+        {
+            final Node node = path.endNode();
+            if ( node == null )
             {
-                final Set<Set<Long>> cycleIds = getInjectedCycles( hit );
-                nextCycle: for ( final Set<Long> cycle : cycleIds )
+                logger.error( "Path to cycle has no end-node: %s", path );
+                continue;
+            }
+
+            final Relationship hit = targetNodes.get( node );
+
+            final Set<Set<Long>> cycleIds = getInjectedCycles( hit );
+            nextCycle: for ( final Set<Long> cycle : cycleIds )
+            {
+                final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
+                for ( final Long relId : cycle )
                 {
-                    final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
-                    for ( final Long relId : cycle )
+                    final Relationship r = graph.getRelationshipById( relId );
+                    if ( r == null )
                     {
-                        final Relationship r = graph.getRelationshipById( relId );
-                        if ( r == null )
+                        continue nextCycle;
+                    }
+
+                    rels.add( toProjectRelationship( r ) );
+                }
+
+                ProjectRelationshipFilter f = view.getFilter();
+                if ( f != null )
+                {
+                    for ( final ProjectRelationship<?> rel : rels )
+                    {
+                        if ( !f.accept( rel ) )
                         {
                             continue nextCycle;
                         }
 
-                        rels.add( toProjectRelationship( r ) );
+                        f = f.getChildFilter( rel );
                     }
-
-                    cycles.add( new EProjectCycle( rels ) );
                 }
-            }
-        }
 
-        if ( view.getFilter() != null )
-        {
-            nextCycle: for ( final Iterator<EProjectCycle> it = cycles.iterator(); it.hasNext(); )
-            {
-                final EProjectCycle eProjectCycle = it.next();
-                ProjectRelationshipFilter f = view.getFilter();
-                for ( final ProjectRelationship<?> rel : eProjectCycle )
-                {
-                    if ( !f.accept( rel ) )
-                    {
-                        it.remove();
-                        continue nextCycle;
-                    }
-
-                    f = f.getChildFilter( rel );
-                }
+                cycles.add( new EProjectCycle( rels ) );
             }
         }
 
@@ -1372,13 +1447,32 @@ public abstract class AbstractNeo4JEGraphDriver
                                            .forNodes( METADATA_INDEX_PREFIX + key )
                                            .query( GAV, "*" );
 
-        final Set<Node> connected = new HashSet<Node>();
+        final Set<Node> targetNodes = new HashSet<Node>();
         for ( final Node node : nodes )
         {
-            if ( hasPathTo( view, node ) )
+            targetNodes.add( node );
+        }
+
+        final Set<Path> paths = getPathsTo( view, targetNodes );
+        final Set<Node> connected = new HashSet<Node>();
+        nextPath: for ( final Path path : paths )
+        {
+            ProjectRelationshipFilter f = view.getFilter();
+            if ( f != null )
             {
-                connected.add( node );
+                final List<ProjectRelationship<?>> rels = convertToRelationships( path.relationships() );
+                for ( final ProjectRelationship<?> rel : rels )
+                {
+                    if ( !f.accept( rel ) )
+                    {
+                        continue nextPath;
+                    }
+
+                    f = f.getChildFilter( rel );
+                }
             }
+
+            connected.add( path.endNode() );
         }
 
         return new HashSet<ProjectVersionRef>( convertToProjects( connected ) );

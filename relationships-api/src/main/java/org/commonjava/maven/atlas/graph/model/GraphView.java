@@ -4,6 +4,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -20,8 +21,10 @@ public class GraphView
 
     private final ProjectRelationshipFilter filter;
 
+    private final WeakHashMap<String, Object> cache = new WeakHashMap<String, Object>();
+
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                            final Collection<ProjectVersionRef> roots )
+                      final Collection<ProjectVersionRef> roots )
     {
         this.filter = filter;
         this.roots.addAll( roots );
@@ -29,7 +32,7 @@ public class GraphView
     }
 
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                            final ProjectVersionRef... roots )
+                      final ProjectVersionRef... roots )
     {
         this.filter = filter;
         this.roots.addAll( Arrays.asList( roots ) );
@@ -65,4 +68,35 @@ public class GraphView
         return workspace;
     }
 
+    public Object setCache( final String key, final Object value )
+    {
+        return cache.put( key, value );
+    }
+
+    public Object removeCache( final String key )
+    {
+        return cache.remove( key );
+    }
+
+    public <T> T getCache( final String key, final Class<T> type )
+    {
+        final Object value = cache.get( key );
+        if ( value != null )
+        {
+            return type.cast( value );
+        }
+
+        return null;
+    }
+
+    public <T> T getCache( final String key, final Class<T> type, final T def )
+    {
+        final Object value = cache.get( key );
+        if ( value != null )
+        {
+            return type.cast( value );
+        }
+
+        return def;
+    }
 }
