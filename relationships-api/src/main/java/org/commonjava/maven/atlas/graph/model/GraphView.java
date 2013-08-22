@@ -99,4 +99,67 @@ public class GraphView
 
         return def;
     }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ( ( filter == null ) ? 0 : filter.hashCode() );
+        result = prime * result + ( ( roots == null ) ? 0 : roots.hashCode() );
+        result = prime * result + ( ( workspace == null ) ? 0 : workspace.hashCode() );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( obj == null )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final GraphView other = (GraphView) obj;
+        if ( filter == null )
+        {
+            if ( other.filter != null )
+            {
+                return false;
+            }
+        }
+        else if ( !filter.equals( other.filter ) )
+        {
+            return false;
+        }
+        if ( roots == null )
+        {
+            if ( other.roots != null )
+            {
+                return false;
+            }
+        }
+        else if ( !roots.equals( other.roots ) )
+        {
+            return false;
+        }
+        if ( workspace == null )
+        {
+            if ( other.workspace != null )
+            {
+                return false;
+            }
+        }
+        else if ( !workspace.equals( other.workspace ) )
+        {
+            return false;
+        }
+        return true;
+    }
 }

@@ -65,6 +65,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.WeakHashMap;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
@@ -130,8 +131,6 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String METADATA_INDEX_PREFIX = "has_metadata_";
 
-    private static final String CACHE_KEY = "cache-key";
-
     private static final String CACHED_ALL_PROJECT_REFS = "all-project-refs";
 
     //    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
@@ -166,7 +165,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private ExecutionEngine queryEngine;
 
-    private final Map<Long, Map<String, Object>> caches = new HashMap<>();
+    private final Map<GraphView, Map<String, Object>> caches = new WeakHashMap<>();
 
     protected AbstractNeo4JEGraphDriver( final GraphDatabaseService graph, final boolean useShutdownHook )
     {
@@ -497,21 +496,30 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private void updateCaches( final Set<ProjectRelationship<?>> skipped, final ProjectRelationship<?>[] rels )
     {
+        if ( rels.length == skipped.size() )
+        {
+            return;
+        }
+
         final Set<ProjectRelationship<?>> adds = new HashSet<>( Arrays.asList( rels ) );
         adds.removeAll( skipped );
 
-        for ( final Entry<Long, Map<String, Object>> entry : caches.entrySet() )
+        for ( final Map<String, Object> cacheMap : new HashSet<>( caches.values() ) )
         {
-            final Map<String, Object> cacheMap = entry.getValue();
-
             @SuppressWarnings( "unchecked" )
             final Set<ProjectVersionRef> cachedRefs = (Set<ProjectVersionRef>) cacheMap.get( CACHED_ALL_PROJECT_REFS );
             if ( cachedRefs != null )
             {
-                for ( final ProjectRelationship<?> add : adds )
+                synchronized ( cachedRefs )
                 {
-                    cachedRefs.add( add.getTarget()
-                                       .asProjectVersionRef() );
+                    for ( final ProjectRelationship<?> add : adds )
+                    {
+                        cachedRefs.add( add.getDeclaring()
+                                           .asProjectVersionRef() );
+
+                        cachedRefs.add( add.getTarget()
+                                           .asProjectVersionRef() );
+                    }
                 }
             }
         }
@@ -776,21 +784,15 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( view != null )
         {
-            Long cacheKey = view.getCache( CACHE_KEY, Long.class );
-            if ( cacheKey == null )
+            Map<String, Object> cacheMap;
+            synchronized ( caches )
             {
-                do
+                cacheMap = caches.get( view );
+                if ( cacheMap == null )
                 {
-                    cacheKey = System.currentTimeMillis();
+                    cacheMap = new HashMap<>();
+                    caches.put( view, cacheMap );
                 }
-                while ( caches.containsKey( cacheKey ) );
-            }
-
-            Map<String, Object> cacheMap = caches.get( cacheKey );
-            if ( cacheMap == null )
-            {
-                cacheMap = new HashMap<>();
-                caches.put( cacheKey, cacheMap );
             }
 
             @SuppressWarnings( "unchecked" )
