@@ -344,7 +344,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
+    public synchronized Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
         checkClosed();
 
@@ -1257,7 +1257,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void addMetadata( final ProjectVersionRef ref, final String key, final String value )
+    public synchronized void addMetadata( final ProjectVersionRef ref, final String key, final String value )
     {
         final Transaction tx = graph.beginTx();
         try
@@ -1279,7 +1279,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void addMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
+    public synchronized void addMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
     {
         final Transaction tx = graph.beginTx();
         try
@@ -1405,7 +1405,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void reindex()
+    public synchronized void reindex()
         throws GraphDriverException
     {
         final Transaction tx = graph.beginTx();
@@ -1538,26 +1538,29 @@ public abstract class AbstractNeo4JEGraphDriver
             }
         }
 
-        final Transaction tx = graph.beginTx();
-        try
+        synchronized ( this )
         {
-            final IndexHits<Node> hits = graph.index()
-                                              .forNodes( GA_SELECTIONS_IDX )
-                                              .query( GA, variable );
-            Node gaSelectionsNode;
-            if ( hits.hasNext() )
+            final Transaction tx = graph.beginTx();
+            try
             {
-                hits.next();
+                final IndexHits<Node> hits = graph.index()
+                                                  .forNodes( GA_SELECTIONS_IDX )
+                                                  .query( GA, variable );
+                Node gaSelectionsNode;
+                if ( hits.hasNext() )
+                {
+                    hits.next();
+                }
+                else
+                {
+                    gaSelectionsNode = graph.createNode();
+                    toSelectionNodeProperties( sessionId, variable, select, gaSelectionsNode );
+                }
             }
-            else
+            finally
             {
-                gaSelectionsNode = graph.createNode();
-                toSelectionNodeProperties( sessionId, variable, select, gaSelectionsNode );
+                tx.finish();
             }
-        }
-        finally
-        {
-            tx.finish();
         }
     }
 
@@ -1568,7 +1571,8 @@ public abstract class AbstractNeo4JEGraphDriver
                     .query( GA, variable.toString() );
     }
 
-    private Relationship selectRelationship( final long wsid, final Relationship from, final SingleVersion select )
+    private synchronized Relationship selectRelationship( final long wsid, final Relationship from,
+                                                          final SingleVersion select )
     {
         Relationship to = null;
         Transaction tx = null;
@@ -1644,7 +1648,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean clearSelectedVersionsFor( final String sessionId )
+    public synchronized boolean clearSelectedVersionsFor( final String sessionId )
     {
         Transaction tx = null;
         try
@@ -1720,17 +1724,20 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( !containsProject( GraphView.GLOBAL, ref ) )
         {
-            final Transaction tx = graph.beginTx();
-            try
+            synchronized ( this )
             {
-                logger.debug( "Creating new node to account for disconnected project: %s", ref );
-                newProjectNode( ref );
+                final Transaction tx = graph.beginTx();
+                try
+                {
+                    logger.debug( "Creating new node to account for disconnected project: %s", ref );
+                    newProjectNode( ref );
 
-                tx.success();
-            }
-            finally
-            {
-                tx.finish();
+                    tx.success();
+                }
+                finally
+                {
+                    tx.finish();
+                }
             }
         }
     }
@@ -1840,7 +1847,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
+    public synchronized GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
         final Transaction tx = graph.beginTx();
@@ -1866,7 +1873,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public boolean deleteWorkspace( final String id )
+    public synchronized boolean deleteWorkspace( final String id )
     {
         Transaction tx = null;
         try
@@ -1905,7 +1912,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void storeWorkspace( final GraphWorkspace workspace )
+    public synchronized void storeWorkspace( final GraphWorkspace workspace )
         throws GraphDriverException
     {
         final Transaction tx = graph.beginTx();
