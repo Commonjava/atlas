@@ -16,8 +16,6 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident.ref;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
-
 import java.io.Serializable;
 
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
@@ -31,9 +29,7 @@ public class ArtifactRef
 
     private static final long serialVersionUID = 1L;
 
-    private final String type;
-
-    private final String classifier;
+    private final TypeAndClassifier tc;
 
     private final boolean optional;
 
@@ -42,16 +38,21 @@ public class ArtifactRef
     {
         super( groupId, artifactId, version );
         this.optional = optional;
-        this.type = type == null ? "jar" : type;
-        this.classifier = isEmpty( classifier ) ? null : classifier;
+        this.tc = new TypeAndClassifier( type, classifier );
     }
 
     public ArtifactRef( final ProjectVersionRef ref, final String type, final String classifier, final boolean optional )
     {
         super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpecRaw(), ref.getVersionStringRaw() );
         this.optional = optional;
-        this.type = type == null ? "jar" : type;
-        this.classifier = isEmpty( classifier ) ? null : classifier;
+        this.tc = new TypeAndClassifier( type, classifier );
+    }
+
+    public ArtifactRef( final ProjectVersionRef ref, final TypeAndClassifier tc, final boolean optional )
+    {
+        super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpecRaw(), ref.getVersionStringRaw() );
+        this.tc = tc;
+        this.optional = optional;
     }
 
     public ArtifactRef( final String groupId, final String artifactId, final String versionSpec, final String type,
@@ -59,25 +60,29 @@ public class ArtifactRef
         throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId, versionSpec );
-        this.type = type == null ? "jar" : type;
-        this.classifier = isEmpty( classifier ) ? null : classifier;
+        this.tc = new TypeAndClassifier( type, classifier );
         this.optional = optional;
     }
 
     @Override
     protected ProjectVersionRef newRef( final String groupId, final String artifactId, final SingleVersion version )
     {
-        return new ArtifactRef( groupId, artifactId, version, type, classifier, optional );
+        return new ArtifactRef( groupId, artifactId, version, tc.getType(), tc.getClassifier(), optional );
     }
 
     public String getType()
     {
-        return type;
+        return tc.getType();
     }
 
     public String getClassifier()
     {
-        return classifier;
+        return tc.getClassifier();
+    }
+
+    public TypeAndClassifier getTypeAndClassifier()
+    {
+        return tc;
     }
 
     public ArtifactRef setOptional( final boolean optional )
@@ -100,8 +105,7 @@ public class ArtifactRef
     {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ( ( classifier == null ) ? 0 : classifier.hashCode() );
-        result = prime * result + ( ( type == null ) ? 0 : type.hashCode() );
+        result = prime * result + ( ( tc == null ) ? 0 : tc.hashCode() );
         result = prime * result + Boolean.valueOf( optional )
                                          .hashCode();
         return result;
@@ -134,25 +138,14 @@ public class ArtifactRef
             return false;
         }
 
-        if ( classifier == null )
+        if ( tc == null )
         {
-            if ( other.classifier != null )
+            if ( other.tc != null )
             {
                 return false;
             }
         }
-        else if ( !classifier.equals( other.classifier ) )
-        {
-            return false;
-        }
-        if ( type == null )
-        {
-            if ( other.type != null )
-            {
-                return false;
-            }
-        }
-        else if ( !type.equals( other.type ) )
+        else if ( !tc.equals( other.tc ) )
         {
             return false;
         }
@@ -162,15 +155,7 @@ public class ArtifactRef
     @Override
     public String toString()
     {
-        if ( classifier != null )
-        {
-            return String.format( "%s:%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionString(), getType(),
-                                  getClassifier() );
-        }
-        else
-        {
-            return String.format( "%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionString(), getType() );
-        }
+        return String.format( "%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionString(), getTypeAndClassifier() );
     }
 
     @Override
