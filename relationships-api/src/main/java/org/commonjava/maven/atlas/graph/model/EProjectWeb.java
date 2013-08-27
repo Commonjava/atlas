@@ -331,7 +331,7 @@ public class EProjectWeb
     @Override
     public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
     {
-        driver.addMetadata( key.getProject(), metadata );
+        driver.setMetadata( key.getProject(), metadata );
     }
 
     @Override

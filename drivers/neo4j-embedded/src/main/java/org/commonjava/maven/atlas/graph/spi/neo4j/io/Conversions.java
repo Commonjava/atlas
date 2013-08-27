@@ -51,7 +51,6 @@ import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
 
@@ -142,8 +141,7 @@ public final class Conversions
     {
     }
 
-    public static void toSelectionNodeProperties( final String wsId, final ProjectRef ref, final SingleVersion version,
-                                                  final Node node )
+    public static void toSelectionNodeProperties( final String wsId, final ProjectRef ref, final SingleVersion version, final Node node )
     {
         node.setProperty( GA, ref.toString() );
         node.setProperty( NODE_TYPE, NodeType.GA_SELECTIONS.name() );
@@ -205,10 +203,9 @@ public final class Conversions
         final long lastAccess = getLongProperty( LAST_ACCESS_DATE, node, System.currentTimeMillis() );
         final boolean force = getBooleanProperty( FORCE_VERSION_SELECTIONS, node, true );
 
-        return new GraphWorkspace( Long.toString( node.getId() ),
-                                   new GraphWorkspaceConfiguration().withForcedVersions( force )
-                                                                    .withPomLocations( pomLocations )
-                                                                    .withSources( sources ), lastAccess );
+        return new GraphWorkspace( Long.toString( node.getId() ), new GraphWorkspaceConfiguration().withForcedVersions( force )
+                                                                                                   .withPomLocations( pomLocations )
+                                                                                                   .withSources( sources ), lastAccess );
     }
 
     public static Set<GraphWorkspace> convertToWorkspaces( final Iterable<Node> nodes )
@@ -470,8 +467,7 @@ public final class Conversions
                         final String[] parts = ex.split( ":" );
                         if ( parts.length != 2 )
                         {
-                            LOGGER.error( "In: %s -> %s skipping invalid exclude specification: '%s'", from, artifact,
-                                          ex );
+                            LOGGER.error( "In: %s -> %s skipping invalid exclude specification: '%s'", from, artifact, ex );
                         }
                         else
                         {
@@ -481,8 +477,7 @@ public final class Conversions
                 }
 
                 result =
-                    new DependencyRelationship( source, pomLocation, from, artifact, scope, index, managed,
-                                                excludes.toArray( new ProjectRef[] {} ) );
+                    new DependencyRelationship( source, pomLocation, from, artifact, scope, index, managed, excludes.toArray( new ProjectRef[] {} ) );
                 break;
             }
             case PLUGIN_DEP:
@@ -492,9 +487,7 @@ public final class Conversions
                 final String pg = getStringProperty( PLUGIN_GROUP_ID, rel );
                 final boolean managed = getBooleanProperty( IS_MANAGED, rel );
 
-                result =
-                    new PluginDependencyRelationship( source, pomLocation, from, new ProjectRef( pg, pa ), artifact,
-                                                      index, managed );
+                result = new PluginDependencyRelationship( source, pomLocation, from, new ProjectRef( pg, pa ), artifact, index, managed );
                 break;
             }
             case PLUGIN:
@@ -562,8 +555,7 @@ public final class Conversions
         return null;
     }
 
-    public static List<URI> getURIListProperty( final String prop, final PropertyContainer container,
-                                                final URI defaultValue )
+    public static List<URI> getURIListProperty( final String prop, final PropertyContainer container, final URI defaultValue )
     {
         final List<URI> result = new ArrayList<URI>();
 
@@ -594,8 +586,7 @@ public final class Conversions
         return result;
     }
 
-    public static void addToURIListProperty( final Collection<URI> uris, final String prop,
-                                             final PropertyContainer container )
+    public static void addToURIListProperty( final Collection<URI> uris, final String prop, final PropertyContainer container )
     {
         final List<URI> existing = getURIListProperty( prop, container, null );
         for ( final URI uri : uris )
@@ -636,8 +627,7 @@ public final class Conversions
         return null;
     }
 
-    public static Boolean getBooleanProperty( final String prop, final PropertyContainer container,
-                                              final Boolean defaultValue )
+    public static Boolean getBooleanProperty( final String prop, final PropertyContainer container, final Boolean defaultValue )
     {
         if ( container.hasProperty( prop ) )
         {
@@ -673,6 +663,13 @@ public final class Conversions
 
     public static void setMetadata( final Map<String, String> metadata, final PropertyContainer container )
     {
+        final Map<String, String> metadataMap = getMetadataMap( container );
+
+        for ( final String key : metadataMap.keySet() )
+        {
+            container.removeProperty( key );
+        }
+
         for ( final Map.Entry<String, String> entry : metadata.entrySet() )
         {
             container.setProperty( METADATA_PREFIX + entry.getKey(), entry.getValue() );
@@ -704,8 +701,7 @@ public final class Conversions
         return getStringProperty( METADATA_PREFIX + key, container );
     }
 
-    public static void toNodeProperties( final String cycleId, final String rawCycleId,
-                                         final Set<ProjectVersionRef> refs, final Node node )
+    public static void toNodeProperties( final String cycleId, final String rawCycleId, final Set<ProjectVersionRef> refs, final Node node )
     {
         node.setProperty( NODE_TYPE, NodeType.CYCLE.name() );
         node.setProperty( CYCLE_ID, cycleId );
@@ -723,14 +719,14 @@ public final class Conversions
         node.setProperty( CONNECTED, connected );
     }
 
-    public static void markCycleInjection( final Relationship relationship, final Set<Path> cycles )
+    public static void markCycleInjection( final Relationship relationship, final Set<List<Relationship>> cycles )
     {
         relationship.setProperty( CYCLE_INJECTION, true );
         final List<Long> collapsed = new ArrayList<Long>();
-        final Set<Set<Long>> existing = getInjectedCycles( relationship );
+        final Set<List<Long>> existing = getInjectedCycles( relationship );
         if ( existing != null && !existing.isEmpty() )
         {
-            for ( final Set<Long> cycle : existing )
+            for ( final List<Long> cycle : existing )
             {
                 if ( !collapsed.isEmpty() )
                 {
@@ -741,7 +737,7 @@ public final class Conversions
             }
         }
 
-        for ( final Path cycle : cycles )
+        for ( final List<Relationship> cycle : cycles )
         {
             if ( existing.contains( cycle ) )
             {
@@ -754,10 +750,12 @@ public final class Conversions
             }
 
             boolean containsGivenRelationship = false;
-            for ( final Relationship r : cycle.relationships() )
+            for ( final Relationship r : cycle )
             {
-                collapsed.add( r.getId() );
-                if ( r.getId() == relationship.getId() )
+                final long rid = r.getId();
+
+                collapsed.add( rid );
+                if ( rid == relationship.getId() )
                 {
                     containsGivenRelationship = true;
                 }
@@ -780,15 +778,15 @@ public final class Conversions
         relationship.setProperty( CYCLES_INJECTED, arry );
     }
 
-    public static Set<Set<Long>> getInjectedCycles( final Relationship relationship )
+    public static Set<List<Long>> getInjectedCycles( final Relationship relationship )
     {
-        final Set<Set<Long>> cycles = new HashSet<Set<Long>>();
+        final Set<List<Long>> cycles = new HashSet<List<Long>>();
 
         if ( relationship.hasProperty( CYCLES_INJECTED ) )
         {
             final long[] collapsed = (long[]) relationship.getProperty( CYCLES_INJECTED );
 
-            Set<Long> currentCycle = new LinkedHashSet<Long>();
+            List<Long> currentCycle = new ArrayList<>();
             for ( final long id : collapsed )
             {
                 if ( id == -1 )
@@ -796,7 +794,7 @@ public final class Conversions
                     if ( !currentCycle.isEmpty() )
                     {
                         cycles.add( currentCycle );
-                        currentCycle = new LinkedHashSet<Long>();
+                        currentCycle = new ArrayList<>();
                     }
                 }
                 else
@@ -856,8 +854,7 @@ public final class Conversions
 
     public static void markSelection( final Relationship from, final Relationship to, final Node session )
     {
-        LOGGER.debug( "Marking selected: %s for session: %s", getStringProperty( GAV, to.getEndNode() ),
-                      session.getId() );
+        LOGGER.debug( "Marking selected: %s for session: %s", getStringProperty( GAV, to.getEndNode() ), session.getId() );
 
         addToIdListing( session.getId(), SELECTED_FOR, to );
         removeFromIdListing( session.getId(), DESELECTED_FOR, to );
@@ -869,8 +866,7 @@ public final class Conversions
 
     public static void markDeselected( final Relationship rel, final Node session )
     {
-        LOGGER.debug( "Marking de-selected: %s for session: %s", getStringProperty( GAV, rel.getEndNode() ),
-                      session.getId() );
+        LOGGER.debug( "Marking de-selected: %s for session: %s", getStringProperty( GAV, rel.getEndNode() ), session.getId() );
 
         removeFromIdListing( session.getId(), SELECTED_FOR, rel );
         addToIdListing( session.getId(), DESELECTED_FOR, rel );
@@ -895,15 +891,14 @@ public final class Conversions
 
     public static void removeSelectionAnnotationsFor( final Relationship relationship, final Node root )
     {
-        LOGGER.debug( "%s: removing ALL selection annotations for: %s",
-                      getStringProperty( GAV, relationship.getEndNode() ), getStringProperty( GAV, root ) );
+        LOGGER.debug( "%s: removing ALL selection annotations for: %s", getStringProperty( GAV, relationship.getEndNode() ),
+                      getStringProperty( GAV, root ) );
 
         removeFromIdListing( root.getId(), SELECTED_FOR, relationship );
         removeFromIdListing( root.getId(), DESELECTED_FOR, relationship );
     }
 
-    public static boolean idListingContains( final String property, final Relationship relationship,
-                                             final long... targets )
+    public static boolean idListingContains( final String property, final Relationship relationship, final long... targets )
     {
         if ( !relationship.hasProperty( property ) )
         {
@@ -926,8 +921,7 @@ public final class Conversions
         return false;
     }
 
-    public static boolean idListingContains( final String property, final Relationship relationship,
-                                             final Collection<Node> targets )
+    public static boolean idListingContains( final String property, final Relationship relationship, final Collection<Node> targets )
     {
         if ( !relationship.hasProperty( property ) )
         {

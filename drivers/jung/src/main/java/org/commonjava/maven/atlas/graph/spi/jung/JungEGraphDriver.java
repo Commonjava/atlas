@@ -786,7 +786,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public void addMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
+    public void setMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
     {
         if ( metadata == null || metadata.isEmpty() )
         {

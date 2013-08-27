@@ -211,8 +211,7 @@ public abstract class CycleDetectionTCK
 
         final GraphWorkspace session = simpleSession();
         final EProjectGraph graph1 = getManager().getGraph( session, a );
-        final EProjectGraph graph2 = getManager().getGraph( session, d )
-                                                 .filteredInstance( new DependencyFilter() );
+        final EProjectGraph graph2 = getManager().getGraph( session, new DependencyFilter(), d );
 
         final Set<EProjectCycle> cycles1 = graph1.getCycles();
         System.out.println( "Graph 1 Cycles:\n\n" + join( cycles1, "\n" ) );

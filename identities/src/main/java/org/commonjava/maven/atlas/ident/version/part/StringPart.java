@@ -34,7 +34,6 @@ public class StringPart
 
     private static final String RANDOM_STRING_EQUIV = "_random";
 
-    // FIXME: How do we want to do this??
     private static final List<String> MARKER_ORDER = new ArrayList<String>()
     {
         private static final long serialVersionUID = 1L;
@@ -133,6 +132,7 @@ public class StringPart
         return String.format( "STR[%s]", value );
     }
 
+    @Override
     public int compareTo( final VersionPart part )
     {
         if ( part instanceof SnapshotPart )

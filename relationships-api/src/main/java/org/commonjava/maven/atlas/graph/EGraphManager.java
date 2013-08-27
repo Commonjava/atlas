@@ -67,8 +67,7 @@ public class EGraphManager
         return getGraph( workspace, null, project );
     }
 
-    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                                   final ProjectVersionRef project )
+    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef project )
     {
         if ( !rootDriver.containsProject( GLOBAL, project ) || rootDriver.isMissing( GLOBAL, project ) )
         {
@@ -80,15 +79,12 @@ public class EGraphManager
 
     public EProjectWeb getWeb( final GraphWorkspace workspace, final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( workspace, null,
-                       refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
+        return getWeb( workspace, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                               final Collection<ProjectVersionRef> refs )
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( workspace, null,
-                       refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
+        return getWeb( workspace, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
     public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectVersionRef... refs )
@@ -96,8 +92,7 @@ public class EGraphManager
         return getWeb( workspace, null, refs );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                               final ProjectVersionRef... refs )
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef... refs )
     {
         for ( final ProjectVersionRef ref : refs )
         {
@@ -154,38 +149,31 @@ public class EGraphManager
         return containsGraph( new GraphView( workspace ), ref );
     }
 
-    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                                  final ProjectVersionRef ref )
+    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
     {
         return containsGraph( new GraphView( workspace, filter ), ref );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
-                                                                    final boolean includeManagedInfo,
-                                                                    final RelationshipType... types )
+                                                                    final boolean includeManagedInfo, final RelationshipType... types )
     {
         return rootDriver.getDirectRelationshipsFrom( view, from, includeManagedInfo, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
-                                                                  final boolean includeManagedInfo,
+    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
                                                                   final RelationshipType... types )
     {
         return rootDriver.getDirectRelationshipsTo( view, to, includeManagedInfo, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphWorkspace workspace,
-                                                                    final ProjectVersionRef from,
-                                                                    final boolean includeManagedInfo,
-                                                                    final RelationshipType... types )
+    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphWorkspace workspace, final ProjectVersionRef from,
+                                                                    final boolean includeManagedInfo, final RelationshipType... types )
     {
         return findDirectRelationshipsFrom( new GraphView( workspace ), from, includeManagedInfo, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphWorkspace workspace,
-                                                                  final ProjectVersionRef to,
-                                                                  final boolean includeManagedInfo,
-                                                                  final RelationshipType... types )
+    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphWorkspace workspace, final ProjectVersionRef to,
+                                                                  final boolean includeManagedInfo, final RelationshipType... types )
     {
         return findDirectRelationshipsTo( new GraphView( workspace ), to, includeManagedInfo, types );
     }
@@ -245,9 +233,9 @@ public class EGraphManager
         rootDriver.addMetadata( key.getProject(), name, value );
     }
 
-    public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
+    public void setMetadata( final EProjectKey key, final Map<String, String> metadata )
     {
-        rootDriver.addMetadata( key.getProject(), metadata );
+        rootDriver.setMetadata( key.getProject(), metadata );
     }
 
     public void addMetadata( final ProjectVersionRef project, final String name, final String value )
@@ -255,9 +243,9 @@ public class EGraphManager
         rootDriver.addMetadata( project, name, value );
     }
 
-    public void addMetadata( final ProjectVersionRef project, final Map<String, String> metadata )
+    public void setMetadata( final ProjectVersionRef project, final Map<String, String> metadata )
     {
-        rootDriver.addMetadata( project, metadata );
+        rootDriver.setMetadata( project, metadata );
     }
 
     public void reindex()
@@ -301,8 +289,7 @@ public class EGraphManager
     }
 
     @Override
-    public void wildcardSelectionAdded( final GraphWorkspace workspace, final ProjectRef ref,
-                                        final SingleVersion version )
+    public void wildcardSelectionAdded( final GraphWorkspace workspace, final ProjectRef ref, final SingleVersion version )
         throws GraphDriverException
     {
         rootDriver.selectVersionForAll( ref, version, workspace.getId() );

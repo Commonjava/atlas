@@ -50,7 +50,7 @@ public interface EGraphDriver
 
     void addMetadata( ProjectVersionRef ref, String key, String value );
 
-    void addMetadata( ProjectVersionRef ref, Map<String, String> metadata );
+    void setMetadata( ProjectVersionRef ref, Map<String, String> metadata );
 
     /**
      * Add the given relationships. Skip/return those that introduce cycles.
