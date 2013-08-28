@@ -267,7 +267,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
             final RootedRelationshipsCollector checker = new RootedRelationshipsCollector( roots, view, false );
 
-            collectAtlasRelationships( view, checker, roots, true );
+            collectAtlasRelationships( view, checker, roots, false );
 
             for ( final Relationship r : checker )
             {
@@ -673,7 +673,7 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( roots != null && !roots.isEmpty() )
         {
             final RootedNodesCollector agg = new RootedNodesCollector( roots, view, false );
-            collectAtlasRelationships( view, agg, roots, true );
+            collectAtlasRelationships( view, agg, roots, false );
             nodes = agg;
         }
         else
@@ -693,7 +693,7 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( roots != null && !roots.isEmpty() )
         {
             final RootedNodesCollector agg = new RootedNodesCollector( roots, view, false );
-            collectAtlasRelationships( view, agg, roots, true );
+            collectAtlasRelationships( view, agg, roots, false );
             return agg.getFoundNodes();
         }
         else
