@@ -4,6 +4,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -30,8 +31,7 @@ public class RootedNodesCollector
         //        logEnabled = true;
     }
 
-    private RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence,
-                                  final Direction direction )
+    private RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence, final Direction direction )
     {
         super( startNodes, view, checkExistence, direction );
         //        logEnabled = true;
@@ -66,8 +66,11 @@ public class RootedNodesCollector
         {
             for ( final Node node : path.nodes() )
             {
-                logger.info( "Adding node: %s", node );
-                found.add( node );
+                if ( Conversions.isConnected( node ) )
+                {
+                    logger.info( "TRAVERSE: Adding node: %s", node );
+                    found.add( node );
+                }
             }
         }
 

@@ -349,6 +349,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         Transaction tx = graph.beginTx();
         final Map<ProjectRelationship<?>, Relationship> potentialCycleInjectors = new HashMap<>();
+        final Set<Node> connectedSubgraphs = new HashSet<>();
         try
         {
             for ( final ProjectRelationship<?> rel : rels )
@@ -448,6 +449,8 @@ public abstract class AbstractNeo4JEGraphDriver
                     relationship = relHits.next();
                     logger.debug( "Reusing existing relationship: %s (%s)", relationship, toProjectRelationship( relationship ) );
 
+                    connectedSubgraphs.add( relationship.getEndNode() );
+
                     clearCloneStatus( relationship );
                     addToURIListProperty( rel.getSources(), SOURCE_URI, relationship );
                     markSelectionOnly( relationship, false );
@@ -480,37 +483,44 @@ public abstract class AbstractNeo4JEGraphDriver
 
         logger.debug( "Cycle injection detected for: %s", skipped );
 
-        updateCaches( skipped, rels );
+        updateCaches( skipped, rels, connectedSubgraphs );
 
         return skipped;
     }
 
-    private void updateCaches( final Set<ProjectRelationship<?>> skipped, final ProjectRelationship<?>[] rels )
+    private void updateCaches( final Set<ProjectRelationship<?>> skipped, final ProjectRelationship<?>[] rels, final Set<Node> connectedSubgraphs )
     {
         if ( rels.length == skipped.size() )
         {
             return;
         }
 
-        final Set<ProjectRelationship<?>> adds = new HashSet<>( Arrays.asList( rels ) );
-        adds.removeAll( skipped );
-
-        for ( final Map<String, Object> cacheMap : new HashSet<>( caches.values() ) )
+        final Set<ProjectVersionRef> adds = new HashSet<>();
+        for ( final ProjectRelationship<?> rel : rels )
         {
+            if ( !skipped.contains( rel ) )
+            {
+                adds.add( rel.getDeclaring()
+                             .asProjectVersionRef() );
+            }
+        }
+
+        for ( final Map.Entry<GraphView, Map<String, Object>> entry : new HashMap<>( caches ).entrySet() )
+        {
+            final GraphView view = entry.getKey();
+            final Map<String, Object> cacheMap = entry.getValue();
+
             @SuppressWarnings( "unchecked" )
             final Set<ProjectVersionRef> cachedRefs = (Set<ProjectVersionRef>) cacheMap.get( CACHED_ALL_PROJECT_REFS );
             if ( cachedRefs != null )
             {
+                logger.info( "Connecting subgraphs: %s for view: %s", connectedSubgraphs, view );
+                final Set<ProjectVersionRef> connected = getProjectsRootedAt( view, connectedSubgraphs );
+
                 synchronized ( cachedRefs )
                 {
-                    for ( final ProjectRelationship<?> add : adds )
-                    {
-                        cachedRefs.add( add.getDeclaring()
-                                           .asProjectVersionRef() );
-
-                        cachedRefs.add( add.getTarget()
-                                           .asProjectVersionRef() );
-                    }
+                    cachedRefs.addAll( adds );
+                    cachedRefs.addAll( connected );
                 }
             }
         }
@@ -665,10 +675,52 @@ public abstract class AbstractNeo4JEGraphDriver
         return node;
     }
 
+    @SuppressWarnings( "unchecked" )
     @Override
     public Set<ProjectVersionRef> getAllProjects( final GraphView view )
     {
+        Set<ProjectVersionRef> cachedRefs = null;
+        if ( view != null )
+        {
+            synchronized ( caches )
+            {
+                Map<String, Object> cacheMap = caches.get( view );
+                if ( cacheMap == null )
+                {
+                    cacheMap = new HashMap<>();
+                    caches.put( view, cacheMap );
+                }
+
+                cachedRefs = (Set<ProjectVersionRef>) cacheMap.get( CACHED_ALL_PROJECT_REFS );
+
+                if ( cachedRefs != null )
+                {
+                    return cachedRefs;
+                }
+                else
+                {
+                    cachedRefs = new HashSet<>();
+                    cacheMap.put( CACHED_ALL_PROJECT_REFS, cachedRefs );
+                }
+            }
+        }
+
         final Set<Node> roots = getRoots( view );
+        final Set<ProjectVersionRef> result = getProjectsRootedAt( view, roots );
+
+        synchronized ( cachedRefs )
+        {
+            if ( cachedRefs != null )
+            {
+                cachedRefs.addAll( result );
+            }
+        }
+
+        return result;
+    }
+
+    private Set<ProjectVersionRef> getProjectsRootedAt( final GraphView view, final Set<Node> roots )
+    {
         Iterable<Node> nodes = null;
         if ( roots != null && !roots.isEmpty() )
         {
@@ -804,26 +856,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( view != null )
         {
-            Map<String, Object> cacheMap;
-            synchronized ( caches )
-            {
-                cacheMap = caches.get( view );
-                if ( cacheMap == null )
-                {
-                    cacheMap = new HashMap<>();
-                    caches.put( view, cacheMap );
-                }
-            }
-
-            @SuppressWarnings( "unchecked" )
-            Set<ProjectVersionRef> cachedRefs = (Set<ProjectVersionRef>) cacheMap.get( CACHED_ALL_PROJECT_REFS );
-            if ( cachedRefs == null )
-            {
-                cachedRefs = getAllProjects( view );
-                cacheMap.put( CACHED_ALL_PROJECT_REFS, cachedRefs );
-            }
-
-            return cachedRefs.contains( ref );
+            return getAllProjects( view ).contains( ref );
         }
 
         return getNode( view, ref ) != null;

@@ -23,16 +23,14 @@ public class GraphView
 
     private final WeakHashMap<String, Object> cache = new WeakHashMap<String, Object>();
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                      final Collection<ProjectVersionRef> roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> roots )
     {
         this.filter = filter;
         this.roots.addAll( roots );
         this.workspace = workspace;
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
-                      final ProjectVersionRef... roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef... roots )
     {
         this.filter = filter;
         this.roots.addAll( Arrays.asList( roots ) );
@@ -161,5 +159,11 @@ public class GraphView
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format( "GraphView [\n  roots=%s\n  workspace=%s\n  filter=%s\n]", roots, workspace, filter );
     }
 }

@@ -56,8 +56,7 @@ public class EProjectGraph
         this.driver = driver;
     }
 
-    public EProjectGraph( final GraphWorkspace session, final EGraphDriver driver,
-                          final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
+    public EProjectGraph( final GraphWorkspace session, final EGraphDriver driver, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
     {
         this.view = new GraphView( session, filter, ref );
         this.project = ref;
@@ -538,8 +537,7 @@ public class EProjectGraph
 
         final Set<T> result = new HashSet<T>( rels );
 
-        final Set<ProjectRelationship<?>> rejected =
-            driver.addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+        final Set<ProjectRelationship<?>> rejected = driver.addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
         result.removeAll( rejected );
 
         if ( !result.isEmpty() )
@@ -683,7 +681,7 @@ public class EProjectGraph
     @Override
     public boolean containsGraph( final ProjectVersionRef ref )
     {
-        return driver.containsProject( view, ref ) && !driver.isMissing( view, ref );
+        return driver.containsProject( view, ref );
     }
 
     @Override

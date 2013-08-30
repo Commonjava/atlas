@@ -53,7 +53,7 @@ public abstract class AncestryTraversalTCK
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( simpleSession(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
-        graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ) ) );
+        graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ), new ParentRelationship( source, grandRef ) ) );
         /* @formatter:on */
 
         final Set<ProjectVersionRef> projects = graph.getAllProjects();
@@ -129,7 +129,6 @@ public abstract class AncestryTraversalTCK
 
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void traverseTwoAncestors_IgnoreNonParentRelationships()
         throws Exception
