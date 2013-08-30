@@ -71,6 +71,7 @@ public abstract class EProjectGraphTCK
         );
         /* @formatter:on */
 
+        System.out.println( "Incomplete subgraphs: " + child.getIncompleteSubgraphs() );
         assertThat( child.isComplete(), equalTo( true ) );
 
         final AncestryTraversal ancestryTraversal = new AncestryTraversal();

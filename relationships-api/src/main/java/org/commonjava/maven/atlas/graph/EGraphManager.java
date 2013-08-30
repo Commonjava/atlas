@@ -4,7 +4,9 @@ import static org.commonjava.maven.atlas.graph.model.GraphView.GLOBAL;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,6 +37,8 @@ public class EGraphManager
     private final Logger logger = new Logger( getClass() );
 
     private final EGraphDriver rootDriver;
+
+    private final Map<String, WeakReference<GraphWorkspace>> loadedWorkspaces = new HashMap<>();
 
     public EGraphManager( final EGraphDriver rootDriver )
     {
@@ -117,14 +121,27 @@ public class EGraphManager
         return rootDriver.deleteWorkspace( id );
     }
 
-    public GraphWorkspace getWorkspace( final String id )
+    public synchronized GraphWorkspace getWorkspace( final String id )
         throws GraphDriverException
     {
+        WeakReference<GraphWorkspace> ref = loadedWorkspaces.get( id );
+        if ( ref != null )
+        {
+            final GraphWorkspace ws = ref.get();
+            if ( ws != null )
+            {
+                return ws;
+            }
+        }
+
         final GraphWorkspace ws = rootDriver.loadWorkspace( id );
         if ( ws != null )
         {
             ws.addListener( this );
         }
+
+        ref = new WeakReference<GraphWorkspace>( ws );
+        loadedWorkspaces.put( id, ref );
 
         return ws;
     }

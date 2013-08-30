@@ -70,6 +70,7 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
@@ -443,6 +444,11 @@ public abstract class AbstractNeo4JEGraphDriver
                          .remove( from );
 
                     markConnected( from, true );
+
+                    if ( !( rel instanceof ParentRelationship ) || !( (ParentRelationship) rel ).isTerminus() )
+                    {
+                        potentialCycleInjectors.put( rel, relationship );
+                    }
                 }
                 else
                 {
@@ -455,8 +461,6 @@ public abstract class AbstractNeo4JEGraphDriver
                     addToURIListProperty( rel.getSources(), SOURCE_URI, relationship );
                     markSelectionOnly( relationship, false );
                 }
-
-                potentialCycleInjectors.put( rel, relationship );
             }
 
             logger.debug( "Committing graph transaction." );
@@ -969,7 +973,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
         catch ( final IOException e )
         {
-            new Logger( getClass() ).error( "Failed to shutdown graph database. Reason: %s", e, e.getMessage() );
+            //            new Logger( getClass() ).debug( "Failed to shutdown graph database. Reason: %s", e, e.getMessage() );
         }
     }
 
