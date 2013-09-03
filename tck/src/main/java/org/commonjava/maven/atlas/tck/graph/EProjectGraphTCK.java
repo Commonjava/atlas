@@ -49,7 +49,7 @@ public abstract class EProjectGraphTCK
 
         final URI source = sourceURI();
 
-        final GraphWorkspace session = simpleSession();
+        final GraphWorkspace session = simpleWorkspace();
         /* @formatter:off */
         final EProjectGraph root = getManager().createGraph( 
                 session, 
@@ -100,7 +100,7 @@ public abstract class EProjectGraphTCK
 
         final URI source = sourceURI();
 
-        final GraphWorkspace session = simpleSession();
+        final GraphWorkspace session = simpleWorkspace();
         /* @formatter:off */
         final EProjectGraph child = getManager().createGraph(
                 session,

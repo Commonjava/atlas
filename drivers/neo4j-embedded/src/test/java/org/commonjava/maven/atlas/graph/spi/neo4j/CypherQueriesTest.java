@@ -13,8 +13,6 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
-import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.commonjava.util.logging.Log4jUtil;
 import org.junit.BeforeClass;
 import org.junit.Rule;
@@ -50,7 +48,7 @@ public class CypherQueriesTest
     {
         if ( manager == null )
         {
-            manager = new EGraphManager( fixture.newDriverInstance() );
+            manager = new EGraphManager( fixture.factory() );
         }
 
         return manager;
@@ -63,14 +61,13 @@ public class CypherQueriesTest
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef varDep = new ProjectVersionRef( "org.other", "dep", "1.0-SNAPSHOT" );
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
-        final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
+        final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace workspace =
-            getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
+        final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
 
         /* @formatter:off */
-        getManager().storeRelationships(
+        getManager().storeRelationships( workspace,
             new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
             new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
         );
@@ -89,7 +86,7 @@ public class CypherQueriesTest
             + "\nRETURN n as node, p as path";
         /* @formatter:on */
 
-        final AbstractNeo4JEGraphDriver driver = (AbstractNeo4JEGraphDriver) graph.getDriver();
+        final AbstractNeo4JEGraphDriver driver = (AbstractNeo4JEGraphDriver) graph.getDatabase();
 
         final ExecutionResult result = driver.execute( cypher );
         int i = 0;
@@ -107,14 +104,13 @@ public class CypherQueriesTest
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef varDep = new ProjectVersionRef( "org.other", "dep", "1.0-SNAPSHOT" );
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
-        final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
+        final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace workspace =
-            getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
+        final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
 
         /* @formatter:off */
-        getManager().storeRelationships(
+        getManager().storeRelationships( workspace,
             new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
             new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
         );
@@ -136,7 +132,7 @@ public class CypherQueriesTest
             + "\nRETURN n as node, p as path";
         /* @formatter:on */
 
-        final AbstractNeo4JEGraphDriver driver = (AbstractNeo4JEGraphDriver) graph.getDriver();
+        final AbstractNeo4JEGraphDriver driver = (AbstractNeo4JEGraphDriver) graph.getDatabase();
 
         final ExecutionResult result = driver.execute( cypher );
         int i = 0;

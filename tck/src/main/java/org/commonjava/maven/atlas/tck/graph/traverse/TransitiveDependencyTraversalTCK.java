@@ -50,7 +50,7 @@ public abstract class TransitiveDependencyTraversalTCK
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                simpleSession(), 
+                simpleWorkspace(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( dependency( source, root, d1, 0 ) )
                     .build() 
@@ -90,7 +90,7 @@ public abstract class TransitiveDependencyTraversalTCK
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                simpleSession(), 
+                simpleWorkspace(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( 
                         dependency( source, root, d1, 0 ),
@@ -136,7 +136,7 @@ public abstract class TransitiveDependencyTraversalTCK
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                simpleSession(), 
+                simpleWorkspace(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( 
                         dependency( source, root, d1, 0 )
@@ -182,7 +182,7 @@ public abstract class TransitiveDependencyTraversalTCK
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                simpleSession(), 
+                simpleWorkspace(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( 
                         dependency( source, root, d1a, 0 )

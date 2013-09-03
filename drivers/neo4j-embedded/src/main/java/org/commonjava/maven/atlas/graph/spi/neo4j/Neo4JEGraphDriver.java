@@ -19,7 +19,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j;
 import java.util.Map;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.EGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.neo4j.cypher.javacompat.ExecutionResult;
@@ -27,7 +27,7 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 
 public interface Neo4JEGraphDriver
-    extends EGraphDriver
+    extends GraphDatabaseDriver
 {
 
     ExecutionResult executeFrom( String cypher, ProjectVersionRef... roots )

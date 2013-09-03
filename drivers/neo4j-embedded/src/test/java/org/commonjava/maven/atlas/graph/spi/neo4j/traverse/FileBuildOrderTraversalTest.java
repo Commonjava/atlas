@@ -44,7 +44,7 @@ public class FileBuildOrderTraversalTest
     {
         if ( manager == null )
         {
-            manager = new EGraphManager( fixture.newDriverInstance() );
+            manager = new EGraphManager( fixture.factory() );
         }
 
         return manager;

@@ -35,6 +35,7 @@ import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.traverse.BuildOrderTraversal;
 import org.commonjava.maven.atlas.graph.traverse.model.BuildOrder;
+import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -55,18 +56,18 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
-        getManager().storeRelationships( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+        getManager().storeRelationships( ws, new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                        new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false ) );
         
-        final EProjectGraph graph = getManager().getGraph( simpleSession(), c );
+        final EProjectGraph graph = getManager().getGraph( ws, c );
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
@@ -82,7 +83,6 @@ public abstract class BuildOrderTraversalTCK
         assertRelativeOrder( relativeOrder, buildOrder );
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     //@Ignore
     public void simpleDependencyBuildOrder_includeDepParent()
@@ -94,17 +94,17 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
         final ProjectVersionRef p = new ProjectVersionRef( "group.id", "b-parent", "1001" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
         relativeOrder.put( b, p );
 
         final URI source = sourceURI();
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                simpleSession(), 
+                ws, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                     .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ) )
                     .build()
@@ -143,16 +143,16 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                simpleSession(), 
+                ws, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                     .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ) )
                     .withPlugins( new PluginRelationship( source, c, pb, 0, false ) )
@@ -190,16 +190,16 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                  simpleSession(), 
+                  ws, 
                   new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                       .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, c, new ArtifactRef( d, null, null, false ), DependencyScope.test, 1, false )
@@ -239,16 +239,16 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                  simpleSession(), 
+                  ws, 
                   new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                       .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false, d )
                       )
@@ -287,18 +287,18 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.dep.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
-            new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
         relativeOrder.put( c, pb );
         relativeOrder.put( pb, pa );
 
         final URI source = sourceURI();
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                  simpleSession(), 
+                  ws, 
                   new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                       .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false )
                       )
@@ -326,8 +326,7 @@ public abstract class BuildOrderTraversalTCK
         assertRelativeOrder( relativeOrder, buildOrder );
     }
 
-    private void assertRelativeOrder( final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder,
-                                      final List<ProjectRef> buildOrder )
+    private void assertRelativeOrder( final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder, final List<ProjectRef> buildOrder )
     {
         for ( final Map.Entry<ProjectVersionRef, ProjectVersionRef> entry : relativeOrder.entrySet() )
         {
@@ -351,8 +350,7 @@ public abstract class BuildOrderTraversalTCK
 
             if ( vidx >= kidx )
             {
-                fail( "prerequisite project: " + v + " of: " + k + " appears AFTER it in the build order: "
-                    + buildOrder );
+                fail( "prerequisite project: " + v + " of: " + k + " appears AFTER it in the build order: " + buildOrder );
             }
         }
     }

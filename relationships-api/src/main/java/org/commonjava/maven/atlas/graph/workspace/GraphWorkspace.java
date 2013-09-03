@@ -1,5 +1,7 @@
 package org.commonjava.maven.atlas.graph.workspace;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -8,19 +10,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 
 public final class GraphWorkspace
+    implements Closeable
 {
 
     private final GraphWorkspaceConfiguration config;
-
-    private Map<ProjectVersionRef, SingleVersion> selectedVersions = new HashMap<ProjectVersionRef, SingleVersion>();
-
-    private Map<ProjectRef, SingleVersion> wildcardSelectedVersions = new HashMap<ProjectRef, SingleVersion>();
 
     private final transient Map<String, Object> properties = new HashMap<String, Object>();
 
@@ -32,16 +31,20 @@ public final class GraphWorkspace
 
     private long lastAccess = System.currentTimeMillis();
 
-    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config )
+    private final GraphDatabaseDriver dbDriver;
+
+    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final GraphDatabaseDriver dbDriver )
     {
         this.id = id;
         this.config = config;
+        this.dbDriver = dbDriver;
     }
 
-    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final long lastAccess )
+    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final GraphDatabaseDriver dbDriver, final long lastAccess )
     {
         this.id = id;
         this.config = config;
+        this.dbDriver = dbDriver;
         this.lastAccess = lastAccess;
     }
 
@@ -53,16 +56,6 @@ public final class GraphWorkspace
     protected void setId( final String id )
     {
         this.id = id;
-    }
-
-    protected void setSelectedVersions( final Map<ProjectVersionRef, SingleVersion> selections )
-    {
-        this.selectedVersions = selections;
-    }
-
-    protected void setWildcardSelectedVersions( final Map<ProjectRef, SingleVersion> selections )
-    {
-        this.wildcardSelectedVersions = selections;
     }
 
     public void touch()
@@ -226,78 +219,57 @@ public final class GraphWorkspace
         return config.getActiveSources();
     }
 
-    public final ProjectVersionRef selectVersion( final ProjectVersionRef ref, final SingleVersion version )
+    public final ProjectVersionRef selectVersion( final ProjectVersionRef ref, final ProjectVersionRef selected )
         throws GraphDriverException
     {
         checkOpen();
-        if ( !version.isConcrete() )
+        if ( !selected.isSpecificVersion() )
         {
             throw new IllegalArgumentException( "You cannot select a non-concrete version!" );
         }
 
-        final SingleVersion old = selectedVersions.put( ref, version );
-        if ( old == null || !old.equals( version ) )
-        {
-            fireSelectionAdded( ref, version );
-        }
+        dbDriver.selectVersionFor( ref, selected );
+        fireSelectionAdded( ref, selected );
 
         fireAccessed();
-        final ProjectVersionRef updated = ref.selectVersion( version, config.isForceVersions() );
-        return updated;
+        return selected;
     }
 
-    public final boolean selectVersionForAll( final ProjectRef ref, final SingleVersion version )
+    public final boolean selectVersionForAll( final ProjectRef ref, final ProjectVersionRef selected )
         throws GraphDriverException
     {
         checkOpen();
-        if ( !version.isConcrete() )
+        if ( !selected.isSpecificVersion() )
         {
             throw new IllegalArgumentException( "You cannot select a non-concrete version!" );
         }
 
-        final SingleVersion old = wildcardSelectedVersions.put( ref, version );
-        boolean modified = false;
-        if ( old == null || !old.equals( version ) )
-        {
-            fireWildcardSelectionAdded( ref, version );
-            modified = true;
-        }
+        dbDriver.selectVersionForAll( ref, selected );
+        fireWildcardSelectionAdded( ref, selected );
 
         fireAccessed();
-        return modified;
+        return true;
     }
 
-    public final Map<ProjectVersionRef, SingleVersion> clearVersionSelections()
+    public final void clearVersionSelections()
     {
         checkOpen();
-        final Map<ProjectVersionRef, SingleVersion> old =
-            new HashMap<ProjectVersionRef, SingleVersion>( selectedVersions );
-
-        selectedVersions.clear();
+        dbDriver.clearSelectedVersions();
         fireAccessed();
         fireSelectionsCleared();
-
-        return old;
     }
 
-    public final SingleVersion getSelectedVersion( final ProjectVersionRef ref )
+    public final ProjectVersionRef getSelection( final ProjectVersionRef ref )
     {
         checkOpen();
         fireAccessed();
-        SingleVersion version = selectedVersions.get( ref.asProjectVersionRef() );
-
-        if ( version == null )
-        {
-            version = wildcardSelectedVersions.get( ref.asProjectRef() );
-        }
-
-        return version;
+        return dbDriver.getSelectedFor( ref );
     }
 
-    public final Map<ProjectVersionRef, SingleVersion> getVersionSelections()
+    public final Map<ProjectVersionRef, ProjectVersionRef> getVersionSelections()
     {
         fireAccessed();
-        return selectedVersions;
+        return dbDriver.getSelections();
     }
 
     @Override
@@ -337,10 +309,13 @@ public final class GraphWorkspace
         return true;
     }
 
+    @Override
     public final synchronized void close()
+        throws IOException
     {
         if ( open )
         {
+            getDatabase().close();
             clearVersionSelections();
             open = false;
             fireClosed();
@@ -364,21 +339,21 @@ public final class GraphWorkspace
         }
     }
 
-    private void fireWildcardSelectionAdded( final ProjectRef ref, final SingleVersion version )
+    private void fireWildcardSelectionAdded( final ProjectRef ref, final ProjectVersionRef selected )
         throws GraphDriverException
     {
         for ( final GraphWorkspaceListener listener : listeners )
         {
-            listener.wildcardSelectionAdded( this, ref, version );
+            listener.wildcardSelectionAdded( this, ref, selected );
         }
     }
 
-    private void fireSelectionAdded( final ProjectVersionRef ref, final SingleVersion version )
+    private void fireSelectionAdded( final ProjectVersionRef ref, final ProjectVersionRef selected )
         throws GraphDriverException
     {
         for ( final GraphWorkspaceListener listener : listeners )
         {
-            listener.selectionAdded( this, ref, version );
+            listener.selectionAdded( this, ref, selected );
         }
     }
 
@@ -415,17 +390,27 @@ public final class GraphWorkspace
 
     public boolean hasSelection( final ProjectVersionRef ref )
     {
-        return selectedVersions.containsKey( ref );
+        return dbDriver.hasSelectionFor( ref );
     }
 
     public boolean hasSelectionForAll( final ProjectRef ref )
     {
-        return wildcardSelectedVersions.containsKey( ref );
+        return dbDriver.hasSelectionForAll( ref );
     }
 
     public boolean isForceVersions()
     {
         return config.isForceVersions();
+    }
+
+    public GraphDatabaseDriver getDatabase()
+    {
+        return dbDriver;
+    }
+
+    public GraphWorkspaceConfiguration getConfiguration()
+    {
+        return config;
     }
 
 }

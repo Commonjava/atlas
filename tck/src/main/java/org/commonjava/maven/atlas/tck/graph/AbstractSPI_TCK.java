@@ -41,7 +41,7 @@ public abstract class AbstractSPI_TCK
         return new URI( "test:repo:" + naming.getMethodName() );
     }
 
-    protected GraphWorkspace simpleSession()
+    protected GraphWorkspace simpleWorkspace()
         throws Exception
     {
         return getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( sourceURI() ) );

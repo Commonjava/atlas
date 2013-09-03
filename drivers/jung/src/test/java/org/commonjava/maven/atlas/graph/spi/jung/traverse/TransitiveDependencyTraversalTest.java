@@ -18,7 +18,7 @@ package org.commonjava.maven.atlas.graph.spi.jung.traverse;
 
 import org.apache.log4j.Level;
 import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.spi.jung.JungEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.jung.JungWorkspaceFactory;
 import org.commonjava.maven.atlas.tck.graph.traverse.TransitiveDependencyTraversalTCK;
 import org.commonjava.util.logging.Log4jUtil;
 import org.junit.BeforeClass;
@@ -40,7 +40,7 @@ public class TransitiveDependencyTraversalTest
     {
         if ( manager == null )
         {
-            manager = new EGraphManager( new JungEGraphDriver() );
+            manager = new EGraphManager( new JungWorkspaceFactory() );
         }
 
         return manager;

@@ -42,13 +42,10 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
-import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
@@ -131,7 +128,7 @@ public final class Conversions
 
     public static final String SELECTION_ONLY = "_selection_only";
 
-    public static final String SELECTION_FOR_PREFIX = "selection_for_";
+    public static final String SELECTION = "selection";
 
     public static final int SELECTION_FOR_PREFIX_LEN = SELECTED_FOR.length();
 
@@ -141,14 +138,14 @@ public final class Conversions
     {
     }
 
-    public static void toSelectionNodeProperties( final String wsId, final ProjectRef ref, final SingleVersion version, final Node node )
+    public static void toSelectionNodeProperties( final ProjectRef ref, final ProjectVersionRef select, final Node node )
     {
         node.setProperty( GA, ref.toString() );
         node.setProperty( NODE_TYPE, NodeType.GA_SELECTIONS.name() );
-        node.setProperty( SELECTION_FOR_PREFIX + wsId, version.renderStandard() );
+        node.setProperty( SELECTION, select.toString() );
     }
 
-    public static Map<String, SingleVersion> getWorkspaceSelections( final Node node )
+    public static ProjectVersionRef getWorkspaceSelection( final Node node )
     {
         if ( node == null )
         {
@@ -160,19 +157,16 @@ public final class Conversions
             throw new IllegalArgumentException( "Node " + node.getId() + " is not a ga-selections reference." );
         }
 
-        final Map<String, SingleVersion> selections = new HashMap<String, SingleVersion>();
         final Iterable<String> keys = node.getPropertyKeys();
         for ( final String key : keys )
         {
-            if ( key.startsWith( SELECTION_FOR_PREFIX ) )
+            if ( key.startsWith( SELECTION ) )
             {
-                final String wsid = key.substring( SELECTION_FOR_PREFIX_LEN );
-                final SingleVersion version = VersionUtils.createSingleVersion( (String) node.getProperty( key ) );
-                selections.put( wsid, version );
+                return ProjectVersionRef.parse( (String) node.getProperty( key ) );
             }
         }
 
-        return selections;
+        return null;
     }
 
     public static void toNodeProperties( final GraphWorkspace workspace, final Node node )
@@ -184,53 +178,6 @@ public final class Conversions
         node.setProperty( SOURCE_URI, toStringArray( workspace.getActiveSources() ) );
         node.setProperty( POM_LOCATION_URI, toStringArray( workspace.getActivePomLocations() ) );
         node.setProperty( FORCE_VERSION_SELECTIONS, workspace.isForceVersions() );
-    }
-
-    public static GraphWorkspace toWorkspace( final Node node )
-    {
-        if ( node == null )
-        {
-            return null;
-        }
-
-        if ( !isType( node, NodeType.WORKSPACE ) )
-        {
-            throw new IllegalArgumentException( "Node " + node.getId() + " is not a workspace reference." );
-        }
-
-        final List<URI> sources = getURIListProperty( SOURCE_URI, node, UNKNOWN_SOURCE_URI );
-        final List<URI> pomLocations = getURIListProperty( POM_LOCATION_URI, node, POM_ROOT_URI );
-        final long lastAccess = getLongProperty( LAST_ACCESS_DATE, node, System.currentTimeMillis() );
-        final boolean force = getBooleanProperty( FORCE_VERSION_SELECTIONS, node, true );
-
-        return new GraphWorkspace( Long.toString( node.getId() ), new GraphWorkspaceConfiguration().withForcedVersions( force )
-                                                                                                   .withPomLocations( pomLocations )
-                                                                                                   .withSources( sources ), lastAccess );
-    }
-
-    public static Set<GraphWorkspace> convertToWorkspaces( final Iterable<Node> nodes )
-    {
-        final Set<GraphWorkspace> refs = new HashSet<GraphWorkspace>();
-        for ( final Node node : nodes )
-        {
-            LOGGER.info( "Processing node for workspaces: %s", node );
-            if ( node.getId() == 0 )
-            {
-                LOGGER.info( "root node, skipping." );
-                continue;
-            }
-
-            if ( !Conversions.isType( node, NodeType.WORKSPACE ) )
-            {
-                final String nt = getStringProperty( NODE_TYPE, node );
-                LOGGER.info( "Not a workspace node: %s. Type: %s", node, nt );
-                continue;
-            }
-
-            refs.add( Conversions.toWorkspace( node ) );
-        }
-
-        return refs;
     }
 
     public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )

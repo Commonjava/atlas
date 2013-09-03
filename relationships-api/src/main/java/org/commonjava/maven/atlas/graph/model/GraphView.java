@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -165,5 +166,10 @@ public class GraphView
     public String toString()
     {
         return String.format( "GraphView [\n  roots=%s\n  workspace=%s\n  filter=%s\n]", roots, workspace, filter );
+    }
+
+    public GraphDatabaseDriver getDatabase()
+    {
+        return workspace.getDatabase();
     }
 }

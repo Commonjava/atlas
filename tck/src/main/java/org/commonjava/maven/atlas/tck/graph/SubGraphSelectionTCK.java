@@ -21,7 +21,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
-import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.EProjectGraph;
@@ -29,8 +28,6 @@ import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
-import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.junit.Test;
 
 public abstract class SubGraphSelectionTCK
@@ -45,13 +42,15 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef varDep = new ProjectVersionRef( "org.other", "dep", "1.0-SNAPSHOT" );
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
-        final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
+        final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace session = simpleSession();
+        final GraphWorkspace session = simpleWorkspace();
+
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
-        getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+        getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
         final EProjectGraph graph = getManager().getGraph( session, project );
@@ -77,23 +76,23 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef varDep = new ProjectVersionRef( "org.other", "dep", "1.0-SNAPSHOT" );
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
-        final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
+        final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace session = simpleSession();
+        final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
-        getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+        getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
-        final EProjectGraph graph = getManager().getGraph( session, project );
+        final EProjectGraph graph = getManager().getGraph( ws, project );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
         System.out.println( "Variable before selecting:\n  " + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        final ProjectVersionRef selDep = session.selectVersion( varDep, selected );
+        final ProjectVersionRef selDep = ws.selectVersion( varDep, selected );
         assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph.getVariableSubgraphs();
@@ -104,9 +103,7 @@ public abstract class SubGraphSelectionTCK
         System.out.println( "Incomplete after selecting:\n  " + incomplete );
         assertThat( incomplete.contains( selDep ), equalTo( true ) );
 
-        final Map<ProjectVersionRef, SingleVersion> cleared = session.clearVersionSelections();
-        System.out.println( "Cleared:\n  " + cleared );
-        assertThat( cleared.get( varDep ), equalTo( selDep.getVersionSpec() ) );
+        ws.clearVersionSelections();
 
         variables = graph.getVariableSubgraphs();
         System.out.println( "Variable after clearing:\n  " + variables );
@@ -127,16 +124,19 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
         final ProjectVersionRef varDep = new ProjectVersionRef( "org.other", "dep", "1.0-SNAPSHOT" );
         final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
-        final SingleVersion selected = VersionUtils.createSingleVersion( "1.0-20130314.161200-1" );
+        final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace session = simpleSession();
-        final GraphWorkspace session2 = simpleSession();
+        final GraphWorkspace session = simpleWorkspace();
+        final GraphWorkspace session2 = simpleWorkspace();
 
         /* @formatter:off */
-        getManager().storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+        getManager().storeRelationships( session, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
+        getManager().storeRelationships( session2, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
+         
         final EProjectGraph graph = getManager().getGraph( session, project );
         final EProjectGraph graph2 = getManager().getGraph( session2, project );
         /* @formatter:on */
@@ -151,8 +151,8 @@ public abstract class SubGraphSelectionTCK
         // Second graph session should remain unchanged.
         final ProjectVersionRef selDep = session.selectVersion( varDep, selected );
 
-        assertThat( session.getSelectedVersion( varDep ), equalTo( selected ) );
-        assertThat( session2.getSelectedVersion( varDep ), nullValue() );
+        assertThat( session.getSelection( varDep ), equalTo( selected ) );
+        assertThat( session2.getSelection( varDep ), nullValue() );
 
         assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 

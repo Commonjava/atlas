@@ -52,7 +52,7 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( simpleSession(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
+        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
         graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ), new ParentRelationship( source, grandRef ) ) );
         /* @formatter:on */
 
@@ -100,7 +100,7 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( simpleSession(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
+        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
         graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ) ) );
         /* @formatter:on */
 
@@ -140,7 +140,7 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( simpleSession(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) )
+        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) )
             .withParent( new ParentRelationship( source, myRef, parentRef ) )
             .withDependencies(
                   new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),

@@ -23,7 +23,7 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.EGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -65,7 +65,7 @@ public interface EProjectNet
 
     Set<EProjectCycle> getCycles();
 
-    EGraphDriver getDriver();
+    GraphDatabaseDriver getDatabase();
 
     GraphWorkspace getWorkspace();
 

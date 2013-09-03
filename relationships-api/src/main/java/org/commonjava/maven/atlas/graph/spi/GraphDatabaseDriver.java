@@ -28,13 +28,10 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 
-public interface EGraphDriver
+public interface GraphDatabaseDriver
     extends Closeable
 {
 
@@ -59,18 +56,7 @@ public interface EGraphDriver
      */
     Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel );
 
-    boolean clearSelectedVersionsFor( String id );
-
-    boolean deleteWorkspace( String id );
-
-    GraphWorkspace createWorkspace( GraphWorkspaceConfiguration config )
-        throws GraphDriverException;
-
-    void storeWorkspace( GraphWorkspace workspace )
-        throws GraphDriverException;
-
-    GraphWorkspace loadWorkspace( String id )
-        throws GraphDriverException;
+    boolean clearSelectedVersions();
 
     void recomputeIncompleteSubgraphs()
         throws GraphDriverException;
@@ -78,9 +64,9 @@ public interface EGraphDriver
     void reindex()
         throws GraphDriverException;
 
-    void selectVersionFor( ProjectVersionRef ref, SingleVersion version, String id );
+    void selectVersionFor( ProjectVersionRef ref, ProjectVersionRef selected );
 
-    void selectVersionForAll( ProjectRef ref, SingleVersion version, String id );
+    void selectVersionForAll( ProjectRef ref, ProjectVersionRef selected );
 
     /* 
      * ################################################
@@ -129,14 +115,22 @@ public interface EGraphDriver
 
     Set<ProjectVersionRef> getProjectsWithMetadata( GraphView view, String key );
 
-    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from,
-                                                            boolean includeManagedInfo, RelationshipType... types );
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,
+                                                            RelationshipType... types );
 
-    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to,
-                                                          boolean includeManagedInfo, RelationshipType... types );
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
+                                                          RelationshipType... types );
 
     Set<ProjectVersionRef> getProjectsMatching( ProjectRef projectRef, GraphView eProjectNetView );
 
-    Set<GraphWorkspace> loadAllWorkspaces();
+    ProjectVersionRef getSelectedFor( ProjectVersionRef ref );
+
+    Map<ProjectVersionRef, ProjectVersionRef> getSelections();
+
+    Map<ProjectRef, ProjectVersionRef> getWildcardSelections();
+
+    boolean hasSelectionFor( ProjectVersionRef ref );
+
+    boolean hasSelectionForAll( ProjectRef ref );
 
 }

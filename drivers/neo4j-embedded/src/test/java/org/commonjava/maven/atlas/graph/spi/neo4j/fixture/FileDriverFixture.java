@@ -18,30 +18,21 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.fixture;
 
 import java.io.File;
 
-import org.commonjava.maven.atlas.graph.spi.EGraphDriver;
-import org.commonjava.maven.atlas.graph.spi.neo4j.FileNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
+import org.commonjava.maven.atlas.graph.spi.neo4j.FileNeo4jWorkspaceFactory;
 import org.commonjava.util.logging.Logger;
+import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 
 public class FileDriverFixture
-    extends AbstractDriverFixture
+    extends ExternalResource
 {
 
     private final Logger logger = new Logger( getClass() );
 
     private final TemporaryFolder folder = new TemporaryFolder();
 
-    @Override
-    protected EGraphDriver create()
-        throws Exception
-    {
-        final File dbDir = folder.newFolder();
-        dbDir.delete();
-        dbDir.mkdirs();
-
-        logger.info( "Initializing db in: %s", dbDir );
-        return new FileNeo4JEGraphDriver( dbDir );
-    }
+    private FileNeo4jWorkspaceFactory factory;
 
     @Override
     protected void after()
@@ -54,7 +45,18 @@ public class FileDriverFixture
     protected void before()
         throws Throwable
     {
-        super.before();
         folder.create();
+
+        final File dbDir = folder.newFolder();
+        dbDir.delete();
+        dbDir.mkdirs();
+
+        logger.info( "Initializing db in: %s", dbDir );
+        factory = new FileNeo4jWorkspaceFactory( dbDir, true );
+    }
+
+    public GraphWorkspaceFactory factory()
+    {
+        return factory;
     }
 }

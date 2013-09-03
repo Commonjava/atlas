@@ -28,7 +28,7 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.EGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -45,22 +45,18 @@ public class EProjectGraph
 
     private final ProjectVersionRef project;
 
-    private final EGraphDriver driver;
-
     private final GraphView view;
 
-    public EProjectGraph( final GraphWorkspace session, final EGraphDriver driver, final ProjectVersionRef ref )
+    public EProjectGraph( final GraphWorkspace session, final ProjectVersionRef ref )
     {
         this.view = new GraphView( session, ref );
         this.project = ref;
-        this.driver = driver;
     }
 
-    public EProjectGraph( final GraphWorkspace session, final EGraphDriver driver, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
+    public EProjectGraph( final GraphWorkspace session, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
     {
         this.view = new GraphView( session, filter, ref );
         this.project = ref;
-        this.driver = driver;
     }
 
     //    public EProjectGraph( final EGraphSession session, final EProjectRelationships relationships,
@@ -72,7 +68,7 @@ public class EProjectGraph
     //
     //        this.project = key.getProject();
     //        this.sources = Collections.singleton( key.getSource() );
-    //        this.driver = driver.newInstance( session, null, filter, key.getProject() );
+    //        this.driver = view.getDatabase().newInstance( session, null, filter, key.getProject() );
     //
     //        add( relationships );
     //    }
@@ -99,12 +95,12 @@ public class EProjectGraph
     //        this.session = session;
     //        this.project = key.getProject();
     //        this.sources = Collections.singleton( key.getSource() );
-    //        this.driver = driver.newInstance( session, this, filter, key.getProject() );
+    //        this.driver = view.getDatabase().newInstance( session, this, filter, key.getProject() );
     //        if ( cycles != null )
     //        {
     //            for ( final EProjectCycle cycle : cycles )
     //            {
-    //                driver.addCycle( cycle );
+    //                view.getDatabase().addCycle( cycle );
     //            }
     //        }
     //
@@ -125,13 +121,15 @@ public class EProjectGraph
 
     public Set<ProjectRelationship<?>> getExactFirstOrderRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( driver.getRelationshipsDeclaredBy( view, getRoot() ) );
+        return new HashSet<ProjectRelationship<?>>( view.getDatabase()
+                                                        .getRelationshipsDeclaredBy( view, getRoot() ) );
     }
 
     @Override
     public Set<ProjectRelationship<?>> getExactAllRelationships()
     {
-        final Collection<ProjectRelationship<?>> rels = driver.getAllRelationships( view );
+        final Collection<ProjectRelationship<?>> rels = view.getDatabase()
+                                                            .getAllRelationships( view );
         if ( rels == null )
         {
             return null;
@@ -153,25 +151,29 @@ public class EProjectGraph
     @Override
     public boolean isComplete()
     {
-        return !driver.hasMissingProjects( view );
+        return !view.getDatabase()
+                    .hasMissingProjects( view );
     }
 
     @Override
     public boolean isConcrete()
     {
-        return !driver.hasVariableProjects( view );
+        return !view.getDatabase()
+                    .hasVariableProjects( view );
     }
 
     @Override
     public Set<ProjectVersionRef> getIncompleteSubgraphs()
     {
-        return Collections.unmodifiableSet( driver.getMissingProjects( view ) );
+        return Collections.unmodifiableSet( view.getDatabase()
+                                                .getMissingProjects( view ) );
     }
 
     @Override
     public Set<ProjectVersionRef> getVariableSubgraphs()
     {
-        return Collections.unmodifiableSet( driver.getVariableProjects( view ) );
+        return Collections.unmodifiableSet( view.getDatabase()
+                                                .getVariableProjects( view ) );
     }
 
     //    public static final class Builder
@@ -198,7 +200,7 @@ public class EProjectGraph
     //                        final EGraphDriver driver )
     //            throws GraphDriverException
     //        {
-    //            this.session = driver.createSession( config );
+    //            this.session = view.getDatabase().createSession( config );
     //            this.driver = driver;
     //            this.root = rels.getKey()
     //                            .getProject();
@@ -213,7 +215,7 @@ public class EProjectGraph
     //                        final EGraphDriver driver, final String... activeProfiles )
     //            throws GraphDriverException
     //        {
-    //            this.session = driver.createSession( config );
+    //            this.session = view.getDatabase().createSession( config );
     //            this.driver = driver;
     //            this.root = projectRef;
     //            this.rootSource = source;
@@ -223,7 +225,7 @@ public class EProjectGraph
     //        public Builder( final EGraphSessionConfiguration config, final EProjectKey key, final EGraphDriver driver )
     //            throws GraphDriverException
     //        {
-    //            this.session = driver.createSession( config );
+    //            this.session = view.getDatabase().createSession( config );
     //            this.root = key.getProject();
     //            this.rootSource = key.getSource();
     //            this.sources.add( key.getSource() );
@@ -522,7 +524,7 @@ public class EProjectGraph
     //            target = ( (ArtifactRef) target ).asProjectVersionRef();
     //        }
     //
-    //        return driver.addRelationships( rel )
+    //        return view.getDatabase().addRelationships( rel )
     //                     .isEmpty();
     //    }
 
@@ -537,12 +539,14 @@ public class EProjectGraph
 
         final Set<T> result = new HashSet<T>( rels );
 
-        final Set<ProjectRelationship<?>> rejected = driver.addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+        final Set<ProjectRelationship<?>> rejected = view.getDatabase()
+                                                         .addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
         result.removeAll( rejected );
 
         if ( !result.isEmpty() )
         {
-            driver.recomputeIncompleteSubgraphs();
+            view.getDatabase()
+                .recomputeIncompleteSubgraphs();
         }
 
         return result;
@@ -562,7 +566,8 @@ public class EProjectGraph
     protected void traverse( final ProjectVersionRef ref, final ProjectNetTraversal traversal )
         throws GraphDriverException
     {
-        driver.traverse( view, traversal, this, ref );
+        view.getDatabase()
+            .traverse( view, traversal, this, ref );
     }
 
     @Override
@@ -596,19 +601,22 @@ public class EProjectGraph
     @Override
     public void addCycle( final EProjectCycle cycle )
     {
-        driver.addCycle( cycle );
+        view.getDatabase()
+            .addCycle( cycle );
     }
 
     @Override
     public Set<EProjectCycle> getCycles()
     {
-        return driver.getCycles( view );
+        return view.getDatabase()
+                   .getCycles( view );
     }
 
     @Override
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
-        final Collection<? extends ProjectRelationship<?>> rels = driver.getRelationshipsTargeting( view, ref );
+        final Collection<? extends ProjectRelationship<?>> rels = view.getDatabase()
+                                                                      .getRelationshipsTargeting( view, ref );
         if ( rels == null )
         {
             return null;
@@ -618,9 +626,9 @@ public class EProjectGraph
     }
 
     @Override
-    public EGraphDriver getDriver()
+    public GraphDatabaseDriver getDatabase()
     {
-        return driver;
+        return view.getDatabase();
     }
 
     //    @Override
@@ -635,7 +643,7 @@ public class EProjectGraph
     //                                   final EGraphSession session )
     //        throws GraphDriverException
     //    {
-    //        if ( driver.containsProject( view, ref ) && !driver.isMissing( view, ref ) )
+    //        if ( view.getDatabase().containsProject( view, ref ) && !view.getDatabase().isMissing( view, ref ) )
     //        {
     //            return new EProjectGraph( session, this, filter, ref );
     //        }
@@ -657,7 +665,7 @@ public class EProjectGraph
     //    {
     //        for ( final ProjectVersionRef ref : refs )
     //        {
-    //            if ( !driver.containsProject( ref ) || driver.isMissing( ref ) )
+    //            if ( !view.getDatabase().containsProject( ref ) || view.getDatabase().isMissing( ref ) )
     //            {
     //                return null;
     //            }
@@ -681,44 +689,51 @@ public class EProjectGraph
     @Override
     public boolean containsGraph( final ProjectVersionRef ref )
     {
-        return driver.containsProject( view, ref );
+        return view.getDatabase()
+                   .containsProject( view, ref );
     }
 
     @Override
     public Set<ProjectVersionRef> getAllProjects()
     {
-        return driver.getAllProjects( view );
+        return view.getDatabase()
+                   .getAllProjects( view );
     }
 
     @Override
     public Map<String, String> getMetadata( final ProjectVersionRef ref )
     {
-        return driver.getMetadata( ref );
+        return view.getDatabase()
+                   .getMetadata( ref );
     }
 
     @Override
     public void addMetadata( final EProjectKey key, final String name, final String value )
     {
-        driver.addMetadata( key.getProject(), name, value );
+        view.getDatabase()
+            .addMetadata( key.getProject(), name, value );
     }
 
     @Override
     public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
     {
-        driver.setMetadata( key.getProject(), metadata );
+        view.getDatabase()
+            .setMetadata( key.getProject(), metadata );
     }
 
     @Override
     public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
     {
-        return driver.getProjectsWithMetadata( view, key );
+        return view.getDatabase()
+                   .getProjectsWithMetadata( view, key );
     }
 
     @Override
     public void reindex()
         throws GraphDriverException
     {
-        driver.reindex();
+        view.getDatabase()
+            .reindex();
     }
 
     //    @Override
@@ -738,13 +753,15 @@ public class EProjectGraph
     @Override
     public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... refs )
     {
-        return driver.getAllPathsTo( view, refs );
+        return view.getDatabase()
+                   .getAllPathsTo( view, refs );
     }
 
     @Override
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
-        return driver.introducesCycle( view, rel );
+        return view.getDatabase()
+                   .introducesCycle( view, rel );
     }
 
     @Override
@@ -752,13 +769,14 @@ public class EProjectGraph
     public EProjectGraph filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectGraph( view.getWorkspace(), driver, filter, project );
+        return new EProjectGraph( view.getWorkspace(), filter, project );
     }
 
     @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
-        driver.addDisconnectedProject( ref );
+        view.getDatabase()
+            .addDisconnectedProject( ref );
     }
 
     @Override
@@ -770,7 +788,8 @@ public class EProjectGraph
     @Override
     public boolean isMissing( final ProjectVersionRef ref )
     {
-        return driver.isMissing( view, ref );
+        return view.getDatabase()
+                   .isMissing( view, ref );
     }
 
 }
