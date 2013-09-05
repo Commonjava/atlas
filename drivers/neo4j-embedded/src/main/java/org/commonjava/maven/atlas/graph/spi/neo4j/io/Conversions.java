@@ -23,13 +23,13 @@ import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SO
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -41,7 +41,6 @@ import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -104,9 +103,9 @@ public final class Conversions
 
     public static final String CONNECTED = "_connected";
 
-    public static final String SELECTED_FOR = "_selected_for";
+    public static final String SELECTED = "_selected";
 
-    public static final String DESELECTED_FOR = "_deselected_for";
+    public static final String DESELECTED = "_deselected";
 
     public static final String CLONE_OF = "_clone_of";
 
@@ -124,60 +123,18 @@ public final class Conversions
 
     public static final String SELECTION_PREFIX = "rel_selection_";
 
+    public static final String DESELECTION_PREFIX = "rel_deselection_";
+
     private static final int SELECTION_PREFIX_LEN = SELECTION_PREFIX.length();
 
     public static final String SELECTION_ONLY = "_selection_only";
 
-    public static final String SELECTION = "selection";
+    public static final String WILDCARD_SELECTION = "_wc_selection_";
 
-    public static final int SELECTION_FOR_PREFIX_LEN = SELECTED_FOR.length();
-
-    public static final String WS_ID = "wsid";
+    public static final int SELECTED_PREFIX_LEN = SELECTED.length();
 
     private Conversions()
     {
-    }
-
-    public static void toSelectionNodeProperties( final ProjectRef ref, final ProjectVersionRef select, final Node node )
-    {
-        node.setProperty( GA, ref.toString() );
-        node.setProperty( NODE_TYPE, NodeType.GA_SELECTIONS.name() );
-        node.setProperty( SELECTION, select.toString() );
-    }
-
-    public static ProjectVersionRef getWorkspaceSelection( final Node node )
-    {
-        if ( node == null )
-        {
-            return null;
-        }
-
-        if ( !isType( node, NodeType.WORKSPACE ) )
-        {
-            throw new IllegalArgumentException( "Node " + node.getId() + " is not a ga-selections reference." );
-        }
-
-        final Iterable<String> keys = node.getPropertyKeys();
-        for ( final String key : keys )
-        {
-            if ( key.startsWith( SELECTION ) )
-            {
-                return ProjectVersionRef.parse( (String) node.getProperty( key ) );
-            }
-        }
-
-        return null;
-    }
-
-    public static void toNodeProperties( final GraphWorkspace workspace, final Node node )
-    {
-        node.setProperty( NODE_TYPE, NodeType.WORKSPACE.name() );
-
-        node.setProperty( LAST_ACCESS_DATE, workspace.getLastAccess() );
-
-        node.setProperty( SOURCE_URI, toStringArray( workspace.getActiveSources() ) );
-        node.setProperty( POM_LOCATION_URI, toStringArray( workspace.getActivePomLocations() ) );
-        node.setProperty( FORCE_VERSION_SELECTIONS, workspace.isForceVersions() );
     }
 
     public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
@@ -770,6 +727,16 @@ public final class Conversions
         to.setProperty( CLONE_OF, from.getId() );
     }
 
+    public static long getClonedId( final Relationship relationship )
+    {
+        if ( relationship.hasProperty( CLONE_OF ) )
+        {
+            return (Long) relationship.getProperty( CLONE_OF );
+        }
+
+        return -1;
+    }
+
     public static boolean isCloneFor( final Relationship relationship, final Relationship original )
     {
         if ( relationship.hasProperty( CLONE_OF ) )
@@ -799,27 +766,75 @@ public final class Conversions
         return getBooleanProperty( SELECTION_ONLY, rel, false );
     }
 
-    public static void markSelection( final Relationship from, final Relationship to, final Node session )
+    public static void markSpecificSelection( final Node from, final Node to, final Node wsNode )
     {
-        LOGGER.debug( "Marking selected: %s for session: %s", getStringProperty( GAV, to.getEndNode() ), session.getId() );
-
-        addToIdListing( session.getId(), SELECTED_FOR, to );
-        removeFromIdListing( session.getId(), DESELECTED_FOR, to );
-
-        markDeselected( from, session );
-
-        session.setProperty( SELECTION_PREFIX + from.getId(), to.getId() );
+        wsNode.setProperty( SELECTION_PREFIX + from.getId(), to.getId() );
+        wsNode.setProperty( DESELECTION_PREFIX + to.getId(), from.getId() );
     }
 
-    public static void markDeselected( final Relationship rel, final Node session )
+    public static void markWildcardSelection( final ProjectRef from, final ProjectVersionRef to, final Node wsNode )
     {
-        LOGGER.debug( "Marking de-selected: %s for session: %s", getStringProperty( GAV, rel.getEndNode() ), session.getId() );
-
-        removeFromIdListing( session.getId(), SELECTED_FOR, rel );
-        addToIdListing( session.getId(), DESELECTED_FOR, rel );
+        wsNode.setProperty( WILDCARD_SELECTION + from.toString(), to.toString() );
     }
 
-    public static Map<Long, Long> getSelections( final Node session )
+    public static ProjectVersionRef getWildcardSelection( final ProjectRef ref, final Node wsNode )
+    {
+        if ( wsNode == null )
+        {
+            return null;
+        }
+
+        final String key = WILDCARD_SELECTION + ref.toString();
+        if ( wsNode.hasProperty( key ) )
+        {
+            return ProjectVersionRef.parse( (String) wsNode.getProperty( key ) );
+        }
+
+        return null;
+    }
+
+    public static Map<Long, Long> clearWildcardSelections( final Node wsNode )
+    {
+        final Map<Long, Long> selections = getSpecificSelections( wsNode );
+
+        for ( final String key : wsNode.getPropertyKeys() )
+        {
+            if ( key.startsWith( WILDCARD_SELECTION ) )
+            {
+                wsNode.removeProperty( key );
+            }
+        }
+
+        return selections;
+    }
+
+    public static Map<Long, Long> clearSelectionsAndDeselections( final Node wsNode )
+    {
+        final Map<Long, Long> selections = getSpecificSelections( wsNode );
+
+        for ( final Entry<Long, Long> entry : selections.entrySet() )
+        {
+            final Long key = entry.getKey();
+            final Long value = entry.getValue();
+
+            removeProperty( SELECTION_PREFIX + key, wsNode );
+            removeProperty( DESELECTION_PREFIX + value, wsNode );
+        }
+
+        return selections;
+    }
+
+    public static boolean isSelected( final Node node, final Node wsNode )
+    {
+        return wsNode.hasProperty( DESELECTION_PREFIX + node.getId() );
+    }
+
+    public static boolean isDeselected( final Node node, final Node wsNode )
+    {
+        return wsNode.hasProperty( SELECTION_PREFIX + node.getId() );
+    }
+
+    public static Map<Long, Long> getSpecificSelections( final Node session )
     {
         final Map<Long, Long> result = new HashMap<Long, Long>();
         for ( final String key : session.getPropertyKeys() )
@@ -836,124 +851,23 @@ public final class Conversions
         return result;
     }
 
-    public static void removeSelectionAnnotationsFor( final Relationship relationship, final Node root )
+    public static long getSpecificSelectionFor( final long nodeId, final Node wsNode )
     {
-        LOGGER.debug( "%s: removing ALL selection annotations for: %s", getStringProperty( GAV, relationship.getEndNode() ),
-                      getStringProperty( GAV, root ) );
+        final String key = SELECTION_PREFIX + nodeId;
+        if ( wsNode.hasProperty( key ) )
+        {
+            return (long) wsNode.getProperty( key );
+        }
 
-        removeFromIdListing( root.getId(), SELECTED_FOR, relationship );
-        removeFromIdListing( root.getId(), DESELECTED_FOR, relationship );
+        return -1;
     }
 
-    public static boolean idListingContains( final String property, final Relationship relationship, final long... targets )
+    private static void removeProperty( final String key, final PropertyContainer container )
     {
-        if ( !relationship.hasProperty( property ) )
+        if ( container.hasProperty( key ) )
         {
-            return false;
+            container.removeProperty( key );
         }
-
-        final long[] ids = (long[]) relationship.getProperty( property, new long[] {} );
-        //        LOGGER.info( "Relationship: %s\nValue of property: %s is: %s", relationship, property,
-        //                     relationship.getProperty( property ) );
-
-        Arrays.sort( ids );
-        for ( final long target : targets )
-        {
-            if ( Arrays.binarySearch( ids, target ) > -1 )
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    public static boolean idListingContains( final String property, final Relationship relationship, final Collection<Node> targets )
-    {
-        if ( !relationship.hasProperty( property ) )
-        {
-            return false;
-        }
-
-        final long[] ids = (long[]) relationship.getProperty( property, new long[] {} );
-        //        LOGGER.info( "Relationship: %s\nValue of property: %s is: %s", relationship, property,
-        //                     relationship.getProperty( property ) );
-
-        Arrays.sort( ids );
-        for ( final Node target : targets )
-        {
-            if ( Arrays.binarySearch( ids, target.getId() ) > -1 )
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static void addToIdListing( final long target, final String property, final Relationship relationship )
-    {
-        final Set<Long> ids = new HashSet<Long>();
-        boolean contains = false;
-        for ( final long id : (long[]) relationship.getProperty( property, new long[] {} ) )
-        {
-            if ( id == target )
-            {
-                contains = true;
-            }
-
-            ids.add( id );
-        }
-
-        if ( !contains )
-        {
-            ids.add( target );
-            relationship.setProperty( property, ids.toArray( new Long[] {} ) );
-        }
-    }
-
-    private static void removeFromIdListing( final long target, final String property, final Relationship relationship )
-    {
-        final Set<Long> ids = new HashSet<Long>();
-        boolean changed = false;
-        for ( final long id : (long[]) relationship.getProperty( property, new long[] {} ) )
-        {
-            if ( id == target )
-            {
-                LOGGER.debug( "Found id: %d in property: %s.", target, property );
-                changed = true;
-            }
-            else
-            {
-                ids.add( id );
-            }
-        }
-
-        if ( changed )
-        {
-            if ( ids.isEmpty() )
-            {
-                LOGGER.debug( "Removing empty property: %s from: %s", property, relationship );
-                relationship.removeProperty( property );
-            }
-            else
-            {
-                LOGGER.debug( "Modifying property: %s from: %s", property, relationship );
-                relationship.setProperty( property, ids.toArray( new Long[] {} ) );
-            }
-        }
-    }
-
-    public static boolean isDeselectedFor( final Relationship relationship, final Node... roots )
-    {
-        final long[] ids = new long[roots.length];
-        for ( int i = 0; i < roots.length; i++ )
-        {
-            final Node n = roots[i];
-            ids[i] = n.getId();
-        }
-
-        return idListingContains( DESELECTED_FOR, relationship, ids );
     }
 
     public static <T, P> Set<P> toProjectedSet( final Iterable<T> src, final Projector<T, P> projector )

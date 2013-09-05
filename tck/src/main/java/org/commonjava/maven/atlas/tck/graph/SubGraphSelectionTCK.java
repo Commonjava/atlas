@@ -45,21 +45,19 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace session = simpleWorkspace();
-
         final GraphWorkspace ws = simpleWorkspace();
 
         /* @formatter:off */
         getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
-        final EProjectGraph graph = getManager().getGraph( session, project );
+        final EProjectGraph graph = getManager().getGraph( ws, project );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        final ProjectVersionRef selDep = session.selectVersion( varDep, selected );
+        final ProjectVersionRef selDep = ws.selectVersion( varDep, selected );
         assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph.getVariableSubgraphs();

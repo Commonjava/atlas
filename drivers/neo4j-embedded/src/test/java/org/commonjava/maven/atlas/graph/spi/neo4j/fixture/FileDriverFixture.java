@@ -17,8 +17,9 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.fixture;
 
 import java.io.File;
+import java.io.IOException;
 
-import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
+import org.commonjava.maven.atlas.graph.EGraphManager;
 import org.commonjava.maven.atlas.graph.spi.neo4j.FileNeo4jWorkspaceFactory;
 import org.commonjava.util.logging.Logger;
 import org.junit.rules.ExternalResource;
@@ -34,10 +35,21 @@ public class FileDriverFixture
 
     private FileNeo4jWorkspaceFactory factory;
 
+    private EGraphManager manager;
+
     @Override
     protected void after()
     {
         super.after();
+        try
+        {
+            manager.close();
+        }
+        catch ( final IOException e )
+        {
+            e.printStackTrace();
+        }
+
         folder.delete();
     }
 
@@ -52,11 +64,12 @@ public class FileDriverFixture
         dbDir.mkdirs();
 
         logger.info( "Initializing db in: %s", dbDir );
-        factory = new FileNeo4jWorkspaceFactory( dbDir, true );
+        factory = new FileNeo4jWorkspaceFactory( dbDir, false );
+        manager = new EGraphManager( factory );
     }
 
-    public GraphWorkspaceFactory factory()
+    public EGraphManager manager()
     {
-        return factory;
+        return manager;
     }
 }

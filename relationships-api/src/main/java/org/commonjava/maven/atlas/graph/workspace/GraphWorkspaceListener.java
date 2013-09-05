@@ -19,4 +19,6 @@ public interface GraphWorkspaceListener
 
     void selectionsCleared( GraphWorkspace ws );
 
+    void detached( GraphWorkspace graphWorkspace );
+
 }

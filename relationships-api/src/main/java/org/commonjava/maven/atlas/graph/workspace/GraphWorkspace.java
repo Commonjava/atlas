@@ -25,13 +25,13 @@ public final class GraphWorkspace
 
     private String id;
 
-    private boolean open = true;
+    private transient boolean open = true;
 
     private final transient List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
 
     private long lastAccess = System.currentTimeMillis();
 
-    private final GraphDatabaseDriver dbDriver;
+    private final transient GraphDatabaseDriver dbDriver;
 
     public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final GraphDatabaseDriver dbDriver )
     {
@@ -56,6 +56,11 @@ public final class GraphWorkspace
     protected void setId( final String id )
     {
         this.id = id;
+    }
+
+    public void detach()
+    {
+        fireDetached();
     }
 
     public void touch()
@@ -315,8 +320,8 @@ public final class GraphWorkspace
     {
         if ( open )
         {
-            getDatabase().close();
             clearVersionSelections();
+            getDatabase().close();
             open = false;
             fireClosed();
         }
@@ -336,6 +341,15 @@ public final class GraphWorkspace
         for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.accessed( this );
+        }
+    }
+
+    private void fireDetached()
+    {
+        lastAccess = System.currentTimeMillis();
+        for ( final GraphWorkspaceListener listener : listeners )
+        {
+            listener.detached( this );
         }
     }
 

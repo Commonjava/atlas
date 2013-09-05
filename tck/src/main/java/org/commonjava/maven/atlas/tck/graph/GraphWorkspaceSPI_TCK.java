@@ -19,6 +19,7 @@ public abstract class GraphWorkspaceSPI_TCK
         throws Exception
     {
         final GraphWorkspace ws = getManager().createWorkspace( new GraphWorkspaceConfiguration() );
+        System.out.println( "wsid: " + ws.getId() );
 
         assertThat( ws, notNullValue() );
 
@@ -38,6 +39,7 @@ public abstract class GraphWorkspaceSPI_TCK
         throws Exception
     {
         final GraphWorkspace ws = getManager().createWorkspace( new GraphWorkspaceConfiguration() );
+        System.out.println( "wsid: " + ws.getId() );
 
         assertThat( ws, notNullValue() );
 

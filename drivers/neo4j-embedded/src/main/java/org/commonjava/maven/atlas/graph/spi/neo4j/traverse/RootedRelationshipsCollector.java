@@ -15,28 +15,28 @@ public class RootedRelationshipsCollector
     extends AbstractAtlasCollector<Relationship>
 {
 
-    public RootedRelationshipsCollector( final Node start, final GraphView view, final boolean checkExistence )
+    public RootedRelationshipsCollector( final Node start, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
-        super( start, view, checkExistence );
+        super( start, view, wsNode, checkExistence );
     }
 
-    public RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
+    public RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
-        super( startNodes, view, checkExistence );
+        super( startNodes, view, wsNode, checkExistence );
         //        this.logEnabled = true;
     }
 
-    private RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view,
-                                          final boolean checkExistence, final Direction direction )
+    private RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence,
+                                          final Direction direction )
     {
-        super( startNodes, view, checkExistence, direction );
+        super( startNodes, view, wsNode, checkExistence, direction );
         //        this.logEnabled = true;
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new RootedRelationshipsCollector( startNodes, view, checkExistence, direction.reverse() );
+        return new RootedRelationshipsCollector( startNodes, view, wsNode, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

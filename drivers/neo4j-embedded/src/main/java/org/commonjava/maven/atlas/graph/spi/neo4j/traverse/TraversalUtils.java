@@ -1,12 +1,11 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.DESELECTED_FOR;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.POM_LOCATION_URI;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.SELECTED_FOR;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.SOURCE_URI;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getURIListProperty;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getURIProperty;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.idListingContains;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isDeselected;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isSelected;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isSelectionOnly;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
@@ -27,6 +26,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.util.logging.Logger;
+import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 
@@ -39,14 +39,14 @@ public final class TraversalUtils
     {
     }
 
-    public static boolean acceptedInView( final Path path, final GraphView view )
+    public static boolean acceptedInView( final Path path, final GraphView view, final Node wsNode )
     {
         ProjectRelationshipFilter f = view.getFilter();
-        final GraphWorkspace workspace = view.getWorkspace();
+        final GraphWorkspace ws = view.getWorkspace();
 
         for ( final Relationship r : path.relationships() )
         {
-            if ( !accepted( r, f, workspace ) )
+            if ( !accepted( r, f, ws, wsNode ) )
             {
                 return false;
             }
@@ -62,64 +62,63 @@ public final class TraversalUtils
         return true;
     }
 
-    public static boolean acceptedInView( final Relationship r, final GraphView view )
+    public static boolean acceptedInView( final Relationship r, final GraphView view, final Node wsNode )
     {
-        return accepted( r, view.getFilter(), view.getWorkspace() );
+        return accepted( r, view.getFilter(), view.getWorkspace(), wsNode );
     }
 
-    private static boolean accepted( final Relationship r, final ProjectRelationshipFilter f,
-                                     final GraphWorkspace workspace )
+    private static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace, final Node wsNode )
     {
         final ProjectRelationship<?> rel = toProjectRelationship( r );
 
         debug( "Checking relationship for acceptance: %s (%s)", r, rel );
 
-        if ( workspace != null )
+        if ( wsNode != null )
         {
-            final long workspaceId = Long.parseLong( workspace.getId() );
-            if ( idListingContains( DESELECTED_FOR, r, workspaceId ) )
+            final Node endNode = r.getEndNode();
+
+            if ( r != null && isDeselected( endNode, wsNode ) )
             {
                 debug( "REJECTED: Found relationship in path that was deselected: %s", r );
                 return false;
             }
 
-            if ( isSelectionOnly( r ) && !idListingContains( SELECTED_FOR, r, workspaceId ) )
+            if ( r != null && isSelectionOnly( r ) && !isSelected( endNode, wsNode ) )
             {
-                debug( "REJECTED: Found relationship in path that was not selected and is marked as selection-only: %s",
-                       r );
+                debug( "REJECTED: Found relationship in path that was not selected and is marked as selection-only: %s", r );
                 return false;
             }
+        }
 
-            final Set<URI> sources = workspace.getActiveSources();
-            if ( sources != null && !sources.isEmpty() )
+        final Set<URI> sources = workspace.getActiveSources();
+        if ( sources != null && !sources.isEmpty() )
+        {
+            final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
+            boolean found = false;
+            for ( final URI uri : s )
             {
-                final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
-                boolean found = false;
-                for ( final URI uri : s )
+                if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
                 {
-                    if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
-                    {
-                        found = true;
-                        break;
-                    }
-                }
-
-                if ( !found )
-                {
-                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s", r );
-                    return false;
+                    found = true;
+                    break;
                 }
             }
 
-            final Set<URI> pomLocations = workspace.getActivePomLocations();
-            if ( pomLocations != null && !pomLocations.isEmpty() )
+            if ( !found )
             {
-                final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
-                if ( !pomLocations.contains( pomLocation ) )
-                {
-                    debug( "REJECTED: Found relationship in path with de-selected pom-location URI: %s", r );
-                    return false;
-                }
+                debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s", r );
+                return false;
+            }
+        }
+
+        final Set<URI> pomLocations = workspace.getActivePomLocations();
+        if ( pomLocations != null && !pomLocations.isEmpty() )
+        {
+            final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
+            if ( !pomLocations.contains( pomLocation ) )
+            {
+                debug( "REJECTED: Found relationship in path with de-selected pom-location URI: %s", r );
+                return false;
             }
         }
 
@@ -199,8 +198,7 @@ public final class TraversalUtils
         }
         else if ( filter instanceof AbstractAggregatingFilter )
         {
-            final List<? extends ProjectRelationshipFilter> filters =
-                ( (AbstractAggregatingFilter) filter ).getFilters();
+            final List<? extends ProjectRelationshipFilter> filters = ( (AbstractAggregatingFilter) filter ).getFilters();
 
             for ( final ProjectRelationshipFilter f : filters )
             {

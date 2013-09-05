@@ -19,28 +19,29 @@ public class RootedNodesCollector
 
     public Direction direction = Direction.OUTGOING;
 
-    public RootedNodesCollector( final Node start, final GraphView view, final boolean checkExistence )
+    public RootedNodesCollector( final Node start, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
-        super( start, view, checkExistence );
+        super( start, view, wsNode, checkExistence );
         //        logEnabled = true;
     }
 
-    public RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
+    public RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
-        super( startNodes, view, checkExistence );
+        super( startNodes, view, wsNode, checkExistence );
         //        logEnabled = true;
     }
 
-    private RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence, final Direction direction )
+    private RootedNodesCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence,
+                                  final Direction direction )
     {
-        super( startNodes, view, checkExistence, direction );
+        super( startNodes, view, wsNode, checkExistence, direction );
         //        logEnabled = true;
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new RootedNodesCollector( startNodes, view, checkExistence, direction.reverse() );
+        return new RootedNodesCollector( startNodes, view, wsNode, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

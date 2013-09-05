@@ -8,6 +8,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -23,15 +24,16 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
+import org.commonjava.maven.atlas.graph.workspace.AbstractGraphWorkspaceListener;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceListener;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.util.logging.Logger;
 
 public class EGraphManager
-    implements Closeable, GraphWorkspaceListener
+    extends AbstractGraphWorkspaceListener
+    implements Closeable
 {
 
     private static final String TEMP_WS = "is-temporary";
@@ -116,11 +118,14 @@ public class EGraphManager
         return new EProjectWeb( workspace, filter, refs );
     }
 
-    public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
+    public synchronized GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
-        return workspaceFactory.createWorkspace( config )
-                               .addListener( this );
+        final GraphWorkspace ws = workspaceFactory.createWorkspace( config )
+                                                  .addListener( this );
+
+        loadedWorkspaces.put( ws.getId(), ws );
+        return ws;
     }
 
     public boolean deleteWorkspace( final String id )
@@ -150,7 +155,11 @@ public class EGraphManager
 
     public Set<GraphWorkspace> getAllWorkspaces()
     {
-        return workspaceFactory.loadAllWorkspaces();
+        final Set<GraphWorkspace> result = new HashSet<>();
+        result.addAll( loadedWorkspaces.values() );
+        result.addAll( workspaceFactory.loadAllWorkspaces( loadedWorkspaces.keySet() ) );
+
+        return result;
     }
 
     public boolean containsGraph( final ProjectVersionRef ref )
@@ -308,14 +317,13 @@ public class EGraphManager
     }
 
     @Override
-    public void close()
+    public synchronized void close()
         throws IOException
     {
-
         final StringBuilder sb = new StringBuilder();
         StringWriter sw = new StringWriter();
 
-        for ( final Entry<String, GraphWorkspace> entry : loadedWorkspaces.entrySet() )
+        for ( final Entry<String, GraphWorkspace> entry : new HashMap<>( loadedWorkspaces ).entrySet() )
         {
             final GraphWorkspace ws = entry.getValue();
             if ( ws == null )
@@ -347,15 +355,19 @@ public class EGraphManager
     }
 
     @Override
-    public void selectionAdded( final GraphWorkspace workspace, final ProjectVersionRef ref, final ProjectVersionRef selected )
-        throws GraphDriverException
+    public void detached( final GraphWorkspace ws )
     {
-    }
-
-    @Override
-    public void wildcardSelectionAdded( final GraphWorkspace workspace, final ProjectRef ref, final ProjectVersionRef selected )
-        throws GraphDriverException
-    {
+        if ( ws != null )
+        {
+            try
+            {
+                storeWorkspace( ws );
+            }
+            catch ( final GraphDriverException e )
+            {
+                logger.error( "Failed to store workspace %s on detach. Reason: %s", e, ws.getId(), e.getMessage() );
+            }
+        }
     }
 
     @Override
@@ -380,21 +392,10 @@ public class EGraphManager
         }
     }
 
-    @Override
-    public void selectionsCleared( final GraphWorkspace workspace )
-    {
-    }
-
     public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphWorkspace workspace )
     {
         return workspace.getDatabase()
                         .getProjectsMatching( projectRef, new GraphView( workspace ) );
-    }
-
-    @Override
-    public void accessed( final GraphWorkspace ws )
-    {
-        // TODO: periodic loop to update last-access for eventual workspace-expiration logic...especially for temporary workspaces.
     }
 
     public GraphWorkspace createTemporaryWorkspace( final GraphWorkspaceConfiguration config )

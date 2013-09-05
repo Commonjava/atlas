@@ -2,6 +2,7 @@ package org.commonjava.maven.atlas.graph.spi.jung;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
@@ -35,7 +36,7 @@ public class JungWorkspaceFactory
     public void storeWorkspace( final GraphWorkspace workspace )
         throws GraphDriverException
     {
-        // passed by reference, so automatically updated.
+        // currently just stored in memory...
     }
 
     @Override
@@ -46,9 +47,19 @@ public class JungWorkspaceFactory
     }
 
     @Override
-    public Set<GraphWorkspace> loadAllWorkspaces()
+    public Set<GraphWorkspace> loadAllWorkspaces( final Set<String> excluded )
     {
-        return new HashSet<GraphWorkspace>( workspaces.values() );
+        final Set<GraphWorkspace> result = new HashSet<GraphWorkspace>( workspaces.values() );
+        for ( final Iterator<GraphWorkspace> it = result.iterator(); it.hasNext(); )
+        {
+            final GraphWorkspace ws = it.next();
+            if ( excluded.contains( ws.getId() ) )
+            {
+                it.remove();
+            }
+        }
+
+        return result;
     }
 
 }

@@ -48,6 +48,15 @@ public class FileNeo4jWorkspaceFactory
     public synchronized GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
+        try
+        {
+            Thread.sleep( 20 );
+        }
+        catch ( final InterruptedException e )
+        {
+            return null;
+        }
+
         final String id = Long.toString( System.currentTimeMillis() );
         final File db = new File( dbBaseDirectory, id );
         if ( db.exists() || !db.mkdirs() )
@@ -128,13 +137,18 @@ public class FileNeo4jWorkspaceFactory
     }
 
     @Override
-    public Set<GraphWorkspace> loadAllWorkspaces()
+    public Set<GraphWorkspace> loadAllWorkspaces( final Set<String> excludedIds )
     {
         final String[] ids = dbBaseDirectory.list();
-        final Set<GraphWorkspace> results = new HashSet<>( ids.length - 2 );
+        final Set<GraphWorkspace> results = new HashSet<>();
         for ( final String id : ids )
         {
             if ( id.charAt( 0 ) == '.' )
+            {
+                continue;
+            }
+
+            if ( excludedIds.contains( id ) )
             {
                 continue;
             }

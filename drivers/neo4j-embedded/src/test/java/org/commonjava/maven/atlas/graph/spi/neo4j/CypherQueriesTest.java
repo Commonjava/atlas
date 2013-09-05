@@ -29,8 +29,6 @@ public class CypherQueriesTest
     @Rule
     public TestName naming = new TestName();
 
-    private EGraphManager manager;
-
     private URI sourceURI()
         throws URISyntaxException
     {
@@ -46,12 +44,7 @@ public class CypherQueriesTest
     protected synchronized EGraphManager getManager()
         throws Exception
     {
-        if ( manager == null )
-        {
-            manager = new EGraphManager( fixture.factory() );
-        }
-
-        return manager;
+        return fixture.manager();
     }
 
     @Test

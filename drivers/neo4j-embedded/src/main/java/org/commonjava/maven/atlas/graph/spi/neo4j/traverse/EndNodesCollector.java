@@ -19,25 +19,25 @@ public class EndNodesCollector
 
     private final Set<Node> endNodes;
 
-    public EndNodesCollector( final Node start, final Node end, final GraphView view, final boolean checkExistence )
+    public EndNodesCollector( final Node start, final Node end, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), Collections.singleton( end ), view, checkExistence );
+        this( Collections.singleton( start ), Collections.singleton( end ), view, wsNode, checkExistence );
     }
 
-    public EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view,
+    public EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view, final Node wsNode,
                               final boolean checkExistence )
     {
-        super( startNodes, view, checkExistence );
+        super( startNodes, view, wsNode, checkExistence );
         this.endNodes = endNodes;
-        logger.debug( "Collector: start=(%s), end=(%s), view=(%s), checkExistence=%s", join( startNodes, ", " ),
-                      join( endNodes, ", " ), view, checkExistence );
+        logger.debug( "Collector: start=(%s), end=(%s), view=(%s), checkExistence=%s", join( startNodes, ", " ), join( endNodes, ", " ), view,
+                      checkExistence );
         //        this.logEnabled = true;
     }
 
-    private EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view,
+    private EndNodesCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view, final Node wsNode,
                                final boolean checkExistence, final Direction direction )
     {
-        super( startNodes, view, checkExistence, direction );
+        super( startNodes, view, wsNode, checkExistence, direction );
         this.endNodes = endNodes;
         //        this.logEnabled = true;
     }
@@ -45,7 +45,7 @@ public class EndNodesCollector
     @Override
     public PathExpander reverse()
     {
-        return new EndNodesCollector( startNodes, endNodes, view, checkExistence, direction.reverse() );
+        return new EndNodesCollector( startNodes, endNodes, view, wsNode, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundNodes()

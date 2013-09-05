@@ -19,30 +19,29 @@ public class EndGAVsPathsCollector
 
     private final Set<ProjectVersionRef> endRefs;
 
-    public EndGAVsPathsCollector( final Node start, final ProjectVersionRef end, final GraphView view,
-                                  final boolean checkExistence )
+    public EndGAVsPathsCollector( final Node start, final ProjectVersionRef end, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), Collections.singleton( end ), view, checkExistence );
+        this( Collections.singleton( start ), Collections.singleton( end ), view, wsNode, checkExistence );
     }
 
-    public EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs,
-                                  final GraphView view, final boolean checkExistence )
+    public EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs, final GraphView view, final Node wsNode,
+                                  final boolean checkExistence )
     {
-        super( startNodes, view, checkExistence );
+        super( startNodes, view, wsNode, checkExistence );
         this.endRefs = endRefs;
     }
 
-    private EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs,
-                                   final GraphView view, final boolean checkExistence, final Direction direction )
+    private EndGAVsPathsCollector( final Set<Node> startNodes, final Set<ProjectVersionRef> endRefs, final GraphView view, final Node wsNode,
+                                   final boolean checkExistence, final Direction direction )
     {
-        super( startNodes, view, checkExistence, direction );
+        super( startNodes, view, wsNode, checkExistence, direction );
         this.endRefs = endRefs;
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new EndGAVsPathsCollector( startNodes, endRefs, view, checkExistence, direction.reverse() );
+        return new EndGAVsPathsCollector( startNodes, endRefs, view, wsNode, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

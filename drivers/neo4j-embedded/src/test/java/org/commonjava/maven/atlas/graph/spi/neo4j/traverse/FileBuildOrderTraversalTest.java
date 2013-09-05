@@ -30,8 +30,6 @@ public class FileBuildOrderTraversalTest
     @Rule
     public FileDriverFixture fixture = new FileDriverFixture();
 
-    private EGraphManager manager;
-
     @BeforeClass
     public static void logging()
     {
@@ -42,12 +40,6 @@ public class FileBuildOrderTraversalTest
     protected synchronized EGraphManager getManager()
         throws Exception
     {
-        if ( manager == null )
-        {
-            manager = new EGraphManager( fixture.factory() );
-        }
-
-        return manager;
+        return fixture.manager();
     }
-
 }

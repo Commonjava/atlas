@@ -72,16 +72,14 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private int evalPreChecks = 0;
 
-    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal,
-                                                final int pass )
+    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final int pass )
     {
         this.rootIds = rootIds;
         this.traversal = traversal;
         this.pass = pass;
     }
 
-    private MembershipWrappedTraversalEvaluator( final MembershipWrappedTraversalEvaluator<STATE> ev,
-                                                 final boolean reversedExpander )
+    private MembershipWrappedTraversalEvaluator( final MembershipWrappedTraversalEvaluator<STATE> ev, final boolean reversedExpander )
     {
         this.rootIds = ev.rootIds;
         this.traversal = ev.traversal;
@@ -91,14 +89,12 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     public void printStats()
     {
-        logger.info( "\n\n\n\nStats for traversal:\n" + "---------------------\n" + "\ntotal expander hits: %d"
-                         + "\nexpander membership hits: %d" + "\nexpander membership misses: %d"
-                         + "\nexpander preCheck() calls: %d" + "\n\ntotal evaluator hits: %d"
-                         + "\nevaluator membership hits: %d" + "\nevaluator membership misses: %s"
-                         + "\nevaluator duplicate hits: %d" + "\nevaluator preCheck() calls: %d\n\n\n\n", expHits,
-                     expMemberHits,
-                     expMemberMisses, expPreChecks, evalHits, evalMemberHits, evalMemberMisses, evalDupes,
-                     evalPreChecks );
+        logger.info( "\n\n\n\nStats for traversal:\n" + "---------------------\n" + "\ntotal expander hits: %d" + "\nexpander membership hits: %d"
+                         + "\nexpander membership misses: %d" + "\nexpander preCheck() calls: %d" + "\n\ntotal evaluator hits: %d"
+                         + "\nevaluator membership hits: %d" + "\nevaluator membership misses: %s" + "\nevaluator duplicate hits: %d"
+                         + "\nevaluator preCheck() calls: %d\n\n\n\n", expHits, expMemberHits, expMemberMisses, expPreChecks, evalHits,
+                     evalMemberHits,
+                     evalMemberMisses, evalDupes, evalPreChecks );
     }
 
     @Override
@@ -200,9 +196,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             return Collections.emptySet();
         }
 
-        final Node root = path.startNode();
         final Relationship rel = path.lastRelationship();
-        if ( rel != null && Conversions.isDeselectedFor( rel, root ) )
+        if ( rel != null && Conversions.getBooleanProperty( Conversions.DESELECTED, rel, false ) )
         {
             expMemberMisses++;
             return Collections.emptySet();
@@ -210,8 +205,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         expMemberHits++;
 
-        final Iterable<Relationship> rs =
-            node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
+        final Iterable<Relationship> rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
         if ( rs == null )
         {
             //            logger.info( "No relationships from end-node: %s", node );

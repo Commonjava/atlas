@@ -52,13 +52,13 @@ public class SelectionFinderAtlasCollector
         this.filter = filter;
     }
 
-    private SelectionFinderAtlasCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter,
-                                           final Direction direction )
+    private SelectionFinderAtlasCollector( final Set<Node> startNodes, final ProjectRelationshipFilter filter, final Direction direction )
     {
         this( startNodes, filter );
         this.direction = direction;
     }
 
+    @Override
     @SuppressWarnings( "rawtypes" )
     public final Iterable<Relationship> expand( final Path path, final BranchState state )
     {
@@ -84,7 +84,7 @@ public class SelectionFinderAtlasCollector
             final Relationship r = path.lastRelationship();
             if ( r != null )
             {
-                if ( Conversions.idListingContains( Conversions.DESELECTED_FOR, r, startNodes ) )
+                if ( Conversions.getBooleanProperty( Conversions.DESELECTED, r ) )
                 {
                     final Node node = r.getStartNode();
                     Relationship[] raw = this.raw.get( node );
@@ -98,7 +98,7 @@ public class SelectionFinderAtlasCollector
 
                     return Collections.emptySet();
                 }
-                else if ( Conversions.idListingContains( Conversions.SELECTED_FOR, r, startNodes ) )
+                else if ( Conversions.getBooleanProperty( Conversions.SELECTED, r ) )
                 {
                     final Node node = r.getStartNode();
                     Relationship[] raw = this.raw.get( node );
@@ -142,11 +142,13 @@ public class SelectionFinderAtlasCollector
         return true;
     }
 
+    @Override
     public final Evaluation evaluate( final Path path )
     {
         return Evaluation.INCLUDE_AND_CONTINUE;
     }
 
+    @Override
     @SuppressWarnings( "rawtypes" )
     public PathExpander reverse()
     {
@@ -198,6 +200,7 @@ public class SelectionFinderAtlasCollector
         return infos;
     }
 
+    @Override
     public Iterator<SelectionInfo> iterator()
     {
         return getSelectionInfos().iterator();

@@ -19,6 +19,6 @@ public interface GraphWorkspaceFactory
     GraphWorkspace loadWorkspace( String id )
         throws GraphDriverException;
 
-    Set<GraphWorkspace> loadAllWorkspaces();
+    Set<GraphWorkspace> loadAllWorkspaces( Set<String> excludedIds );
 
 }

@@ -36,25 +36,27 @@ public abstract class AbstractAtlasCollector<T>
 
     protected final boolean checkExistence;
 
+    protected final Node wsNode;
+
     protected GraphView view;
 
-    protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Node start, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), view, checkExistence );
+        this( Collections.singleton( start ), view, wsNode, checkExistence );
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
         this.startNodes = startNodes;
         this.view = view;
+        this.wsNode = wsNode;
         this.checkExistence = checkExistence;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence,
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence,
                                       final Direction direction )
     {
-        this( startNodes, view, checkExistence );
-        this.view = view;
+        this( startNodes, view, wsNode, checkExistence );
         this.direction = direction;
     }
 
@@ -93,10 +95,9 @@ public abstract class AbstractAtlasCollector<T>
         if ( returnChildren( path ) )
         {
             final ProjectRelationship<?> rel = toProjectRelationship( path.lastRelationship() );
-            log( "Implementation says return the children of: %s (lastRel=%s)",
-                 path.endNode()
-                     .hasProperty( GAV ) ? path.endNode()
-                                               .getProperty( GAV ) : "Unknown", rel );
+            log( "Implementation says return the children of: %s (lastRel=%s)", path.endNode()
+                                                                                    .hasProperty( GAV ) ? path.endNode()
+                                                                                                              .getProperty( GAV ) : "Unknown", rel );
 
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction );
@@ -115,7 +116,7 @@ public abstract class AbstractAtlasCollector<T>
 
     protected boolean accept( final Path path )
     {
-        return acceptedInView( path, view );
+        return acceptedInView( path, view, wsNode );
     }
 
     @Override
