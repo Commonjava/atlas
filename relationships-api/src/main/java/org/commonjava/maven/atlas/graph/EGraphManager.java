@@ -128,8 +128,15 @@ public class EGraphManager
         return ws;
     }
 
-    public boolean deleteWorkspace( final String id )
+    public synchronized boolean deleteWorkspace( final String id )
+        throws IOException
     {
+        final GraphWorkspace workspace = loadedWorkspaces.remove( id );
+        if ( workspace != null )
+        {
+            workspace.close();
+        }
+
         return workspaceFactory.deleteWorkspace( id );
     }
 
@@ -377,7 +384,14 @@ public class EGraphManager
 
         if ( workspace.getProperty( TEMP_WS, Boolean.class, Boolean.FALSE ) )
         {
-            workspaceFactory.deleteWorkspace( workspace.getId() );
+            try
+            {
+                workspaceFactory.deleteWorkspace( workspace.getId() );
+            }
+            catch ( final IOException e )
+            {
+                logger.error( "Failed to delete temporary workspace: %s. Reason: %s", e, workspace.getId(), e.getMessage() );
+            }
         }
         else
         {

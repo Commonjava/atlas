@@ -12,6 +12,7 @@ import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.io.FileUtils;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -39,9 +40,17 @@ public class FileNeo4jWorkspaceFactory
 
     @Override
     public boolean deleteWorkspace( final String id )
+        throws IOException
     {
         final File db = new File( dbBaseDirectory, id );
-        return db.isDirectory() ? db.delete() : false;
+        if ( !db.exists() || !db.isDirectory() )
+        {
+            return false;
+        }
+
+        FileUtils.forceDelete( db );
+
+        return true;
     }
 
     @Override
