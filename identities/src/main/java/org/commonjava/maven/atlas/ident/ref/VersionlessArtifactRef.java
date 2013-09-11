@@ -17,8 +17,6 @@
 package org.commonjava.maven.atlas.ident.ref;
 
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
-import org.commonjava.maven.atlas.ident.version.part.NumericPart;
 
 /**
  * Special implementation of {@link ArtifactRef} that forces all versions to ZERO, to allow calculation of transitive
@@ -27,62 +25,77 @@ import org.commonjava.maven.atlas.ident.version.part.NumericPart;
  * @author jdcasey
  */
 public class VersionlessArtifactRef
-    extends ArtifactRef
+    extends ProjectRef
 {
 
     private static final long serialVersionUID = 1L;
 
-    private static SingleVersion DUMMY_VERSION;
+    private final TypeAndClassifier tc;
 
-    static
-    {
-        try
-        {
-            DUMMY_VERSION = new SingleVersion( "1", new NumericPart( 1 ) );
-        }
-        catch ( final InvalidVersionSpecificationException e )
-        {
-            // TODO: What do I do with this? It should NEVER happen.
-        }
-    }
-
-    private ArtifactRef realRef;
+    private final boolean optional;
 
     public VersionlessArtifactRef( final ArtifactRef ref )
     {
-        super( new ProjectVersionRef( ref.getGroupId(), ref.getArtifactId(), DUMMY_VERSION ), ref.getType(),
-               ref.getClassifier(), ref.isOptional() );
-
-        this.realRef = ref;
+        super( ref.getGroupId(), ref.getArtifactId() );
+        this.optional = ref.isOptional();
+        this.tc = ref.getTypeAndClassifier();
     }
 
-    public void replaceRealRef( final ArtifactRef ref )
+    public VersionlessArtifactRef( final ProjectRef ref, final String type, final String classifier, final boolean optional )
     {
-        if ( realRef.versionlessEquals( ref ) )
-        {
-            this.realRef = ref;
-        }
+        super( ref.getGroupId(), ref.getArtifactId() );
+        this.optional = optional;
+        this.tc = new TypeAndClassifier( type, classifier );
     }
 
-    public ArtifactRef getRealRef()
+    public VersionlessArtifactRef( final ProjectRef ref, final TypeAndClassifier tc, final boolean optional )
     {
-        return realRef;
+        super( ref.getGroupId(), ref.getArtifactId() );
+        this.tc = tc == null ? new TypeAndClassifier() : tc;
+        this.optional = optional;
     }
 
-    /**
-     * Leave out the version!
-     */
+    public VersionlessArtifactRef( final String groupId, final String artifactId, final String type, final String classifier, final boolean optional )
+        throws InvalidVersionSpecificationException
+    {
+        super( groupId, artifactId );
+        this.tc = new TypeAndClassifier( type, classifier );
+        this.optional = optional;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getTypeAndClassifier() );
+    }
+
+    public String getType()
+    {
+        return tc.getType();
+    }
+
+    public String getClassifier()
+    {
+        return tc.getClassifier();
+    }
+
+    public TypeAndClassifier getTypeAndClassifier()
+    {
+        return tc;
+    }
+
+    public boolean isOptional()
+    {
+        return optional;
+    }
+
     @Override
     public int hashCode()
     {
         final int prime = 31;
-        int result = 1;
-        result = prime * result + ( ( getArtifactId() == null ) ? 0 : getArtifactId().hashCode() );
-        result = prime * result + ( ( getGroupId() == null ) ? 0 : getGroupId().hashCode() );
-        result = prime * result + ( ( getClassifier() == null ) ? 0 : getClassifier().hashCode() );
-        result = prime * result + ( ( getType() == null ) ? 0 : getType().hashCode() );
-        result = prime * result + Boolean.valueOf( isOptional() )
-                                         .hashCode();
+        int result = super.hashCode();
+        result = prime * result + ( optional ? 1231 : 1237 );
+        result = prime * result + ( ( tc == null ) ? 0 : tc.hashCode() );
         return result;
     }
 
@@ -93,15 +106,30 @@ public class VersionlessArtifactRef
         {
             return true;
         }
-
-        final ArtifactRef other = (ArtifactRef) obj;
-        return versionlessEquals( other );
-    }
-
-    @Override
-    public String toString()
-    {
-        return String.format( "%s:%s:*:%s%s", getGroupId(), getArtifactId(), getType(), ( getClassifier() == null ? ""
-                        : ":" + getClassifier() ) );
+        if ( !super.equals( obj ) )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final VersionlessArtifactRef other = (VersionlessArtifactRef) obj;
+        if ( optional != other.optional )
+        {
+            return false;
+        }
+        if ( tc == null )
+        {
+            if ( other.tc != null )
+            {
+                return false;
+            }
+        }
+        else if ( !tc.equals( other.tc ) )
+        {
+            return false;
+        }
+        return true;
     }
 }

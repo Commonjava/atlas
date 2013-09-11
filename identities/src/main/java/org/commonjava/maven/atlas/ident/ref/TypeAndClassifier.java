@@ -19,6 +19,11 @@ public class TypeAndClassifier
         this( type, null );
     }
 
+    public TypeAndClassifier()
+    {
+        this( null, null );
+    }
+
     public String getType()
     {
         return type;

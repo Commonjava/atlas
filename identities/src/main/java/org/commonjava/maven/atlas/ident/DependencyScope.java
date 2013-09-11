@@ -22,7 +22,7 @@ import java.util.Set;
 
 public enum DependencyScope
 {
-    _import( "import" ), provided, compile( provided ), runtime( compile ), system, test( provided, compile, runtime,
+    _import( "import" ), provided, embedded, compile( provided, embedded ), runtime( compile ), system, test( provided, embedded, compile, runtime,
         system );
 
     private final Set<DependencyScope> implied;
