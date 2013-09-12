@@ -296,9 +296,4 @@ public class ProjectVersionRef
         return isCompound() || ( isSpecificVersion() && ( (SingleVersion) getVersionSpec() ).isLocalSnapshot() );
     }
 
-    public int compareTo( final ProjectVersionRef other )
-    {
-        return super.compareTo( other );
-    }
-
 }
