@@ -67,7 +67,7 @@ public final class TraversalUtils
         return accepted( r, view.getFilter(), view.getWorkspace(), wsNode );
     }
 
-    private static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace, final Node wsNode )
+    public static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace, final Node wsNode )
     {
         final ProjectRelationship<?> rel = toProjectRelationship( r );
 
@@ -76,7 +76,6 @@ public final class TraversalUtils
         if ( wsNode != null )
         {
             final Node endNode = r.getEndNode();
-
             if ( r != null && isDeselected( endNode, wsNode ) )
             {
                 debug( "REJECTED: Found relationship in path that was deselected: %s", r );

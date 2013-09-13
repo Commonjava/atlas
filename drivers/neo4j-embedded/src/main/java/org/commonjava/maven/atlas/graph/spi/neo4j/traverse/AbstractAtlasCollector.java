@@ -1,13 +1,17 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isDeselected;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.acceptedInView;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.util.logging.Logger;
@@ -39,6 +43,8 @@ public abstract class AbstractAtlasCollector<T>
     protected final Node wsNode;
 
     protected GraphView view;
+
+    protected Map<Long, ProjectRelationshipFilter> relationshipFilters = new HashMap<>();
 
     protected AbstractAtlasCollector( final Node start, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
@@ -94,19 +100,42 @@ public abstract class AbstractAtlasCollector<T>
 
         if ( returnChildren( path ) )
         {
-            final ProjectRelationship<?> rel = toProjectRelationship( path.lastRelationship() );
+            final ProjectRelationship<?> rel = toProjectRelationship( lastRelationship );
+
+            ProjectRelationshipFilter nextFilter = null;
+            if ( lastRelationship != null )
+            {
+                final Long endId = lastRelationship.getId();
+                ProjectRelationshipFilter lastFilter = relationshipFilters.remove( endId );
+                if ( lastFilter == null )
+                {
+                    lastFilter = view.getFilter();
+                }
+
+                if ( lastFilter != null )
+                {
+                    nextFilter = lastFilter.getChildFilter( rel );
+                }
+            }
+
             log( "Implementation says return the children of: %s (lastRel=%s)", path.endNode()
                                                                                     .hasProperty( GAV ) ? path.endNode()
                                                                                                               .getProperty( GAV ) : "Unknown", rel );
 
+            final Set<Relationship> nextRelationships = new HashSet<>();
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction );
-            //            for ( final Relationship r : relationships )
-            //            {
-            //                log( "Expand included relationship: %s", toProjectRelationship( r ) );
-            //            }
+            for ( final Relationship r : relationships )
+            {
+                nextRelationships.add( r );
 
-            return relationships;
+                if ( nextFilter != null )
+                {
+                    relationshipFilters.put( r.getId(), nextFilter );
+                }
+            }
+
+            return nextRelationships;
         }
 
         return Collections.emptySet();
@@ -116,7 +145,19 @@ public abstract class AbstractAtlasCollector<T>
 
     protected boolean accept( final Path path )
     {
-        return acceptedInView( path, view, wsNode );
+        final Relationship r = path.lastRelationship();
+        if ( r == null )
+        {
+            return !isDeselected( path.endNode(), wsNode );
+        }
+
+        ProjectRelationshipFilter filter = relationshipFilters.get( r.getId() );
+        if ( filter == null )
+        {
+            filter = view.getFilter();
+        }
+
+        return accepted( r, filter, view.getWorkspace(), wsNode );
     }
 
     @Override

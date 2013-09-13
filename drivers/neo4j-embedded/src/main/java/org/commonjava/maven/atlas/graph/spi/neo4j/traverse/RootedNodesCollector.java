@@ -69,13 +69,12 @@ public class RootedNodesCollector
             {
                 if ( Conversions.isConnected( node ) )
                 {
-                    logger.info( "TRAVERSE: Adding node: %s", node );
+                    log( "TRAVERSE: Adding node: %s", node );
                     found.add( node );
                 }
             }
         }
 
-        logger.info( "In any case, proceed on this path." );
         return true;
     }
 

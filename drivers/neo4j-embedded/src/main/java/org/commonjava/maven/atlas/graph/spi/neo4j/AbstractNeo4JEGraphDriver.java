@@ -361,7 +361,7 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             for ( final ProjectRelationship<?> rel : rels )
             {
-                logger.debug( "Adding relationship: %s", rel );
+                logger.debug( "Checking relationship: %s", rel );
 
                 final Index<Node> index = graph.index()
                                                .forNodes( BY_GAV_IDX );
@@ -402,11 +402,11 @@ public abstract class AbstractNeo4JEGraphDriver
                 {
                     final Node from = nodes[0];
 
-                    if ( from != nodes[1] )
+                    if ( from.getId() != nodes[1].getId() )
                     {
                         final Node to = nodes[1];
 
-                        logger.debug( "Creating graph relationship for: %s between node: %d and node: %d", rel, from, to );
+                        logger.debug( "Creating graph relationship for: %s between node: %s and node: %s", rel, from, to );
 
                         final GraphRelType grt = GraphRelType.map( rel.getType(), rel.isManaged() );
 
@@ -429,6 +429,12 @@ public abstract class AbstractNeo4JEGraphDriver
                     }
                     else
                     {
+                        graph.index()
+                             .forNodes( MISSING_NODES_IDX )
+                             .remove( from );
+
+                        markConnected( from, true );
+
                         continue;
                     }
 
@@ -498,6 +504,8 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             if ( !skipped.contains( rel ) )
             {
+                //                logger.info( "Adding project from declaring section of added relationship: %s", rel.getDeclaring()
+                //                                                                                                   .asProjectVersionRef() );
                 adds.add( rel.getDeclaring()
                              .asProjectVersionRef() );
             }
@@ -512,9 +520,10 @@ public abstract class AbstractNeo4JEGraphDriver
             final Set<ProjectVersionRef> cachedRefs = (Set<ProjectVersionRef>) cacheMap.get( CACHED_ALL_PROJECT_REFS );
             if ( cachedRefs != null )
             {
-                logger.info( "Connecting subgraphs: %s for view: %s", connectedSubgraphs, view );
+                //                logger.info( "Connecting subgraphs: %s for view: %s", connectedSubgraphs, view );
                 final Set<ProjectVersionRef> connected = getProjectsRootedAt( view, connectedSubgraphs );
 
+                //                logger.info( "Adding projects from subgraphs: %s", connected );
                 synchronized ( cachedRefs )
                 {
                     cachedRefs.addAll( adds );

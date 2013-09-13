@@ -66,9 +66,9 @@ public class EGraphManager
         final ProjectVersionRef project = rels.getKey()
                                               .getProject();
 
-        workspace.getDatabase()
-                 .addRelationships( rels.getExactAllRelationships()
-                                        .toArray( new ProjectRelationship[] {} ) );
+        final Set<ProjectRelationship<?>> rejected = workspace.getDatabase()
+                                                              .addRelationships( rels.getExactAllRelationships()
+                                                                                     .toArray( new ProjectRelationship[] {} ) );
 
         return getGraph( workspace, null, project );
     }
