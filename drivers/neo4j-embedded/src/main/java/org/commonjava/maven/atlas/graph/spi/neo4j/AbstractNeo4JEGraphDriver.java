@@ -993,15 +993,20 @@ public abstract class AbstractNeo4JEGraphDriver
     public boolean isMissing( final GraphView view, final ProjectVersionRef ref )
     {
         final IndexHits<Node> hits = graph.index()
-                                          .forNodes( BY_GAV_IDX )
+                                          .forNodes( MISSING_NODES_IDX )
                                           .get( GAV, ref.toString() );
 
-        if ( hits.size() > 0 )
-        {
-            return !isConnected( hits.next() );
-        }
-
-        return false;
+        return hits.size() > 0;
+        //        final IndexHits<Node> hits = graph.index()
+        //                                          .forNodes( BY_GAV_IDX )
+        //                                          .get( GAV, ref.toString() );
+        //
+        //        if ( hits.size() > 0 )
+        //        {
+        //            return !isConnected( hits.next() );
+        //        }
+        //
+        //        return false;
     }
 
     @Override

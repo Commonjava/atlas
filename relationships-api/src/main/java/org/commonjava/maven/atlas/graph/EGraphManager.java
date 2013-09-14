@@ -1,5 +1,6 @@
 package org.commonjava.maven.atlas.graph;
 
+import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.graph.model.GraphView.GLOBAL;
 
 import java.io.Closeable;
@@ -51,12 +52,14 @@ public class EGraphManager
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final ProjectRelationship<?>... rels )
     {
+        logger.info( "Storing relationships for: %s\n\n  %s", workspace.getId(), join( rels, "\n  " ) );
         return workspace.getDatabase()
                         .addRelationships( rels );
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final Collection<ProjectRelationship<?>> rels )
     {
+        logger.info( "Storing relationships for: %s\n\n  %s", workspace.getId(), join( rels, "\n  " ) );
         return workspace.getDatabase()
                         .addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
     }
@@ -66,9 +69,9 @@ public class EGraphManager
         final ProjectVersionRef project = rels.getKey()
                                               .getProject();
 
-        final Set<ProjectRelationship<?>> rejected = workspace.getDatabase()
-                                                              .addRelationships( rels.getExactAllRelationships()
-                                                                                     .toArray( new ProjectRelationship[] {} ) );
+        workspace.getDatabase()
+                 .addRelationships( rels.getExactAllRelationships()
+                                        .toArray( new ProjectRelationship[] {} ) );
 
         return getGraph( workspace, null, project );
     }
