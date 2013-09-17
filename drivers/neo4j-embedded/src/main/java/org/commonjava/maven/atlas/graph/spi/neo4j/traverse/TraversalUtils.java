@@ -89,35 +89,38 @@ public final class TraversalUtils
             }
         }
 
-        final Set<URI> sources = workspace.getActiveSources();
-        if ( sources != null && !sources.isEmpty() )
+        if ( workspace != null )
         {
-            final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
-            boolean found = false;
-            for ( final URI uri : s )
+            final Set<URI> sources = workspace.getActiveSources();
+            if ( sources != null && !sources.isEmpty() )
             {
-                if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
+                final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
+                boolean found = false;
+                for ( final URI uri : s )
                 {
-                    found = true;
-                    break;
+                    if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+
+                if ( !found )
+                {
+                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s", r );
+                    return false;
                 }
             }
 
-            if ( !found )
+            final Set<URI> pomLocations = workspace.getActivePomLocations();
+            if ( pomLocations != null && !pomLocations.isEmpty() )
             {
-                debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s", r );
-                return false;
-            }
-        }
-
-        final Set<URI> pomLocations = workspace.getActivePomLocations();
-        if ( pomLocations != null && !pomLocations.isEmpty() )
-        {
-            final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
-            if ( !pomLocations.contains( pomLocation ) )
-            {
-                debug( "REJECTED: Found relationship in path with de-selected pom-location URI: %s", r );
-                return false;
+                final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
+                if ( !pomLocations.contains( pomLocation ) )
+                {
+                    debug( "REJECTED: Found relationship in path with de-selected pom-location URI: %s", r );
+                    return false;
+                }
             }
         }
 

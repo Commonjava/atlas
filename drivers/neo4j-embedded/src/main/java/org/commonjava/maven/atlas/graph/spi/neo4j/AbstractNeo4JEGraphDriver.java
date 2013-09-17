@@ -85,6 +85,7 @@ import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.cypher.javacompat.ExecutionEngine;
@@ -359,7 +360,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<Node> connectedSubgraphs = new HashSet<>();
         try
         {
-            for ( final ProjectRelationship<?> rel : rels )
+            nextRel: for ( final ProjectRelationship<?> rel : rels )
             {
                 logger.debug( "Checking relationship: %s", rel );
 
@@ -378,8 +379,18 @@ public abstract class AbstractNeo4JEGraphDriver
                     if ( !hits.hasNext() )
                     {
                         logger.debug( "Creating new node for: %s to support addition of relationship: %s", ref, rel );
-                        final Node node = newProjectNode( ref );
-                        nodes[i] = node;
+                        try
+                        {
+                            final Node node = newProjectNode( ref );
+                            nodes[i] = node;
+                        }
+                        catch ( final InvalidVersionSpecificationException e )
+                        {
+                            // FIXME: This means we're discarding a rejected relationship without passing it back...NOT GOOD
+                            // However, some code assumes rejects are cycles...also not good.
+                            logger.error( "Failed to create node for project ref: %s. Reason: %s", e, ref, e.getMessage() );
+                            continue nextRel;
+                        }
                     }
                     else
                     {
@@ -672,13 +683,13 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( ref.isVariableVersion() )
         {
-            logger.debug( "Adding %s to variable-nodes index.", ref );
+            logger.info( "Adding %s to variable-nodes index.", ref );
             graph.index()
                  .forNodes( VARIABLE_NODES_IDX )
                  .add( node, GAV, gav );
         }
 
-        logger.debug( "Created project node: %s with id: %d", ref, node.getId() );
+        logger.info( "Created project node: %s with id: %d", ref, node.getId() );
         return node;
     }
 
@@ -863,6 +874,15 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public boolean containsProject( final GraphView view, final ProjectVersionRef ref )
     {
+        final IndexHits<Node> missing = graph.index()
+                                             .forNodes( MISSING_NODES_IDX )
+                                             .get( GAV, ref.asProjectVersionRef()
+                                                           .toString() );
+        if ( missing.size() > 0 )
+        {
+            return false;
+        }
+
         if ( view != null )
         {
             return getAllProjects( view ).contains( ref );
@@ -893,7 +913,12 @@ public abstract class AbstractNeo4JEGraphDriver
         final IndexHits<Node> hits = idx.get( GAV, ref.asProjectVersionRef()
                                                       .toString() );
 
-        final Node node = hits.hasNext() ? hits.next() : null;
+        if ( hits.size() < 1 )
+        {
+            return null;
+        }
+
+        final Node node = hits.next();
 
         //        logger.debug( "Query result for node: %s is: %s\nChecking for path to root(s): %s", ref, node,
         //                      join( roots, "|" ) );
