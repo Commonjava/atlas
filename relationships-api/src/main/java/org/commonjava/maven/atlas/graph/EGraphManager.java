@@ -169,6 +169,11 @@ public class EGraphManager
         result.addAll( loadedWorkspaces.values() );
         result.addAll( workspaceFactory.loadAllWorkspaces( loadedWorkspaces.keySet() ) );
 
+        for ( final GraphWorkspace ws : result )
+        {
+            loadedWorkspaces.put( ws.getId(), ws );
+        }
+
         return result;
     }
 

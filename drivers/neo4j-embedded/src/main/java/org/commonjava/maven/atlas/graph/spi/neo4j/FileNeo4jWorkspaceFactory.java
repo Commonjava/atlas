@@ -159,11 +159,13 @@ public class FileNeo4jWorkspaceFactory
 
             if ( excludedIds.contains( id ) )
             {
+                logger.info( "Skip loading workspace: %s. It's already cached in a higher layer.", id );
                 continue;
             }
 
             try
             {
+                logger.info( "Loading workspace: %s", id );
                 results.add( loadWorkspace( id ) );
             }
             catch ( final GraphDriverException e )
