@@ -63,12 +63,13 @@ public class SingleVersion
     private void validatePhrases()
         throws InvalidVersionSpecificationException
     {
-        if ( phrases.get( 0 )
-                    .isSilent() )
-        {
-            throw new InvalidVersionSpecificationException( rawExpression, "This version: " + toString()
-                + " is effectively empty! All parts are 'silent'." );
-        }
+        // NOTE: This is unnecessarily restrictive...the version '0' should be allowed, though it's very strange.
+        //        if ( phrases.get( 0 )
+        //                    .isSilent() )
+        //        {
+        //            throw new InvalidVersionSpecificationException( rawExpression, "This version: " + toString()
+        //                + " is effectively empty! All parts are 'silent'." );
+        //        }
     }
 
     private List<VersionPhrase> parsePhrases( final List<VersionPart> p )
@@ -87,8 +88,7 @@ public class SingleVersion
             final VersionPart part = parts.get( i );
             final VersionPart next = i >= parts.size() - 1 ? null : parts.get( i + 1 );
 
-            if ( ( part instanceof SeparatorPart )
-                && ( VersionPartSeparator.DASH == ( (SeparatorPart) part ).getValue() ) )
+            if ( ( part instanceof SeparatorPart ) && ( VersionPartSeparator.DASH == ( (SeparatorPart) part ).getValue() ) )
             {
                 if ( prev != null && !( prev instanceof StringPart ) )
                 {
@@ -116,8 +116,7 @@ public class SingleVersion
                     i++;
                 }
             }
-            else if ( ( ( part instanceof SnapshotPart ) || ( part instanceof StringPart ) )
-                && prev != null
+            else if ( ( ( part instanceof SnapshotPart ) || ( part instanceof StringPart ) ) && prev != null
                 && ( !( prev instanceof SeparatorPart ) || ( ( (SeparatorPart) prev ).getValue() != VersionPartSeparator.DASH ) ) )
             {
                 VersionPartSeparator sep = null;
@@ -240,8 +239,7 @@ public class SingleVersion
         {
             if ( part != parts.get( parts.size() - 1 ) && part instanceof SnapshotPart )
             {
-                throw new InvalidVersionSpecificationException( rawExpression,
-                                                                "Snapshot marker MUST appear at the end of the version" );
+                throw new InvalidVersionSpecificationException( rawExpression, "Snapshot marker MUST appear at the end of the version" );
             }
         }
     }
@@ -259,11 +257,13 @@ public class SingleVersion
         return v;
     }
 
+    @Override
     public String renderStandard()
     {
         return rawExpression;
     }
 
+    @Override
     public boolean contains( final VersionSpec version )
     {
         if ( version.isSingle() )
@@ -293,11 +293,13 @@ public class SingleVersion
         return false;
     }
 
+    @Override
     public int compareTo( final VersionSpec other )
     {
         return VersionSpecComparisons.compareTo( this, other );
     }
 
+    @Override
     public boolean isRelease()
     {
         return !isSnapshot();
@@ -321,6 +323,7 @@ public class SingleVersion
         return sb.toString();
     }
 
+    @Override
     public boolean isSnapshot()
     {
         final VersionPhrase last = phrases.get( phrases.size() - 1 );
@@ -355,21 +358,25 @@ public class SingleVersion
         return parts == null || parts.isEmpty() ? null : parts.get( parts.size() - 1 );
     }
 
+    @Override
     public boolean isConcrete()
     {
         return isRelease() || !isLocalSnapshot();
     }
 
+    @Override
     public boolean isSingle()
     {
         return true;
     }
 
+    @Override
     public SingleVersion getConcreteVersion()
     {
         return isConcrete() ? this : null;
     }
 
+    @Override
     public SingleVersion getSingleVersion()
     {
         return isSingle() ? this : null;
