@@ -53,7 +53,7 @@ public class ProjectVersionRef
         super( groupId, artifactId );
         if ( versionSpec == null && versionString == null )
         {
-            throw new NullPointerException( "Version spec AND string cannot both be null for '" + groupId + ":" + artifactId + "'" );
+            throw new InvalidRefException( "Version spec AND string cannot both be null for '" + groupId + ":" + artifactId + "'" );
         }
 
         this.versionString = versionString;
@@ -76,7 +76,7 @@ public class ProjectVersionRef
         final String[] parts = gav.split( ":" );
         if ( parts.length < 3 || isEmpty( parts[0] ) || isEmpty( parts[1] ) || isEmpty( parts[2] ) )
         {
-            throw new IllegalArgumentException( "ProjectVersionRef must contain non-empty groupId, artifactId, AND version. (Given: '" + gav + "')" );
+            throw new InvalidRefException( "ProjectVersionRef must contain non-empty groupId, artifactId, AND version. (Given: '" + gav + "')" );
         }
 
         return new ProjectVersionRef( parts[0], parts[1], parts[2] );

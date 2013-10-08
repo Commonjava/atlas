@@ -14,35 +14,27 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.commonjava.maven.atlas.ident.version;
+package org.commonjava.maven.atlas.ident.ref;
 
 import java.util.IllegalFormatException;
 
-public class InvalidVersionSpecificationException
+public class InvalidRefException
     extends RuntimeException
 {
     private static final long serialVersionUID = 1L;
 
     private final Object[] params;
 
-    private String version;
-
-    public InvalidVersionSpecificationException( final String version, final String message, final Throwable cause, final Object... params )
+    public InvalidRefException( final String message, final Throwable cause, final Object... params )
     {
-        super( "'" + version + "': " + message, cause );
+        super( message, cause );
         this.params = params;
     }
 
-    public InvalidVersionSpecificationException( final String version, final String message, final Object... params )
+    public InvalidRefException( final String message, final Object... params )
     {
-        super( "'" + version + "': " + message );
-        this.version = version;
+        super( message );
         this.params = params;
-    }
-
-    public String getVersion()
-    {
-        return version;
     }
 
     @Override

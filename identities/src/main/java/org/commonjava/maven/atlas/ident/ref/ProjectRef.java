@@ -36,7 +36,7 @@ public class ProjectRef
     {
         if ( isEmpty( groupId ) || isEmpty( artifactId ) )
         {
-            throw new IllegalArgumentException( "ProjectId must contain non-empty groupId AND artifactId. (Given: '"
+            throw new InvalidRefException( "ProjectId must contain non-empty groupId AND artifactId. (Given: '"
                 + groupId + "':'" + artifactId + "')" );
         }
 
@@ -49,7 +49,7 @@ public class ProjectRef
         final String[] parts = ga.split( ":" );
         if ( parts.length < 2 || isEmpty( parts[0] ) || isEmpty( parts[1] ) )
         {
-            throw new IllegalArgumentException( "ProjectRef must contain non-empty groupId AND artifactId. (Given: '"
+            throw new InvalidRefException( "ProjectRef must contain non-empty groupId AND artifactId. (Given: '"
                 + ga + "')" );
         }
 
