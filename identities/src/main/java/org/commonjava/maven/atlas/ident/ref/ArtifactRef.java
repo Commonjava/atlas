@@ -33,8 +33,8 @@ public class ArtifactRef
 
     private final boolean optional;
 
-    public ArtifactRef( final String groupId, final String artifactId, final VersionSpec version, final String type,
-                        final String classifier, final boolean optional )
+    public ArtifactRef( final String groupId, final String artifactId, final VersionSpec version, final String type, final String classifier,
+                        final boolean optional )
     {
         super( groupId, artifactId, version );
         this.optional = optional;
@@ -55,8 +55,8 @@ public class ArtifactRef
         this.optional = optional;
     }
 
-    public ArtifactRef( final String groupId, final String artifactId, final String versionSpec, final String type,
-                        final String classifier, final boolean optional )
+    public ArtifactRef( final String groupId, final String artifactId, final String versionSpec, final String type, final String classifier,
+                        final boolean optional )
         throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId, versionSpec );
@@ -133,11 +133,6 @@ public class ArtifactRef
 
     private boolean artifactFieldsEqual( final ArtifactRef other )
     {
-        if ( optional != other.optional )
-        {
-            return false;
-        }
-
         if ( tc == null )
         {
             if ( other.tc != null )
