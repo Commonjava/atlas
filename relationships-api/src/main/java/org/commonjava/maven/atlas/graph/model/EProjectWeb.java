@@ -17,6 +17,7 @@
 package org.commonjava.maven.atlas.graph.model;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -172,7 +173,7 @@ public class EProjectWeb
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#connect(org.apache.maven.graph.effective.EProjectWeb)
      */
-    public void connect( final EProjectWeb otherWeb )
+    public void connect( final EProjectNet otherWeb )
         throws GraphDriverException
     {
         if ( !otherWeb.getDatabase()
@@ -395,7 +396,7 @@ public class EProjectWeb
 
     @Override
     @SuppressWarnings( "unchecked" )
-    public EProjectWeb filteredInstance( final ProjectRelationshipFilter filter )
+    public EProjectNet filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
         return new EProjectWeb( view.getWorkspace(), filter, getRoots().toArray( new ProjectVersionRef[] {} ) );
@@ -419,5 +420,18 @@ public class EProjectWeb
     {
         return view.getDatabase()
                    .isMissing( view, ref );
+    }
+
+    @Override
+    public Set<URI> getSources()
+    {
+        final Set<ProjectRelationship<?>> rels = getAllRelationships();
+        final Set<URI> sources = new HashSet<>();
+        for ( final ProjectRelationship<?> rel : rels )
+        {
+            sources.addAll( rel.getSources() );
+        }
+
+        return sources;
     }
 }

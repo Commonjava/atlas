@@ -18,6 +18,7 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
 import org.commonjava.maven.atlas.graph.model.EProjectGraph;
 import org.commonjava.maven.atlas.graph.model.EProjectKey;
+import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.EProjectWeb;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -92,12 +93,12 @@ public class EGraphManager
         return new EProjectGraph( workspace, filter, project );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace workspace, final Collection<ProjectVersionRef> refs )
+    public EProjectNet getWeb( final GraphWorkspace workspace, final Collection<ProjectVersionRef> refs )
     {
         return getWeb( workspace, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> refs )
+    public EProjectNet getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> refs )
     {
         return getWeb( workspace, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
@@ -138,6 +139,15 @@ public class EGraphManager
         if ( workspace != null )
         {
             workspace.close();
+
+            // try to wait for file handles to close?
+            try
+            {
+                Thread.sleep( 2000 );
+            }
+            catch ( final InterruptedException e )
+            {
+            }
         }
 
         return workspaceFactory.deleteWorkspace( id );
@@ -276,6 +286,28 @@ public class EGraphManager
     {
         return workspace.getDatabase()
                         .getMetadata( ref );
+    }
+
+    public Map<Map<String, String>, Set<ProjectVersionRef>> collateByMetadata( final GraphWorkspace workspace, final Set<ProjectVersionRef> refs,
+                                                                               final Set<String> keys )
+    {
+        final GraphDatabaseDriver db = workspace.getDatabase();
+
+        final Map<Map<String, String>, Set<ProjectVersionRef>> result = new HashMap<>();
+        for ( final ProjectVersionRef ref : refs )
+        {
+            final Map<String, String> metadata = db.getMetadata( ref, keys );
+            Set<ProjectVersionRef> collated = result.get( metadata );
+            if ( collated == null )
+            {
+                collated = new HashSet<>();
+                result.put( metadata, collated );
+            }
+
+            collated.add( ref );
+        }
+
+        return result;
     }
 
     public void addMetadata( final GraphWorkspace workspace, final EProjectKey key, final String name, final String value )

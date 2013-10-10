@@ -16,6 +16,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.model;
 
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -103,6 +104,8 @@ public interface EProjectNet
         throws GraphDriverException;
 
     boolean isMissing( ProjectVersionRef ref );
+
+    public abstract Set<URI> getSources();
 
     //    ProjectVersionRef selectVersionFor( ProjectVersionRef variable, SingleVersion version )
     //        throws GraphDriverException;

@@ -113,6 +113,8 @@ public interface GraphDatabaseDriver
 
     Map<String, String> getMetadata( ProjectVersionRef ref );
 
+    Map<String, String> getMetadata( ProjectVersionRef ref, Set<String> keys );
+
     Set<ProjectVersionRef> getProjectsWithMetadata( GraphView view, String key );
 
     Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,

@@ -695,7 +695,36 @@ public class JungEGraphDriver
     @Override
     public Map<String, String> getMetadata( final ProjectVersionRef ref )
     {
-        return metadata.get( ref );
+        return getMetadata( ref, null );
+    }
+
+    @Override
+    public Map<String, String> getMetadata( final ProjectVersionRef ref, final Set<String> keys )
+    {
+        Map<String, String> metadata;
+        synchronized ( this )
+        {
+            metadata = this.metadata.get( ref );
+            if ( metadata == null )
+            {
+                metadata = new HashMap<String, String>();
+                this.metadata.put( ref, metadata );
+            }
+        }
+
+        if ( keys != null && !keys.isEmpty() )
+        {
+            metadata = new HashMap<>( metadata );
+            final Set<String> removable = new HashSet<>( metadata.keySet() );
+            removable.removeAll( keys );
+
+            for ( final String remove : removable )
+            {
+                metadata.remove( remove );
+            }
+        }
+
+        return metadata;
     }
 
     @Override
@@ -706,7 +735,7 @@ public class JungEGraphDriver
             return;
         }
 
-        final Map<String, String> md = getMetadataMap( ref );
+        final Map<String, String> md = getMetadata( ref );
         md.put( key, value );
 
         addMetadataOwner( key, ref );
@@ -732,20 +761,8 @@ public class JungEGraphDriver
             return;
         }
 
-        final Map<String, String> md = getMetadataMap( ref );
+        final Map<String, String> md = getMetadata( ref );
         md.putAll( metadata );
-    }
-
-    private synchronized Map<String, String> getMetadataMap( final ProjectVersionRef ref )
-    {
-        Map<String, String> metadata = this.metadata.get( ref );
-        if ( metadata == null )
-        {
-            metadata = new HashMap<String, String>();
-            this.metadata.put( ref, metadata );
-        }
-
-        return metadata;
     }
 
     @Override

@@ -569,9 +569,12 @@ public final class Conversions
     {
         final Map<String, String> metadataMap = getMetadataMap( container );
 
-        for ( final String key : metadataMap.keySet() )
+        if ( metadataMap != null )
         {
-            container.removeProperty( key );
+            for ( final String key : metadataMap.keySet() )
+            {
+                container.removeProperty( key );
+            }
         }
 
         for ( final Map.Entry<String, String> entry : metadata.entrySet() )
@@ -581,6 +584,11 @@ public final class Conversions
     }
 
     public static Map<String, String> getMetadataMap( final PropertyContainer container )
+    {
+        return getMetadataMap( container, null );
+    }
+
+    public static Map<String, String> getMetadataMap( final PropertyContainer container, final Set<String> matching )
     {
         final Iterable<String> keys = container.getPropertyKeys();
         final Map<String, String> md = new HashMap<String, String>();
@@ -592,6 +600,11 @@ public final class Conversions
             }
 
             final String k = key.substring( METADATA_PREFIX.length() );
+            if ( matching != null && !matching.contains( k ) )
+            {
+                continue;
+            }
+
             final String value = getStringProperty( key, container );
 
             md.put( k, value );

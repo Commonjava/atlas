@@ -1354,6 +1354,18 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
+    public Map<String, String> getMetadata( final ProjectVersionRef ref, final Set<String> keys )
+    {
+        final Node node = getNode( ref );
+        if ( node == null )
+        {
+            return null;
+        }
+
+        return getMetadataMap( node, keys );
+    }
+
+    @Override
     public synchronized void addMetadata( final ProjectVersionRef ref, final String key, final String value )
     {
         final Transaction tx = graph.beginTx();

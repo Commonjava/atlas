@@ -19,6 +19,7 @@ package org.commonjava.maven.atlas.graph.model;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.filterTerminalParents;
 
 import java.io.Serializable;
+import java.net.URI;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -790,6 +791,19 @@ public class EProjectGraph
     {
         return view.getDatabase()
                    .isMissing( view, ref );
+    }
+
+    @Override
+    public Set<URI> getSources()
+    {
+        final Set<ProjectRelationship<?>> rels = getAllRelationships();
+        final Set<URI> sources = new HashSet<>();
+        for ( final ProjectRelationship<?> rel : rels )
+        {
+            sources.addAll( rel.getSources() );
+        }
+
+        return sources;
     }
 
 }
