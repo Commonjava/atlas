@@ -86,13 +86,13 @@ public class JungEGraphDriver
     @Override
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final GraphView view, final ProjectVersionRef ref )
     {
-        return imposeSelections( view, graph.getOutEdges( ref ) );
+        return imposeSelections( view, graph.getOutEdges( ref.asProjectVersionRef() ) );
     }
 
     @Override
     public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final GraphView view, final ProjectVersionRef ref )
     {
-        return imposeSelections( view, graph.getInEdges( ref ) );
+        return imposeSelections( view, graph.getInEdges( ref.asProjectVersionRef() ) );
     }
 
     @Override
@@ -118,7 +118,8 @@ public class JungEGraphDriver
         final List<ProjectRelationship<?>> result = new ArrayList<ProjectRelationship<?>>( edges.size() );
         for ( final ProjectRelationship<?> edge : edges )
         {
-            final ProjectVersionRef target = edge.getTarget();
+            final ProjectVersionRef target = edge.getTarget()
+                                                 .asProjectVersionRef();
             final ProjectVersionRef selected = getSelectedVersion( target );
             final Set<URI> sources = workspace.getActiveSources();
             if ( sources != null && !sources.isEmpty() )
@@ -195,6 +196,7 @@ public class JungEGraphDriver
         {
             if ( !graph.containsVertex( rel.getDeclaring() ) )
             {
+                //                // logger.info( "Adding node: %s", rel.getDeclaring() );
                 graph.addVertex( rel.getDeclaring() );
                 addGA( rel.getDeclaring() );
             }
@@ -204,31 +206,39 @@ public class JungEGraphDriver
             if ( !target.getVersionSpec()
                         .isSingle() )
             {
+                // logger.info( "Adding variable target: %s", target );
                 variableSubgraphs.add( target );
             }
             else if ( !graph.containsVertex( target ) )
             {
+                // logger.info( "Adding incomplete target: %s", target );
                 incompleteSubgraphs.add( target );
             }
 
             if ( !graph.containsVertex( target ) )
             {
-                graph.addVertex( target );
+                // logger.info( "Adding node: %s", target );
+                graph.addVertex( target.asProjectVersionRef() );
                 addGA( target );
             }
 
             final List<ProjectRelationship<?>> edges = new ArrayList<ProjectRelationship<?>>( graph.findEdgeSet( rel.getDeclaring(), target ) );
             if ( !edges.contains( rel ) )
             {
-                graph.addEdge( rel, rel.getDeclaring(), target );
+                // logger.info( "Adding edge: %s -> %s", rel.getDeclaring(), target );
+                graph.addEdge( rel, rel.getDeclaring(), target.asProjectVersionRef() );
             }
             else
             {
                 final int idx = edges.indexOf( rel );
                 final ProjectRelationship<?> existing = edges.get( idx );
+
+                // logger.info( "Adding sources: %s to existing edge: %s", rel.getSources(), existing );
+
                 existing.addSources( rel.getSources() );
             }
 
+            // logger.info( "removing from incomplete status: %s", rel.getDeclaring() );
             incompleteSubgraphs.remove( rel.getDeclaring() );
         }
 
@@ -239,6 +249,8 @@ public class JungEGraphDriver
                 continue;
             }
 
+            // logger.info( "Detecting cycles introduced by: %s", rel );
+
             final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
             dfsTraverse( GraphView.GLOBAL, traversal, 0, rel.getTarget()
@@ -248,6 +260,7 @@ public class JungEGraphDriver
 
             if ( !cycles.isEmpty() )
             {
+                // logger.info( "CYCLE introduced by: %s", rel );
                 skipped.add( rel );
 
                 graph.removeEdge( rel );
@@ -350,8 +363,10 @@ public class JungEGraphDriver
         {
             for ( final ProjectRelationship<?> edge : edges )
             {
+                path.addLast( edge );
                 if ( traversal.traverseEdge( edge, path, pass ) )
                 {
+
                     if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
                     {
                         final ProjectVersionRef target = edge.getTarget()
@@ -371,14 +386,15 @@ public class JungEGraphDriver
 
                         if ( !cycle )
                         {
-                            path.addLast( edge );
                             dfsIterate( view, target, traversal, path, pass );
-                            path.removeLast();
                         }
+
                     }
 
                     traversal.edgeTraversed( edge, path, pass );
                 }
+
+                path.removeLast();
             }
         }
     }
@@ -418,16 +434,17 @@ public class JungEGraphDriver
             {
                 for ( final ProjectRelationship<?> edge : edges )
                 {
+                    final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
+
+                    // FIXME: How do we avoid cycle traversal here??
+                    nextPath.add( edge );
+
                     // call traverseEdge no matter what, to allow traversal to "see" all relationships.
-                    if ( /*( edge instanceof SelfEdge ) ||*/traversal.traverseEdge( edge, path, pass ) )
+                    if ( /*( edge instanceof SelfEdge ) ||*/traversal.traverseEdge( edge, nextPath, pass ) )
                     {
                         // Don't account for terminal parent relationship.
                         if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
                         {
-                            final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
-
-                            // FIXME: How do we avoid cycle traversal here??
-                            nextPath.add( edge );
                             nextLayer.add( nextPath );
                         }
 
@@ -446,7 +463,7 @@ public class JungEGraphDriver
 
     private List<ProjectRelationship<?>> getSortedOutEdges( final GraphView view, final ProjectVersionRef node )
     {
-        Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node );
+        Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node.asProjectVersionRef() );
         if ( unsorted == null )
         {
             return null;
@@ -470,13 +487,13 @@ public class JungEGraphDriver
 
         SelfEdge( final ProjectVersionRef ref )
         {
-            super( (URI) null, null, ref, ref, 0 );
+            super( (URI) null, null, ref.asProjectVersionRef(), ref.asProjectVersionRef(), 0 );
         }
 
         @Override
         public ArtifactRef getTargetArtifact()
         {
-            return new ArtifactRef( getTarget(), "pom", null, false );
+            return getTarget().asPomArtifact();
         }
 
         @Override
@@ -530,7 +547,7 @@ public class JungEGraphDriver
     @Override
     public boolean containsProject( final GraphView view, final ProjectVersionRef ref )
     {
-        return graph.containsVertex( ref );
+        return graph.containsVertex( ref.asProjectVersionRef() ) && !incompleteSubgraphs.contains( ref.asProjectVersionRef() );
     }
 
     @Override
@@ -544,7 +561,7 @@ public class JungEGraphDriver
         final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
         for ( final ProjectVersionRef ref : refs )
         {
-            final Collection<ProjectRelationship<?>> edges = graph.getOutEdges( ref );
+            final Collection<ProjectRelationship<?>> edges = graph.getOutEdges( ref.asProjectVersionRef() );
             if ( edges != null )
             {
                 rels.addAll( edges );
@@ -581,7 +598,7 @@ public class JungEGraphDriver
     @Override
     public boolean isMissing( final GraphView view, final ProjectVersionRef project )
     {
-        return !graph.containsVertex( project );
+        return !graph.containsVertex( project.asProjectVersionRef() );
     }
 
     @Override
@@ -593,7 +610,9 @@ public class JungEGraphDriver
     @Override
     public Set<ProjectVersionRef> getMissingProjects( final GraphView view )
     {
-        return new HashSet<ProjectVersionRef>( incompleteSubgraphs );
+        final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>( incompleteSubgraphs );
+        // logger.info( "Got %d missing projects: %s", result.size(), result );
+        return result;
     }
 
     @Override
@@ -625,6 +644,7 @@ public class JungEGraphDriver
         return changed;
     }
 
+    // TODO: May not work with paths to the entries in the cycle...since filters are often path-sensitive
     @Override
     public Set<EProjectCycle> getCycles( final GraphView view )
     {
@@ -670,7 +690,7 @@ public class JungEGraphDriver
     {
         for ( final EProjectCycle cycle : cycles )
         {
-            if ( cycle.contains( ref ) )
+            if ( cycle.contains( ref.asProjectVersionRef() ) )
             {
                 return true;
             }
@@ -704,11 +724,11 @@ public class JungEGraphDriver
         Map<String, String> metadata;
         synchronized ( this )
         {
-            metadata = this.metadata.get( ref );
+            metadata = this.metadata.get( ref.asProjectVersionRef() );
             if ( metadata == null )
             {
                 metadata = new HashMap<String, String>();
-                this.metadata.put( ref, metadata );
+                this.metadata.put( ref.asProjectVersionRef(), metadata );
             }
         }
 
@@ -735,10 +755,10 @@ public class JungEGraphDriver
             return;
         }
 
-        final Map<String, String> md = getMetadata( ref );
+        final Map<String, String> md = getMetadata( ref.asProjectVersionRef() );
         md.put( key, value );
 
-        addMetadataOwner( key, ref );
+        addMetadataOwner( key, ref.asProjectVersionRef() );
     }
 
     private synchronized void addMetadataOwner( final String key, final ProjectVersionRef ref )
@@ -750,7 +770,7 @@ public class JungEGraphDriver
             metadataOwners.put( key, owners );
         }
 
-        owners.add( ref );
+        owners.add( ref.asProjectVersionRef() );
     }
 
     @Override
@@ -761,7 +781,7 @@ public class JungEGraphDriver
             return;
         }
 
-        final Map<String, String> md = getMetadata( ref );
+        final Map<String, String> md = getMetadata( ref.asProjectVersionRef() );
         md.putAll( metadata );
     }
 
@@ -774,7 +794,8 @@ public class JungEGraphDriver
             for ( final Map.Entry<String, String> mdEntry : refEntry.getValue()
                                                                     .entrySet() )
             {
-                addMetadataOwner( mdEntry.getKey(), refEntry.getKey() );
+                addMetadataOwner( mdEntry.getKey(), refEntry.getKey()
+                                                            .asProjectVersionRef() );
             }
         }
     }
@@ -908,13 +929,19 @@ public class JungEGraphDriver
     private static final class PathDetectionTraversal
         extends AbstractTraversal
     {
+        //        private final Logger logger = new Logger( getClass() );
+
         private final ProjectVersionRef[] to;
 
         private final Set<List<ProjectRelationship<?>>> paths = new HashSet<List<ProjectRelationship<?>>>();
 
         private PathDetectionTraversal( final ProjectVersionRef[] refs )
         {
-            this.to = refs;
+            this.to = new ProjectVersionRef[refs.length];
+            for ( int i = 0; i < refs.length; i++ )
+            {
+                this.to[i] = refs[i].asProjectVersionRef();
+            }
         }
 
         public Set<List<ProjectRelationship<?>>> getPaths()
@@ -927,38 +954,42 @@ public class JungEGraphDriver
         {
             final ProjectVersionRef target = relationship.getTarget()
                                                          .asProjectVersionRef();
+
+            // logger.info( "Checking path: %s to see if target: %s is in endpoints: %s", join( path, "," ), target, join( to, ", " ) );
+            boolean found = false;
             for ( final ProjectVersionRef t : to )
             {
                 if ( t.equals( target ) )
                 {
                     paths.add( new ArrayList<ProjectRelationship<?>>( path ) );
-                    return false;
+                    // logger.info( "+= %s", join( path, ", " ) );
+                    found = true;
                 }
             }
 
-            return true;
+            return !found;
         }
     }
 
     @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
-        if ( !graph.containsVertex( ref ) )
+        if ( !graph.containsVertex( ref.asProjectVersionRef() ) )
         {
-            graph.addVertex( ref );
+            graph.addVertex( ref.asProjectVersionRef() );
         }
     }
 
     @Override
     public void selectVersionFor( final ProjectVersionRef ref, final ProjectVersionRef selected )
     {
-        this.selected.put( ref, selected );
+        this.selected.put( ref.asProjectVersionRef(), selected );
     }
 
     @Override
     public void selectVersionForAll( final ProjectRef ref, final ProjectVersionRef selected )
     {
-        selectedForAll.put( ref, selected );
+        selectedForAll.put( ref.asProjectRef(), selected );
     }
 
     @Override
@@ -973,7 +1004,7 @@ public class JungEGraphDriver
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo, final RelationshipType... types )
     {
-        return getMatchingRelationships( graph.getOutEdges( from ), view, includeManagedInfo, types );
+        return getMatchingRelationships( graph.getOutEdges( from.asProjectVersionRef() ), view, includeManagedInfo, types );
     }
 
     private Set<ProjectRelationship<?>> getMatchingRelationships( final Collection<ProjectRelationship<?>> edges, final GraphView view,
@@ -981,9 +1012,11 @@ public class JungEGraphDriver
     {
         if ( edges == null )
         {
+            // logger.info( "No edges found. Nothing to filter!" );
             return null;
         }
 
+        // logger.info( "Filtering %d edges...", edges.size() );
         final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>( edges.size() );
 
         final List<RelationshipType> typeList = Arrays.asList( types );
@@ -993,20 +1026,24 @@ public class JungEGraphDriver
         {
             if ( !typeList.isEmpty() && !typeList.contains( rel.getType() ) )
             {
+                // logger.info( "-= %s (wrong type)", rel );
                 continue;
             }
 
             if ( view.getFilter() != null && !view.getFilter()
                                                   .accept( rel ) )
             {
+                // logger.info( "-= %s (rejected by filter)", rel );
                 continue;
             }
 
             if ( !includeManagedInfo && rel.isManaged() )
             {
+                // logger.info( "-= %s (wrong managed status)", rel );
                 continue;
             }
 
+            // logger.info( "+= %s", rel );
             rels.add( rel );
         }
 
@@ -1017,19 +1054,20 @@ public class JungEGraphDriver
     public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
     {
-        return getMatchingRelationships( graph.getInEdges( to ), view, includeManagedInfo, types );
+        // logger.info( "Getting relationships targeting: %s (types: %s)", to, join( types, ", " ) );
+        return getMatchingRelationships( graph.getInEdges( to.asProjectVersionRef() ), view, includeManagedInfo, types );
     }
 
     @Override
     public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphView eProjectNetView )
     {
-        return byGA.containsKey( projectRef ) ? byGA.get( projectRef ) : Collections.<ProjectVersionRef> emptySet();
+        return byGA.containsKey( projectRef.asProjectRef() ) ? byGA.get( projectRef.asProjectRef() ) : Collections.<ProjectVersionRef> emptySet();
     }
 
     @Override
     public ProjectVersionRef getSelectedFor( final ProjectVersionRef ref )
     {
-        return getSelectedVersion( ref );
+        return getSelectedVersion( ref.asProjectVersionRef() );
     }
 
     @Override
@@ -1041,13 +1079,13 @@ public class JungEGraphDriver
     @Override
     public boolean hasSelectionFor( final ProjectVersionRef ref )
     {
-        return selected.containsKey( ref );
+        return selected.containsKey( ref.asProjectVersionRef() );
     }
 
     @Override
     public boolean hasSelectionForAll( final ProjectRef ref )
     {
-        return selectedForAll.containsKey( ref );
+        return selectedForAll.containsKey( ref.asProjectRef() );
     }
 
     @Override
