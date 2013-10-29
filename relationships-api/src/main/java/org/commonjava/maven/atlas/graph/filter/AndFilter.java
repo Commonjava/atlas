@@ -35,6 +35,7 @@ public class AndFilter
         super( filters );
     }
 
+    @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {
         boolean accepted = true;
@@ -56,6 +57,7 @@ public class AndFilter
         return new AndFilter( childFilters );
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         final List<? extends ProjectRelationshipFilter> filters = getFilters();
@@ -67,6 +69,11 @@ public class AndFilter
         boolean first = true;
         for ( final ProjectRelationshipFilter filter : filters )
         {
+            if ( filter == null )
+            {
+                continue;
+            }
+
             if ( first )
             {
                 first = false;

@@ -39,7 +39,6 @@ public abstract class CycleDetectionTCK
 {
 
     @Test
-    //    @Ignore
     public void introducesCycleCheckWithExistingGraph()
         throws Exception
     {

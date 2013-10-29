@@ -544,12 +544,6 @@ public class EProjectGraph
                                                          .addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
         result.removeAll( rejected );
 
-        if ( !result.isEmpty() )
-        {
-            view.getDatabase()
-                .recomputeIncompleteSubgraphs();
-        }
-
         return result;
     }
 
@@ -568,7 +562,7 @@ public class EProjectGraph
         throws GraphDriverException
     {
         view.getDatabase()
-            .traverse( view, traversal, this, ref );
+            .traverse( view, traversal, ref );
     }
 
     @Override

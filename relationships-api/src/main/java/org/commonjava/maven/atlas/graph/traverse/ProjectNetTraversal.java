@@ -18,7 +18,6 @@ package org.commonjava.maven.atlas.graph.traverse;
 
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 
@@ -29,10 +28,10 @@ public interface ProjectNetTraversal
 
     int getRequiredPasses();
 
-    void startTraverse( int pass, EProjectNet network )
+    void startTraverse( int pass )
         throws GraphDriverException;
 
-    void endTraverse( int pass, EProjectNet network )
+    void endTraverse( int pass )
         throws GraphDriverException;
 
     boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
@@ -40,6 +39,8 @@ public interface ProjectNetTraversal
     void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
 
     boolean preCheck( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
+
+    boolean isStopped();
 
     TraversalType[] getTraversalTypes();
 }

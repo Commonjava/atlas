@@ -37,11 +37,17 @@ public class OrFilter
         super( filters );
     }
 
+    @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {
         boolean accepted = false;
         for ( final ProjectRelationshipFilter filter : getFilters() )
         {
+            if ( filter == null )
+            {
+                continue;
+            }
+
             accepted = accepted || filter.accept( rel );
             if ( accepted )
             {
@@ -59,6 +65,7 @@ public class OrFilter
         return new OrFilter( childFilters );
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         final List<? extends ProjectRelationshipFilter> filters = getFilters();

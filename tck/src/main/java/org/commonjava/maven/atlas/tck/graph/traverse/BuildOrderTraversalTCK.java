@@ -77,7 +77,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
         graph.traverse( bo );
 
-        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder( graph );
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         assertRelativeOrder( relativeOrder, buildOrder );
@@ -122,7 +122,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
         graph.traverse( bo );
 
-        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder( graph );
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         new Logger( getClass() ).info( "Build order: %s", buildOrder );
@@ -171,7 +171,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.test ) );
         graph.traverse( bo );
 
-        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder( graph );
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         assertRelativeOrder( relativeOrder, buildOrder );
@@ -221,7 +221,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.runtime ) );
         graph.traverse( bo );
 
-        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder( graph );
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         assertThat( buildOrder.size(), equalTo( 3 ) );
@@ -267,7 +267,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrderTraversal bo = new BuildOrderTraversal( new DependencyFilter( DependencyScope.runtime ) );
         graph.traverse( bo );
 
-        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder( graph );
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         logger.info( "Build order: %s", buildOrder );
@@ -318,7 +318,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrderTraversal bo = new BuildOrderTraversal();
         graph.traverse( bo );
 
-        final BuildOrder buildOrderObj = bo.getBuildOrder();
+        final BuildOrder buildOrderObj = bo.getBuildOrder( graph );
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
         System.out.printf( "Build order: %s\n", buildOrder );

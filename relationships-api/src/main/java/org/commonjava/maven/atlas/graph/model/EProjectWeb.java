@@ -137,12 +137,6 @@ public class EProjectWeb
                                                          .addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
         result.removeAll( rejected );
 
-        if ( !result.isEmpty() )
-        {
-            view.getDatabase()
-                .recomputeIncompleteSubgraphs();
-        }
-
         return result;
     }
 
@@ -163,9 +157,6 @@ public class EProjectWeb
                 result.add( rel );
             }
         }
-
-        view.getDatabase()
-            .recomputeIncompleteSubgraphs();
 
         return result;
     }
@@ -190,7 +181,7 @@ public class EProjectWeb
         throws GraphDriverException
     {
         view.getDatabase()
-            .traverse( view, traversal, this, start );
+            .traverse( view, traversal, start );
     }
 
     public Set<ProjectRelationship<?>> getUserRelationships( final ProjectVersionRef ref )

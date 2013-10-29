@@ -64,7 +64,6 @@ import java.util.WeakHashMap;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -778,15 +777,34 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
+    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final ProjectVersionRef... roots )
         throws GraphDriverException
     {
         printCaller( "TRAVERSE" );
 
-        final Node rootNode = getNode( root );
-        if ( rootNode == null )
+        Node[] rootNodes;
+        if ( roots.length > 0 )
         {
-            //            logger.debug( "Root node not found! (root: %s)", root );
+            rootNodes = new Node[roots.length];
+            for ( int i = 0; i < roots.length; i++ )
+            {
+                rootNodes[i] = getNode( roots[i] );
+            }
+        }
+        else if ( view.getRoots() != null && !view.getRoots()
+                                                  .isEmpty() )
+        {
+            rootNodes = new Node[view.getRoots()
+                                     .size()];
+            int i = 0;
+            for ( final ProjectVersionRef root : view.getRoots() )
+            {
+                rootNodes[i++] = getNode( root );
+            }
+        }
+        else
+        {
+            logger.error( "Cannot traverse; no roots provided!" );
             return;
         }
 
@@ -814,7 +832,7 @@ public abstract class AbstractNeo4JEGraphDriver
             }
 
             //            logger.debug( "starting traverse of: %s", net );
-            traversal.startTraverse( i, net );
+            traversal.startTraverse( i );
 
             final Set<Long> rootIds = getRootIds( view );
 
@@ -824,7 +842,7 @@ public abstract class AbstractNeo4JEGraphDriver
             description = description.expand( checker )
                                      .evaluator( checker );
 
-            final Traverser traverser = description.traverse( rootNode );
+            final Traverser traverser = description.traverse( rootNodes );
             for ( final Path path : traverser )
             {
                 //                logger.debug( "traversing: %s", path );
@@ -844,7 +862,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 }
             }
 
-            traversal.endTraverse( i, net );
+            traversal.endTraverse( i );
 
             checker.printStats();
         }
@@ -1333,12 +1351,6 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         return false;
-    }
-
-    @Override
-    public void recomputeIncompleteSubgraphs()
-    {
-        // NOP, handled automatically.
     }
 
     @Override

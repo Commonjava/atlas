@@ -57,55 +57,50 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
 
     private boolean cloneUsesLocation = true;
 
-    protected AbstractProjectRelationship( final URI source, final RelationshipType type,
-                                           final ProjectVersionRef declaring, final T target, final int index )
+    protected AbstractProjectRelationship( final URI source, final RelationshipType type, final ProjectVersionRef declaring, final T target,
+                                           final int index )
     {
         this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, false );
     }
 
-    protected AbstractProjectRelationship( final Collection<URI> sources, final RelationshipType type,
-                                           final ProjectVersionRef declaring, final T target, final int index )
+    protected AbstractProjectRelationship( final Collection<URI> sources, final RelationshipType type, final ProjectVersionRef declaring,
+                                           final T target, final int index )
     {
         this( sources, POM_ROOT_URI, type, declaring, target, index, false );
     }
 
-    protected AbstractProjectRelationship( final URI source, final RelationshipType type,
-                                           final ProjectVersionRef declaring, final T target, final int index,
-                                           final boolean managed )
+    protected AbstractProjectRelationship( final URI source, final RelationshipType type, final ProjectVersionRef declaring, final T target,
+                                           final int index, final boolean managed )
     {
         this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, managed );
     }
 
-    protected AbstractProjectRelationship( final Collection<URI> sources, final RelationshipType type,
-                                           final ProjectVersionRef declaring, final T target, final int index,
-                                           final boolean managed )
+    protected AbstractProjectRelationship( final Collection<URI> sources, final RelationshipType type, final ProjectVersionRef declaring,
+                                           final T target, final int index, final boolean managed )
     {
         this( sources, POM_ROOT_URI, type, declaring, target, index, managed );
     }
 
-    protected AbstractProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type,
-                                           final ProjectVersionRef declaring, final T target, final int index )
+    protected AbstractProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type, final ProjectVersionRef declaring,
+                                           final T target, final int index )
     {
         this( Collections.singleton( source ), pomLocation, type, declaring, target, index, false );
     }
 
-    protected AbstractProjectRelationship( final Collection<URI> sources, final URI pomLocation,
-                                           final RelationshipType type, final ProjectVersionRef declaring,
-                                           final T target, final int index )
+    protected AbstractProjectRelationship( final Collection<URI> sources, final URI pomLocation, final RelationshipType type,
+                                           final ProjectVersionRef declaring, final T target, final int index )
     {
         this( sources, pomLocation, type, declaring, target, index, false );
     }
 
-    protected AbstractProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type,
-                                           final ProjectVersionRef declaring, final T target, final int index,
-                                           final boolean managed )
+    protected AbstractProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type, final ProjectVersionRef declaring,
+                                           final T target, final int index, final boolean managed )
     {
         this( Collections.singleton( source ), pomLocation, type, declaring, target, index, managed );
     }
 
-    protected AbstractProjectRelationship( final Collection<URI> sources, final URI pomLocation,
-                                           final RelationshipType type, final ProjectVersionRef declaring,
-                                           final T target, final int index, final boolean managed )
+    protected AbstractProjectRelationship( final Collection<URI> sources, final URI pomLocation, final RelationshipType type,
+                                           final ProjectVersionRef declaring, final T target, final int index, final boolean managed )
     {
         if ( sources == null )
         {
@@ -120,8 +115,7 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         this.pomLocation = pomLocation;
         if ( declaring == null || target == null )
         {
-            throw new NullPointerException( "Neither declaring ref (" + declaring + ") nor target ref (" + target
-                + ") can be null!" );
+            throw new NullPointerException( "Neither declaring ref (" + declaring + ") nor target ref (" + target + ") can be null!" );
         }
 
         this.type = type;
@@ -172,8 +166,7 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         {
             try
             {
-                cloneCtor =
-                    getClass().getConstructor( URI.class, URI.class, ProjectVersionRef.class, target.getClass() );
+                cloneCtor = getClass().getConstructor( URI.class, URI.class, ProjectVersionRef.class, target.getClass() );
             }
             catch ( final NoSuchMethodException e )
             {
@@ -184,9 +177,9 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
                 }
                 catch ( final NoSuchMethodException e2 )
                 {
-                    throw new IllegalArgumentException( "Missing constructor: " + getClass().getName()
-                        + "(VersionedProjectRef declaring, " + target.getClass()
-                                                                     .getName() + " target)", e2 );
+                    throw new IllegalArgumentException( "Missing constructor: " + getClass().getName() + "(VersionedProjectRef declaring, "
+                        + target.getClass()
+                                .getName() + " target)", e2 );
                 }
             }
         }
@@ -202,19 +195,19 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         }
         catch ( final InstantiationException e )
         {
-            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: "
-                + projectRef + ": " + e.getMessage(), e );
+            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: " + projectRef + ": "
+                + e.getMessage(), e );
         }
         catch ( final IllegalAccessException e )
         {
-            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: "
-                + projectRef + ": " + e.getMessage(), e );
+            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: " + projectRef + ": "
+                + e.getMessage(), e );
         }
         catch ( final InvocationTargetException e )
         {
-            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: "
-                + projectRef + ": " + e.getTargetException()
-                                       .getMessage(), e.getTargetException() );
+            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: " + projectRef + ": "
+                + e.getTargetException()
+                   .getMessage(), e.getTargetException() );
         }
     }
 
@@ -226,6 +219,8 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         result = prime * result + ( ( declaring == null ) ? 0 : declaring.hashCode() );
         result = prime * result + ( ( target == null ) ? 0 : target.hashCode() );
         result = prime * result + ( ( type == null ) ? 0 : type.hashCode() );
+        result = prime * result + Boolean.valueOf( managed )
+                                         .hashCode();
         return result;
     }
 
@@ -268,6 +263,10 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
             return false;
         }
         if ( type != other.type )
+        {
+            return false;
+        }
+        if ( managed != other.managed )
         {
             return false;
         }

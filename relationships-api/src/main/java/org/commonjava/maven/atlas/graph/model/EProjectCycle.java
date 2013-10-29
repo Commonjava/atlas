@@ -22,6 +22,8 @@ import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.filterTerm
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -159,11 +161,13 @@ public class EProjectCycle
         return targetIdx;
     }
 
+    @Override
     public Iterator<ProjectRelationship<?>> iterator()
     {
         return participants.iterator();
     }
 
+    @Override
     public Collection<ProjectRelationship<?>> getAllRelationships()
     {
         final Collection<ProjectRelationship<?>> rels = getExactAllRelationships();
@@ -172,6 +176,7 @@ public class EProjectCycle
         return rels;
     }
 
+    @Override
     public Collection<ProjectRelationship<?>> getExactAllRelationships()
     {
         return new ArrayList<ProjectRelationship<?>>( participants );
@@ -199,7 +204,18 @@ public class EProjectCycle
     @Override
     public int hashCode()
     {
-        final Set<ProjectRelationship<?>> cycle = new HashSet<ProjectRelationship<?>>( this.participants );
+        // FIXME: Horrible hack! This has terrible performance for a hashcode call.
+        final List<ProjectRelationship<?>> cycle = new ArrayList<ProjectRelationship<?>>( this.participants );
+        Collections.sort( cycle, new Comparator<ProjectRelationship<?>>()
+        {
+            @Override
+            public int compare( final ProjectRelationship<?> f, final ProjectRelationship<?> s )
+            {
+                return String.valueOf( f )
+                             .compareTo( String.valueOf( s ) );
+            }
+        } );
+
         final int prime = 31;
         int result = 1;
         result = prime * result + ( ( cycle == null ) ? 0 : cycle.hashCode() );

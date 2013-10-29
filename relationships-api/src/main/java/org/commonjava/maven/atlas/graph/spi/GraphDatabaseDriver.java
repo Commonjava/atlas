@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
@@ -58,9 +57,6 @@ public interface GraphDatabaseDriver
 
     boolean clearSelectedVersions();
 
-    void recomputeIncompleteSubgraphs()
-        throws GraphDriverException;
-
     void reindex()
         throws GraphDriverException;
 
@@ -88,7 +84,7 @@ public interface GraphDatabaseDriver
 
     Set<ProjectVersionRef> getAllProjects( GraphView view );
 
-    void traverse( GraphView view, ProjectNetTraversal traversal, EProjectNet net, ProjectVersionRef root )
+    void traverse( GraphView view, ProjectNetTraversal traversal, ProjectVersionRef... root )
         throws GraphDriverException;
 
     boolean containsProject( GraphView view, ProjectVersionRef ref );

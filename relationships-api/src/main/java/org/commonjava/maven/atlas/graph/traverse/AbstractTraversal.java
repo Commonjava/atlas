@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 
@@ -31,6 +30,8 @@ public abstract class AbstractTraversal
     private final List<TraversalType> types;
 
     private final int passes;
+
+    private boolean stop = false;
 
     protected AbstractTraversal()
     {
@@ -50,6 +51,18 @@ public abstract class AbstractTraversal
         this.types = Arrays.asList( types );
     }
 
+    protected void stop()
+    {
+        stop = true;
+    }
+
+    @Override
+    public boolean isStopped()
+    {
+        return stop;
+    }
+
+    @Override
     public TraversalType getType( final int pass )
     {
         if ( types == null || types.isEmpty() )
@@ -64,32 +77,36 @@ public abstract class AbstractTraversal
         return types.get( pass );
     }
 
-    public void startTraverse( final int pass, final EProjectNet network )
+    @Override
+    public void startTraverse( final int pass )
         throws GraphDriverException
     {
     }
 
+    @Override
     public int getRequiredPasses()
     {
         return passes;
     }
 
-    public void endTraverse( final int pass, final EProjectNet network )
+    @Override
+    public void endTraverse( final int pass )
         throws GraphDriverException
     {
     }
 
-    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                               final int pass )
+    @Override
+    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
     }
 
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                                 final int pass )
+    @Override
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         return preCheck( relationship, path, pass );
     }
 
+    @Override
     public TraversalType[] getTraversalTypes()
     {
         return types.toArray( new TraversalType[] {} );

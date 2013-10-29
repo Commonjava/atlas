@@ -51,48 +51,14 @@ public class BuildOrderTraversal
         super( new OrFilter( filter, new ParentFilter( false ) ) );
     }
 
-    public BuildOrder getBuildOrder()
+    public BuildOrder getBuildOrder( final EProjectNet network )
     {
+        detectCycles( network );
         return new BuildOrder( order, cycles );
     }
 
-    @Override
-    protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
-                                          final List<ProjectRelationship<?>> path, final int pass )
+    private void detectCycles( final EProjectNet network )
     {
-        final ProjectVersionRef decl = relationship.getDeclaring();
-
-        ProjectVersionRef target = relationship.getTarget();
-        if ( target instanceof ArtifactRef )
-        {
-            target = ( (ArtifactRef) target ).asProjectVersionRef();
-        }
-
-        final ProjectRef baseDecl = new ProjectRef( decl.getGroupId(), decl.getArtifactId() );
-        final ProjectRef baseTgt = new ProjectRef( target.getGroupId(), target.getArtifactId() );
-
-        int declIdx = order.indexOf( baseDecl );
-        final int tgtIdx = order.indexOf( baseTgt );
-        if ( declIdx < 0 )
-        {
-            declIdx = order.size();
-            order.add( baseDecl );
-        }
-
-        if ( tgtIdx < 0 )
-        {
-            order.add( declIdx, baseTgt );
-        }
-
-        return true;
-    }
-
-    @Override
-    public void endTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
-    {
-        super.endTraverse( pass, network );
-
         Set<EProjectCycle> cycles = network.getCycles();
         if ( cycles != null )
         {
@@ -123,6 +89,43 @@ public class BuildOrderTraversal
         }
 
         this.cycles = cycles;
+    }
+
+    @Override
+    protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    {
+        final ProjectVersionRef decl = relationship.getDeclaring();
+
+        ProjectVersionRef target = relationship.getTarget();
+        if ( target instanceof ArtifactRef )
+        {
+            target = ( (ArtifactRef) target ).asProjectVersionRef();
+        }
+
+        final ProjectRef baseDecl = new ProjectRef( decl.getGroupId(), decl.getArtifactId() );
+        final ProjectRef baseTgt = new ProjectRef( target.getGroupId(), target.getArtifactId() );
+
+        int declIdx = order.indexOf( baseDecl );
+        final int tgtIdx = order.indexOf( baseTgt );
+        if ( declIdx < 0 )
+        {
+            declIdx = order.size();
+            order.add( baseDecl );
+        }
+
+        if ( tgtIdx < 0 )
+        {
+            order.add( declIdx, baseTgt );
+        }
+
+        return true;
+    }
+
+    @Override
+    public void endTraverse( final int pass )
+        throws GraphDriverException
+    {
+        super.endTraverse( pass );
     }
 
 }
