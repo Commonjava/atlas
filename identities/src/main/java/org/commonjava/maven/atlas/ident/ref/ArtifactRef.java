@@ -144,6 +144,10 @@ public class ArtifactRef
         {
             return false;
         }
+        if ( optional != other.optional )
+        {
+            return false;
+        }
         return true;
     }
 

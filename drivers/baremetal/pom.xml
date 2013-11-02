@@ -24,15 +24,11 @@
     <version>0.9.2-SNAPSHOT</version>
   </parent>
 
-  <artifactId>atlas-driver-jung</artifactId>
+  <artifactId>atlas-driver-baremetal</artifactId>
 
-  <name>Atlas :: Maven Project-Graph :: Jung Driver</name>
+  <name>Atlas :: Maven Project-Graph :: Bare-Metal Driver</name>
   
   <dependencies>
-    <dependency>
-      <groupId>net.sf.jung</groupId>
-      <artifactId>jung-graph-impl</artifactId>
-    </dependency>
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>

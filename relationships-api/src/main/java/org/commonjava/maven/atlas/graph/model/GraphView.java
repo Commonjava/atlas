@@ -2,7 +2,9 @@ package org.commonjava.maven.atlas.graph.model;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
@@ -23,6 +25,12 @@ public class GraphView
     private final ProjectRelationshipFilter filter;
 
     private final WeakHashMap<String, Object> cache = new WeakHashMap<String, Object>();
+
+    private final Map<ProjectVersionRef, Set<ProjectRelationshipFilter>> acceptingFilters = new HashMap<>();
+
+    private final Map<ProjectVersionRef, Set<ProjectRelationshipFilter>> rejectingFilters = new HashMap<>();
+
+    private final Map<ProjectVersionRef, ProjectVersionRef> allGAVs = new HashMap<>();
 
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> roots )
     {
@@ -50,6 +58,66 @@ public class GraphView
         this.filter = null;
         this.roots.addAll( Arrays.asList( roots ) );
         this.workspace = workspace;
+    }
+
+    public ProjectVersionRef normalize( final ProjectVersionRef ref )
+    {
+        ProjectVersionRef result = allGAVs.get( ref );
+        if ( result == null )
+        {
+            allGAVs.put( ref, ref );
+            result = ref;
+        }
+
+        return result;
+    }
+
+    public boolean addAcceptingFilter( ProjectVersionRef ref, final ProjectRelationshipFilter filter )
+    {
+        ref = normalize( ref );
+        synchronized ( ref )
+        {
+            Set<ProjectRelationshipFilter> filters = acceptingFilters.get( ref );
+            if ( filters == null )
+            {
+                filters = new HashSet<>();
+                acceptingFilters.put( ref, filters );
+            }
+
+            return filters.add( filter );
+        }
+    }
+
+    public Set<ProjectRelationshipFilter> getAcceptingFilters( final ProjectVersionRef ref )
+    {
+        return acceptingFilters.get( ref );
+    }
+
+    public boolean addRejectingFilter( ProjectVersionRef ref, final ProjectRelationshipFilter filter )
+    {
+        ref = normalize( ref );
+        synchronized ( ref )
+        {
+            Set<ProjectRelationshipFilter> filters = rejectingFilters.get( ref );
+            if ( filters == null )
+            {
+                filters = new HashSet<>();
+                rejectingFilters.put( ref, filters );
+            }
+
+            return filters.add( filter );
+        }
+    }
+
+    public Set<ProjectRelationshipFilter> getRejectingFilters( final ProjectVersionRef ref )
+    {
+        return rejectingFilters.get( ref );
+    }
+
+    public void clearGAVFilters()
+    {
+        acceptingFilters.clear();
+        rejectingFilters.clear();
     }
 
     public ProjectRelationshipFilter getFilter()

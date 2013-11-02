@@ -46,6 +46,7 @@
   </dependencies>
   
   <modules>
+    <module>baremetal</module>
     <module>jung</module>
     <module>neo4j-embedded</module>
   </modules>

@@ -19,6 +19,7 @@ package org.commonjava.maven.atlas.graph.spi.jung;
 import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
+import static org.commonjava.maven.atlas.graph.util.Traversals.dfsTraverse;
 
 import java.io.IOException;
 import java.net.URI;
@@ -29,34 +30,30 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.apache.commons.lang.StringUtils;
+import org.commonjava.maven.atlas.graph.bare.GraphEdgeSelector;
 import org.commonjava.maven.atlas.graph.filter.OrFilter;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.rel.AbstractProjectRelationship;
-import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
-import org.commonjava.maven.atlas.graph.rel.RelationshipPathComparator;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.traverse.FilteringTraversal;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
+import org.commonjava.maven.atlas.graph.util.Traversals;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.util.logging.Logger;
 
@@ -68,9 +65,11 @@ public class JungEGraphDriver
 {
     private static final String PATHS = "paths";
 
-    private final Logger logger = new Logger( getClass() );
+    final Logger logger = new Logger( getClass() );
 
     private final DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph = new DirectedSparseMultigraph<>();
+
+    //    private final AtlasGraph graph = new AtlasGraph();
 
     private final Map<ProjectRef, Set<ProjectVersionRef>> byGA = new HashMap<>();
 
@@ -142,9 +141,9 @@ public class JungEGraphDriver
             final FilteringTraversal traversal = new FilteringTraversal( view.getFilter(), true );
 
             // FIXME: if the view doesn't have any roots, this will fail.
-            dfsTraverse( view, traversal, 0, view.getRoots()
-                                                 .toArray( new ProjectVersionRef[view.getRoots()
-                                                                                     .size()] ) );
+            dfsTraverse( view, traversal, 0, selector, view.getRoots()
+                                                           .toArray( new ProjectVersionRef[view.getRoots()
+                                                                                               .size()] ) );
 
             return traversal.getCapturedRelationships();
         }
@@ -252,6 +251,7 @@ public class JungEGraphDriver
     {
         final Set<ProjectRelationship<?>> skipped = new HashSet<ProjectRelationship<?>>();
         final Set<ProjectVersionRef> targets = new HashSet<>( rels.length );
+
         for ( final ProjectRelationship<?> rel : rels )
         {
             final ProjectVersionRef target = rel.getTarget()
@@ -259,64 +259,11 @@ public class JungEGraphDriver
 
             targets.add( target );
 
-            try
-            {
-                if ( !target.getVersionSpec()
-                            .isSingle() )
-                {
-                    logger.info( "Adding variable target: %s", target );
-                    variableSubgraphs.add( target );
-                }
-            }
-            catch ( final InvalidVersionSpecificationException e )
-            {
-                logger.error( "Failed to determine variable-version status of: %s. Reason: %s", e, target, e.getMessage() );
-                skipped.add( rel );
-                continue;
-            }
-
-            if ( !graph.containsVertex( rel.getDeclaring() ) )
-            {
-                logger.info( "Adding node: %s", rel.getDeclaring() );
-                graph.addVertex( rel.getDeclaring() );
-                addGA( rel.getDeclaring() );
-            }
-
-            if ( !graph.containsVertex( target ) )
-            {
-                logger.info( "Adding incomplete target: %s", target );
-                incompleteSubgraphs.add( target );
-            }
-
-            if ( !graph.containsVertex( target ) )
-            {
-                logger.info( "Adding node: %s", target );
-                graph.addVertex( target.asProjectVersionRef() );
-                addGA( target );
-            }
-
-            final List<ProjectRelationship<?>> edges = new ArrayList<ProjectRelationship<?>>( graph.findEdgeSet( rel.getDeclaring(), target ) );
-            if ( !edges.contains( rel ) )
-            {
-                logger.info( "Adding edge: %s -> %s", rel.getDeclaring(), target );
-                graph.addEdge( rel, rel.getDeclaring(), target.asProjectVersionRef() );
-            }
-            else
-            {
-                final int idx = edges.indexOf( rel );
-                final ProjectRelationship<?> existing = edges.get( idx );
-
-                logger.info( "Adding sources: %s to existing edge: %s", rel.getSources(), existing );
-
-                existing.addSources( rel.getSources() );
-            }
-
-            logger.info( "removing from incomplete status: %s", rel.getDeclaring() );
-            incompleteSubgraphs.remove( rel.getDeclaring() );
+            graph.add( rel );
         }
 
-        final CycleDetectionTraversal traversal = new CycleDetectionTraversal();
-        dfsTraverse( GraphView.GLOBAL, traversal, 0, targets.toArray( new ProjectVersionRef[targets.size()] ) );
+        final CycleDetectionTraversal traversal = new CycleDetectionTraversal( cycles, skipped, rels );
+        dfsTraverse( GraphView.GLOBAL, traversal, 0, selector, targets.toArray( new ProjectVersionRef[targets.size()] ) );
 
         logger.info( "Detecting cycles..." );
 
@@ -416,6 +363,7 @@ public class JungEGraphDriver
 
         if ( reTraverse )
         {
+            logger.info( "Re-traversing to capture path states for: %s", refs );
             final PathMappingTraversal traversal = new PathMappingTraversal( filter, pathStates );
 
             if ( roots == null || roots.isEmpty() )
@@ -424,7 +372,7 @@ public class JungEGraphDriver
                 return;
             }
 
-            dfsTraverse( view, traversal, 0, roots.toArray( new ProjectVersionRef[roots.size()] ) );
+            dfsTraverse( view, traversal, 0, selector, roots.toArray( new ProjectVersionRef[roots.size()] ) );
         }
     }
 
@@ -451,7 +399,7 @@ public class JungEGraphDriver
                 return;
             }
 
-            dfsTraverse( view, traversal, 0, roots.toArray( new ProjectVersionRef[roots.size()] ) );
+            dfsTraverse( view, traversal, 0, selector, roots.toArray( new ProjectVersionRef[roots.size()] ) );
         }
     }
 
@@ -480,7 +428,7 @@ public class JungEGraphDriver
                 return;
             }
 
-            dfsTraverse( view, traversal, 0, roots.toArray( new ProjectVersionRef[roots.size()] ) );
+            dfsTraverse( view, traversal, 0, selector, roots.toArray( new ProjectVersionRef[roots.size()] ) );
         }
     }
 
@@ -489,8 +437,8 @@ public class JungEGraphDriver
     {
         final SingleCycleDetectionTraversal traversal = new SingleCycleDetectionTraversal( rel );
 
-        dfsTraverse( view, traversal, 0, rel.getTarget()
-                                            .asProjectVersionRef() );
+        dfsTraverse( view, traversal, 0, selector, rel.getTarget()
+                                                      .asProjectVersionRef() );
 
         return !traversal.getCycles()
                          .isEmpty();
@@ -500,240 +448,6 @@ public class JungEGraphDriver
     public Set<ProjectVersionRef> getAllProjects( final GraphView view )
     {
         return findVisibleProjects( getRoots( view, false ), view.getFilter(), view, graph.getVertices() );
-    }
-
-    @Override
-    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final ProjectVersionRef... roots )
-        throws GraphDriverException
-    {
-        ProjectVersionRef[] start;
-        if ( roots.length > 0 )
-        {
-            start = roots;
-        }
-        else if ( view.getRoots() != null && !view.getRoots()
-                                                  .isEmpty() )
-        {
-            start = view.getRoots()
-                        .toArray( new ProjectVersionRef[view.getRoots()
-                                                            .size()] );
-        }
-        else
-        {
-            logger.error( "Cannot traverse; no roots specified!" );
-            return;
-        }
-
-        for ( int i = 0; i < traversal.getRequiredPasses(); i++ )
-        {
-            traversal.startTraverse( i );
-
-            switch ( traversal.getType( i ) )
-            {
-                case breadth_first:
-                {
-                    bfsTraverse( view, traversal, i, start );
-                    break;
-                }
-                case depth_first:
-                {
-                    dfsTraverse( view, traversal, i, start );
-                    break;
-                }
-            }
-
-            traversal.endTraverse( i );
-        }
-    }
-
-    // TODO: Implement without recursion.
-    private void dfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef... roots )
-    {
-        for ( final ProjectVersionRef root : roots )
-        {
-            dfsIterate( view, root, traversal, new LinkedList<ProjectRelationship<?>>(), pass );
-        }
-    }
-
-    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal,
-                             final LinkedList<ProjectRelationship<?>> path, final int pass )
-    {
-        final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
-        if ( edges != null )
-        {
-            for ( final ProjectRelationship<?> edge : edges )
-            {
-                if ( traversal.traverseEdge( edge, path, pass ) )
-                {
-
-                    if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
-                    {
-                        path.addLast( edge );
-
-                        final ProjectVersionRef target = edge.getTarget()
-                                                             .asProjectVersionRef();
-
-                        // FIXME: Are there cases where a traversal needs to see cycles??
-                        boolean cycle = false;
-                        for ( final ProjectRelationship<?> item : path )
-                        {
-                            if ( item.getDeclaring()
-                                     .equals( target ) )
-                            {
-                                cycle = true;
-                                break;
-                            }
-                        }
-
-                        if ( !cycle )
-                        {
-                            dfsIterate( view, target, traversal, path, pass );
-                        }
-
-                        path.removeLast();
-                    }
-
-                    traversal.edgeTraversed( edge, path, pass );
-                    if ( traversal.isStopped() )
-                    {
-                        return;
-                    }
-                }
-
-            }
-        }
-    }
-
-    // TODO: Implement without recursion.
-    private void bfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef... roots )
-    {
-        final List<List<ProjectRelationship<?>>> starts = new ArrayList<>();
-        for ( final ProjectVersionRef root : roots )
-        {
-            final List<ProjectRelationship<?>> path = new ArrayList<ProjectRelationship<?>>();
-            path.add( new SelfEdge( root ) );
-            starts.add( path );
-        }
-
-        bfsIterate( view, starts, traversal, pass );
-    }
-
-    private void bfsIterate( final GraphView view, final List<List<ProjectRelationship<?>>> thisLayer, final ProjectNetTraversal traversal,
-                             final int pass )
-    {
-        final List<List<ProjectRelationship<?>>> nextLayer = new ArrayList<List<ProjectRelationship<?>>>();
-
-        for ( final List<ProjectRelationship<?>> path : thisLayer )
-        {
-            if ( path.isEmpty() )
-            {
-                continue;
-            }
-
-            final ProjectVersionRef node = path.get( path.size() - 1 )
-                                               .getTarget()
-                                               .asProjectVersionRef();
-
-            if ( !path.isEmpty() && ( path.get( 0 ) instanceof SelfEdge ) )
-            {
-                path.remove( 0 );
-            }
-
-            final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
-            if ( edges != null )
-            {
-                for ( final ProjectRelationship<?> edge : edges )
-                {
-                    // call traverseEdge no matter what, to allow traversal to "see" all relationships.
-                    if ( /*( edge instanceof SelfEdge ) ||*/traversal.traverseEdge( edge, path, pass ) )
-                    {
-                        // Don't account for terminal parent relationship.
-                        if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
-                        {
-                            final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
-
-                            // FIXME: How do we avoid cycle traversal here??
-                            nextPath.add( edge );
-
-                            nextLayer.add( nextPath );
-                        }
-
-                        traversal.edgeTraversed( edge, path, pass );
-                        if ( traversal.isStopped() )
-                        {
-                            return;
-                        }
-                    }
-                }
-            }
-        }
-
-        if ( !nextLayer.isEmpty() )
-        {
-            Collections.sort( nextLayer, new RelationshipPathComparator() );
-            bfsIterate( view, nextLayer, traversal, pass );
-        }
-    }
-
-    private List<ProjectRelationship<?>> getSortedOutEdges( final GraphView view, final ProjectVersionRef node )
-    {
-        Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node.asProjectVersionRef() );
-        if ( unsorted == null )
-        {
-            return null;
-        }
-
-        unsorted = new ArrayList<ProjectRelationship<?>>( unsorted );
-
-        RelationshipUtils.filterTerminalParents( unsorted );
-
-        final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( imposeSelections( view, unsorted, false ) );
-        Collections.sort( sorted, new RelationshipComparator() );
-
-        return sorted;
-    }
-
-    private static final class SelfEdge
-        extends AbstractProjectRelationship<ProjectVersionRef>
-    {
-
-        private static final long serialVersionUID = 1L;
-
-        SelfEdge( final ProjectVersionRef ref )
-        {
-            super( (URI) null, null, ref.asProjectVersionRef(), ref.asProjectVersionRef(), 0 );
-        }
-
-        @Override
-        public ArtifactRef getTargetArtifact()
-        {
-            return getTarget().asPomArtifact();
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
-        {
-            return selectDeclaring( version, false );
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version, final boolean force )
-        {
-            return new SelfEdge( getDeclaring().selectVersion( version, force ) );
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
-        {
-            return selectTarget( version, false );
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
-        {
-            return new SelfEdge( getDeclaring().selectVersion( version, force ) );
-        }
-
     }
 
     @Override
@@ -1187,4 +901,33 @@ public class JungEGraphDriver
         return selectedForAll;
     }
 
+    @Override
+    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final ProjectVersionRef... root )
+        throws GraphDriverException
+    {
+        Traversals.traverse( view, traversal, selector, root );
+    }
+
+    private final GraphEdgeSelector selector = new GraphEdgeSelector()
+    {
+
+        @Override
+        public List<ProjectRelationship<?>> getSortedOutEdges( final GraphView view, final ProjectVersionRef node )
+        {
+            Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node.asProjectVersionRef() );
+            if ( unsorted == null )
+            {
+                return null;
+            }
+
+            unsorted = new ArrayList<ProjectRelationship<?>>( unsorted );
+
+            RelationshipUtils.filterTerminalParents( unsorted );
+
+            final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( imposeSelections( view, unsorted, false ) );
+            Collections.sort( sorted, new RelationshipComparator() );
+
+            return sorted;
+        }
+    };
 }
