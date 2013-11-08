@@ -57,21 +57,13 @@
       </dependency>
       
       <dependency>
-        <groupId>commons-lang</groupId>
-        <artifactId>commons-lang</artifactId>
-        <version>2.6</version>
+        <groupId>org.commonjava.boms</groupId>
+        <artifactId>web-commons-bom</artifactId>
+        <version>6-SNAPSHOT</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
-      <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>1.6</version>
-      </dependency>
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.10</version>
-        <scope>test</scope>
-      </dependency>
+      
       <dependency>
         <groupId>org.neo4j</groupId>
         <artifactId>neo4j</artifactId>
@@ -81,27 +73,6 @@
         <groupId>net.sf.jung</groupId>
         <artifactId>jung-graph-impl</artifactId>
         <version>2.0.1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.commonjava.util</groupId>
-        <artifactId>logging</artifactId>
-        <version>1.1</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-log4j12</artifactId>
-        <version>1.6.1</version>
-        <scope>test</scope>
-      </dependency>
-      <dependency>
-        <groupId>org.commonjava.web</groupId>
-        <artifactId>json-serialization</artifactId>
-        <version>0.5</version>
-      </dependency>
-      <dependency>
-        <groupId>com.google.code.gson</groupId>
-        <artifactId>gson</artifactId>
-        <version>2.2.2</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

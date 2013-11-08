@@ -185,7 +185,7 @@ public class ProjectVersionRef
     }
 
     @Override
-    public synchronized VersionSpec getVersionSpec()
+    public VersionSpec getVersionSpec()
     {
         if ( versionSpec == null )
         {
@@ -281,7 +281,7 @@ public class ProjectVersionRef
     }
 
     @Override
-    public synchronized String getVersionString()
+    public String getVersionString()
     {
         if ( versionString == null )
         {
