@@ -633,7 +633,7 @@ public final class Conversions
 
     public static void markConnected( final Node node, final boolean connected )
     {
-        LOGGER.info( "Marking as connected (non-missing): %s", node.getProperty( GAV ) );
+        //        LOGGER.info( "Marking as connected (non-missing): %s", node.getProperty( GAV ) );
         node.setProperty( CONNECTED, connected );
     }
 

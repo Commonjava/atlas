@@ -683,13 +683,13 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( ref.isVariableVersion() )
         {
-            logger.info( "Adding %s to variable-nodes index.", ref );
+            //            logger.info( "Adding %s to variable-nodes index.", ref );
             graph.index()
                  .forNodes( VARIABLE_NODES_IDX )
                  .add( node, GAV, gav );
         }
 
-        logger.info( "Created project node: %s with id: %d", ref, node.getId() );
+        //        logger.info( "Created project node: %s with id: %d", ref, node.getId() );
         return node;
     }
 

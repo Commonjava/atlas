@@ -40,6 +40,12 @@ public class EGraphManager
 
     private static final String TEMP_WS = "is-temporary";
 
+    private static final String GROUP_ID = "groupId";
+
+    private static final String ARTIFACT_ID = "artifactId";
+
+    private static final String VERSION = "version";
+
     private final Logger logger = new Logger( getClass() );
 
     private final Map<String, GraphWorkspace> loadedWorkspaces = new HashMap<>();
@@ -294,19 +300,56 @@ public class EGraphManager
 
     public Map<String, String> getMetadata( final GraphWorkspace workspace, final ProjectVersionRef ref )
     {
-        return workspace.getDatabase()
-                        .getMetadata( ref );
+        final Map<String, String> result = new HashMap<>();
+        final Map<String, String> metadata = workspace.getDatabase()
+                                                      .getMetadata( ref );
+        if ( metadata != null )
+        {
+            result.putAll( metadata );
+        }
+
+        result.put( GROUP_ID, ref.getGroupId() );
+        result.put( ARTIFACT_ID, ref.getArtifactId() );
+        result.put( VERSION, ref.getVersionString() );
+
+        return result;
+    }
+
+    public Map<String, String> getMetadata( final GraphWorkspace workspace, final ProjectVersionRef ref, final Set<String> keys )
+    {
+        final Map<String, String> result = new HashMap<>();
+        final Map<String, String> metadata = workspace.getDatabase()
+                                                      .getMetadata( ref, keys );
+        if ( metadata != null )
+        {
+            result.putAll( metadata );
+        }
+
+        if ( keys.contains( GROUP_ID ) )
+        {
+            result.put( GROUP_ID, ref.getGroupId() );
+        }
+
+        if ( keys.contains( ARTIFACT_ID ) )
+        {
+            result.put( ARTIFACT_ID, ref.getArtifactId() );
+        }
+
+        if ( keys.contains( VERSION ) )
+        {
+            result.put( VERSION, ref.getVersionString() );
+        }
+
+        return result;
     }
 
     public Map<Map<String, String>, Set<ProjectVersionRef>> collateByMetadata( final GraphWorkspace workspace, final Set<ProjectVersionRef> refs,
                                                                                final Set<String> keys )
     {
-        final GraphDatabaseDriver db = workspace.getDatabase();
-
         final Map<Map<String, String>, Set<ProjectVersionRef>> result = new HashMap<>();
         for ( final ProjectVersionRef ref : refs )
         {
-            final Map<String, String> metadata = db.getMetadata( ref, keys );
+            final Map<String, String> metadata = getMetadata( workspace, ref, keys );
             Set<ProjectVersionRef> collated = result.get( metadata );
             if ( collated == null )
             {
