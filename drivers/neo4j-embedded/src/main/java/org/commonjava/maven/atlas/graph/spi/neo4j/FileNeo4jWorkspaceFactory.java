@@ -54,6 +54,26 @@ public class FileNeo4jWorkspaceFactory
     }
 
     @Override
+    public synchronized GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )
+        throws GraphDriverException
+    {
+        final File db = new File( dbBaseDirectory, id );
+        if ( db.exists() )
+        {
+            throw new GraphDriverException( "Workspace directory already exists: %s. Cannot create workspace.", id );
+        }
+        else if ( !db.mkdirs() )
+        {
+            throw new GraphDriverException( "Failed to create workspace directory for: %s. (dir: %s)", id, db );
+        }
+
+        final GraphWorkspace ws = new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ) );
+        storeWorkspace( ws );
+
+        return ws;
+    }
+
+    @Override
     public synchronized GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
@@ -114,7 +134,7 @@ public class FileNeo4jWorkspaceFactory
         final File db = new File( dbBaseDirectory, id );
         if ( !db.isDirectory() )
         {
-            throw new GraphDriverException( "No database for workspace: %s", id );
+            return null;
         }
 
         GraphWorkspaceConfiguration config;

@@ -122,6 +122,16 @@ public class EGraphManager
         return new EProjectWeb( workspace, filter, refs );
     }
 
+    public synchronized GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )
+        throws GraphDriverException
+    {
+        final GraphWorkspace ws = workspaceFactory.createWorkspace( id, config )
+                                                  .addListener( this );
+
+        loadedWorkspaces.put( ws.getId(), ws );
+        return ws;
+    }
+
     public synchronized GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
@@ -166,9 +176,9 @@ public class EGraphManager
         if ( ws != null )
         {
             ws.addListener( this );
-        }
 
-        loadedWorkspaces.put( id, ws );
+            loadedWorkspaces.put( id, ws );
+        }
 
         return ws;
     }

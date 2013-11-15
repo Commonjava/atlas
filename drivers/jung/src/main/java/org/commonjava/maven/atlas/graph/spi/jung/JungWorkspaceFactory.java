@@ -18,6 +18,20 @@ public class JungWorkspaceFactory
     private final Map<String, GraphWorkspace> workspaces = new HashMap<String, GraphWorkspace>();
 
     @Override
+    public GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )
+        throws GraphDriverException
+    {
+        if ( workspaces.containsKey( id ) )
+        {
+            throw new GraphDriverException( "Workspace already exists: %s. Cannot create workspace.", id );
+        }
+
+        final GraphWorkspace ws = new GraphWorkspace( id, config, new JungEGraphDriver() );
+        workspaces.put( ws.getId(), ws );
+        return ws;
+    }
+
+    @Override
     public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {

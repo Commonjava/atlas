@@ -15,6 +15,9 @@ public interface GraphWorkspaceFactory
     GraphWorkspace createWorkspace( GraphWorkspaceConfiguration config )
         throws GraphDriverException;
 
+    GraphWorkspace createWorkspace( String id, GraphWorkspaceConfiguration config )
+        throws GraphDriverException;
+
     void storeWorkspace( GraphWorkspace workspace )
         throws GraphDriverException;
 
