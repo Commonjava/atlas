@@ -203,11 +203,6 @@ public class EGraphManager
         return result;
     }
 
-    public boolean containsGraph( final ProjectVersionRef ref )
-    {
-        return containsGraph( GLOBAL, ref );
-    }
-
     public boolean containsGraph( final GraphView view, final ProjectVersionRef ref )
     {
         final GraphDatabaseDriver dbDriver = view.getDatabase();
@@ -261,11 +256,6 @@ public class EGraphManager
         return getAllProjects( new GraphView( workspace ) );
     }
 
-    public Set<ProjectVersionRef> getAllProjects()
-    {
-        return getAllProjects( GraphView.GLOBAL );
-    }
-
     public Set<ProjectVersionRef> getAllIncompleteSubgraphs( final GraphView view )
     {
         return view.getDatabase()
@@ -277,11 +267,6 @@ public class EGraphManager
         return getAllIncompleteSubgraphs( new GraphView( workspace ) );
     }
 
-    public Set<ProjectVersionRef> getAllIncompleteSubgraphs()
-    {
-        return getAllIncompleteSubgraphs( GLOBAL );
-    }
-
     public Set<ProjectVersionRef> getAllVariableSubgraphs( final GraphView view )
     {
         return view.getDatabase()
@@ -291,11 +276,6 @@ public class EGraphManager
     public Set<ProjectVersionRef> getAllVariableSubgraphs( final GraphWorkspace workspace )
     {
         return getAllVariableSubgraphs( new GraphView( workspace ) );
-    }
-
-    public Set<ProjectVersionRef> getAllVariableSubgraphs()
-    {
-        return getAllVariableSubgraphs( GLOBAL );
     }
 
     public Map<String, String> getMetadata( final GraphWorkspace workspace, final ProjectVersionRef ref )
@@ -392,11 +372,6 @@ public class EGraphManager
     {
         workspace.getDatabase()
                  .reindex();
-    }
-
-    public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
-    {
-        return getProjectsWithMetadata( GLOBAL, key );
     }
 
     public Set<ProjectVersionRef> getProjectsWithMetadata( final GraphWorkspace workspace, final String key )
