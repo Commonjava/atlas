@@ -65,21 +65,22 @@ public class JungEGraphDriver
 {
     //    private final Logger logger = new Logger( getClass() );
 
-    private DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph = new DirectedSparseMultigraph<>();
+    private DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
+        new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
 
-    private final Map<ProjectRef, Set<ProjectVersionRef>> byGA = new HashMap<>();
+    private final Map<ProjectRef, Set<ProjectVersionRef>> byGA = new HashMap<ProjectRef, Set<ProjectVersionRef>>();
 
-    private transient Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<>();
+    private transient Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<>();
+    private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
 
-    private transient Map<ProjectVersionRef, ProjectVersionRef> selected = new HashMap<>();
+    private transient Map<ProjectVersionRef, ProjectVersionRef> selected = new HashMap<ProjectVersionRef, ProjectVersionRef>();
 
-    private transient Map<ProjectRef, ProjectVersionRef> selectedForAll = new HashMap<>();
+    private transient Map<ProjectRef, ProjectVersionRef> selectedForAll = new HashMap<ProjectRef, ProjectVersionRef>();
 
-    private final Map<String, Set<ProjectVersionRef>> metadataOwners = new HashMap<>();
+    private final Map<String, Set<ProjectVersionRef>> metadataOwners = new HashMap<String, Set<ProjectVersionRef>>();
 
-    private final Map<ProjectVersionRef, Map<String, String>> metadata = new HashMap<>();
+    private final Map<ProjectVersionRef, Map<String, String>> metadata = new HashMap<ProjectVersionRef, Map<String, String>>();
 
     private final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
@@ -734,8 +735,8 @@ public class JungEGraphDriver
 
         if ( keys != null && !keys.isEmpty() )
         {
-            metadata = new HashMap<>( metadata );
-            final Set<String> removable = new HashSet<>( metadata.keySet() );
+            metadata = new HashMap<String, String>( metadata );
+            final Set<String> removable = new HashSet<String>( metadata.keySet() );
             removable.removeAll( keys );
 
             for ( final String remove : removable )

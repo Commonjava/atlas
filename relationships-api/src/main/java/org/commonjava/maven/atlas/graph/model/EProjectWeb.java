@@ -146,7 +146,6 @@ public class EProjectWeb
         return result;
     }
 
-    @SuppressWarnings( "unchecked" )
     public <T extends ProjectRelationship<?>> Set<T> addAll( final T... rels )
         throws GraphDriverException
     {
@@ -275,49 +274,6 @@ public class EProjectWeb
         return view.getDatabase();
     }
 
-    //    @Override
-    //    public EProjectGraph getGraph( final ProjectVersionRef ref, final EGraphSession session )
-    //        throws GraphDriverException
-    //    {
-    //        return getGraph( null, ref, session );
-    //    }
-    //
-    //    @Override
-    //    public EProjectGraph getGraph( final ProjectRelationshipFilter filter, final ProjectVersionRef ref,
-    //                                   final EGraphSession session )
-    //        throws GraphDriverException
-    //    {
-    //        if ( view.getDatabase().containsProject( view, ref ) && !view.getDatabase().isMissing( view, ref ) )
-    //        {
-    //            return new EProjectGraph( session, this, filter, ref );
-    //        }
-    //
-    //        return null;
-    //    }
-    //
-    //    @Override
-    //    public EProjectWeb getWeb( final EGraphSession session, final ProjectVersionRef... refs )
-    //        throws GraphDriverException
-    //    {
-    //        return getWeb( session, null, refs );
-    //    }
-    //
-    //    @Override
-    //    public EProjectWeb getWeb( final EGraphSession session, final ProjectRelationshipFilter filter,
-    //                               final ProjectVersionRef... refs )
-    //        throws GraphDriverException
-    //    {
-    //        for ( final ProjectVersionRef ref : refs )
-    //        {
-    //            if ( !view.getDatabase().containsProject( ref ) || view.getDatabase().isMissing( ref ) )
-    //            {
-    //                return null;
-    //            }
-    //        }
-    //
-    //        return new EProjectWeb( session, this, filter, refs );
-    //    }
-
     @Override
     public boolean containsGraph( final ProjectVersionRef ref )
     {
@@ -426,7 +382,7 @@ public class EProjectWeb
     public Set<URI> getSources()
     {
         final Set<ProjectRelationship<?>> rels = getAllRelationships();
-        final Set<URI> sources = new HashSet<>();
+        final Set<URI> sources = new HashSet<URI>();
         for ( final ProjectRelationship<?> rel : rels )
         {
             sources.addAll( rel.getSources() );

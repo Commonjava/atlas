@@ -169,7 +169,7 @@ public class FileNeo4jWorkspaceFactory
     public Set<GraphWorkspace> loadAllWorkspaces( final Set<String> excludedIds )
     {
         final String[] ids = dbBaseDirectory.list();
-        final Set<GraphWorkspace> results = new HashSet<>();
+        final Set<GraphWorkspace> results = new HashSet<GraphWorkspace>();
         for ( final String id : ids )
         {
             if ( id.charAt( 0 ) == '.' )

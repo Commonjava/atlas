@@ -29,9 +29,9 @@ public class CycleDetectingCollector
 
     private final Direction direction;
 
-    private final Map<ProjectRelationship<?>, Set<List<Relationship>>> found = new HashMap<>();
+    private final Map<ProjectRelationship<?>, Set<List<Relationship>>> found = new HashMap<ProjectRelationship<?>, Set<List<Relationship>>>();
 
-    private final Set<Long> seen = new HashSet<>();
+    private final Set<Long> seen = new HashSet<Long>();
 
     private final Set<Node> startNodes;
 
@@ -45,8 +45,8 @@ public class CycleDetectingCollector
         //        this.view = view;
         this.direction = Direction.OUTGOING;
 
-        final Set<Node> start = new HashSet<>();
-        final Set<Node> end = new HashSet<>();
+        final Set<Node> start = new HashSet<Node>();
+        final Set<Node> end = new HashSet<Node>();
         for ( final NodePair pair : map.keySet() )
         {
             start.add( pair.getFrom() );
@@ -130,12 +130,12 @@ public class CycleDetectingCollector
             paths = found.get( rel );
             if ( paths == null )
             {
-                paths = new HashSet<>();
+                paths = new HashSet<List<Relationship>>();
                 found.put( rel, paths );
             }
         }
 
-        final List<Relationship> rels = new ArrayList<>();
+        final List<Relationship> rels = new ArrayList<Relationship>();
         for ( final Relationship r : path )
         {
             //            if ( !TraversalUtils.acceptedInView( r, view ) )
@@ -182,7 +182,7 @@ public class CycleDetectingCollector
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction );
 
-            final Set<Relationship> expansion = new HashSet<>();
+            final Set<Relationship> expansion = new HashSet<Relationship>();
 
             Node endNode;
             NodePair pair;
@@ -198,14 +198,14 @@ public class CycleDetectingCollector
                 {
                     if ( pathRelationships == null )
                     {
-                        pathRelationships = new ArrayList<>();
+                        pathRelationships = new ArrayList<Relationship>();
                         for ( final Relationship pr : path.relationships() )
                         {
                             pathRelationships.add( pr );
                         }
                     }
 
-                    final List<Relationship> rels = new ArrayList<>( pathRelationships );
+                    final List<Relationship> rels = new ArrayList<Relationship>( pathRelationships );
                     rels.add( r );
                     addCycle( pair, rel, rels );
                 }

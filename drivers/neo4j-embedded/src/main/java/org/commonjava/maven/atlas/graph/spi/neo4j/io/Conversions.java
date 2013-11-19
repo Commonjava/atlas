@@ -704,7 +704,7 @@ public final class Conversions
         {
             final long[] collapsed = (long[]) relationship.getProperty( CYCLES_INJECTED );
 
-            List<Long> currentCycle = new ArrayList<>();
+            List<Long> currentCycle = new ArrayList<Long>();
             for ( final long id : collapsed )
             {
                 if ( id == -1 )
@@ -712,7 +712,7 @@ public final class Conversions
                     if ( !currentCycle.isEmpty() )
                     {
                         cycles.add( currentCycle );
-                        currentCycle = new ArrayList<>();
+                        currentCycle = new ArrayList<Long>();
                     }
                 }
                 else
@@ -870,7 +870,7 @@ public final class Conversions
         final String key = SELECTION_PREFIX + nodeId;
         if ( wsNode.hasProperty( key ) )
         {
-            return (long) wsNode.getProperty( key );
+            return (Long) wsNode.getProperty( key );
         }
 
         return -1;

@@ -160,7 +160,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private ExecutionEngine queryEngine;
 
-    private final Map<GraphView, Map<String, Object>> caches = new WeakHashMap<>();
+    private final Map<GraphView, Map<String, Object>> caches = new WeakHashMap<GraphView, Map<String, Object>>();
 
     protected AbstractNeo4JEGraphDriver( final GraphDatabaseService graph, final boolean useShutdownHook )
     {
@@ -356,8 +356,8 @@ public abstract class AbstractNeo4JEGraphDriver
         checkClosed();
 
         Transaction tx = graph.beginTx();
-        final Map<ProjectRelationship<?>, Relationship> potentialCycleInjectors = new HashMap<>();
-        final Set<Node> connectedSubgraphs = new HashSet<>();
+        final Map<ProjectRelationship<?>, Relationship> potentialCycleInjectors = new HashMap<ProjectRelationship<?>, Relationship>();
+        final Set<Node> connectedSubgraphs = new HashSet<Node>();
         try
         {
             nextRel: for ( final ProjectRelationship<?> rel : rels )
@@ -510,7 +510,7 @@ public abstract class AbstractNeo4JEGraphDriver
             return;
         }
 
-        final Set<ProjectVersionRef> adds = new HashSet<>();
+        final Set<ProjectVersionRef> adds = new HashSet<ProjectVersionRef>();
         for ( final ProjectRelationship<?> rel : rels )
         {
             if ( !skipped.contains( rel ) )
@@ -522,7 +522,7 @@ public abstract class AbstractNeo4JEGraphDriver
             }
         }
 
-        for ( final Map.Entry<GraphView, Map<String, Object>> entry : new HashMap<>( caches ).entrySet() )
+        for ( final Map.Entry<GraphView, Map<String, Object>> entry : new HashMap<GraphView, Map<String, Object>>( caches ).entrySet() )
         {
             final GraphView view = entry.getKey();
             final Map<String, Object> cacheMap = entry.getValue();
@@ -548,7 +548,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final Map<ProjectRelationship<?>, Set<List<Relationship>>> cycleMap = getIntroducedCycles( GraphView.GLOBAL, potentialCycleInjectors );
 
-        final Set<ProjectRelationship<?>> cycleInjectors = new HashSet<>();
+        final Set<ProjectRelationship<?>> cycleInjectors = new HashSet<ProjectRelationship<?>>();
         if ( cycleMap != null && !cycleMap.isEmpty() )
         {
             for ( final Entry<ProjectRelationship<?>, Set<List<Relationship>>> entry : cycleMap.entrySet() )
@@ -584,8 +584,8 @@ public abstract class AbstractNeo4JEGraphDriver
     private Map<ProjectRelationship<?>, Set<List<Relationship>>> getIntroducedCycles( final GraphView view,
                                                                                       final Map<ProjectRelationship<?>, Relationship> potentialCycleInjectors )
     {
-        final Map<NodePair, ProjectRelationship<?>> src = new HashMap<>();
-        final Set<Node> targets = new HashSet<>();
+        final Map<NodePair, ProjectRelationship<?>> src = new HashMap<NodePair, ProjectRelationship<?>>();
+        final Set<Node> targets = new HashSet<Node>();
         for ( final Map.Entry<ProjectRelationship<?>, Relationship> entry : potentialCycleInjectors.entrySet() )
         {
             final ProjectRelationship<?> rel = entry.getKey();
@@ -705,7 +705,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 Map<String, Object> cacheMap = caches.get( view );
                 if ( cacheMap == null )
                 {
-                    cacheMap = new HashMap<>();
+                    cacheMap = new HashMap<String, Object>();
                     caches.put( view, cacheMap );
                 }
 
@@ -717,7 +717,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 }
                 else
                 {
-                    cachedRefs = new HashSet<>();
+                    cachedRefs = new HashSet<ProjectVersionRef>();
                     cacheMap.put( CACHED_ALL_PROJECT_REFS, cachedRefs );
                 }
             }
@@ -1200,7 +1200,7 @@ public abstract class AbstractNeo4JEGraphDriver
                                                   .forRelationships( CYCLE_INJECTION_IDX )
                                                   .query( RELATIONSHIP_ID, "*" );
 
-        final Map<Node, Relationship> targetNodes = new HashMap<>();
+        final Map<Node, Relationship> targetNodes = new HashMap<Node, Relationship>();
         for ( final Relationship hit : hits )
         {
             targetNodes.put( hit.getStartNode(), hit );
@@ -1957,7 +1957,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
         final Map<Long, Long> selections = getSpecificSelections( wsNode );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> results = new HashMap<>( selections.size() );
+        final Map<ProjectVersionRef, ProjectVersionRef> results = new HashMap<ProjectVersionRef, ProjectVersionRef>( selections.size() );
 
         for ( final Entry<Long, Long> entry : selections.entrySet() )
         {

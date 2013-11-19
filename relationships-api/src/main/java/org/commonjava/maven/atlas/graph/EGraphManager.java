@@ -48,7 +48,7 @@ public class EGraphManager
 
     private final Logger logger = new Logger( getClass() );
 
-    private final Map<String, GraphWorkspace> loadedWorkspaces = new HashMap<>();
+    private final Map<String, GraphWorkspace> loadedWorkspaces = new HashMap<String, GraphWorkspace>();
 
     private final GraphWorkspaceFactory workspaceFactory;
 
@@ -191,7 +191,7 @@ public class EGraphManager
 
     public Set<GraphWorkspace> getAllWorkspaces()
     {
-        final Set<GraphWorkspace> result = new HashSet<>();
+        final Set<GraphWorkspace> result = new HashSet<GraphWorkspace>();
         result.addAll( loadedWorkspaces.values() );
         result.addAll( workspaceFactory.loadAllWorkspaces( loadedWorkspaces.keySet() ) );
 
@@ -280,7 +280,7 @@ public class EGraphManager
 
     public Map<String, String> getMetadata( final GraphWorkspace workspace, final ProjectVersionRef ref )
     {
-        final Map<String, String> result = new HashMap<>();
+        final Map<String, String> result = new HashMap<String, String>();
         final Map<String, String> metadata = workspace.getDatabase()
                                                       .getMetadata( ref );
         if ( metadata != null )
@@ -297,7 +297,7 @@ public class EGraphManager
 
     public Map<String, String> getMetadata( final GraphWorkspace workspace, final ProjectVersionRef ref, final Set<String> keys )
     {
-        final Map<String, String> result = new HashMap<>();
+        final Map<String, String> result = new HashMap<String, String>();
         final Map<String, String> metadata = workspace.getDatabase()
                                                       .getMetadata( ref, keys );
         if ( metadata != null )
@@ -326,14 +326,14 @@ public class EGraphManager
     public Map<Map<String, String>, Set<ProjectVersionRef>> collateByMetadata( final GraphWorkspace workspace, final Set<ProjectVersionRef> refs,
                                                                                final Set<String> keys )
     {
-        final Map<Map<String, String>, Set<ProjectVersionRef>> result = new HashMap<>();
+        final Map<Map<String, String>, Set<ProjectVersionRef>> result = new HashMap<Map<String, String>, Set<ProjectVersionRef>>();
         for ( final ProjectVersionRef ref : refs )
         {
             final Map<String, String> metadata = getMetadata( workspace, ref, keys );
             Set<ProjectVersionRef> collated = result.get( metadata );
             if ( collated == null )
             {
-                collated = new HashSet<>();
+                collated = new HashSet<ProjectVersionRef>();
                 result.put( metadata, collated );
             }
 
@@ -398,7 +398,7 @@ public class EGraphManager
         final StringBuilder sb = new StringBuilder();
         StringWriter sw = new StringWriter();
 
-        for ( final Entry<String, GraphWorkspace> entry : new HashMap<>( loadedWorkspaces ).entrySet() )
+        for ( final Entry<String, GraphWorkspace> entry : new HashMap<String, GraphWorkspace>( loadedWorkspaces ).entrySet() )
         {
             final GraphWorkspace ws = entry.getValue();
             if ( ws == null )

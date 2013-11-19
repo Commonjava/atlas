@@ -44,7 +44,7 @@ public abstract class AbstractAtlasCollector<T>
 
     protected GraphView view;
 
-    protected Map<Long, ProjectRelationshipFilter> relationshipFilters = new HashMap<>();
+    protected Map<Long, ProjectRelationshipFilter> relationshipFilters = new HashMap<Long, ProjectRelationshipFilter>();
 
     protected AbstractAtlasCollector( final Node start, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
@@ -122,7 +122,7 @@ public abstract class AbstractAtlasCollector<T>
                                                                                     .hasProperty( GAV ) ? path.endNode()
                                                                                                               .getProperty( GAV ) : "Unknown", rel );
 
-            final Set<Relationship> nextRelationships = new HashSet<>();
+            final Set<Relationship> nextRelationships = new HashSet<Relationship>();
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction );
             for ( final Relationship r : relationships )
