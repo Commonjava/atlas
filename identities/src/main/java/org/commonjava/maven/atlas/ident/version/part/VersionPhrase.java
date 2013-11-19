@@ -72,8 +72,7 @@ public class VersionPhrase
             {
                 silenced = true;
             }
-            else if ( ( part instanceof StringPart )
-                && ( (StringPart) part ).getZeroCompareIndex() == StringPart.ADJ_ZERO_EQUIV_INDEX )
+            else if ( ( part instanceof StringPart ) && ( (StringPart) part ).getZeroCompareIndex() == StringPart.ADJ_ZERO_EQUIV_INDEX )
             {
                 silenced = true;
             }
@@ -174,8 +173,7 @@ public class VersionPhrase
         {
             if ( part != parts.get( parts.size() - 1 ) && part instanceof SnapshotPart )
             {
-                throw new InvalidVersionSpecificationException( renderStandard( parts ),
-                                                                "Snapshot marker MUST appear at the end of the version" );
+                throw new InvalidVersionSpecificationException( renderStandard( parts ), "Snapshot marker MUST appear at the end of the version" );
             }
         }
     }
@@ -194,11 +192,28 @@ public class VersionPhrase
         }
         catch ( final InvalidVersionSpecificationException e )
         {
-            throw new InvalidVersionSpecificationException(
-                                                            e.getVersion(),
-                                                            "Cannot create base version for non-release: %s. Reason: %s",
-                                                            e, e.getVersion(), e.getMessage() );
+            throw new InvalidVersionSpecificationException( e.getVersion(), "Cannot create base version for non-release: %s. Reason: %s", e,
+                                                            e.getVersion(), e.getMessage() );
         }
+    }
+
+    public String renderDebug()
+    {
+        final StringBuilder sb = new StringBuilder();
+        sb.append( "PHRASE[sep=" )
+          .append( separator == null ? "NULL" : separator.getRenderedString() )
+          .append( ", parts=(" );
+        for ( final VersionPart part : parts )
+        {
+            sb.append( part )
+              .append( ", " );
+        }
+        sb.setLength( sb.length() - 2 );
+        sb.append( ")] (" )
+          .append( renderStandard() )
+          .append( ")" );
+
+        return sb.toString();
     }
 
     public String renderStandard()
@@ -217,6 +232,7 @@ public class VersionPhrase
         return sb.toString();
     }
 
+    @Override
     public int compareTo( final VersionPhrase other )
     {
         return VersionSpecComparisons.comparePhraseToPhrase( this, other );
@@ -238,21 +254,7 @@ public class VersionPhrase
     @Override
     public String toString()
     {
-        final StringBuilder sb = new StringBuilder();
-        sb.append( "PHRASE[sep=" )
-          .append( separator == null ? "NULL" : separator.getRenderedString() )
-          .append( ", parts=(" );
-        for ( final VersionPart part : parts )
-        {
-            sb.append( part )
-              .append( ", " );
-        }
-        sb.setLength( sb.length() - 2 );
-        sb.append( ")] (" )
-          .append( renderStandard() )
-          .append( ")" );
-
-        return sb.toString();
+        return renderStandard();
     }
 
     public boolean isConcrete()

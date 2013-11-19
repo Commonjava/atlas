@@ -49,18 +49,15 @@ public abstract class AbstractFilteringTraversal
         rootFilter = filter;
     }
 
-    protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter, final int passes,
-                                          final TraversalType... types )
+    protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter, final int passes, final TraversalType... types )
     {
         super( passes, types );
         rootFilter = filter;
     }
 
-    protected abstract boolean shouldTraverseEdge( ProjectRelationship<?> relationship,
-                                                   List<ProjectRelationship<?>> path, int pass );
+    protected abstract boolean shouldTraverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
 
-    protected void edgeTraversalFinished( final ProjectRelationship<?> relationship,
-                                          final List<ProjectRelationship<?>> path, final int pass )
+    protected void edgeTraversalFinished( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
     }
 
@@ -70,15 +67,13 @@ public abstract class AbstractFilteringTraversal
     }
 
     @Override
-    public final void edgeTraversed( final ProjectRelationship<?> relationship,
-                                     final List<ProjectRelationship<?>> path, final int pass )
+    public final void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         edgeTraversalFinished( relationship, path, pass );
     }
 
     @Override
-    public final boolean traverseEdge( final ProjectRelationship<?> relationship,
-                                       final List<ProjectRelationship<?>> path, final int pass )
+    public final boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         if ( !preCheck( relationship, path, pass ) )
         {
@@ -93,8 +88,7 @@ public abstract class AbstractFilteringTraversal
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                             final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         boolean result = true;
         if ( seen.contains( relationship ) )

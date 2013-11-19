@@ -39,7 +39,7 @@ public class TransitiveDependencyTraversal
 
     private final List<ArtifactRef> artifacts = new ArrayList<ArtifactRef>();
 
-    private final Set<VersionlessArtifactRef> seen = new HashSet<VersionlessArtifactRef>();
+    private final Set<VersionlessArtifactRef> seenArtifacts = new HashSet<VersionlessArtifactRef>();
 
     public TransitiveDependencyTraversal()
     {
@@ -68,8 +68,7 @@ public class TransitiveDependencyTraversal
     }
 
     @Override
-    public boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
-                                       final List<ProjectRelationship<?>> path, final int pass )
+    public boolean shouldTraverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         boolean result = false;
         if ( relationship instanceof DependencyRelationship )
@@ -77,10 +76,10 @@ public class TransitiveDependencyTraversal
             final ArtifactRef target = (ArtifactRef) relationship.getTarget();
             final VersionlessArtifactRef versionlessTarget = new VersionlessArtifactRef( target );
 
-            if ( !seen.contains( versionlessTarget ) )
+            if ( !seenArtifacts.contains( versionlessTarget ) )
             {
                 artifacts.add( target );
-                seen.add( versionlessTarget );
+                seenArtifacts.add( versionlessTarget );
                 result = true;
             }
         }

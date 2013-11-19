@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident.version;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,10 +42,10 @@ public class SingleVersion
 
     private final String rawExpression;
 
-    private SingleVersion()
+    private SingleVersion( final List<VersionPhrase> phrases )
     {
-        phrases = new ArrayList<VersionPhrase>();
-        this.rawExpression = "";
+        this.phrases = new ArrayList<VersionPhrase>( phrases );
+        this.rawExpression = join( phrases, "" );
     }
 
     public SingleVersion( final String rawExpression, final VersionPart... parts )
@@ -251,10 +253,7 @@ public class SingleVersion
             return this;
         }
 
-        final SingleVersion v = new SingleVersion();
-        v.phrases.addAll( phrases.subList( 0, phrases.size() - 1 ) );
-
-        return v;
+        return new SingleVersion( phrases.subList( 0, phrases.size() - 1 ) );
     }
 
     @Override
