@@ -59,7 +59,7 @@
       <dependency>
         <groupId>org.commonjava.boms</groupId>
         <artifactId>web-commons-bom</artifactId>
-        <version>7-SNAPSHOT</version>
+        <version>7</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
