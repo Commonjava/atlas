@@ -1060,12 +1060,19 @@ public abstract class AbstractNeo4JEGraphDriver
         final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
         final Set<Node> nodes = toSet( hits );
         final Set<Node> roots = getRoots( view );
-        final EndNodesCollector checker = new EndNodesCollector( roots, nodes, view, wsNode, false );
+        Set<Node> found;
+        if ( roots == null || roots.isEmpty() )
+        {
+            found = nodes;
+        }
+        else
+        {
+            final EndNodesCollector checker = new EndNodesCollector( roots, nodes, view, wsNode, false );
+            collectAtlasRelationships( view, checker, roots, false );
 
-        collectAtlasRelationships( view, checker, roots, false );
-
-        final Set<Node> found = checker.getFoundNodes();
-        //        logger.info( "Found %d nodes: %s", found.size(), found );
+            //        logger.info( "Found %d nodes: %s", found.size(), found );
+            found = checker.getFoundNodes();
+        }
 
         final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>();
         for ( final Node node : found )

@@ -150,7 +150,8 @@ public class ArtifactRef
     @Override
     public String toString()
     {
-        return String.format( "%s:%s:%s:%s", getGroupId(), getArtifactId(), getVersionString(), getTypeAndClassifier() );
+        return String.format( "%s:%s:%s:%s%s", getGroupId(), getArtifactId(), getType(), getVersionString(), ( getClassifier() == null ? "" : ":"
+            + getClassifier() ) );
     }
 
     @Override

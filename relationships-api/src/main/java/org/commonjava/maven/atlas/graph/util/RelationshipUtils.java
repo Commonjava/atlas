@@ -21,11 +21,14 @@ import static org.commonjava.maven.atlas.ident.util.IdentityUtils.projectVersion
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.AbstractAggregatingFilter;
@@ -85,6 +88,26 @@ public final class RelationshipUtils
         {
             throw new IllegalStateException( "Cannot construct pom-root URI: 'pom:root'" );
         }
+    }
+
+    public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<ProjectRelationship<?>> relationships )
+    {
+        final Map<ProjectVersionRef, List<ProjectRelationship<?>>> result = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
+        for ( final ProjectRelationship<?> rel : relationships )
+        {
+            final ProjectVersionRef declaring = rel.getDeclaring();
+            List<ProjectRelationship<?>> rels = result.get( declaring );
+            if ( rels == null )
+            {
+                rels = new ArrayList<ProjectRelationship<?>>();
+                result.put( declaring, rels );
+            }
+
+            rels.add( rel );
+        }
+
+        return result;
+
     }
 
     public static URI profileLocation( final String profile )
@@ -189,6 +212,26 @@ public final class RelationshipUtils
         for ( final ProjectRelationship<?> rel : relationships )
         {
             results.add( rel.getTarget() );
+        }
+
+        return results;
+    }
+
+    public static Set<ProjectVersionRef> gavs( final ProjectRelationship<?>... relationships )
+    {
+        return gavs( Arrays.asList( relationships ) );
+    }
+
+    public static Set<ProjectVersionRef> gavs( final Collection<ProjectRelationship<?>> relationships )
+    {
+        final Set<ProjectVersionRef> results = new HashSet<ProjectVersionRef>();
+        for ( final ProjectRelationship<?> rel : relationships )
+        {
+            results.add( rel.getDeclaring()
+                            .asProjectVersionRef() );
+
+            results.add( rel.getTarget()
+                            .asProjectVersionRef() );
         }
 
         return results;

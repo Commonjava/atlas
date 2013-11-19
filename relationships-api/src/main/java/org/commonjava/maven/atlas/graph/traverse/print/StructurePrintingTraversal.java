@@ -18,16 +18,22 @@ package org.commonjava.maven.atlas.graph.traverse.print;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
+import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
+// TODO: Replace with getAllRelationships(), map to declaring GAV, and then printStructure based on that.
+// Letting the filter in the graph view shape what's in getAllRelationships()...
 public class StructurePrintingTraversal
     implements ProjectNetTraversal
 {
@@ -38,8 +44,7 @@ public class StructurePrintingTraversal
 
     private final StructureRelationshipPrinter relationshipPrinter;
 
-    private final Map<ProjectVersionRef, List<ProjectRelationship<?>>> outboundLinks =
-        new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
+    private final Map<ProjectVersionRef, List<ProjectRelationship<?>>> outboundLinks = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
 
     public StructurePrintingTraversal()
     {
@@ -59,16 +64,14 @@ public class StructurePrintingTraversal
         this.relationshipPrinter = relationshipPrinter;
     }
 
-    public StructurePrintingTraversal( final ProjectNetTraversal traversal,
-                                       final StructureRelationshipPrinter relationshipPrinter )
+    public StructurePrintingTraversal( final ProjectNetTraversal traversal, final StructureRelationshipPrinter relationshipPrinter )
     {
         this.traversal = traversal;
         this.relationshipPrinter = relationshipPrinter;
     }
 
     @Override
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                                 final int pass )
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         if ( traversal == null || traversal.traverseEdge( relationship, path, pass ) )
         {
@@ -90,32 +93,19 @@ public class StructurePrintingTraversal
         return false;
     }
 
-    public String printStructure( final ProjectVersionRef from )
+    public String printStructure( final ProjectVersionRef from, final Map<String, Set<ProjectVersionRef>> labels )
     {
-        return printStructure( from, null, null, "  " );
+        return printStructure( from, null, null, "  ", labels );
     }
 
-    public String printStructure( final ProjectVersionRef from, final String indent )
+    public String printStructure( final ProjectVersionRef from, final String indent, final Map<String, Set<ProjectVersionRef>> labels )
     {
-        return printStructure( from, null, null, indent );
+        return printStructure( from, null, null, indent, labels );
     }
 
-    public String printStructure( final ProjectVersionRef from, final String header, final String footer,
-                                  final String indent )
+    public String printStructure( final ProjectVersionRef from, final String header, final String footer, final String indent,
+                                  final Map<String, Set<ProjectVersionRef>> labels )
     {
-        //        final Set<ProjectRelationship<?>> refs = new HashSet<ProjectRelationship<?>>();
-        //        for ( final Map.Entry<ProjectVersionRef, List<ProjectRelationship<?>>> entry : outboundLinks.entrySet() )
-        //        {
-        //            refs.add( entry.getKey() );
-        //            final List<ProjectRelationship<?>> list = entry.getValue();
-        //            if ( list != null )
-        //            {
-        //                refs.addAll( list );
-        //            }
-        //        }
-
-        //        logger.info( "Printing structure for: %s using %d accumulated project references.", from, refs.size() );
-
         final StringBuilder builder = new StringBuilder();
         if ( header != null )
         {
@@ -125,7 +115,7 @@ public class StructurePrintingTraversal
         builder.append( "\n" );
         builder.append( from );
 
-        printLinks( from, builder, indent, 1 );
+        printLinks( from, builder, indent, 1, labels, new HashSet<ProjectRef>() );
         builder.append( "\n" );
 
         if ( footer != null )
@@ -136,14 +126,20 @@ public class StructurePrintingTraversal
         return builder.toString();
     }
 
-    private void printLinks( final ProjectVersionRef from, final StringBuilder builder, final String indent,
-                             final int depth )
+    private void printLinks( final ProjectVersionRef from, final StringBuilder builder, final String indent, final int depth,
+                             final Map<String, Set<ProjectVersionRef>> labels, final Set<ProjectRef> excluded )
     {
         final List<ProjectRelationship<?>> outbound = outboundLinks.get( from );
         if ( outbound != null )
         {
             for ( final ProjectRelationship<?> out : outbound )
             {
+                if ( excluded.contains( out.getTarget()
+                                           .asProjectVersionRef() ) )
+                {
+                    continue;
+                }
+
                 builder.append( "\n" );
 
                 for ( int i = 0; i < depth; i++ )
@@ -151,21 +147,43 @@ public class StructurePrintingTraversal
                     builder.append( indent );
                 }
 
-                relationshipPrinter.print( out, builder );
+                relationshipPrinter.print( out, builder, labels );
 
                 if ( !from.equals( out.getTarget()
-                                      .asProjectVersionRef() ) )
+                                      .asProjectRef() ) )
                 {
+                    Set<ProjectRef> newExcluded = null;
+                    if ( out instanceof DependencyRelationship )
+                    {
+                        final Set<ProjectRef> excludes = ( (DependencyRelationship) out ).getExcludes();
+                        if ( excludes != null && !excludes.isEmpty() )
+                        {
+                            newExcluded = new HashSet<ProjectRef>();
+                            for ( final ProjectRef ref : excludes )
+                            {
+                                if ( !excluded.contains( ref ) )
+                                {
+                                    newExcluded.add( ref );
+                                    excluded.add( ref );
+                                }
+                            }
+                        }
+                    }
+
                     printLinks( out.getTarget()
-                                   .asProjectVersionRef(), builder, indent, depth + 1 );
+                                   .asProjectVersionRef(), builder, indent, depth + 1, labels, excluded );
+
+                    if ( newExcluded != null && !newExcluded.isEmpty() )
+                    {
+                        excluded.removeAll( newExcluded );
+                    }
                 }
             }
         }
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                             final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         return traversal == null || traversal.preCheck( relationship, path, pass );
     }
@@ -191,8 +209,7 @@ public class StructurePrintingTraversal
     }
 
     @Override
-    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                               final int pass )
+    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         if ( traversal != null )
         {
