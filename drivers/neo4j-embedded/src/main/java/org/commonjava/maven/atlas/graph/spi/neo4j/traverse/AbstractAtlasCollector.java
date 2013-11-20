@@ -3,6 +3,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isDeselected;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectVersionRef;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
 import java.util.Collections;
@@ -14,6 +15,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -118,9 +120,10 @@ public abstract class AbstractAtlasCollector<T>
                 }
             }
 
-            log( "Implementation says return the children of: %s (lastRel=%s)", path.endNode()
-                                                                                    .hasProperty( GAV ) ? path.endNode()
-                                                                                                              .getProperty( GAV ) : "Unknown", rel );
+            log( "Implementation says return the children of: %s\n  lastRel=%s\n  nextFilter=%s\n\n",
+                 path.endNode()
+                     .hasProperty( GAV ) ? path.endNode()
+                                               .getProperty( GAV ) : "Unknown", rel, nextFilter );
 
             final Set<Relationship> nextRelationships = new HashSet<Relationship>();
             final Iterable<Relationship> relationships = path.endNode()
@@ -132,6 +135,11 @@ public abstract class AbstractAtlasCollector<T>
                 if ( nextFilter != null )
                 {
                     relationshipFilters.put( r.getId(), nextFilter );
+                    log( "+= %s [%s]", logwrapper( r ), nextFilter );
+                }
+                else
+                {
+                    log( "+= %s [global: %s]", logwrapper( r ), view.getFilter() );
                 }
             }
 
@@ -157,7 +165,32 @@ public abstract class AbstractAtlasCollector<T>
             filter = view.getFilter();
         }
 
-        return accepted( r, filter, view.getWorkspace(), wsNode );
+        final boolean accept = accepted( r, filter, view.getWorkspace(), wsNode );
+
+        if ( logEnabled )
+        {
+            final Set<ProjectVersionRef> gavs = new HashSet<ProjectVersionRef>( startNodes.size() );
+            for ( final Node node : startNodes )
+            {
+                gavs.add( toProjectVersionRef( node ) );
+            }
+
+            log( "Checking acceptance: %s [roots: %s, filter: %s]...%s", logwrapper( r ), gavs, filter, accept );
+        }
+
+        return accept;
+    }
+
+    private Object logwrapper( final Relationship r )
+    {
+        return new Object()
+        {
+            @Override
+            public String toString()
+            {
+                return String.valueOf( toProjectRelationship( r ) );
+            }
+        };
     }
 
     @Override

@@ -107,7 +107,8 @@ public final class TraversalUtils
 
                 if ( !found )
                 {
-                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s", r );
+                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s (r=%s, permissable sources: %s)", s, r,
+                           sources );
                     return false;
                 }
             }

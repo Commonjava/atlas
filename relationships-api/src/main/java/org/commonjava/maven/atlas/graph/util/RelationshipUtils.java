@@ -16,6 +16,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.util;
 
+import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.ident.util.IdentityUtils.artifact;
 import static org.commonjava.maven.atlas.ident.util.IdentityUtils.projectVersion;
 
@@ -46,6 +47,7 @@ import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
+import org.commonjava.util.logging.Logger;
 
 public final class RelationshipUtils
 {
@@ -92,18 +94,23 @@ public final class RelationshipUtils
 
     public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<ProjectRelationship<?>> relationships )
     {
+        final Logger logger = new Logger( RelationshipUtils.class );
+        logger.info( "Mapping %d relationships by declaring GAV:\n\n  %s\n\n", relationships.size(), join( relationships, "\n  " ) );
         final Map<ProjectVersionRef, List<ProjectRelationship<?>>> result = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
         for ( final ProjectRelationship<?> rel : relationships )
         {
             final ProjectVersionRef declaring = rel.getDeclaring();
-            List<ProjectRelationship<?>> rels = result.get( declaring );
-            if ( rels == null )
+            List<ProjectRelationship<?>> outbound = result.get( declaring );
+            if ( outbound == null )
             {
-                rels = new ArrayList<ProjectRelationship<?>>();
-                result.put( declaring, rels );
+                outbound = new ArrayList<ProjectRelationship<?>>();
+                result.put( rel.getDeclaring(), outbound );
             }
 
-            rels.add( rel );
+            if ( !outbound.contains( rel ) )
+            {
+                outbound.add( rel );
+            }
         }
 
         return result;

@@ -18,6 +18,7 @@ public class RootedRelationshipsCollector
     public RootedRelationshipsCollector( final Node start, final GraphView view, final Node wsNode, final boolean checkExistence )
     {
         super( start, view, wsNode, checkExistence );
+        //        logEnabled = true;
     }
 
     public RootedRelationshipsCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence )
@@ -60,7 +61,6 @@ public class RootedRelationshipsCollector
     {
         if ( accept( path ) )
         {
-            //                logger.info( "FOUND path ending in: %s", endId );
             for ( final Relationship r : path.relationships() )
             {
                 found.add( r );

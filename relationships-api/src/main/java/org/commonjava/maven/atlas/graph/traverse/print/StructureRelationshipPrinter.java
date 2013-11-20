@@ -8,5 +8,6 @@ import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public interface StructureRelationshipPrinter
 {
-    void print( ProjectRelationship<?> relationship, StringBuilder builder, Map<String, Set<ProjectVersionRef>> labels );
+    void print( ProjectRelationship<?> relationship, ProjectVersionRef targetOverride, StringBuilder builder,
+                Map<String, Set<ProjectVersionRef>> labels, int depth, String indent );
 }

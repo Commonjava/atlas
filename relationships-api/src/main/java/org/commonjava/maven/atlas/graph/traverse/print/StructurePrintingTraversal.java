@@ -142,15 +142,10 @@ public class StructurePrintingTraversal
 
                 builder.append( "\n" );
 
-                for ( int i = 0; i < depth; i++ )
-                {
-                    builder.append( indent );
-                }
-
-                relationshipPrinter.print( out, builder, labels );
+                relationshipPrinter.print( out, null, builder, labels, depth, indent );
 
                 if ( !from.equals( out.getTarget()
-                                      .asProjectRef() ) )
+                                      .asProjectVersionRef() ) )
                 {
                     Set<ProjectRef> newExcluded = null;
                     if ( out instanceof DependencyRelationship )

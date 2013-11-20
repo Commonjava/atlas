@@ -34,24 +34,22 @@ public final class PluginDependencyRelationship
 
     private final ProjectRef plugin;
 
-    public PluginDependencyRelationship( final URI source, final ProjectVersionRef declaring, final ProjectRef plugin,
-                                         final ArtifactRef target, final int index, final boolean managed )
+    public PluginDependencyRelationship( final URI source, final ProjectVersionRef declaring, final ProjectRef plugin, final ArtifactRef target,
+                                         final int index, final boolean managed )
     {
         super( source, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
         this.plugin = plugin;
     }
 
-    public PluginDependencyRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                                         final ProjectRef plugin, final ArtifactRef target, final int index,
-                                         final boolean managed )
+    public PluginDependencyRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring, final ProjectRef plugin,
+                                         final ArtifactRef target, final int index, final boolean managed )
     {
         super( source, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
         this.plugin = plugin;
     }
 
-    public PluginDependencyRelationship( final Collection<URI> sources, final URI pomLocation,
-                                         final ProjectVersionRef declaring, final ProjectRef plugin,
-                                         final ArtifactRef target, final int index, final boolean managed )
+    public PluginDependencyRelationship( final Collection<URI> sources, final URI pomLocation, final ProjectVersionRef declaring,
+                                         final ProjectRef plugin, final ArtifactRef target, final int index, final boolean managed )
     {
         super( sources, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
         this.plugin = plugin;
@@ -65,8 +63,7 @@ public final class PluginDependencyRelationship
     @Override
     public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new PluginDependencyRelationship( getSources(), getPomLocation(), projectRef, plugin, getTarget(),
-                                                 getIndex(), isManaged() );
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), projectRef, plugin, getTarget(), getIndex(), isManaged() );
     }
 
     @Override
@@ -116,8 +113,8 @@ public final class PluginDependencyRelationship
     @Override
     public String toString()
     {
-        return String.format( "PluginDependencyRelationship [%s(%s) => %s (managed=%s, index=%s)]", getDeclaring(),
-                              plugin, getTarget(), isManaged(), getIndex() );
+        return String.format( "PluginDependencyRelationship [%s -> (%s) => %s (managed=%s, index=%s)]", getDeclaring(), plugin, getTarget(),
+                              isManaged(), getIndex() );
     }
 
     @Override
@@ -138,8 +135,7 @@ public final class PluginDependencyRelationship
         final ProjectVersionRef d = getDeclaring().selectVersion( version, force );
         final ArtifactRef t = getTarget();
 
-        return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
-                                                 isManaged() );
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(), isManaged() );
     }
 
     @Override
@@ -155,8 +151,7 @@ public final class PluginDependencyRelationship
         ArtifactRef t = getTarget();
         t = new ArtifactRef( t.selectVersion( version, force ), t.getType(), t.getClassifier(), t.isOptional() );
 
-        return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
-                                                 isManaged() );
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(), isManaged() );
     }
 
 }

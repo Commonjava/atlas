@@ -8,6 +8,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class DependencyTreeRelationshipPrinter
@@ -15,10 +16,30 @@ public class DependencyTreeRelationshipPrinter
 {
 
     @Override
-    public void print( final ProjectRelationship<?> relationship, final StringBuilder builder, final Map<String, Set<ProjectVersionRef>> labels )
+    public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget, final StringBuilder builder,
+                       final Map<String, Set<ProjectVersionRef>> labels, final int depth, final String indent )
     {
+        for ( int i = 0; i < depth; i++ )
+        {
+            builder.append( indent );
+        }
+
         final RelationshipType type = relationship.getType();
-        builder.append( relationship.getTargetArtifact() );
+
+        ArtifactRef targetArtifact = relationship.getTargetArtifact();
+        ProjectVersionRef target = selectedTarget;
+        final ProjectVersionRef originalTargetGAV = targetArtifact.asProjectVersionRef();
+
+        if ( selectedTarget == null )
+        {
+            target = originalTargetGAV;
+        }
+        else
+        {
+            targetArtifact = selectedTarget.asArtifactRef( targetArtifact.getTypeAndClassifier() );
+        }
+
+        builder.append( targetArtifact );
 
         final Set<String> localLabels = new HashSet<String>();
 
@@ -43,9 +64,6 @@ public class DependencyTreeRelationshipPrinter
         {
             localLabels.add( type.name() );
         }
-
-        final ProjectVersionRef target = relationship.getTarget()
-                                                     .asProjectVersionRef();
 
         boolean hasLabel = false;
         if ( !localLabels.isEmpty() )
@@ -94,6 +112,13 @@ public class DependencyTreeRelationshipPrinter
         if ( hasLabel )
         {
             builder.append( ')' );
+        }
+
+        if ( originalTargetGAV != target )
+        {
+            builder.append( " [was: " )
+                   .append( originalTargetGAV )
+                   .append( "]" );
         }
     }
 }

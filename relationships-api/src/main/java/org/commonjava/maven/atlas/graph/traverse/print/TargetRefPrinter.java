@@ -12,10 +12,17 @@ public final class TargetRefPrinter
 {
 
     @Override
-    public void print( final ProjectRelationship<?> relationship, final StringBuilder builder, final Map<String, Set<ProjectVersionRef>> labels )
+    public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget, final StringBuilder builder,
+                       final Map<String, Set<ProjectVersionRef>> labels, final int depth, final String indent )
     {
-        final ProjectVersionRef target = relationship.getTarget()
-                                                     .asProjectVersionRef();
+        for ( int i = 0; i < depth; i++ )
+        {
+            builder.append( indent );
+        }
+
+        final ProjectVersionRef originalTarget = relationship.getTarget()
+                                                             .asProjectVersionRef();
+        final ProjectVersionRef target = selectedTarget == null ? originalTarget : selectedTarget;
         builder.append( target );
 
         boolean hasLabel = false;
@@ -44,6 +51,13 @@ public final class TargetRefPrinter
         if ( hasLabel )
         {
             builder.append( ')' );
+        }
+
+        if ( target != originalTarget )
+        {
+            builder.append( " [was: " )
+                   .append( originalTarget )
+                   .append( "]" );
         }
     }
 

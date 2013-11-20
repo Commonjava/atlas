@@ -200,15 +200,15 @@ public abstract class AbstractNeo4JEGraphDriver
     private void printGraphStats()
     {
         final Logger logger = new Logger( getClass() );
-        logger.info( "Loaded approximately %d nodes.", graph.index()
-                                                            .forNodes( BY_GAV_IDX )
-                                                            .query( GAV, "*" )
-                                                            .size() );
-
-        logger.info( "Loaded approximately %d relationships.", graph.index()
-                                                                    .forRelationships( ALL_RELATIONSHIPS )
-                                                                    .query( RELATIONSHIP_ID, "*" )
+        logger.info( "Graph contains approximately %d nodes.", graph.index()
+                                                                    .forNodes( BY_GAV_IDX )
+                                                                    .query( GAV, "*" )
                                                                     .size() );
+
+        logger.info( "Graph contains approximately %d relationships.", graph.index()
+                                                                            .forRelationships( ALL_RELATIONSHIPS )
+                                                                            .query( RELATIONSHIP_ID, "*" )
+                                                                            .size() );
     }
 
     @Override
@@ -500,6 +500,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
         updateCaches( skipped, rels, connectedSubgraphs );
 
+        printGraphStats();
+
         return skipped;
     }
 
@@ -781,8 +783,6 @@ public abstract class AbstractNeo4JEGraphDriver
     public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
         throws GraphDriverException
     {
-        printCaller( "TRAVERSE" );
-
         final Node rootNode = getNode( root );
         if ( rootNode == null )
         {
@@ -864,11 +864,6 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         return relTypes;
-    }
-
-    private void printCaller( final String label )
-    {
-        //        logger.debug( "\n\n\n\n%s called from:\n\n%s\n\n\n\n", label, join( new Throwable().getStackTrace(), "\n" ) );
     }
 
     @Override
@@ -1201,8 +1196,6 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public Set<EProjectCycle> getCycles( final GraphView view )
     {
-        printCaller( "GET-CYCLES" );
-
         final IndexHits<Relationship> hits = graph.index()
                                                   .forRelationships( CYCLE_INJECTION_IDX )
                                                   .query( RELATIONSHIP_ID, "*" );

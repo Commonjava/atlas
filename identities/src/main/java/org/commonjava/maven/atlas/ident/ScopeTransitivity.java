@@ -16,6 +16,10 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident;
 
+import static org.commonjava.maven.atlas.ident.DependencyScope.embedded;
+import static org.commonjava.maven.atlas.ident.DependencyScope.runtime;
+import static org.commonjava.maven.atlas.ident.DependencyScope.toolchain;
+
 public enum ScopeTransitivity
 {
     maven
@@ -23,7 +27,15 @@ public enum ScopeTransitivity
         @Override
         public DependencyScope getChildFor( final DependencyScope scope )
         {
-            return DependencyScope.runtime;
+            switch ( scope )
+            {
+                case embedded:
+                    return embedded;
+                case toolchain:
+                    return toolchain;
+                default:
+                    return runtime;
+            }
         }
     },
 
