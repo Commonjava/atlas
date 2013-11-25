@@ -14,23 +14,30 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.apache.maven.graph.common.version;
+package org.commonjava.maven.atlas.ident.version;
 
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
+
+import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
+import org.commonjava.maven.atlas.ident.version.RangeVersionSpec;
 import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.junit.Test;
 
-public class VersionUtilsTest
+public class VersionRangeTest
 {
 
     @Test
-    public void createSingleTimestampVersionFormat()
-        throws Exception
+    public void identialRangeEquality()
+        throws InvalidVersionSpecificationException
     {
-        final String spec = "20031129.200437";
-        final SingleVersion version = VersionUtils.createSingleVersion( spec );
+        final RangeVersionSpec r1 = VersionUtils.createRange( "[1.1.1-baz-1,1.1.1-baz-2]" );
+        final RangeVersionSpec r2 = VersionUtils.createRange( "[1.1.1-baz-1,1.1.1-baz-2]" );
 
-        System.out.println( version );
+        assertThat( r1.renderStandard(), equalTo( r2.renderStandard() ) );
+        assertThat( r1.hashCode(), equalTo( r2.hashCode() ) );
+        assertThat( r1, equalTo( r2 ) );
+        assertThat( r2, equalTo( r1 ) );
     }
 
 }

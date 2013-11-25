@@ -1,4 +1,4 @@
-package org.apache.maven.graph.common.ref;
+package org.commonjava.maven.atlas.ident.ref;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;

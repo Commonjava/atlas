@@ -22,6 +22,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ScopeTransitivity;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -80,8 +81,7 @@ public class DependencyFilter
     public boolean doAccept( final ProjectRelationship<?> rel )
     {
         final DependencyRelationship dr = (DependencyRelationship) rel;
-        if ( excludes.contains( dr.getTarget()
-                                  .asProjectRef() ) )
+        if ( RelationshipUtils.isExcluded( dr.getTarget(), excludes ) )
         {
             return false;
         }

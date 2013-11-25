@@ -26,6 +26,7 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -124,7 +125,7 @@ public class ListPrinter
                             newExcluded = new HashSet<ProjectRef>();
                             for ( final ProjectRef ref : excludes )
                             {
-                                if ( !excluded.contains( ref ) )
+                                if ( !RelationshipUtils.isExcluded( ref, excluded ) )
                                 {
                                     newExcluded.add( ref );
                                     excluded.add( ref );

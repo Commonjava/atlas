@@ -14,7 +14,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  ******************************************************************************/
-package org.apache.maven.graph.common.version;
+package org.commonjava.maven.atlas.ident.version;
 
 /*
  * Licensed to the Apache Software Foundation (ASF) under one

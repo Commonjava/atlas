@@ -92,6 +92,29 @@ public final class RelationshipUtils
         }
     }
 
+    public static boolean isExcluded( final ProjectRef ref, final Collection<ProjectRef> excludes )
+    {
+        if ( excludes == null || excludes.isEmpty() )
+        {
+            return false;
+        }
+
+        for ( final ProjectRef ex : excludes )
+        {
+            if ( ex == null )
+            {
+                continue;
+            }
+
+            if ( ex.matches( ref ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<ProjectRelationship<?>> relationships )
     {
         final Logger logger = new Logger( RelationshipUtils.class );

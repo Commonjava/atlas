@@ -36,8 +36,7 @@ public class ProjectRef
     {
         if ( isEmpty( groupId ) || isEmpty( artifactId ) )
         {
-            throw new InvalidRefException( "ProjectId must contain non-empty groupId AND artifactId. (Given: '"
-                + groupId + "':'" + artifactId + "')" );
+            throw new InvalidRefException( "ProjectId must contain non-empty groupId AND artifactId. (Given: '" + groupId + "':'" + artifactId + "')" );
         }
 
         this.groupId = groupId;
@@ -49,8 +48,7 @@ public class ProjectRef
         final String[] parts = ga.split( ":" );
         if ( parts.length < 2 || isEmpty( parts[0] ) || isEmpty( parts[1] ) )
         {
-            throw new InvalidRefException( "ProjectRef must contain non-empty groupId AND artifactId. (Given: '"
-                + ga + "')" );
+            throw new InvalidRefException( "ProjectRef must contain non-empty groupId AND artifactId. (Given: '" + ga + "')" );
         }
 
         return new ProjectRef( parts[0], parts[1] );
@@ -124,6 +122,36 @@ public class ProjectRef
         }
 
         return 0;
+    }
+
+    public boolean matches( final ProjectRef ref )
+    {
+        if ( equals( ref ) )
+        {
+            return true;
+        }
+
+        final String gidPattern = toWildcard( getGroupId() );
+        if ( !ref.getGroupId()
+                 .matches( gidPattern ) )
+        {
+            return false;
+        }
+
+        final String aidPattern = toWildcard( getArtifactId() );
+        if ( !ref.getArtifactId()
+                 .matches( aidPattern ) )
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    private String toWildcard( final String val )
+    {
+        return val.replaceAll( "\\.", "\\." )
+                  .replaceAll( "\\*", ".*" );
     }
 
 }

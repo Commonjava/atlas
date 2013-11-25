@@ -29,6 +29,7 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -156,7 +157,7 @@ public class StructurePrintingTraversal
                             newExcluded = new HashSet<ProjectRef>();
                             for ( final ProjectRef ref : excludes )
                             {
-                                if ( !excluded.contains( ref ) )
+                                if ( !RelationshipUtils.isExcluded( ref, excluded ) )
                                 {
                                     newExcluded.add( ref );
                                     excluded.add( ref );
