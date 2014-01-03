@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.commonjava</groupId>
     <artifactId>commonjava</artifactId>
-    <version>2</version>
+    <version>3</version>
   </parent>
 
   <groupId>org.commonjava.maven.atlas</groupId>
