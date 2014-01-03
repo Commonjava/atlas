@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (C) 2013 John Casey.
+ * Copyright (C) 2014 John Casey.
  * 
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -223,7 +223,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final Index<Node> index = graph.index()
                                        .forNodes( BY_GAV_IDX );
-        final IndexHits<Node> hits = index.get( GAV, ref.toString() );
+        final IndexHits<Node> hits = index.get( GAV, ref.asProjectVersionRef()
+                                                        .toString() );
 
         if ( hits.hasNext() )
         {
@@ -250,7 +251,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final Index<Node> index = graph.index()
                                        .forNodes( BY_GAV_IDX );
-        final IndexHits<Node> hits = index.get( GAV, ref.toString() );
+        final IndexHits<Node> hits = index.get( GAV, ref.asProjectVersionRef()
+                                                        .toString() );
 
         if ( hits.hasNext() )
         {
@@ -375,7 +377,8 @@ public abstract class AbstractNeo4JEGraphDriver
                 int i = 0;
                 for ( final ProjectVersionRef ref : new ProjectVersionRef[] { declaring, target } )
                 {
-                    final IndexHits<Node> hits = index.get( GAV, ref.toString() );
+                    final IndexHits<Node> hits = index.get( GAV, ref.asProjectVersionRef()
+                                                                    .toString() );
                     if ( !hits.hasNext() )
                     {
                         logger.debug( "Creating new node for: %s to support addition of relationship: %s", ref, rel );
@@ -668,7 +671,8 @@ public abstract class AbstractNeo4JEGraphDriver
         final Node node = graph.createNode();
         toNodeProperties( ref, node, false );
 
-        final String gav = ref.toString();
+        final String gav = ref.asProjectVersionRef()
+                              .toString();
 
         graph.index()
              .forNodes( BY_GAV_IDX )
@@ -1014,12 +1018,13 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( MISSING_NODES_IDX )
-                                          .get( GAV, ref.toString() );
+                                          .get( GAV, ref.asProjectVersionRef()
+                                                        .toString() );
 
         return hits.size() > 0;
         //        final IndexHits<Node> hits = graph.index()
         //                                          .forNodes( BY_GAV_IDX )
-        //                                          .get( GAV, ref.toString() );
+        //                                          .get( GAV, ref.asProjectVersionRef().toString() );
         //
         //        if ( hits.size() > 0 )
         //        {
@@ -1672,7 +1677,8 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         return graph.index()
                     .forNodes( BY_GA_IDX )
-                    .query( GA, variable.toString() );
+                    .query( GA, variable.asProjectRef()
+                                        .toString() );
     }
 
     private synchronized Relationship selectRelationship( final Relationship from, final ProjectVersionRef select, final Transaction tx )
@@ -1919,7 +1925,8 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final IndexHits<Node> hits = graph.index()
                                           .forNodes( BY_GA_IDX )
-                                          .query( GA, projectRef.toString() );
+                                          .query( GA, projectRef.asProjectRef()
+                                                                .toString() );
         return new HashSet<ProjectVersionRef>( convertToProjects( hits ) );
     }
 
