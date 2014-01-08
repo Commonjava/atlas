@@ -64,8 +64,11 @@ public class ListPrinter
             builder.append( header );
         }
 
+        builder.append( "  " );
+        relationshipPrinter.printProjectVersionRef( from, builder, null, labels, null );
+        //      builder.append( from );
+
         final Set<String> lines = new LinkedHashSet<String>();
-        lines.add( from.toString() );
 
         printLinks( from, lines, links, labels, new HashSet<ProjectRef>() );
 

@@ -24,6 +24,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -31,40 +32,57 @@ public class DependencyTreeRelationshipPrinter
     implements StructureRelationshipPrinter
 {
 
+    private final Set<ProjectVersionRef> missing;
+
+    public DependencyTreeRelationshipPrinter()
+    {
+        missing = null;
+    }
+
+    public DependencyTreeRelationshipPrinter( final Set<ProjectVersionRef> missing )
+    {
+        this.missing = missing;
+    }
+
     @Override
     public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget, final StringBuilder builder,
                        final Map<String, Set<ProjectVersionRef>> labels, final int depth, final String indent )
     {
-        for ( int i = 0; i < depth; i++ )
-        {
-            builder.append( indent );
-        }
+        indent( builder, depth, indent );
 
         final RelationshipType type = relationship.getType();
 
+        final ProjectVersionRef originalTarget = relationship.getTarget()
+                                                             .asProjectVersionRef();
+
+        ProjectVersionRef target = null;
         ArtifactRef targetArtifact = relationship.getTargetArtifact();
-        ProjectVersionRef target = selectedTarget;
-        final ProjectVersionRef originalTargetGAV = targetArtifact.asProjectVersionRef();
 
         if ( selectedTarget == null )
         {
-            target = originalTargetGAV;
+            target = originalTarget;
         }
         else
         {
+            target = selectedTarget;
             targetArtifact = selectedTarget.asArtifactRef( targetArtifact.getTypeAndClassifier() );
         }
 
-        builder.append( targetArtifact );
-
         final Set<String> localLabels = new HashSet<String>();
 
+        String suffix = null;
         if ( type == RelationshipType.DEPENDENCY )
         {
             final DependencyRelationship dr = (DependencyRelationship) relationship;
-            builder.append( ':' )
-                   .append( dr.getScope()
-                              .name() );
+            if ( DependencyScope._import == dr.getScope() /*&& dr.isManaged() && "pom".equals( dr.getType() )*/)
+            {
+                localLabels.add( "BOM" );
+            }
+            else
+            {
+                suffix = ":" + dr.getScope()
+                                 .name();
+            }
 
             if ( dr.getTargetArtifact()
                    .isOptional() )
@@ -81,8 +99,38 @@ public class DependencyTreeRelationshipPrinter
             localLabels.add( type.name() );
         }
 
+        printProjectVersionRef( targetArtifact, builder, suffix, labels, localLabels );
+
+        if ( !target.equals( originalTarget ) )
+        {
+            builder.append( " [was: " )
+                   .append( originalTarget )
+                   .append( "]" );
+        }
+
+        if ( missing != null && missing.contains( target ) )
+        {
+            builder.append( '\n' );
+            indent( builder, depth + 1, indent );
+            builder.append( "???" );
+        }
+    }
+
+    @Override
+    public void printProjectVersionRef( final ProjectVersionRef targetArtifact, final StringBuilder builder, final String targetSuffix,
+                                        final Map<String, Set<ProjectVersionRef>> labels, final Set<String> localLabels )
+    {
+        // the original could be an artifact ref!
+        final ProjectVersionRef target = targetArtifact.asProjectVersionRef();
+
+        builder.append( targetArtifact );
+        if ( targetSuffix != null )
+        {
+            builder.append( targetSuffix );
+        }
+
         boolean hasLabel = false;
-        if ( !localLabels.isEmpty() )
+        if ( localLabels != null && !localLabels.isEmpty() )
         {
             hasLabel = true;
             builder.append( " (" );
@@ -129,12 +177,13 @@ public class DependencyTreeRelationshipPrinter
         {
             builder.append( ')' );
         }
+    }
 
-        if ( originalTargetGAV != target )
+    private void indent( final StringBuilder builder, final int depth, final String indent )
+    {
+        for ( int i = 0; i < depth; i++ )
         {
-            builder.append( " [was: " )
-                   .append( originalTargetGAV )
-                   .append( "]" );
+            builder.append( indent );
         }
     }
 }

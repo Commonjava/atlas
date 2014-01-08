@@ -39,7 +39,26 @@ public final class TargetRefPrinter
         final ProjectVersionRef originalTarget = relationship.getTarget()
                                                              .asProjectVersionRef();
         final ProjectVersionRef target = selectedTarget == null ? originalTarget : selectedTarget;
+
+        printProjectVersionRef( target, builder, null, labels, null );
+
+        if ( target != originalTarget )
+        {
+            builder.append( " [was: " )
+                   .append( originalTarget )
+                   .append( "]" );
+        }
+    }
+
+    @Override
+    public void printProjectVersionRef( final ProjectVersionRef target, final StringBuilder builder, final String targetSuffix,
+                                        final Map<String, Set<ProjectVersionRef>> labels, final Set<String> localLabels )
+    {
         builder.append( target );
+        if ( targetSuffix != null )
+        {
+            builder.append( targetSuffix );
+        }
 
         boolean hasLabel = false;
         for ( final Entry<String, Set<ProjectVersionRef>> entry : labels.entrySet() )
@@ -67,13 +86,6 @@ public final class TargetRefPrinter
         if ( hasLabel )
         {
             builder.append( ')' );
-        }
-
-        if ( target != originalTarget )
-        {
-            builder.append( " [was: " )
-                   .append( originalTarget )
-                   .append( "]" );
         }
     }
 

@@ -26,4 +26,7 @@ public interface StructureRelationshipPrinter
 {
     void print( ProjectRelationship<?> relationship, ProjectVersionRef targetOverride, StringBuilder builder,
                 Map<String, Set<ProjectVersionRef>> labels, int depth, String indent );
+
+    void printProjectVersionRef( ProjectVersionRef targetArtifact, StringBuilder builder, String targetSuffix,
+                                 Map<String, Set<ProjectVersionRef>> labels, Set<String> localLabels );
 }

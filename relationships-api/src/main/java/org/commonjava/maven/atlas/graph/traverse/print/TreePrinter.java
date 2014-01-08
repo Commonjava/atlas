@@ -75,7 +75,8 @@ public class TreePrinter
         }
 
         builder.append( "\n" );
-        builder.append( from );
+        relationshipPrinter.printProjectVersionRef( from, builder, null, labels, null );
+        //        builder.append( from );
 
         printLinks( from, builder, indent, 1, links, labels, new HashSet<ProjectRef>() );
         builder.append( "\n" );
