@@ -49,6 +49,7 @@ public final class GraphWorkspaceConfiguration
         if ( activePomLocations == null )
         {
             activePomLocations = new HashSet<URI>();
+            activePomLocations.add( RelationshipUtils.POM_ROOT_URI );
         }
     }
 
@@ -82,6 +83,13 @@ public final class GraphWorkspaceConfiguration
     {
         initActivePomLocations();
         this.activePomLocations.add( pomLocation );
+        return this;
+    }
+
+    public GraphWorkspaceConfiguration withoutRootPomLocation()
+    {
+        initActivePomLocations();
+        this.activePomLocations.remove( RelationshipUtils.POM_ROOT_URI );
         return this;
     }
 
@@ -194,8 +202,8 @@ public final class GraphWorkspaceConfiguration
     @Override
     public String toString()
     {
-        return String.format( "GraphWorkspaceConfiguration [activePomLocations=%s, activeSources=%s, forceVersions=%s]",
-                              activePomLocations, activeSources, forceVersions );
+        return String.format( "GraphWorkspaceConfiguration [activePomLocations=%s, activeSources=%s, forceVersions=%s]", activePomLocations,
+                              activeSources, forceVersions );
     }
 
 }
