@@ -35,23 +35,29 @@ public class TreePrinter
 
     private final StructureRelationshipPrinter relationshipPrinter;
 
-    private final boolean collapseTransitives;
+    //    private final boolean collapseTransitives;
 
-    private final Set<ProjectRef> seen = new HashSet<ProjectRef>();
+    //    private final Set<ProjectRef> seen = new HashSet<ProjectRef>();
 
     private final Map<ProjectRef, ProjectVersionRef> selected = new HashMap<ProjectRef, ProjectVersionRef>();
 
     public TreePrinter()
     {
         this.relationshipPrinter = new TargetRefPrinter();
-        this.collapseTransitives = true;
+        //        this.collapseTransitives = true;
     }
 
-    public TreePrinter( final StructureRelationshipPrinter relationshipPrinter, final boolean collapseTransitives )
+    public TreePrinter( final StructureRelationshipPrinter relationshipPrinter )
     {
         this.relationshipPrinter = relationshipPrinter;
-        this.collapseTransitives = collapseTransitives;
     }
+
+    // TODO: Reinstate transitive collapse IF we can find a way to make output consistent.
+    //    public TreePrinter( final StructureRelationshipPrinter relationshipPrinter, final boolean collapseTransitives )
+    //    {
+    //        this.relationshipPrinter = relationshipPrinter;
+    //        this.collapseTransitives = collapseTransitives;
+    //    }
 
     public String printStructure( final ProjectVersionRef from, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
                                   final Map<String, Set<ProjectVersionRef>> labels )
@@ -105,11 +111,12 @@ public class TreePrinter
                 {
                     continue;
                 }
-                else if ( collapseTransitives && !seen.add( out.getTarget()
-                                                               .asProjectRef() ) )
-                {
-                    return;
-                }
+                // TODO: Reinstate transitive collapse IF we can find a way to make output consistent.
+                //                else if ( collapseTransitives && !seen.add( out.getTarget()
+                //                                                               .asProjectRef() ) )
+                //                {
+                //                    return;
+                //                }
 
                 builder.append( "\n" );
 

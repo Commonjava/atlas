@@ -37,7 +37,7 @@ public class ListPrinter
 
     private final StructureRelationshipPrinter relationshipPrinter;
 
-    private final Set<ProjectRef> seen = new HashSet<ProjectRef>();
+    //    private final Set<ProjectRef> seen = new HashSet<ProjectRef>();
 
     public ListPrinter()
     {
@@ -105,11 +105,12 @@ public class ListPrinter
                 {
                     continue;
                 }
-                else if ( !seen.add( out.getTarget()
-                                        .asProjectRef() ) )
-                {
-                    return;
-                }
+                // TODO: Reinstate transitive collapse IF we can find a way to make output consistent.
+                //                else if ( !seen.add( out.getTarget()
+                //                                        .asProjectRef() ) )
+                //                {
+                //                    return;
+                //                }
 
                 builder.setLength( 0 );
 
