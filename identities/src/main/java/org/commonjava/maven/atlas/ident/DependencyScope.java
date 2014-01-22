@@ -16,8 +16,10 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 public enum DependencyScope
@@ -70,6 +72,28 @@ public enum DependencyScope
         }
 
         return null;
+    }
+
+    public static DependencyScope[] parseScopes( final String scopesStr )
+    {
+        final String[] rawScopes = scopesStr.split( "\\s*[+,|]+\\s*" );
+        final List<DependencyScope> result = new ArrayList<DependencyScope>( rawScopes.length );
+        for ( final String rawScope : rawScopes )
+        {
+            if ( rawScope == null || rawScope.trim()
+                                             .length() < 1 )
+            {
+                continue;
+            }
+
+            final DependencyScope scope = getScope( rawScope );
+            if ( scope != null && !result.contains( scope ) )
+            {
+                result.add( scope );
+            }
+        }
+
+        return result.toArray( new DependencyScope[result.size()] );
     }
 
 }
