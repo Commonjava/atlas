@@ -153,7 +153,7 @@ public class FileNeo4jWorkspaceFactory
             return null;
         }
 
-        GraphWorkspaceConfiguration config;
+        GraphWorkspaceConfiguration config = null;
 
         final File configFile = new File( db, "workspace-config.json" );
         if ( configFile.exists() )
@@ -173,9 +173,10 @@ public class FileNeo4jWorkspaceFactory
                 closeQuietly( stream );
             }
         }
-        else
+
+        if ( config == null )
         {
-            config = new GraphWorkspaceConfiguration();
+            throw new GraphDriverException( "No configuration found for workspace: %s. Cannot load.", id );
         }
 
         return new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ), configFile.lastModified() );
