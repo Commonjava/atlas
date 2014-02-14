@@ -29,6 +29,8 @@ public enum ScopeTransitivity
         {
             switch ( scope )
             {
+                case provided:
+                    return null;
                 case embedded:
                     return embedded;
                 case toolchain:
