@@ -23,6 +23,7 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -187,5 +188,15 @@ public class GraphView
     public GraphDatabaseDriver getDatabase()
     {
         return workspace.getDatabase();
+    }
+
+    public VersionManager getSelections()
+    {
+        return workspace.getSelections();
+    }
+
+    public void setSelections( final VersionManager selections )
+    {
+        workspace.setSelections( selections );
     }
 }

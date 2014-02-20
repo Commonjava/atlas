@@ -66,7 +66,37 @@ public class ProjectRef
 
     public ProjectRef asProjectRef()
     {
-        return new ProjectRef( getGroupId(), getArtifactId() );
+        return ProjectRef.class.equals( getClass() ) ? this : new ProjectRef( getGroupId(), getArtifactId() );
+    }
+
+    public VersionlessArtifactRef asVersionlessPomArtifact()
+    {
+        return asVersionlessArtifactRef( "pom", null, false );
+    }
+
+    public VersionlessArtifactRef asVersionlessJarArtifact()
+    {
+        return asVersionlessArtifactRef( "jar", null, false );
+    }
+
+    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier )
+    {
+        return asVersionlessArtifactRef( type, classifier, false );
+    }
+
+    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier, final boolean optional )
+    {
+        return new VersionlessArtifactRef( this, type, classifier, optional );
+    }
+
+    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc )
+    {
+        return asVersionlessArtifactRef( tc, false );
+    }
+
+    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc, final boolean optional )
+    {
+        return new VersionlessArtifactRef( this, tc, optional );
     }
 
     @Override

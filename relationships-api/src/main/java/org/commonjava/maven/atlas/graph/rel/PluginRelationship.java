@@ -33,36 +33,34 @@ public final class PluginRelationship
 
     private final boolean reporting;
 
-    public PluginRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target,
-                               final int index, final boolean managed )
+    public PluginRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target, final int index,
+                               final boolean managed )
     {
         this( source, declaring, target, index, managed, false );
     }
 
-    public PluginRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target,
-                               final int index, final boolean managed, final boolean reporting )
+    public PluginRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target, final int index,
+                               final boolean managed, final boolean reporting )
     {
         super( source, RelationshipType.PLUGIN, declaring, target, index, managed );
         this.reporting = reporting;
     }
 
-    public PluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                               final ProjectVersionRef target, final int index, final boolean managed )
+    public PluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring, final ProjectVersionRef target,
+                               final int index, final boolean managed )
     {
         this( source, pomLocation, declaring, target, index, managed, false );
     }
 
-    public PluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                               final ProjectVersionRef target, final int index, final boolean managed,
-                               final boolean reporting )
+    public PluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring, final ProjectVersionRef target,
+                               final int index, final boolean managed, final boolean reporting )
     {
         super( source, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed );
         this.reporting = reporting;
     }
 
     public PluginRelationship( final Collection<URI> sources, final URI pomLocation, final ProjectVersionRef declaring,
-                               final ProjectVersionRef target, final int index, final boolean managed,
-                               final boolean reporting )
+                               final ProjectVersionRef target, final int index, final boolean managed, final boolean reporting )
     {
         super( sources, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed );
         this.reporting = reporting;
@@ -76,8 +74,7 @@ public final class PluginRelationship
     @Override
     public synchronized ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new PluginRelationship( getSources(), getPomLocation(), projectRef, getTarget(), getIndex(),
-                                       isManaged(), reporting );
+        return new PluginRelationship( getSources(), getPomLocation(), projectRef, getTarget(), getIndex(), isManaged(), reporting );
     }
 
     @Override
@@ -115,8 +112,7 @@ public final class PluginRelationship
     @Override
     public String toString()
     {
-        return String.format( "PluginRelationship [%s => %s (managed=%s, index=%s)]", getDeclaring(), getTarget(),
-                              isManaged(), getIndex() );
+        return String.format( "PluginRelationship [%s => %s (managed=%s, index=%s)]", getDeclaring(), getTarget(), isManaged(), getIndex() );
     }
 
     @Override
@@ -153,6 +149,22 @@ public final class PluginRelationship
         final ProjectVersionRef t = getTarget().selectVersion( version, force );
 
         return new PluginRelationship( getSources(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final ProjectVersionRef ref )
+    {
+        final ProjectVersionRef t = getTarget();
+
+        return new PluginRelationship( getSources(), getPomLocation(), ref, t, getIndex(), isManaged(), isReporting() );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectTarget( final ProjectVersionRef ref )
+    {
+        final ProjectVersionRef d = getDeclaring();
+
+        return new PluginRelationship( getSources(), getPomLocation(), d, ref, getIndex(), isManaged(), isReporting() );
     }
 
 }

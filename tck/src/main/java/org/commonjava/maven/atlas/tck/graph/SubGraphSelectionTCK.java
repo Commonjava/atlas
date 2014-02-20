@@ -101,7 +101,7 @@ public abstract class SubGraphSelectionTCK
         System.out.println( "Incomplete after selecting:\n  " + incomplete );
         assertThat( incomplete.contains( selDep ), equalTo( true ) );
 
-        ws.clearVersionSelections();
+        ws.clearSelections();
 
         variables = graph.getVariableSubgraphs();
         System.out.println( "Variable after clearing:\n  " + variables );

@@ -38,6 +38,7 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.rel.AbstractProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -73,10 +74,6 @@ public class JungEGraphDriver
     private transient Set<ProjectVersionRef> incompleteSubgraphs = new HashSet<ProjectVersionRef>();
 
     private transient Set<ProjectVersionRef> variableSubgraphs = new HashSet<ProjectVersionRef>();
-
-    private transient Map<ProjectVersionRef, ProjectVersionRef> selected = new HashMap<ProjectVersionRef, ProjectVersionRef>();
-
-    private transient Map<ProjectRef, ProjectVersionRef> selectedForAll = new HashMap<ProjectRef, ProjectVersionRef>();
 
     private final Map<String, Set<ProjectVersionRef>> metadataOwners = new HashMap<String, Set<ProjectVersionRef>>();
 
@@ -121,7 +118,6 @@ public class JungEGraphDriver
         {
             final ProjectVersionRef target = edge.getTarget()
                                                  .asProjectVersionRef();
-            final ProjectVersionRef selected = getSelectedVersion( target );
             final Set<URI> sources = workspace.getActiveSources();
             if ( sources != null && !sources.isEmpty() )
             {
@@ -163,27 +159,26 @@ public class JungEGraphDriver
                 }
             }
 
+            final VersionManager selections = view.getSelections();
+            ProjectVersionRef selected = null;
+            if ( selections != null )
+            {
+                selected = selections.getSelected( target );
+
+                if ( selected == null )
+                {
+                    selected = selections.getSelected( target.asProjectRef() );
+                }
+            }
+
             if ( selected != null )
             {
-                // FIXME: Fix the api to allow relocations!
-                result.add( edge.selectTarget( (SingleVersion) selected.getVersionSpec() ) );
+                result.add( edge.selectTarget( selected ) );
             }
             else
             {
                 result.add( edge );
             }
-        }
-
-        return result;
-    }
-
-    private ProjectVersionRef getSelectedVersion( final ProjectVersionRef ref )
-    {
-        ProjectVersionRef result = selected.get( ref.asProjectVersionRef() );
-
-        if ( result == null )
-        {
-            result = selectedForAll.get( ref.asProjectRef() );
         }
 
         return result;
@@ -519,6 +514,18 @@ public class JungEGraphDriver
         public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
         {
             return new SelfEdge( getDeclaring().selectVersion( version, force ) );
+        }
+
+        @Override
+        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final ProjectVersionRef ref )
+        {
+            return this;
+        }
+
+        @Override
+        public ProjectRelationship<ProjectVersionRef> selectTarget( final ProjectVersionRef ref )
+        {
+            return this;
         }
 
     }
@@ -981,35 +988,28 @@ public class JungEGraphDriver
         }
     }
 
-    @Override
-    public void selectVersionFor( final ProjectVersionRef ref, final ProjectVersionRef selected )
-    {
-        this.selected.put( ref.asProjectVersionRef(), selected );
-    }
-
-    @Override
-    public void selectVersionForAll( final ProjectRef ref, final ProjectVersionRef selected )
-    {
-        selectedForAll.put( ref.asProjectRef(), selected );
-    }
-
-    @Override
-    public boolean clearSelectedVersions()
-    {
-        selected.clear();
-        selectedForAll.clear();
-        return true;
-    }
-
+    /**
+     * @deprecated Use {@link #getDirectRelationshipsFrom(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
+     */
+    @Deprecated
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo, final RelationshipType... types )
     {
-        return getMatchingRelationships( graph.getOutEdges( from.asProjectVersionRef() ), view, includeManagedInfo, types );
+        return getDirectRelationshipsFrom( view, from, includeManagedInfo, true, types );
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
+                                                                   final boolean includeManagedInfo, final boolean includeConcreteInfo,
+                                                                   final RelationshipType... types )
+    {
+        return getMatchingRelationships( graph.getOutEdges( from.asProjectVersionRef() ), view, includeManagedInfo, includeConcreteInfo, types );
     }
 
     private Set<ProjectRelationship<?>> getMatchingRelationships( final Collection<ProjectRelationship<?>> edges, final GraphView view,
-                                                                  final boolean includeManagedInfo, final RelationshipType... types )
+                                                                  final boolean includeManagedInfo, final boolean includeConcreteInfo,
+                                                                  final RelationshipType... types )
     {
         if ( edges == null )
         {
@@ -1044,6 +1044,12 @@ public class JungEGraphDriver
                 continue;
             }
 
+            if ( !includeConcreteInfo && !rel.isManaged() )
+            {
+                // logger.info( "-= %s (wrong managed status)", rel );
+                continue;
+            }
+
             // logger.info( "+= %s", rel );
             rels.add( rel );
         }
@@ -1051,48 +1057,29 @@ public class JungEGraphDriver
         return rels;
     }
 
+    /**
+     * @deprecated Use {@link #getDirectRelationshipsTo(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
+     */
+    @Deprecated
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
     {
+        return getDirectRelationshipsTo( view, to, includeManagedInfo, true, types );
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
+                                                                 final boolean includeConcreteInfo, final RelationshipType... types )
+    {
         // logger.info( "Getting relationships targeting: %s (types: %s)", to, join( types, ", " ) );
-        return getMatchingRelationships( graph.getInEdges( to.asProjectVersionRef() ), view, includeManagedInfo, types );
+        return getMatchingRelationships( graph.getInEdges( to.asProjectVersionRef() ), view, includeManagedInfo, includeConcreteInfo, types );
     }
 
     @Override
     public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphView eProjectNetView )
     {
         return byGA.containsKey( projectRef.asProjectRef() ) ? byGA.get( projectRef.asProjectRef() ) : Collections.<ProjectVersionRef> emptySet();
-    }
-
-    @Override
-    public ProjectVersionRef getSelectedFor( final ProjectVersionRef ref )
-    {
-        return getSelectedVersion( ref.asProjectVersionRef() );
-    }
-
-    @Override
-    public Map<ProjectVersionRef, ProjectVersionRef> getSelections()
-    {
-        return selected;
-    }
-
-    @Override
-    public boolean hasSelectionFor( final ProjectVersionRef ref )
-    {
-        return selected.containsKey( ref.asProjectVersionRef() );
-    }
-
-    @Override
-    public boolean hasSelectionForAll( final ProjectRef ref )
-    {
-        return selectedForAll.containsKey( ref.asProjectRef() );
-    }
-
-    @Override
-    public Map<ProjectRef, ProjectVersionRef> getWildcardSelections()
-    {
-        return selectedForAll;
     }
 
 }

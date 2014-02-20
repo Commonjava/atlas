@@ -239,14 +239,14 @@ public class EGraphManager
                                                                     final boolean includeManagedInfo, final RelationshipType... types )
     {
         return view.getDatabase()
-                   .getDirectRelationshipsFrom( view, from, includeManagedInfo, types );
+                   .getDirectRelationshipsFrom( view, from, includeManagedInfo, true, types );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
                                                                   final RelationshipType... types )
     {
         return view.getDatabase()
-                   .getDirectRelationshipsTo( view, to, includeManagedInfo, types );
+                   .getDirectRelationshipsTo( view, to, includeManagedInfo, true, types );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphWorkspace workspace, final ProjectVersionRef from,

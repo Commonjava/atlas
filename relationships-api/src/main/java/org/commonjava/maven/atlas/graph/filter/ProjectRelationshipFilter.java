@@ -18,13 +18,42 @@ package org.commonjava.maven.atlas.graph.filter;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
+/**
+ * Filter used to determine which paths in a dependency graph to traverse (or discover).
+ * The full dependency graph (relation dependency, not just maven-style dependency)
+ * will be QUITE extensive, so a filter should be used in NEARLY ALL cases.
+ * 
+ * @author jdcasey
+ */
 public interface ProjectRelationshipFilter
 {
 
+    /**
+     * Determine whether the given relationship should be traversed.
+     * 
+     * @param rel The relationship in question
+     * @return true to allow traversal, false otherwise.
+     */
     boolean accept( ProjectRelationship<?> rel );
 
+    /**
+     * Return the filter used to handle the next wave of relationships after the 
+     * given one is traversed.
+     * 
+     * @param parent The parent relationship for the set of relationships to which
+     * the return filter from this method will be applied
+     * 
+     * @return This instance WHENEVER POSSIBLE, but possibly a different filter 
+     * if the relationship demands a shift in logic.
+     */
     ProjectRelationshipFilter getChildFilter( ProjectRelationship<?> parent );
 
+    /**
+     * Render a user-friendly description for what this filter does.
+     * 
+     * @param sb buffer used to accumulate description info (used to concatenate
+     * descriptions for embedded or aggregate filtering)
+     */
     void render( StringBuilder sb );
 
 }

@@ -17,7 +17,6 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isDeselected;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectVersionRef;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
@@ -31,6 +30,8 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
@@ -58,29 +59,25 @@ public abstract class AbstractAtlasCollector<T>
 
     protected final boolean checkExistence;
 
-    protected final Node wsNode;
-
     protected GraphView view;
 
     protected Map<Long, ProjectRelationshipFilter> relationshipFilters = new HashMap<Long, ProjectRelationshipFilter>();
 
-    protected AbstractAtlasCollector( final Node start, final GraphView view, final Node wsNode, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), view, wsNode, checkExistence );
+        this( Collections.singleton( start ), view, checkExistence );
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
     {
         this.startNodes = startNodes;
         this.view = view;
-        this.wsNode = wsNode;
         this.checkExistence = checkExistence;
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final Node wsNode, final boolean checkExistence,
-                                      final Direction direction )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence, final Direction direction )
     {
-        this( startNodes, view, wsNode, checkExistence );
+        this( startNodes, view, checkExistence );
         this.direction = direction;
     }
 
@@ -144,8 +141,21 @@ public abstract class AbstractAtlasCollector<T>
             final Set<Relationship> nextRelationships = new HashSet<Relationship>();
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction );
-            for ( final Relationship r : relationships )
+            for ( Relationship r : relationships )
             {
+                final Relationship selected = ( (AbstractNeo4JEGraphDriver) view.getDatabase() ).select( r, view );
+
+                // if no selection happened and r is a selection-only relationship, skip it.
+                if ( ( selected == null || selected == r ) && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
+                {
+                    continue;
+                }
+
+                if ( selected != null )
+                {
+                    r = selected;
+                }
+
                 nextRelationships.add( r );
 
                 if ( nextFilter != null )
@@ -172,7 +182,7 @@ public abstract class AbstractAtlasCollector<T>
         final Relationship r = path.lastRelationship();
         if ( r == null )
         {
-            return !isDeselected( path.endNode(), wsNode );
+            return true;
         }
 
         ProjectRelationshipFilter filter = relationshipFilters.get( r.getId() );
@@ -181,7 +191,7 @@ public abstract class AbstractAtlasCollector<T>
             filter = view.getFilter();
         }
 
-        final boolean accept = accepted( r, filter, view.getWorkspace(), wsNode );
+        final boolean accept = accepted( r, filter, view.getWorkspace() );
 
         if ( logEnabled )
         {

@@ -17,31 +17,20 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
 import static org.apache.commons.lang.StringUtils.join;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.FORCE_VERSION_SELECTIONS;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.SOURCE_URI;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.addToURIListProperty;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.clearCloneStatus;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.cloneRelationshipProperties;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.convertToProjects;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.convertToRelationships;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getBooleanProperty;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getClonedId;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getInjectedCycles;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getMetadataMap;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getSpecificSelectionFor;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getSpecificSelections;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getStringProperty;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getWildcardSelection;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.id;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isConnected;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.markConnected;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.markCycleInjection;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.markSelectionOnly;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.markSpecificSelection;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.markWildcardSelection;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toNodeProperties;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectVersionRef;
@@ -66,6 +55,7 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
@@ -86,7 +76,6 @@ import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.cypher.javacompat.ExecutionEngine;
 import org.neo4j.cypher.javacompat.ExecutionResult;
@@ -125,8 +114,6 @@ public abstract class AbstractNeo4JEGraphDriver
     private static final String METADATA_INDEX_PREFIX = "has_metadata_";
 
     private static final String CACHED_ALL_PROJECT_REFS = "all-project-refs";
-
-    private static final long SELECTIONS_NODE = 1;
 
     //    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
 
@@ -272,8 +259,7 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
 
-            final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-            final RootedRelationshipsCollector checker = new RootedRelationshipsCollector( roots, view, wsNode, false );
+            final RootedRelationshipsCollector checker = new RootedRelationshipsCollector( roots, view, false );
 
             collectAtlasRelationships( view, checker, roots, false );
 
@@ -326,8 +312,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         final Set<Node> roots = getRoots( view );
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, view, wsNode, false );
+        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, view, false );
 
         collectAtlasRelationships( view, checker, roots, false );
 
@@ -344,8 +329,7 @@ public abstract class AbstractNeo4JEGraphDriver
     private Set<Path> getPathsTo( final GraphView view, final Set<Node> nodes )
     {
         final Set<Node> roots = getRoots( view );
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, view, wsNode, false );
+        final ConnectingPathsCollector checker = new ConnectingPathsCollector( roots, nodes, view, false );
 
         collectAtlasRelationships( view, checker, roots, false );
 
@@ -431,14 +415,6 @@ public abstract class AbstractNeo4JEGraphDriver
                         toRelationshipProperties( rel, relationship );
                         relIdx.add( relationship, RELATIONSHIP_ID, relId );
 
-                        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-                        final ProjectVersionRef selection = getWildcardSelection( target.asProjectRef(), wsNode );
-
-                        if ( selection != null )
-                        {
-                            selectRelationship( relationship, selection, tx );
-                        }
-
                         logger.debug( "Created relationship: %s (%s)", relationship, toProjectRelationship( relationship ) );
                     }
                     else
@@ -470,10 +446,9 @@ public abstract class AbstractNeo4JEGraphDriver
                     logger.debug( "Reusing existing relationship: %s (%s)", relationship, toProjectRelationship( relationship ) );
 
                     connectedSubgraphs.add( relationship.getEndNode() );
+                    Conversions.removeProperty( Conversions.SELECTION, relationship );
 
-                    clearCloneStatus( relationship );
                     addToURIListProperty( rel.getSources(), SOURCE_URI, relationship );
-                    markSelectionOnly( relationship, false );
                 }
             }
 
@@ -699,6 +674,80 @@ public abstract class AbstractNeo4JEGraphDriver
         return node;
     }
 
+    public Relationship select( final Relationship old, final GraphView view )
+    {
+        final VersionManager selections = view.getSelections();
+        if ( selections != null )
+        {
+            final ProjectVersionRef target = toProjectVersionRef( old.getEndNode() );
+            final ProjectVersionRef selected = selections.getSelected( target );
+            if ( selected != null )
+            {
+                final Transaction tx = graph.beginTx();
+                try
+                {
+                    Node selectedNode = getNode( selected );
+                    if ( selectedNode == null )
+                    {
+                        selectedNode = newProjectNode( selected );
+                    }
+
+                    Relationship result = null;
+                    if ( old.getEndNode()
+                            .getId() == selectedNode.getId() )
+                    {
+                        result = old;
+                    }
+
+                    if ( result == null )
+                    {
+                        final Iterable<Relationship> relationships = old.getStartNode()
+                                                                        .getRelationships( Direction.OUTGOING, old.getType() );
+                        for ( final Relationship r : relationships )
+                        {
+                            if ( r.getEndNode()
+                                  .getId() == selectedNode.getId() )
+                            {
+                                result = r;
+                                break;
+                            }
+                        }
+                    }
+
+                    if ( result == null )
+                    {
+                        final Relationship newR = old.getStartNode()
+                                                     .createRelationshipTo( selectedNode, old.getType() );
+
+                        logger.debug( "New selection relationship is: %s with type: %s", newR, old.getType() );
+
+                        Conversions.cloneRelationshipProperties( old, newR );
+                        newR.setProperty( Conversions.SELECTION, true );
+
+                        final RelationshipIndex relIdx = graph.index()
+                                                              .forRelationships( ALL_RELATIONSHIPS );
+
+                        final ProjectRelationship<?> rel = toProjectRelationship( newR );
+                        final String relId = id( rel );
+                        relIdx.add( newR, RELATIONSHIP_ID, relId );
+
+                        result = newR;
+                    }
+
+                    tx.success();
+
+                    return result;
+                }
+                finally
+                {
+                    tx.finish();
+                }
+            }
+        }
+
+        return old;
+    }
+
     @SuppressWarnings( "unchecked" )
     @Override
     public Set<ProjectVersionRef> getAllProjects( final GraphView view )
@@ -748,8 +797,7 @@ public abstract class AbstractNeo4JEGraphDriver
         Iterable<Node> nodes = null;
         if ( roots != null && !roots.isEmpty() )
         {
-            final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-            final RootedNodesCollector agg = new RootedNodesCollector( roots, view, wsNode, false );
+            final RootedNodesCollector agg = new RootedNodesCollector( roots, view, false );
             collectAtlasRelationships( view, agg, roots, false );
             nodes = agg;
         }
@@ -769,8 +817,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<Node> roots = getRoots( view );
         if ( roots != null && !roots.isEmpty() )
         {
-            final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-            final RootedNodesCollector agg = new RootedNodesCollector( roots, view, wsNode, false );
+            final RootedNodesCollector agg = new RootedNodesCollector( roots, view, false );
             collectAtlasRelationships( view, agg, roots, false );
             return agg.getFoundNodes();
         }
@@ -823,7 +870,7 @@ public abstract class AbstractNeo4JEGraphDriver
             final Set<Long> rootIds = getRootIds( view );
 
             @SuppressWarnings( { "rawtypes", "unchecked" } )
-            final MembershipWrappedTraversalEvaluator checker = new MembershipWrappedTraversalEvaluator( rootIds, traversal, i );
+            final MembershipWrappedTraversalEvaluator checker = new MembershipWrappedTraversalEvaluator( rootIds, traversal, view, i );
 
             description = description.expand( checker )
                                      .evaluator( checker );
@@ -951,8 +998,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         logger.debug( "Checking for path between roots: %s and target node: %s", join( roots, "," ), node.getId() );
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        final EndNodesCollector checker = new EndNodesCollector( roots, Collections.singleton( node ), view, wsNode, false );
+        final EndNodesCollector checker = new EndNodesCollector( roots, Collections.singleton( node ), view, false );
 
         collectAtlasRelationships( v, checker, roots, false );
         return checker.hasFoundNodes();
@@ -1057,7 +1103,6 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private Set<ProjectVersionRef> getIndexedProjects( final GraphView view, final Iterable<Node> hits )
     {
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
         final Set<Node> nodes = toSet( hits );
         final Set<Node> roots = getRoots( view );
         Set<Node> found;
@@ -1067,7 +1112,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
         else
         {
-            final EndNodesCollector checker = new EndNodesCollector( roots, nodes, view, wsNode, false );
+            final EndNodesCollector checker = new EndNodesCollector( roots, nodes, view, false );
             collectAtlasRelationships( view, checker, roots, false );
 
             //        logger.info( "Found %d nodes: %s", found.size(), found );
@@ -1085,10 +1130,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private boolean hasIndexedProjects( final GraphView view, final Iterable<Node> hits )
     {
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
         final Set<Node> nodes = toSet( hits );
         final Set<Node> roots = getRoots( view );
-        final EndNodesCollector checker = new EndNodesCollector( roots, nodes, view, wsNode, true );
+        final EndNodesCollector checker = new EndNodesCollector( roots, nodes, view, true );
 
         collectAtlasRelationships( view, checker, roots, false );
 
@@ -1588,221 +1632,6 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void selectVersionFor( final ProjectVersionRef variable, final ProjectVersionRef select )
-    {
-        logger.debug( "\n\n\n\nSELECT: %s for: %s\n\n\n\n", select, variable );
-        if ( !select.isSpecificVersion() )
-        {
-            logger.warn( "Cannot select non-concrete version! Attempted to select: %s", select );
-            return;
-        }
-
-        //        if ( variable.isRelease() )
-        //        {
-        //            logger.warn( "Cannot select version if target is already a concrete version! Attempted to select for: %s",
-        //                         variable );
-        //
-        //            return;
-        //        }
-
-        final Node node = getNode( variable );
-        final Iterable<Relationship> rels = node.getRelationships( Direction.INCOMING );
-
-        synchronized ( this )
-        {
-            final Transaction tx = graph.beginTx();
-            try
-            {
-                for ( final Relationship r : rels )
-                {
-                    selectRelationship( r, select, tx );
-                }
-
-                tx.success();
-            }
-            finally
-            {
-                tx.finish();
-            }
-        }
-    }
-
-    @Override
-    public void selectVersionForAll( final ProjectRef variable, final ProjectVersionRef select )
-    {
-        logger.debug( "\n\n\n\nSELECT: %s for: %s\n\n\n\n", select, variable );
-        if ( !select.isSpecificVersion() )
-        {
-            logger.warn( "Cannot select non-concrete version! Attempted to select: %s", select );
-            return;
-        }
-
-        //        if ( variable.isRelease() )
-        //        {
-        //            logger.warn( "Cannot select version if target is already a concrete version! Attempted to select for: %s",
-        //                         variable );
-        //
-        //            return;
-        //        }
-
-        synchronized ( this )
-        {
-            final Transaction tx = graph.beginTx();
-            try
-            {
-                final Iterable<Node> nodes = getNodes( variable );
-                for ( final Node node : nodes )
-                {
-                    final Iterable<Relationship> rels = node.getRelationships( Direction.INCOMING );
-
-                    for ( final Relationship r : rels )
-                    {
-                        selectRelationship( r, select, tx );
-                    }
-                }
-
-                final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-                markWildcardSelection( variable, select, wsNode );
-
-                tx.success();
-            }
-            finally
-            {
-                tx.finish();
-            }
-        }
-    }
-
-    private Iterable<Node> getNodes( final ProjectRef variable )
-    {
-        return graph.index()
-                    .forNodes( BY_GA_IDX )
-                    .query( GA, variable.asProjectRef()
-                                        .toString() );
-    }
-
-    private synchronized Relationship selectRelationship( final Relationship from, final ProjectVersionRef select, final Transaction tx )
-    {
-        Relationship to = null;
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        final boolean force = getBooleanProperty( FORCE_VERSION_SELECTIONS, wsNode, true );
-
-        //        logger.info( "\n\n\n\nSELECT: %s\n\n\n\n", toPR );
-        final ProjectRelationship<?> rel = toProjectRelationship( from );
-
-        final ProjectRelationship<?> sel = rel.selectTarget( (SingleVersion) select.getVersionSpec(), force );
-
-        final RelationshipIndex relIdx = graph.index()
-                                              .forRelationships( ALL_RELATIONSHIPS );
-
-        final String toId = id( sel );
-
-        //            logger.info( "\n\nLooking for relationship with id: %s", toId );
-        final IndexHits<Relationship> hits = relIdx.get( RELATIONSHIP_ID, toId );
-        if ( hits.size() < 1 )
-        {
-            Node toNode = getNode( sel.getTarget()
-                                      .asProjectVersionRef() );
-
-            if ( toNode == null )
-            {
-                logger.debug( "Creating new node to deal with selection of version: %s for: %s", select, rel );
-                toNode = newProjectNode( sel.getTarget()
-                                            .asProjectVersionRef() );
-
-                //                    logger.info( "Created node %s for selected project version: %s", toNode, toPR.getTarget()
-                //                                                                                                 .asProjectVersionRef() );
-            }
-
-            //                logger.info( "\n\nCreating relationship for selected: %s from node: %s to node: %s\n\n", toPR,
-            //                             fromNode, toNode );
-
-            final Node fromNode = from.getStartNode();
-
-            to = fromNode.createRelationshipTo( toNode, from.getType() );
-            markSelectionOnly( to, true );
-
-            cloneRelationshipProperties( from, to );
-            relIdx.add( to, RELATIONSHIP_ID, toId );
-
-            markConnected( fromNode, true );
-        }
-        else
-        {
-            to = hits.next();
-        }
-
-        markSpecificSelection( from.getEndNode(), to.getEndNode(), wsNode );
-
-        //        logger.info( "SELECTION DONE; returning: %s", to );
-
-        return to;
-    }
-
-    @Override
-    public synchronized boolean clearSelectedVersions()
-    {
-        Transaction tx = null;
-        try
-        {
-            tx = graph.beginTx();
-
-            final boolean result = clearSelectedVersions( tx );
-
-            tx.success();
-
-            return result;
-        }
-        finally
-        {
-            if ( tx != null )
-            {
-                tx.finish();
-            }
-        }
-    }
-
-    private boolean clearSelectedVersions( final Transaction tx )
-    {
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        if ( wsNode == null )
-        {
-            return false;
-        }
-
-        final Map<Long, Long> selections = Conversions.clearSelectionsAndDeselections( wsNode );
-
-        final Set<Long> deleted = new HashSet<Long>();
-        for ( final Entry<Long, Long> entry : selections.entrySet() )
-        {
-            final Long fromId = entry.getKey();
-            final Long toId = entry.getValue();
-
-            if ( deleted.contains( toId ) || deleted.contains( fromId ) )
-            {
-                //                logger.debug( "Selected- or Variable-relationship already deleted:\n  selected: %s\n    deleted? %s\n  variable: %s\n    deleted? %s.\nContinuing to next mapping.",
-                //                              toId, deleted.contains( toId ), fromId, deleted.contains( fromId ) );
-                continue;
-            }
-
-            final Node to = graph.getNodeById( toId );
-            final Iterable<Relationship> toRels = to.getRelationships( Direction.INCOMING );
-
-            for ( final Relationship relationship : toRels )
-            {
-                final long id = getClonedId( relationship );
-                if ( id > -1 )
-                {
-                    deleted.add( toId );
-                    relationship.delete();
-                }
-            }
-        }
-
-        return true;
-    }
-
-    @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
         if ( !containsProject( GraphView.GLOBAL, ref ) )
@@ -1825,9 +1654,21 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
+    /**
+     * @deprecated Use {@link #getDirectRelationshipsFrom(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
+     */
+    @Deprecated
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo, final RelationshipType... types )
+    {
+        return getDirectRelationshipsFrom( view, from, includeManagedInfo, true, types );
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
+                                                                   final boolean includeManagedInfo, final boolean includeConcreteInfo,
+                                                                   final RelationshipType... types )
     {
         final Node node = getNode( from );
         if ( node == null )
@@ -1838,7 +1679,11 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
         for ( final RelationshipType relType : types )
         {
-            grts.add( GraphRelType.map( relType, false ) );
+            if ( includeConcreteInfo )
+            {
+                grts.add( GraphRelType.map( relType, false ) );
+            }
+
             if ( includeManagedInfo )
             {
                 grts.add( GraphRelType.map( relType, true ) );
@@ -1849,12 +1694,10 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( relationships != null )
         {
-            final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-
             final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
             for ( final Relationship r : relationships )
             {
-                if ( TraversalUtils.acceptedInView( r, view, wsNode ) )
+                if ( TraversalUtils.acceptedInView( r, view ) )
                 {
                     final ProjectRelationship<?> rel = toProjectRelationship( r );
                     if ( rel != null )
@@ -1870,9 +1713,20 @@ public abstract class AbstractNeo4JEGraphDriver
         return null;
     }
 
+    /**
+     * @deprecated Use {@link #getDirectRelationshipsTo(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
+     */
+    @Deprecated
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
+    {
+        return getDirectRelationshipsTo( view, to, includeManagedInfo, true, types );
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
+                                                                 final boolean includeConcreteInfo, final RelationshipType... types )
     {
         logger.debug( "Finding relationships targeting: %s (filter: %s, managed: %s, types: %s)", to, view.getFilter(), includeManagedInfo,
                       Arrays.asList( types ) );
@@ -1885,7 +1739,11 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
         for ( final RelationshipType relType : types )
         {
-            grts.add( GraphRelType.map( relType, false ) );
+            if ( includeConcreteInfo )
+            {
+                grts.add( GraphRelType.map( relType, false ) );
+            }
+
             if ( includeManagedInfo )
             {
                 grts.add( GraphRelType.map( relType, true ) );
@@ -1898,13 +1756,11 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( relationships != null )
         {
-            final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-
             final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
             for ( final Relationship r : relationships )
             {
                 logger.debug( "Examining relationship: %s", r );
-                if ( TraversalUtils.acceptedInView( r, view, wsNode ) )
+                if ( TraversalUtils.acceptedInView( r, view ) )
                 {
                     final ProjectRelationship<?> rel = toProjectRelationship( r );
                     if ( rel != null )
@@ -1928,88 +1784,6 @@ public abstract class AbstractNeo4JEGraphDriver
                                           .query( GA, projectRef.asProjectRef()
                                                                 .toString() );
         return new HashSet<ProjectVersionRef>( convertToProjects( hits ) );
-    }
-
-    @Override
-    public ProjectVersionRef getSelectedFor( final ProjectVersionRef ref )
-    {
-        final Node node = getNode( ref );
-        if ( node == null )
-        {
-            return null;
-        }
-
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
-        for ( final Relationship relationship : relationships )
-        {
-            if ( relationship != null )
-            {
-                final long selId = getSpecificSelectionFor( relationship.getEndNode()
-                                                                        .getId(), wsNode );
-                if ( selId > 0 )
-                {
-                    final Node selected = graph.getNodeById( selId );
-                    return toProjectVersionRef( selected );
-                }
-            }
-        }
-
-        return null;
-    }
-
-    @Override
-    public Map<ProjectVersionRef, ProjectVersionRef> getSelections()
-    {
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        final Map<Long, Long> selections = getSpecificSelections( wsNode );
-
-        final Map<ProjectVersionRef, ProjectVersionRef> results = new HashMap<ProjectVersionRef, ProjectVersionRef>( selections.size() );
-
-        for ( final Entry<Long, Long> entry : selections.entrySet() )
-        {
-            final Long key = entry.getKey();
-            final Long value = entry.getValue();
-
-            final Node from = graph.getNodeById( key );
-            final ProjectVersionRef fromRef = toProjectVersionRef( from );
-            if ( !results.containsKey( fromRef ) )
-            {
-                final Node to = graph.getNodeById( value );
-                final ProjectVersionRef toRef = toProjectVersionRef( to );
-
-                results.put( fromRef, toRef );
-            }
-        }
-
-        return results;
-    }
-
-    @Override
-    public boolean hasSelectionFor( final ProjectVersionRef ref )
-    {
-        final Node fromNode = getNode( ref );
-        if ( fromNode == null )
-        {
-            return false;
-        }
-
-        final Node wsNode = graph.getNodeById( SELECTIONS_NODE );
-        return getSpecificSelectionFor( fromNode.getId(), wsNode ) > -1;
-    }
-
-    @Override
-    public boolean hasSelectionForAll( final ProjectRef ref )
-    {
-        // TODO Auto-generated method stub
-        return false;
-    }
-
-    @Override
-    public Map<ProjectRef, ProjectVersionRef> getWildcardSelections()
-    {
-        // TODO Auto-generated method stub
-        return null;
     }
 
 }

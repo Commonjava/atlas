@@ -33,29 +33,28 @@ public class ConnectingPathsCollector
 
     private final Set<Node> endNodes;
 
-    public ConnectingPathsCollector( final Node start, final Node end, final GraphView view, final Node wsNode, final boolean checkExistence )
+    public ConnectingPathsCollector( final Node start, final Node end, final GraphView view, final boolean checkExistence )
     {
-        this( Collections.singleton( start ), Collections.singleton( end ), view, wsNode, checkExistence );
+        this( Collections.singleton( start ), Collections.singleton( end ), view, checkExistence );
     }
 
-    public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view, final Node wsNode,
-                                     final boolean checkExistence )
+    public ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view, final boolean checkExistence )
     {
-        super( startNodes, view, wsNode, checkExistence );
+        super( startNodes, view, checkExistence );
         this.endNodes = endNodes;
     }
 
-    private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view, final Node wsNode,
-                                      final boolean checkExistence, final Direction direction )
+    private ConnectingPathsCollector( final Set<Node> startNodes, final Set<Node> endNodes, final GraphView view, final boolean checkExistence,
+                                      final Direction direction )
     {
-        super( startNodes, view, wsNode, checkExistence, direction );
+        super( startNodes, view, checkExistence, direction );
         this.endNodes = endNodes;
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new ConnectingPathsCollector( startNodes, endNodes, view, wsNode, checkExistence, direction.reverse() );
+        return new ConnectingPathsCollector( startNodes, endNodes, view, checkExistence, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

@@ -132,4 +132,51 @@ public class VersionlessArtifactRef
         }
         return true;
     }
+
+    @Override
+    public VersionlessArtifactRef asVersionlessPomArtifact()
+    {
+        return asVersionlessArtifactRef( "pom", null, false );
+    }
+
+    @Override
+    public VersionlessArtifactRef asVersionlessJarArtifact()
+    {
+        return asVersionlessArtifactRef( "jar", null, false );
+    }
+
+    @Override
+    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier )
+    {
+        return asVersionlessArtifactRef( type, classifier, false );
+    }
+
+    @Override
+    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier, final boolean optional )
+    {
+        final TypeAndClassifier tc = new TypeAndClassifier( type, classifier );
+        if ( VersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) && this.optional == optional )
+        {
+            return this;
+        }
+
+        return super.asVersionlessArtifactRef( type, classifier, optional );
+    }
+
+    @Override
+    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc )
+    {
+        return asVersionlessArtifactRef( tc, false );
+    }
+
+    @Override
+    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc, final boolean optional )
+    {
+        if ( VersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) && this.optional == optional )
+        {
+            return this;
+        }
+
+        return super.asVersionlessArtifactRef( tc, optional );
+    }
 }

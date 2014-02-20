@@ -56,17 +56,11 @@ public interface GraphDatabaseDriver
      */
     Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel );
 
-    boolean clearSelectedVersions();
-
     void recomputeIncompleteSubgraphs()
         throws GraphDriverException;
 
     void reindex()
         throws GraphDriverException;
-
-    void selectVersionFor( ProjectVersionRef ref, ProjectVersionRef selected );
-
-    void selectVersionForAll( ProjectRef ref, ProjectVersionRef selected );
 
     /* 
      * ################################################
@@ -117,22 +111,26 @@ public interface GraphDatabaseDriver
 
     Set<ProjectVersionRef> getProjectsWithMetadata( GraphView view, String key );
 
+    /**
+     * @deprecated Use {@link #getDirectRelationshipsFrom(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
+     */
+    @Deprecated
     Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,
                                                             RelationshipType... types );
 
+    /**
+     * @deprecated Use {@link #getDirectRelationshipsTo(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
+     */
+    @Deprecated
     Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
                                                           RelationshipType... types );
 
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,
+                                                            boolean includeConcreteInfo, RelationshipType... types );
+
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
+                                                          boolean includeConcreteInfo, RelationshipType... types );
+
     Set<ProjectVersionRef> getProjectsMatching( ProjectRef projectRef, GraphView eProjectNetView );
-
-    ProjectVersionRef getSelectedFor( ProjectVersionRef ref );
-
-    Map<ProjectVersionRef, ProjectVersionRef> getSelections();
-
-    Map<ProjectRef, ProjectVersionRef> getWildcardSelections();
-
-    boolean hasSelectionFor( ProjectVersionRef ref );
-
-    boolean hasSelectionForAll( ProjectRef ref );
 
 }

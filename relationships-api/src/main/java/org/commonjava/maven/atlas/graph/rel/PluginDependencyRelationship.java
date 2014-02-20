@@ -154,4 +154,22 @@ public final class PluginDependencyRelationship
         return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(), isManaged() );
     }
 
+    @Override
+    public ProjectRelationship<ArtifactRef> selectDeclaring( final ProjectVersionRef ref )
+    {
+        final ArtifactRef t = getTarget();
+
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), ref, getPlugin(), t, getIndex(), isManaged() );
+    }
+
+    @Override
+    public ProjectRelationship<ArtifactRef> selectTarget( final ProjectVersionRef ref )
+    {
+        final ProjectVersionRef d = getDeclaring();
+        ArtifactRef t = getTarget();
+        t = (ArtifactRef) ( ( ref instanceof ArtifactRef ) ? ref : new ArtifactRef( ref, t.getType(), t.getClassifier(), t.isOptional() ) );
+
+        return new PluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(), isManaged() );
+    }
+
 }

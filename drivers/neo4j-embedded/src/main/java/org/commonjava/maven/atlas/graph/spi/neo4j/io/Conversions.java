@@ -29,7 +29,6 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -103,12 +102,6 @@ public final class Conversions
 
     public static final String CONNECTED = "_connected";
 
-    public static final String SELECTED = "_selected";
-
-    public static final String DESELECTED = "_deselected";
-
-    public static final String CLONE_OF = "_clone_of";
-
     public static final String CYCLE_INJECTION = "_cycle_injection";
 
     public static final String CYCLES_INJECTED = "_cycles";
@@ -117,21 +110,9 @@ public final class Conversions
 
     public static final String POM_LOCATION_URI = "pom_location_uri";
 
-    public static final String FORCE_VERSION_SELECTIONS = "force_selections";
-
     public static final String LAST_ACCESS_DATE = "last_access";
 
-    public static final String SELECTION_PREFIX = "rel_selection_";
-
-    public static final String DESELECTION_PREFIX = "rel_deselection_";
-
-    private static final int SELECTION_PREFIX_LEN = SELECTION_PREFIX.length();
-
-    public static final String SELECTION_ONLY = "_selection_only";
-
-    public static final String WILDCARD_SELECTION = "_wc_selection_";
-
-    public static final int SELECTED_PREFIX_LEN = SELECTED.length();
+    public static final String SELECTION = "_selection";
 
     private Conversions()
     {
@@ -730,153 +711,7 @@ public final class Conversions
         return cycles;
     }
 
-    public static void cloneRelationshipProperties( final Relationship from, final Relationship to )
-    {
-        final Iterable<String> keys = from.getPropertyKeys();
-        for ( final String key : keys )
-        {
-            to.setProperty( key, from.getProperty( key ) );
-        }
-
-        to.setProperty( CLONE_OF, from.getId() );
-    }
-
-    public static long getClonedId( final Relationship relationship )
-    {
-        if ( relationship.hasProperty( CLONE_OF ) )
-        {
-            return (Long) relationship.getProperty( CLONE_OF );
-        }
-
-        return -1;
-    }
-
-    public static boolean isCloneFor( final Relationship relationship, final Relationship original )
-    {
-        if ( relationship.hasProperty( CLONE_OF ) )
-        {
-            final long id = (Long) relationship.getProperty( CLONE_OF );
-            return original.getId() == id;
-        }
-
-        return false;
-    }
-
-    public static void clearCloneStatus( final Relationship relationship )
-    {
-        if ( relationship.hasProperty( CLONE_OF ) )
-        {
-            relationship.removeProperty( CLONE_OF );
-        }
-    }
-
-    public static void markSelectionOnly( final Relationship rel, final boolean value )
-    {
-        rel.setProperty( SELECTION_ONLY, value );
-    }
-
-    public static boolean isSelectionOnly( final Relationship rel )
-    {
-        return getBooleanProperty( SELECTION_ONLY, rel, false );
-    }
-
-    public static void markSpecificSelection( final Node from, final Node to, final Node wsNode )
-    {
-        wsNode.setProperty( SELECTION_PREFIX + from.getId(), to.getId() );
-        wsNode.setProperty( DESELECTION_PREFIX + to.getId(), from.getId() );
-    }
-
-    public static void markWildcardSelection( final ProjectRef from, final ProjectVersionRef to, final Node wsNode )
-    {
-        wsNode.setProperty( WILDCARD_SELECTION + from.toString(), to.toString() );
-    }
-
-    public static ProjectVersionRef getWildcardSelection( final ProjectRef ref, final Node wsNode )
-    {
-        if ( wsNode == null )
-        {
-            return null;
-        }
-
-        final String key = WILDCARD_SELECTION + ref.toString();
-        if ( wsNode.hasProperty( key ) )
-        {
-            return ProjectVersionRef.parse( (String) wsNode.getProperty( key ) );
-        }
-
-        return null;
-    }
-
-    public static Map<Long, Long> clearWildcardSelections( final Node wsNode )
-    {
-        final Map<Long, Long> selections = getSpecificSelections( wsNode );
-
-        for ( final String key : wsNode.getPropertyKeys() )
-        {
-            if ( key.startsWith( WILDCARD_SELECTION ) )
-            {
-                wsNode.removeProperty( key );
-            }
-        }
-
-        return selections;
-    }
-
-    public static Map<Long, Long> clearSelectionsAndDeselections( final Node wsNode )
-    {
-        final Map<Long, Long> selections = getSpecificSelections( wsNode );
-
-        for ( final Entry<Long, Long> entry : selections.entrySet() )
-        {
-            final Long key = entry.getKey();
-            final Long value = entry.getValue();
-
-            removeProperty( SELECTION_PREFIX + key, wsNode );
-            removeProperty( DESELECTION_PREFIX + value, wsNode );
-        }
-
-        return selections;
-    }
-
-    public static boolean isSelected( final Node node, final Node wsNode )
-    {
-        return wsNode.hasProperty( DESELECTION_PREFIX + node.getId() );
-    }
-
-    public static boolean isDeselected( final Node node, final Node wsNode )
-    {
-        return wsNode.hasProperty( SELECTION_PREFIX + node.getId() );
-    }
-
-    public static Map<Long, Long> getSpecificSelections( final Node session )
-    {
-        final Map<Long, Long> result = new HashMap<Long, Long>();
-        for ( final String key : session.getPropertyKeys() )
-        {
-            if ( key.startsWith( SELECTION_PREFIX ) && key.length() > SELECTION_PREFIX_LEN )
-            {
-                final Long k = Long.parseLong( key.substring( SELECTION_PREFIX_LEN ) );
-                final Long v = (Long) session.getProperty( key );
-
-                result.put( k, v );
-            }
-        }
-
-        return result;
-    }
-
-    public static long getSpecificSelectionFor( final long nodeId, final Node wsNode )
-    {
-        final String key = SELECTION_PREFIX + nodeId;
-        if ( wsNode.hasProperty( key ) )
-        {
-            return (Long) wsNode.getProperty( key );
-        }
-
-        return -1;
-    }
-
-    private static void removeProperty( final String key, final PropertyContainer container )
+    public static void removeProperty( final String key, final PropertyContainer container )
     {
         if ( container.hasProperty( key ) )
         {
@@ -917,4 +752,12 @@ public final class Conversions
         return set;
     }
 
+    public static void cloneRelationshipProperties( final Relationship from, final Relationship to )
+    {
+        final Iterable<String> keys = from.getPropertyKeys();
+        for ( final String key : keys )
+        {
+            to.setProperty( key, from.getProperty( key ) );
+        }
+    }
 }

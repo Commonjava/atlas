@@ -31,14 +31,12 @@ public final class ExtensionRelationship
 
     private static final long serialVersionUID = 1L;
 
-    public ExtensionRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target,
-                                  final int index )
+    public ExtensionRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target, final int index )
     {
         super( source, RelationshipType.EXTENSION, declaring, target, index );
     }
 
-    public ExtensionRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
-                                  final ProjectVersionRef target, final int index )
+    public ExtensionRelationship( final Collection<URI> sources, final ProjectVersionRef declaring, final ProjectVersionRef target, final int index )
     {
         super( sources, RelationshipType.EXTENSION, declaring, target, index );
     }
@@ -83,6 +81,22 @@ public final class ExtensionRelationship
         final ProjectVersionRef t = getTarget().selectVersion( version, force );
 
         return new ExtensionRelationship( getSources(), d, t, getIndex() );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final ProjectVersionRef ref )
+    {
+        final ProjectVersionRef t = getTarget();
+
+        return new ExtensionRelationship( getSources(), ref, t, getIndex() );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> selectTarget( final ProjectVersionRef ref )
+    {
+        final ProjectVersionRef d = getDeclaring();
+
+        return new ExtensionRelationship( getSources(), d, ref, getIndex() );
     }
 
 }

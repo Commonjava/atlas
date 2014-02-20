@@ -20,9 +20,6 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.POM_LOCA
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.SOURCE_URI;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getURIListProperty;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getURIProperty;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isDeselected;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isSelected;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.isSelectionOnly;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
@@ -42,7 +39,6 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.util.logging.Logger;
-import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 
@@ -55,14 +51,14 @@ public final class TraversalUtils
     {
     }
 
-    public static boolean acceptedInView( final Path path, final GraphView view, final Node wsNode )
+    public static boolean acceptedInView( final Path path, final GraphView view )
     {
         ProjectRelationshipFilter f = view.getFilter();
         final GraphWorkspace ws = view.getWorkspace();
 
         for ( final Relationship r : path.relationships() )
         {
-            if ( !accepted( r, f, ws, wsNode ) )
+            if ( !accepted( r, f, ws ) )
             {
                 return false;
             }
@@ -78,32 +74,16 @@ public final class TraversalUtils
         return true;
     }
 
-    public static boolean acceptedInView( final Relationship r, final GraphView view, final Node wsNode )
+    public static boolean acceptedInView( final Relationship r, final GraphView view )
     {
-        return accepted( r, view.getFilter(), view.getWorkspace(), wsNode );
+        return accepted( r, view.getFilter(), view.getWorkspace() );
     }
 
-    public static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace, final Node wsNode )
+    public static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace )
     {
         final ProjectRelationship<?> rel = toProjectRelationship( r );
 
         debug( "Checking relationship for acceptance: %s (%s)", r, rel );
-
-        if ( wsNode != null )
-        {
-            final Node endNode = r.getEndNode();
-            if ( r != null && isDeselected( endNode, wsNode ) )
-            {
-                debug( "REJECTED: Found relationship in path that was deselected: %s", r );
-                return false;
-            }
-
-            if ( r != null && isSelectionOnly( r ) && !isSelected( endNode, wsNode ) )
-            {
-                debug( "REJECTED: Found relationship in path that was not selected and is marked as selection-only: %s", r );
-                return false;
-            }
-        }
 
         if ( workspace != null )
         {

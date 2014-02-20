@@ -40,37 +40,32 @@ public final class DependencyRelationship
 
     private final Set<ProjectRef> excludes;
 
-    public DependencyRelationship( final URI source, final ProjectVersionRef declaring, final ArtifactRef target,
-                                   final DependencyScope scope, final int index, final boolean managed,
-                                   final ProjectRef... excludes )
+    public DependencyRelationship( final URI source, final ProjectVersionRef declaring, final ArtifactRef target, final DependencyScope scope,
+                                   final int index, final boolean managed, final ProjectRef... excludes )
     {
         super( source, RelationshipType.DEPENDENCY, declaring, target, index, managed );
         this.scope = scope == null ? DependencyScope.compile : scope;
         this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
     }
 
-    public DependencyRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                                   final ArtifactRef target, final DependencyScope scope, final int index,
-                                   final boolean managed, final ProjectRef... excludes )
+    public DependencyRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring, final ArtifactRef target,
+                                   final DependencyScope scope, final int index, final boolean managed, final ProjectRef... excludes )
     {
         super( source, pomLocation, RelationshipType.DEPENDENCY, declaring, target, index, managed );
         this.scope = scope == null ? DependencyScope.compile : scope;
         this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
     }
 
-    public DependencyRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
-                                   final ArtifactRef target, final DependencyScope scope, final int index,
-                                   final boolean managed, final ProjectRef... excludes )
+    public DependencyRelationship( final Collection<URI> sources, final ProjectVersionRef declaring, final ArtifactRef target,
+                                   final DependencyScope scope, final int index, final boolean managed, final ProjectRef... excludes )
     {
         super( sources, RelationshipType.DEPENDENCY, declaring, target, index, managed );
         this.scope = scope == null ? DependencyScope.compile : scope;
         this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
     }
 
-    public DependencyRelationship( final Collection<URI> sources, final URI pomLocation,
-                                   final ProjectVersionRef declaring, final ArtifactRef target,
-                                   final DependencyScope scope, final int index, final boolean managed,
-                                   final ProjectRef... excludes )
+    public DependencyRelationship( final Collection<URI> sources, final URI pomLocation, final ProjectVersionRef declaring, final ArtifactRef target,
+                                   final DependencyScope scope, final int index, final boolean managed, final ProjectRef... excludes )
     {
         super( sources, pomLocation, RelationshipType.DEPENDENCY, declaring, target, index, managed );
         this.scope = scope == null ? DependencyScope.compile : scope;
@@ -85,8 +80,7 @@ public final class DependencyRelationship
     @Override
     public synchronized ProjectRelationship<ArtifactRef> cloneFor( final ProjectVersionRef projectRef )
     {
-        return new DependencyRelationship( getSources(), getPomLocation(), projectRef, getTarget(), scope, getIndex(),
-                                           isManaged() );
+        return new DependencyRelationship( getSources(), getPomLocation(), projectRef, getTarget(), scope, getIndex(), isManaged() );
     }
 
     @Override
@@ -124,8 +118,8 @@ public final class DependencyRelationship
     @Override
     public String toString()
     {
-        return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s)]", getDeclaring(),
-                              getTarget(), isManaged(), scope, getIndex() );
+        return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s)]", getDeclaring(), getTarget(), isManaged(), scope,
+                              getIndex() );
     }
 
     @Override
@@ -167,6 +161,26 @@ public final class DependencyRelationship
         final ProjectVersionRef d = getDeclaring();
         ArtifactRef t = getTarget();
         t = new ArtifactRef( t.selectVersion( version, force ), t.getType(), t.getClassifier(), t.isOptional() );
+
+        return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
+                                           getExcludes().toArray( new ProjectRef[] {} ) );
+    }
+
+    @Override
+    public ProjectRelationship<ArtifactRef> selectDeclaring( final ProjectVersionRef ref )
+    {
+        final ArtifactRef t = getTarget();
+
+        return new DependencyRelationship( getSources(), getPomLocation(), ref, t, getScope(), getIndex(), isManaged(),
+                                           getExcludes().toArray( new ProjectRef[] {} ) );
+    }
+
+    @Override
+    public ProjectRelationship<ArtifactRef> selectTarget( final ProjectVersionRef ref )
+    {
+        final ProjectVersionRef d = getDeclaring();
+        ArtifactRef t = getTarget();
+        t = (ArtifactRef) ( ( ref instanceof ArtifactRef ) ? ref : new ArtifactRef( ref, t.getType(), t.getClassifier(), t.isOptional() ) );
 
         return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
                                            getExcludes().toArray( new ProjectRef[] {} ) );

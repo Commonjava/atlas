@@ -78,6 +78,50 @@ public abstract class TransitiveDependencyTraversalTCK
     }
 
     @Test
+    public void collectDependencyOfDependencyWithExternalDepManagement()
+        throws Exception
+    {
+        final URI source = sourceURI();
+        final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
+        final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
+        final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
+        final ProjectVersionRef d3 = projectVersion( "foo", "dep-L2", "1.1.2" );
+
+        /* @formatter:off */
+        final EProjectGraph graph = getManager().createGraph( 
+                simpleWorkspace(), 
+                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
+                    .withDependencies( dependency( source, root, d1, 0 ) )
+                    .build() 
+        );
+        
+        graph.addAll( Arrays.asList(
+                dependency( source, d1, d2, 0 )
+        ));
+        /* @formatter:on */
+
+        graph.getView()
+             .getWorkspace()
+             .selectVersion( d2.asProjectRef(), d3 );
+
+        final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
+        graph.traverse( depTraversal );
+
+        final List<ArtifactRef> artifacts = depTraversal.getArtifacts();
+
+        assertThat( artifacts.size(), equalTo( 2 ) );
+
+        int idx = 0;
+
+        ArtifactRef ref = artifacts.get( idx++ );
+        assertThat( ref.getArtifactId(), equalTo( "dep-L1" ) );
+
+        ref = artifacts.get( idx++ );
+        assertThat( ref.getArtifactId(), equalTo( "dep-L2" ) );
+        assertThat( ref.getVersionString(), equalTo( d3.getVersionString() ) );
+    }
+
+    @Test
     public void preferDirectDependency()
         throws Exception
     {

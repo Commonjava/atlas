@@ -26,8 +26,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -48,6 +48,8 @@ public final class GraphWorkspace
     private long lastAccess = System.currentTimeMillis();
 
     private final transient GraphDatabaseDriver dbDriver;
+
+    private VersionManager versionManager = new VersionManager();
 
     public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final GraphDatabaseDriver dbDriver )
     {
@@ -240,42 +242,27 @@ public final class GraphWorkspace
         return config.getActiveSources();
     }
 
-    public final ProjectVersionRef selectVersion( final ProjectVersionRef ref, final ProjectVersionRef selected )
-        throws GraphDriverException
+    public final ProjectVersionRef selectVersion( final ProjectRef ref, final ProjectVersionRef selected )
     {
         checkOpen();
-        if ( !selected.isSpecificVersion() )
+
+        if ( versionManager == null )
         {
-            throw new IllegalArgumentException( "You cannot select a non-concrete version!" );
+            versionManager = new VersionManager();
         }
 
-        dbDriver.selectVersionFor( ref, selected );
+        versionManager.select( ref, selected, true );
+
         fireSelectionAdded( ref, selected );
 
         fireAccessed();
         return selected;
     }
 
-    public final boolean selectVersionForAll( final ProjectRef ref, final ProjectVersionRef selected )
-        throws GraphDriverException
+    public final void clearSelections()
     {
         checkOpen();
-        if ( !selected.isSpecificVersion() )
-        {
-            throw new IllegalArgumentException( "You cannot select a non-concrete version!" );
-        }
-
-        dbDriver.selectVersionForAll( ref, selected );
-        fireWildcardSelectionAdded( ref, selected );
-
-        fireAccessed();
-        return true;
-    }
-
-    public final void clearVersionSelections()
-    {
-        checkOpen();
-        dbDriver.clearSelectedVersions();
+        versionManager = null;
         fireAccessed();
         fireSelectionsCleared();
     }
@@ -284,13 +271,13 @@ public final class GraphWorkspace
     {
         checkOpen();
         fireAccessed();
-        return dbDriver.getSelectedFor( ref );
+        return versionManager == null ? null : versionManager.getSelected( ref );
     }
 
-    public final Map<ProjectVersionRef, ProjectVersionRef> getVersionSelections()
+    public final VersionManager getSelections()
     {
         fireAccessed();
-        return dbDriver.getSelections();
+        return versionManager;
     }
 
     @Override
@@ -336,7 +323,6 @@ public final class GraphWorkspace
     {
         if ( open )
         {
-            clearVersionSelections();
             getDatabase().close();
             open = false;
             fireClosed();
@@ -369,17 +355,7 @@ public final class GraphWorkspace
         }
     }
 
-    private void fireWildcardSelectionAdded( final ProjectRef ref, final ProjectVersionRef selected )
-        throws GraphDriverException
-    {
-        for ( final GraphWorkspaceListener listener : listeners )
-        {
-            listener.wildcardSelectionAdded( this, ref, selected );
-        }
-    }
-
-    private void fireSelectionAdded( final ProjectVersionRef ref, final ProjectVersionRef selected )
-        throws GraphDriverException
+    private void fireSelectionAdded( final ProjectRef ref, final ProjectVersionRef selected )
     {
         for ( final GraphWorkspaceListener listener : listeners )
         {
@@ -420,12 +396,7 @@ public final class GraphWorkspace
 
     public boolean hasSelection( final ProjectVersionRef ref )
     {
-        return dbDriver.hasSelectionFor( ref );
-    }
-
-    public boolean hasSelectionForAll( final ProjectRef ref )
-    {
-        return dbDriver.hasSelectionForAll( ref );
+        return versionManager != null && ( versionManager.hasSelectionFor( ref ) || versionManager.hasSelectionFor( ref.asProjectRef() ) );
     }
 
     public boolean isForceVersions()
@@ -441,6 +412,11 @@ public final class GraphWorkspace
     public GraphWorkspaceConfiguration getConfiguration()
     {
         return config;
+    }
+
+    public void setSelections( final VersionManager selections )
+    {
+        this.versionManager = selections;
     }
 
 }

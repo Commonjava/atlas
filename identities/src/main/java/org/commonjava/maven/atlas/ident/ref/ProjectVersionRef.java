@@ -84,13 +84,18 @@ public class ProjectVersionRef
 
     public ProjectVersionRef asProjectVersionRef()
     {
-        return getClass().equals( ProjectVersionRef.class ) ? this : new ProjectVersionRef( getGroupId(), getArtifactId(), getVersionSpecRaw(),
+        return ProjectVersionRef.class.equals( getClass() ) ? this : new ProjectVersionRef( getGroupId(), getArtifactId(), getVersionSpecRaw(),
                                                                                             getVersionStringRaw() );
     }
 
     public ArtifactRef asPomArtifact()
     {
         return asArtifactRef( "pom", null, false );
+    }
+
+    public ArtifactRef asJarArtifact()
+    {
+        return asArtifactRef( "jar", null, false );
     }
 
     public ArtifactRef asArtifactRef( final String type, final String classifier )

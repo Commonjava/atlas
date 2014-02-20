@@ -21,7 +21,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.util.logging.Logger;
@@ -72,10 +74,13 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private int evalPreChecks = 0;
 
-    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final int pass )
+    private final GraphView view;
+
+    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view, final int pass )
     {
         this.rootIds = rootIds;
         this.traversal = traversal;
+        this.view = view;
         this.pass = pass;
     }
 
@@ -84,6 +89,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.rootIds = ev.rootIds;
         this.traversal = ev.traversal;
         this.pass = ev.pass;
+        this.view = ev.view;
         this.reversedExpander = reversedExpander;
     }
 
@@ -197,10 +203,14 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         }
 
         final Relationship rel = path.lastRelationship();
-        if ( rel != null && Conversions.getBooleanProperty( Conversions.DESELECTED, rel, false ) )
+        if ( rel != null )
         {
-            expMemberMisses++;
-            return Collections.emptySet();
+            final Relationship sel = ( (AbstractNeo4JEGraphDriver) view.getDatabase() ).select( rel, view );
+            if ( ( sel == null || sel == rel ) && Conversions.getBooleanProperty( Conversions.SELECTION, rel, false ) )
+            {
+                expMemberMisses++;
+                return Collections.emptySet();
+            }
         }
 
         expMemberHits++;
@@ -214,8 +224,20 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         final Set<Relationship> result = new HashSet<Relationship>();
         List<ProjectRelationship<?>> rels = null;
-        for ( final Relationship r : rs )
+        for ( Relationship r : rs )
         {
+            final Relationship selected = ( (AbstractNeo4JEGraphDriver) view.getDatabase() ).select( r, view );
+
+            // if no selection happened and r is a selection-only relationship, skip it.
+            if ( ( selected == null || selected == r ) && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
+            {
+                continue;
+            }
+
+            if ( selected != null )
+            {
+                r = selected;
+            }
             //            logger.info( "Attempting to expand: %s", r );
 
             if ( accepted.contains( r.getId() ) )

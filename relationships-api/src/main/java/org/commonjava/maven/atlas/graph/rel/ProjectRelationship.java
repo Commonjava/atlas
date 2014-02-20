@@ -41,17 +41,21 @@ public interface ProjectRelationship<T extends ProjectVersionRef>
 
     ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef );
 
-    // FIXME: Fix the api to allow relocations!
+    @Deprecated
     ProjectRelationship<T> selectDeclaring( SingleVersion version );
 
-    // FIXME: Fix the api to allow relocations!
+    @Deprecated
     ProjectRelationship<T> selectDeclaring( SingleVersion version, boolean force );
 
-    // FIXME: Fix the api to allow relocations!
+    @Deprecated
     ProjectRelationship<T> selectTarget( SingleVersion version );
 
-    // FIXME: Fix the api to allow relocations!
+    @Deprecated
     ProjectRelationship<T> selectTarget( SingleVersion version, boolean force );
+
+    ProjectRelationship<T> selectDeclaring( ProjectVersionRef ref );
+
+    ProjectRelationship<T> selectTarget( ProjectVersionRef ref );
 
     boolean isManaged();
 
