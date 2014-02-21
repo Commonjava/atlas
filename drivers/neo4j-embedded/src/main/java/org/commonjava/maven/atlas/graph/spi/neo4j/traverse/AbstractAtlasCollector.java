@@ -143,7 +143,8 @@ public abstract class AbstractAtlasCollector<T>
                                                              .getRelationships( direction );
             for ( Relationship r : relationships )
             {
-                final Relationship selected = ( (AbstractNeo4JEGraphDriver) view.getDatabase() ).select( r, view );
+                final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
+                final Relationship selected = db == null ? null : db.select( r, view );
 
                 // if no selection happened and r is a selection-only relationship, skip it.
                 if ( ( selected == null || selected == r ) && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )

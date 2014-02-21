@@ -205,7 +205,9 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         final Relationship rel = path.lastRelationship();
         if ( rel != null )
         {
-            final Relationship sel = ( (AbstractNeo4JEGraphDriver) view.getDatabase() ).select( rel, view );
+            final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
+            final Relationship sel = db == null ? null : db.select( rel, view );
+
             if ( ( sel == null || sel == rel ) && Conversions.getBooleanProperty( Conversions.SELECTION, rel, false ) )
             {
                 expMemberMisses++;
@@ -226,7 +228,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         List<ProjectRelationship<?>> rels = null;
         for ( Relationship r : rs )
         {
-            final Relationship selected = ( (AbstractNeo4JEGraphDriver) view.getDatabase() ).select( r, view );
+            final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
+            final Relationship selected = db == null ? null : db.select( r, view );
 
             // if no selection happened and r is a selection-only relationship, skip it.
             if ( ( selected == null || selected == r ) && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
