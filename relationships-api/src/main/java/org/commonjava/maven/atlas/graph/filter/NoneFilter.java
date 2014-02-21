@@ -18,20 +18,24 @@ package org.commonjava.maven.atlas.graph.filter;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
+// TODO: Optimize to ensure we're only creating a new instance when it's critical to...
 public class NoneFilter
     implements ProjectRelationshipFilter
 {
 
+    @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {
         return false;
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         return this;
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )
@@ -47,6 +51,18 @@ public class NoneFilter
         final StringBuilder sb = new StringBuilder();
         render( sb );
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        return obj instanceof NoneFilter;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return NoneFilter.class.hashCode();
     }
 
 }

@@ -56,6 +56,7 @@ public abstract class AbstractAggregatingFilter
             //            }
         }
 
+        // TODO: Optimize to ensure we're only creating a new instance when it's critical to...
         return newChildFilter( childFilters );
     }
 
@@ -65,6 +66,45 @@ public abstract class AbstractAggregatingFilter
     public Iterator<ProjectRelationshipFilter> iterator()
     {
         return new ArrayList<ProjectRelationshipFilter>( filters ).iterator();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ( ( filters == null ) ? 0 : filters.hashCode() );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( obj == null )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final AbstractAggregatingFilter other = (AbstractAggregatingFilter) obj;
+        if ( filters == null )
+        {
+            if ( other.filters != null )
+            {
+                return false;
+            }
+        }
+        else if ( !filters.equals( other.filters ) )
+        {
+            return false;
+        }
+        return true;
     }
 
 }

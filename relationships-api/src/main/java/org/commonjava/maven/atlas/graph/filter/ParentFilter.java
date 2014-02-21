@@ -48,11 +48,13 @@ public class ParentFilter
         return false;
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         return this;
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )
@@ -72,6 +74,38 @@ public class ParentFilter
         final StringBuilder sb = new StringBuilder();
         render( sb );
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ( allowTerminalParent ? 1231 : 1237 );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( !super.equals( obj ) )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final ParentFilter other = (ParentFilter) obj;
+        if ( allowTerminalParent != other.allowTerminalParent )
+        {
+            return false;
+        }
+        return true;
     }
 
 }

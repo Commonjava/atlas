@@ -31,6 +31,8 @@ public class ExtensionFilter
         super( RelationshipType.EXTENSION, RelationshipType.DEPENDENCY, false, true );
     }
 
+    // TODO: Optimize to minimize new instance creation...
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         if ( parent instanceof ExtensionRelationship )
@@ -43,6 +45,7 @@ public class ExtensionFilter
         }
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )

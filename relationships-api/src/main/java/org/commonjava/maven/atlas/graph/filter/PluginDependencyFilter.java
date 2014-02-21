@@ -35,8 +35,7 @@ public class PluginDependencyFilter
         this( plugin, false, true );
     }
 
-    public PluginDependencyFilter( final PluginRelationship plugin, final boolean includeManaged,
-                                   final boolean includeConcrete )
+    public PluginDependencyFilter( final PluginRelationship plugin, final boolean includeManaged, final boolean includeConcrete )
     {
         super( RelationshipType.PLUGIN_DEP, RelationshipType.DEPENDENCY, includeManaged, includeConcrete );
 
@@ -97,6 +96,45 @@ public class PluginDependencyFilter
         final StringBuilder sb = new StringBuilder();
         render( sb );
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ( ( plugin == null ) ? 0 : plugin.hashCode() );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( !super.equals( obj ) )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final PluginDependencyFilter other = (PluginDependencyFilter) obj;
+        if ( plugin == null )
+        {
+            if ( other.plugin != null )
+            {
+                return false;
+            }
+        }
+        else if ( !plugin.equals( other.plugin ) )
+        {
+            return false;
+        }
+        return true;
     }
 
 }

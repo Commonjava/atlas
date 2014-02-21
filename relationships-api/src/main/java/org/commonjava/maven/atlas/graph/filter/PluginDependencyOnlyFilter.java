@@ -34,8 +34,7 @@ public class PluginDependencyOnlyFilter
         this( plugin, false, true );
     }
 
-    public PluginDependencyOnlyFilter( final PluginRelationship plugin, final boolean includeManaged,
-                                       final boolean includeConcrete )
+    public PluginDependencyOnlyFilter( final PluginRelationship plugin, final boolean includeManaged, final boolean includeConcrete )
     {
         super( RelationshipType.PLUGIN_DEP, false, includeManaged, includeConcrete );
 
@@ -62,11 +61,14 @@ public class PluginDependencyOnlyFilter
         return false;
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
+        // TODO: Optimize to minimize new instance creation...
         return new NoneFilter();
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )
@@ -84,6 +86,45 @@ public class PluginDependencyOnlyFilter
         final StringBuilder sb = new StringBuilder();
         render( sb );
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ( ( plugin == null ) ? 0 : plugin.hashCode() );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( !super.equals( obj ) )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final PluginDependencyOnlyFilter other = (PluginDependencyOnlyFilter) obj;
+        if ( plugin == null )
+        {
+            if ( other.plugin != null )
+            {
+                return false;
+            }
+        }
+        else if ( !plugin.equals( other.plugin ) )
+        {
+            return false;
+        }
+        return true;
     }
 
 }

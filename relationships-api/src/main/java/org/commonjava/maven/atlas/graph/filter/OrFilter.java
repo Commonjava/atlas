@@ -37,6 +37,7 @@ public class OrFilter
         super( filters );
     }
 
+    @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {
         boolean accepted = false;
@@ -56,9 +57,11 @@ public class OrFilter
     @Override
     protected AbstractAggregatingFilter newChildFilter( final List<ProjectRelationshipFilter> childFilters )
     {
+        // TODO: Optimize to minimize new instance creation...
         return new OrFilter( childFilters );
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         final List<? extends ProjectRelationshipFilter> filters = getFilters();

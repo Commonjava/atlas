@@ -39,8 +39,8 @@ public abstract class AbstractTypedFilter
 
     private final boolean includeConcreteInfo;
 
-    protected AbstractTypedFilter( final RelationshipType type, final RelationshipType descendantType,
-                                   final boolean includeManagedInfo, final boolean includeConcreteInfo )
+    protected AbstractTypedFilter( final RelationshipType type, final RelationshipType descendantType, final boolean includeManagedInfo,
+                                   final boolean includeConcreteInfo )
     {
         this.types = Collections.unmodifiableSet( Collections.singleton( type ) );
         this.descendantTypes = Collections.unmodifiableSet( Collections.singleton( descendantType ) );
@@ -48,13 +48,12 @@ public abstract class AbstractTypedFilter
         this.includeConcreteInfo = includeConcreteInfo;
     }
 
-    protected AbstractTypedFilter( final RelationshipType type, final Collection<RelationshipType> descendantTypes,
-                                   final boolean includeManagedInfo, final boolean includeConcreteInfo )
+    protected AbstractTypedFilter( final RelationshipType type, final Collection<RelationshipType> descendantTypes, final boolean includeManagedInfo,
+                                   final boolean includeConcreteInfo )
     {
         if ( type == null )
         {
-            this.types =
-                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.types = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -63,8 +62,7 @@ public abstract class AbstractTypedFilter
 
         if ( descendantTypes == null || descendantTypes.isEmpty() )
         {
-            this.descendantTypes =
-                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.descendantTypes = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -75,14 +73,12 @@ public abstract class AbstractTypedFilter
         this.includeConcreteInfo = includeConcreteInfo;
     }
 
-    protected AbstractTypedFilter( final Collection<RelationshipType> types,
-                                   final Collection<RelationshipType> descendantTypes,
+    protected AbstractTypedFilter( final Collection<RelationshipType> types, final Collection<RelationshipType> descendantTypes,
                                    final boolean includeManagedInfo, final boolean includeConcreteInfo )
     {
         if ( types == null || types.isEmpty() )
         {
-            this.types =
-                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.types = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -91,8 +87,7 @@ public abstract class AbstractTypedFilter
 
         if ( descendantTypes == null || descendantTypes.isEmpty() )
         {
-            this.descendantTypes =
-                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.descendantTypes = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -103,13 +98,12 @@ public abstract class AbstractTypedFilter
         this.includeConcreteInfo = includeConcreteInfo;
     }
 
-    protected AbstractTypedFilter( final RelationshipType type, final boolean hasDescendants,
-                                   final boolean includeManagedInfo, final boolean includeConcreteInfo )
+    protected AbstractTypedFilter( final RelationshipType type, final boolean hasDescendants, final boolean includeManagedInfo,
+                                   final boolean includeConcreteInfo )
     {
         if ( type == null )
         {
-            this.types =
-                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.types = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -139,6 +133,7 @@ public abstract class AbstractTypedFilter
         return includeConcreteInfo;
     }
 
+    @Override
     public final boolean accept( final ProjectRelationship<?> rel )
     {
         if ( types.contains( rel.getType() ) )
@@ -178,6 +173,67 @@ public abstract class AbstractTypedFilter
     protected boolean doAccept( final ProjectRelationship<?> rel )
     {
         // base functionality is only to check that the type is appropriate.
+        return true;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ( ( descendantTypes == null ) ? 0 : descendantTypes.hashCode() );
+        result = prime * result + ( includeConcreteInfo ? 1231 : 1237 );
+        result = prime * result + ( includeManagedInfo ? 1231 : 1237 );
+        result = prime * result + ( ( types == null ) ? 0 : types.hashCode() );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( obj == null )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final AbstractTypedFilter other = (AbstractTypedFilter) obj;
+        if ( descendantTypes == null )
+        {
+            if ( other.descendantTypes != null )
+            {
+                return false;
+            }
+        }
+        else if ( !descendantTypes.equals( other.descendantTypes ) )
+        {
+            return false;
+        }
+        if ( includeConcreteInfo != other.includeConcreteInfo )
+        {
+            return false;
+        }
+        if ( includeManagedInfo != other.includeManagedInfo )
+        {
+            return false;
+        }
+        if ( types == null )
+        {
+            if ( other.types != null )
+            {
+                return false;
+            }
+        }
+        else if ( !types.equals( other.types ) )
+        {
+            return false;
+        }
         return true;
     }
 

@@ -35,6 +35,7 @@ public class AndFilter
         super( filters );
     }
 
+    @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {
         boolean accepted = true;
@@ -53,9 +54,11 @@ public class AndFilter
     @Override
     protected AbstractAggregatingFilter newChildFilter( final List<ProjectRelationshipFilter> childFilters )
     {
+        // TODO: Optimize to ensure we're only creating a new instance when it's critical to...
         return new AndFilter( childFilters );
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         final List<? extends ProjectRelationshipFilter> filters = getFilters();

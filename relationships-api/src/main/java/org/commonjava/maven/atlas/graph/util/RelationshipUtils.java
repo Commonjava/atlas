@@ -238,6 +238,11 @@ public final class RelationshipUtils
 
     public static Set<ProjectVersionRef> targets( final Collection<ProjectRelationship<?>> relationships )
     {
+        if ( relationships == null )
+        {
+            return null;
+        }
+
         final Set<ProjectVersionRef> results = new HashSet<ProjectVersionRef>();
         for ( final ProjectRelationship<?> rel : relationships )
         {

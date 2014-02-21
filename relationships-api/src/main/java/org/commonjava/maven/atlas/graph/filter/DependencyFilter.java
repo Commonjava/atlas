@@ -119,6 +119,7 @@ public class DependencyFilter
             dr = (DependencyRelationship) parent;
         }
 
+        // TODO: Optimize to ensure we're only creating a new instance when it's critical to...
         return new DependencyFilter( this, dr );
     }
 
@@ -171,6 +172,60 @@ public class DependencyFilter
     public boolean isUseImpliedScopes()
     {
         return useImpliedScopes;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + ( ( excludes == null ) ? 0 : excludes.hashCode() );
+        result = prime * result + ( ( scope == null ) ? 0 : scope.hashCode() );
+        result = prime * result + ( ( scopeTransitivity == null ) ? 0 : scopeTransitivity.hashCode() );
+        result = prime * result + ( useImpliedScopes ? 1231 : 1237 );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( !super.equals( obj ) )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final DependencyFilter other = (DependencyFilter) obj;
+        if ( excludes == null )
+        {
+            if ( other.excludes != null )
+            {
+                return false;
+            }
+        }
+        else if ( !excludes.equals( other.excludes ) )
+        {
+            return false;
+        }
+        if ( scope != other.scope )
+        {
+            return false;
+        }
+        if ( scopeTransitivity != other.scopeTransitivity )
+        {
+            return false;
+        }
+        if ( useImpliedScopes != other.useImpliedScopes )
+        {
+            return false;
+        }
+        return true;
     }
 
 }

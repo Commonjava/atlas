@@ -29,11 +29,14 @@ public class ExtensionOnlyFilter
         super( RelationshipType.EXTENSION, false, false, true );
     }
 
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
+        // TODO: Optimize to minimize new instance creation...
         return new NoneFilter();
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )

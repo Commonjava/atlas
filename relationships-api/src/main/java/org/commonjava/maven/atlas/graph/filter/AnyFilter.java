@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.graph.filter;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
+// TODO: Optimize to ensure we're only creating a new instance when it's critical to...
 public class AnyFilter
     implements ProjectRelationshipFilter
 {
@@ -50,6 +51,18 @@ public class AnyFilter
         final StringBuilder sb = new StringBuilder();
         render( sb );
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        return obj instanceof AnyFilter;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        return AnyFilter.class.hashCode();
     }
 
 }

@@ -28,11 +28,14 @@ public class PluginRuntimeFilter
     {
     }
 
+    @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {
         return ( rel instanceof PluginRelationship ) && !( (PluginRelationship) rel ).isManaged();
     }
 
+    // TODO: Optimize to minimize new instance creation...
+    @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         ProjectRelationshipFilter child;
@@ -41,8 +44,8 @@ public class PluginRuntimeFilter
             final PluginRelationship plugin = (PluginRelationship) parent;
 
             child =
-                new OrFilter( new DependencyFilter( DependencyScope.runtime ),
-                              new PluginDependencyFilter( plugin, true, true ), new ParentFilter( false ) );
+                new OrFilter( new DependencyFilter( DependencyScope.runtime ), new PluginDependencyFilter( plugin, true, true ),
+                              new ParentFilter( false ) );
         }
         else
         {
@@ -52,6 +55,7 @@ public class PluginRuntimeFilter
         return child;
     }
 
+    @Override
     public void render( final StringBuilder sb )
     {
         if ( sb.length() > 0 )

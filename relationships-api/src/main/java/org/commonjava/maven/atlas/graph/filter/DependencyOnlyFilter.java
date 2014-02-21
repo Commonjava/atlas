@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
+import java.util.Arrays;
+
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
@@ -40,8 +42,8 @@ public class DependencyOnlyFilter
         this( false, true, true, scopes );
     }
 
-    public DependencyOnlyFilter( final boolean includeManaged, final boolean includeConcrete,
-                                 final boolean useImpliedScope, final DependencyScope... scopes )
+    public DependencyOnlyFilter( final boolean includeManaged, final boolean includeConcrete, final boolean useImpliedScope,
+                                 final DependencyScope... scopes )
     {
         super( RelationshipType.DEPENDENCY, false, includeManaged, includeConcrete );
 
@@ -76,6 +78,7 @@ public class DependencyOnlyFilter
     @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
+        // TODO: Optimize to minimize new instance creation...
         return new NoneFilter();
     }
 
@@ -115,6 +118,43 @@ public class DependencyOnlyFilter
         final StringBuilder sb = new StringBuilder();
         render( sb );
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = super.hashCode();
+        result = prime * result + Arrays.hashCode( scopes );
+        result = prime * result + ( useImpliedScope ? 1231 : 1237 );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( !super.equals( obj ) )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final DependencyOnlyFilter other = (DependencyOnlyFilter) obj;
+        if ( !Arrays.equals( scopes, other.scopes ) )
+        {
+            return false;
+        }
+        if ( useImpliedScope != other.useImpliedScope )
+        {
+            return false;
+        }
+        return true;
     }
 
 }
