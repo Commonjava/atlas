@@ -187,16 +187,19 @@ public class GraphView
 
     public GraphDatabaseDriver getDatabase()
     {
-        return workspace.getDatabase();
+        return workspace == null ? null : workspace.getDatabase();
     }
 
     public VersionManager getSelections()
     {
-        return workspace.getSelections();
+        return workspace == null ? null : workspace.getSelections();
     }
 
     public void setSelections( final VersionManager selections )
     {
-        workspace.setSelections( selections );
+        if ( workspace != null )
+        {
+          workspace.setSelections( selections );
+        }
     }
 }
