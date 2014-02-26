@@ -44,7 +44,7 @@ public class EndNodesCollector
     {
         super( startNodes, view, checkExistence );
         this.endNodes = endNodes;
-        logger.debug( "Collector: start=(%s), end=(%s), view=(%s), checkExistence=%s", join( startNodes, ", " ), join( endNodes, ", " ), view,
+        logger.debug( "Collector: start=({}), end=({}), view=({}), checkExistence={}", join( startNodes, ", " ), join( endNodes, ", " ), view,
                       checkExistence );
         //        this.logEnabled = true;
     }
@@ -87,7 +87,7 @@ public class EndNodesCollector
         {
             if ( accept( path ) )
             {
-                //                logger.info( "FOUND path ending in: %s", endId );
+                //                logger.info( "FOUND path ending in: {}", endId );
                 found.add( end );
             }
 

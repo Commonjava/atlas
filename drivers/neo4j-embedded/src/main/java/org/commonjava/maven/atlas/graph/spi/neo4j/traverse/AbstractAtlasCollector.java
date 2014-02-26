@@ -31,19 +31,20 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
-import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.traversal.BranchState;
 import org.neo4j.graphdb.traversal.Evaluation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractAtlasCollector<T>
     implements AtlasCollector<T>
 {
 
-    protected final Logger logger = new Logger( getClass() );
+    protected final Logger logger = LoggerFactory.getLogger( getClass() );
 
     protected boolean logEnabled = false;
 
@@ -85,13 +86,13 @@ public abstract class AbstractAtlasCollector<T>
     {
         if ( checkExistence && !found.isEmpty() )
         {
-            log( "Only checking for existence, and already found one. Rejecting: %s", path );
+            log( "Only checking for existence, and already found one. Rejecting: {}", path );
             return Collections.emptySet();
         }
 
         if ( !startNodes.isEmpty() && !startNodes.contains( path.startNode() ) )
         {
-            log( "Rejecting path; it does not start with one of our roots:\n\t%s", path );
+            log( "Rejecting path; it does not start with one of our roots:\n\t{}", path );
             return Collections.emptySet();
         }
 
@@ -104,7 +105,7 @@ public abstract class AbstractAtlasCollector<T>
 
             if ( seen.contains( endId ) )
             {
-                log( "Rejecting path; already seen it:\n\t%s", path );
+                log( "Rejecting path; already seen it:\n\t{}", path );
                 return Collections.emptySet();
             }
 
@@ -123,7 +124,7 @@ public abstract class AbstractAtlasCollector<T>
 
             final ProjectRelationship<?> rel = toProjectRelationship( lastRelationship );
             final ProjectRelationshipFilter nextFilter = pathInfo.getFilter();
-            log( "Implementation says return the children of: %s\n  lastRel=%s\n  nextFilter=%s\n\n",
+            log( "Implementation says return the children of: {}\n  lastRel={}\n  nextFilter={}\n\n",
                  path.endNode()
                      .hasProperty( GAV ) ? path.endNode()
                                                .getProperty( GAV ) : "Unknown", rel, nextFilter );
@@ -156,7 +157,7 @@ public abstract class AbstractAtlasCollector<T>
 
                 final GraphPathInfo next = pathInfo.getChildPathInfo( toProjectRelationship( r ) );
                 pathInfos.put( new PathKey( path, r ), next );
-                log( "+= %s [%s]", logwrapper( r ), next.getFilter() );
+                log( "+= {} [{}]", logwrapper( r ), next.getFilter() );
             }
 
             return nextRelationships;
@@ -195,7 +196,7 @@ public abstract class AbstractAtlasCollector<T>
         //                gavs.add( toProjectVersionRef( node ) );
         //            }
         //
-        //            log( "Checking acceptance: %s [roots: %s, filter: %s]...%s", logwrapper( r ), gavs, info.getFilter(), accept );
+        //            log( "Checking acceptance: {} [roots: {}, filter: {}]...{}", logwrapper( r ), gavs, info.getFilter(), accept );
         //        }
         //
         //        return accept;

@@ -31,8 +31,8 @@ import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.traverse.AncestryTraversal;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.util.logging.Logger;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 public abstract class EProjectGraphTCK
     extends AbstractSPI_TCK
@@ -78,7 +78,8 @@ public abstract class EProjectGraphTCK
         child.traverse( ancestryTraversal );
 
         final List<ProjectVersionRef> ancestry = ancestryTraversal.getAncestry();
-        new Logger( getClass() ).info( "Ancestry: %s", ancestry );
+        LoggerFactory.getLogger( getClass() )
+                     .info( "Ancestry: {}", ancestry );
 
         assertThat( ancestry, notNullValue() );
         assertThat( ancestry.size(), equalTo( 3 ) );
@@ -128,7 +129,8 @@ public abstract class EProjectGraphTCK
         child.traverse( ancestryTraversal );
 
         final List<ProjectVersionRef> ancestry = ancestryTraversal.getAncestry();
-        new Logger( getClass() ).info( "Ancestry: %s", ancestry );
+        LoggerFactory.getLogger( getClass() )
+                     .info( "Ancestry: {}", ancestry );
 
         assertThat( ancestry, notNullValue() );
         assertThat( ancestry.size(), equalTo( 3 ) );

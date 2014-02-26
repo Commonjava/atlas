@@ -21,15 +21,16 @@ import java.io.IOException;
 
 import org.commonjava.maven.atlas.graph.EGraphManager;
 import org.commonjava.maven.atlas.graph.spi.neo4j.FileNeo4jWorkspaceFactory;
-import org.commonjava.util.logging.Logger;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileDriverFixture
     extends ExternalResource
 {
 
-    private final Logger logger = new Logger( getClass() );
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final TemporaryFolder folder = new TemporaryFolder();
 
@@ -63,7 +64,7 @@ public class FileDriverFixture
         dbDir.delete();
         dbDir.mkdirs();
 
-        logger.info( "Initializing db in: %s", dbDir );
+        logger.info( "Initializing db in: {}", dbDir );
         factory = new FileNeo4jWorkspaceFactory( dbDir, false );
         manager = new EGraphManager( factory );
     }

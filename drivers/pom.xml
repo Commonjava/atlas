@@ -38,11 +38,6 @@
       <groupId>org.commonjava.maven.atlas</groupId>
       <artifactId>atlas-drivers-tck</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.slf4j</groupId>
-      <artifactId>slf4j-log4j12</artifactId>
-      <scope>test</scope>
-    </dependency>
   </dependencies>
   
   <modules>

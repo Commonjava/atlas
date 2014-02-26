@@ -23,11 +23,12 @@ import java.util.Date;
 import org.commonjava.maven.atlas.graph.EGraphManager;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.util.logging.Logger;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.rules.TestName;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class AbstractSPI_TCK
 {
@@ -47,7 +48,7 @@ public abstract class AbstractSPI_TCK
         return getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( sourceURI() ) );
     }
 
-    protected final Logger logger = new Logger( getClass() );
+    protected final Logger logger = LoggerFactory.getLogger( getClass() );
 
     protected abstract EGraphManager getManager()
         throws Exception;
@@ -58,15 +59,14 @@ public abstract class AbstractSPI_TCK
     public void printStart()
     {
         start = System.currentTimeMillis();
-        System.out.printf( "***START [%s#%s] (%s)\n\n", naming.getClass(), naming.getMethodName(),
-                           new Date().toString() );
+        System.out.printf( "***START [{}#{}] ({})\n\n", naming.getClass(), naming.getMethodName(), new Date().toString() );
     }
 
     @After
     public void printEnd()
     {
-        System.out.printf( "\n\n***END [%s#%s] - %dms (%s)\n", naming.getClass(), naming.getMethodName(),
-                           ( System.currentTimeMillis() - start ), new Date().toString() );
+        System.out.printf( "\n\n***END [{}#{}] - {}ms ({})\n", naming.getClass(), naming.getMethodName(), ( System.currentTimeMillis() - start ),
+                           new Date().toString() );
     }
 
 }

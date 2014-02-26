@@ -47,7 +47,8 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class EGraphManager
     extends AbstractGraphWorkspaceListener
@@ -62,7 +63,7 @@ public class EGraphManager
 
     private static final String VERSION = "version";
 
-    private final Logger logger = new Logger( getClass() );
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final Map<String, GraphWorkspace> loadedWorkspaces = new HashMap<String, GraphWorkspace>();
 
@@ -75,14 +76,14 @@ public class EGraphManager
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final ProjectRelationship<?>... rels )
     {
-        logger.info( "Storing relationships for: %s\n\n  %s", workspace.getId(), join( rels, "\n  " ) );
+        logger.info( "Storing relationships for: {}\n\n  {}", workspace.getId(), join( rels, "\n  " ) );
         return workspace.getDatabase()
                         .addRelationships( rels );
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final Collection<ProjectRelationship<?>> rels )
     {
-        logger.info( "Storing relationships for: %s\n\n  %s", workspace.getId(), join( rels, "\n  " ) );
+        logger.info( "Storing relationships for: {}\n\n  {}", workspace.getId(), join( rels, "\n  " ) );
         return workspace.getDatabase()
                         .addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
     }
@@ -449,7 +450,7 @@ public class EGraphManager
             }
             catch ( final IOException e )
             {
-                new GraphDriverException( "Failed to close workspace: %s.", e, wsid ).printStackTrace( new PrintWriter( sw ) );
+                new GraphDriverException( "Failed to close workspace: {}.", e, wsid ).printStackTrace( new PrintWriter( sw ) );
                 if ( sb.length() > 0 )
                 {
                     sb.append( "\n\n" );
@@ -476,7 +477,7 @@ public class EGraphManager
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( "Failed to store workspace %s on detach. Reason: %s", e, ws.getId(), e.getMessage() );
+                logger.error( "Failed to store workspace {} on detach. Reason: {}", e, ws.getId(), e.getMessage() );
             }
         }
     }
@@ -494,7 +495,7 @@ public class EGraphManager
             }
             catch ( final IOException e )
             {
-                logger.error( "Failed to delete temporary workspace: %s. Reason: %s", e, workspace.getId(), e.getMessage() );
+                logger.error( "Failed to delete temporary workspace: {}. Reason: {}", e, workspace.getId(), e.getMessage() );
             }
         }
         else
@@ -505,7 +506,7 @@ public class EGraphManager
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( "Failed to store updates for workspace: %s. Reason: %s", e, workspace, e.getMessage() );
+                logger.error( "Failed to store updates for workspace: {}. Reason: {}", e, workspace, e.getMessage() );
             }
         }
     }

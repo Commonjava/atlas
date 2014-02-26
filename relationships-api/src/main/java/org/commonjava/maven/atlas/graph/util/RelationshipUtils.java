@@ -47,7 +47,8 @@ import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
-import org.commonjava.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RelationshipUtils
 {
@@ -117,8 +118,8 @@ public final class RelationshipUtils
 
     public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<ProjectRelationship<?>> relationships )
     {
-        final Logger logger = new Logger( RelationshipUtils.class );
-        logger.info( "Mapping %d relationships by declaring GAV:\n\n  %s\n\n", relationships.size(), join( relationships, "\n  " ) );
+        final Logger logger = LoggerFactory.getLogger( RelationshipUtils.class );
+        logger.info( "Mapping {} relationships by declaring GAV:\n\n  {}\n\n", relationships.size(), join( relationships, "\n  " ) );
         final Map<ProjectVersionRef, List<ProjectRelationship<?>>> result = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
         for ( final ProjectRelationship<?> rel : relationships )
         {

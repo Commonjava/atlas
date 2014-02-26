@@ -35,15 +35,12 @@ import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.util.logging.Logger;
 
 public class EProjectGraph
     implements EProjectNet, Serializable
 {
 
     private static final long serialVersionUID = 1L;
-
-    private final Logger logger = new Logger( getClass() );
 
     private final ProjectVersionRef project;
 
@@ -92,7 +89,6 @@ public class EProjectGraph
     @Override
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
-        logger.info( "Retrieving all relationships in graph: %s", project );
         final Set<ProjectRelationship<?>> rels = getExactAllRelationships();
         filterTerminalParents( rels );
 

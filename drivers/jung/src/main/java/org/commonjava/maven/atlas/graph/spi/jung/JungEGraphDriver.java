@@ -50,7 +50,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.util.logging.Logger;
+import org.slf4j.LoggerFactory;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
@@ -283,7 +283,8 @@ public class JungEGraphDriver
         final Set<ProjectVersionRef> roots = view.getRoots();
         if ( roots == null )
         {
-            new Logger( getClass() ).warn( "Cannot retrieve paths targeting %s. No roots specified for this project network!", join( refs, ", " ) );
+            LoggerFactory.getLogger( getClass() )
+                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!", join( refs, ", " ) );
             return null;
         }
 

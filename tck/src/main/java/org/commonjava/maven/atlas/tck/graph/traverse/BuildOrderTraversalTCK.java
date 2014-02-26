@@ -41,8 +41,8 @@ import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.tck.graph.AbstractSPI_TCK;
-import org.commonjava.util.logging.Logger;
 import org.junit.Test;
+import org.slf4j.LoggerFactory;
 
 public abstract class BuildOrderTraversalTCK
     extends AbstractSPI_TCK
@@ -83,6 +83,7 @@ public abstract class BuildOrderTraversalTCK
         assertRelativeOrder( relativeOrder, buildOrder );
     }
 
+    @SuppressWarnings( "unchecked" )
     @Test
     //@Ignore
     public void simpleDependencyBuildOrder_includeDepParent()
@@ -125,7 +126,8 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
-        new Logger( getClass() ).info( "Build order: %s", buildOrder );
+        LoggerFactory.getLogger( getClass() )
+                     .info( "Build order: {}", buildOrder );
 
         assertThat( buildOrder.size(), equalTo( 4 ) );
 

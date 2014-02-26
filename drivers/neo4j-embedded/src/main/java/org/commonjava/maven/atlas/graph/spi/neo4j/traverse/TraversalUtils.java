@@ -38,14 +38,15 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class TraversalUtils
 {
 
-    private static final Logger logger = new Logger( TraversalUtils.class );
+    private static final Logger logger = LoggerFactory.getLogger( TraversalUtils.class );
 
     private TraversalUtils()
     {
@@ -70,7 +71,7 @@ public final class TraversalUtils
             }
         }
 
-        debug( "ACCEPT: Path: %s", path );
+        debug( "ACCEPT: Path: {}", path );
         return true;
     }
 
@@ -83,7 +84,7 @@ public final class TraversalUtils
     {
         final ProjectRelationship<?> rel = toProjectRelationship( r );
 
-        debug( "Checking relationship for acceptance: %s (%s)", r, rel );
+        debug( "Checking relationship for acceptance: {} ({})", r, rel );
 
         if ( workspace != null )
         {
@@ -103,7 +104,7 @@ public final class TraversalUtils
 
                 if ( !found )
                 {
-                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: %s (r=%s, permissable sources: %s)", s, r,
+                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: {} (r={}, permissable sources: {})", s, r,
                            sources );
                     return false;
                 }
@@ -115,7 +116,7 @@ public final class TraversalUtils
                 final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
                 if ( !pomLocations.contains( pomLocation ) )
                 {
-                    debug( "REJECTED: Found relationship in path with de-selected pom-location URI: %s", r );
+                    debug( "REJECTED: Found relationship in path with de-selected pom-location URI: {}", r );
                     return false;
                 }
             }
@@ -125,12 +126,12 @@ public final class TraversalUtils
         {
             if ( !f.accept( rel ) )
             {
-                debug( "Filter: %s REJECTED relationship: %s (%s)", f, r, rel );
+                debug( "Filter: {} REJECTED relationship: {} ({})", f, r, rel );
                 return false;
             }
         }
 
-        debug( "ACCEPT: %s (%s)", r, rel );
+        debug( "ACCEPT: {} ({})", r, rel );
         return true;
     }
 

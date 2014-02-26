@@ -28,7 +28,6 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
-import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -37,12 +36,14 @@ import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.traversal.BranchState;
 import org.neo4j.graphdb.traversal.Evaluation;
 import org.neo4j.graphdb.traversal.Evaluator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MembershipWrappedTraversalEvaluator<STATE>
     implements Evaluator, PathExpander<STATE>
 {
 
-    private final Logger logger = new Logger( getClass() );
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final Set<Long> rootIds;
 
@@ -99,10 +100,10 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     public void printStats()
     {
-        logger.info( "\n\n\n\nStats for traversal:\n" + "---------------------\n" + "\ntotal expander hits: %d" + "\nexpander membership hits: %d"
-                         + "\nexpander membership misses: %d" + "\nexpander preCheck() calls: %d" + "\n\ntotal evaluator hits: %d"
-                         + "\nevaluator membership hits: %d" + "\nevaluator membership misses: %s" + "\nevaluator duplicate hits: %d"
-                         + "\nevaluator preCheck() calls: %d\n\n\n\n", expHits, expMemberHits, expMemberMisses, expPreChecks, evalHits,
+        logger.info( "\n\n\n\nStats for traversal:\n" + "---------------------\n" + "\ntotal expander hits: {}" + "\nexpander membership hits: {}"
+                         + "\nexpander membership misses: {}" + "\nexpander preCheck() calls: {}" + "\n\ntotal evaluator hits: {}"
+                         + "\nevaluator membership hits: {}" + "\nevaluator membership misses: {}" + "\nevaluator duplicate hits: {}"
+                         + "\nevaluator preCheck() calls: {}\n\n\n\n", expHits, expMemberHits, expMemberMisses, expPreChecks, evalHits,
                      evalMemberHits,
                      evalMemberMisses, evalDupes, evalPreChecks );
     }
@@ -115,13 +116,13 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         final Relationship rel = path.lastRelationship();
         if ( rel == null )
         {
-            //            logger.info( "MISSING last-relationship: %s. exclude and continue", rel );
+            //            logger.info( "MISSING last-relationship: {}. exclude and continue", rel );
             return Evaluation.EXCLUDE_AND_CONTINUE;
         }
 
         if ( seenRels.contains( rel.getId() ) )
         {
-            //            logger.info( "SEEN last-relationship: %s. exclude and prune", rel );
+            //            logger.info( "SEEN last-relationship: {}. exclude and prune", rel );
             evalDupes++;
             return Evaluation.EXCLUDE_AND_PRUNE;
         }
@@ -130,14 +131,14 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         if ( accepted.contains( rel.getId() ) )
         {
-            //            logger.info( "ACCEPTED last-relationship: %s. include and continue", rel );
+            //            logger.info( "ACCEPTED last-relationship: {}. include and continue", rel );
             evalMemberHits++;
             evalPreChecks++;
             return Evaluation.INCLUDE_AND_CONTINUE;
         }
         else if ( rejected.contains( rel.getId() ) )
         {
-            //            logger.info( "REJECTED last-relationship: %s. exclude and prune", rel );
+            //            logger.info( "REJECTED last-relationship: {}. exclude and prune", rel );
             evalMemberHits++;
             return Evaluation.EXCLUDE_AND_PRUNE;
         }
@@ -153,7 +154,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             final List<ProjectRelationship<?>> relPath = Conversions.convertToRelationships( path.relationships() );
             if ( relPath.indexOf( lastRel ) == relPath.size() - 1 )
             {
-                //                logger.warn( "\n\n\n\n\nREMOVING last-relationship: %s from path!\n\n\n\n\n" );
+                //                logger.warn( "\n\n\n\n\nREMOVING last-relationship: {} from path!\n\n\n\n\n" );
                 relPath.remove( relPath.size() - 1 );
             }
 
@@ -165,7 +166,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             {
                 if ( traversal.preCheck( lastRel, relPath, pass ) )
                 {
-                    //                    logger.info( "PRE-CHECK+ last-relationship: %s. include and continue", rel );
+                    //                    logger.info( "PRE-CHECK+ last-relationship: {}. include and continue", rel );
                     accepted.add( rel.getId() );
                     evalPreChecks++;
 
@@ -173,14 +174,14 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                 }
                 else
                 {
-                    //                    logger.info( "PRE-CHECK- last-relationship: %s.", rel );
+                    //                    logger.info( "PRE-CHECK- last-relationship: {}.", rel );
                     rejected.add( rel.getId() );
                 }
             }
         }
         else
         {
-            //            logger.info( "NON-ROOTED-PATH: %s.", path );
+            //            logger.info( "NON-ROOTED-PATH: {}.", path );
             evalMemberMisses++;
         }
 
@@ -194,7 +195,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         expHits++;
 
         final Node node = path.endNode();
-        //        logger.info( "START expansion for: %s", path );
+        //        logger.info( "START expansion for: {}", path );
 
         // TODO: Is node(0) appropriate to see??
         final Set<Long> roots = rootIds;
@@ -202,7 +203,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                                                                                            .getId() ) )
         {
             expMemberMisses++;
-            //            logger.info( "%s not in membership. Skipping expansion.", node );
+            //            logger.info( "{} not in membership. Skipping expansion.", node );
             return Collections.emptySet();
         }
 
@@ -232,7 +233,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         final Iterable<Relationship> rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
         if ( rs == null )
         {
-            //            logger.info( "No relationships from end-node: %s", node );
+            //            logger.info( "No relationships from end-node: {}", node );
             return Collections.emptySet();
         }
 
@@ -253,24 +254,24 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             {
                 r = selected;
             }
-            //            logger.info( "Attempting to expand: %s", r );
+            //            logger.info( "Attempting to expand: {}", r );
 
             final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
             final GraphPathInfo next = pathInfo.getChildPathInfo( projectRel );
             if ( accepted.contains( r.getId() ) )
             {
-                //                logger.info( "Previously accepted for expansion: %s", r.getId() );
+                //                logger.info( "Previously accepted for expansion: {}", r.getId() );
                 pathInfos.put( new PathKey( path, r ), next );
                 result.add( r );
                 continue;
             }
             else if ( rejected.contains( r.getId() ) )
             {
-                //                logger.warn( "Previously rejected for expansion: %s", r.getId() );
+                //                logger.warn( "Previously rejected for expansion: {}", r.getId() );
                 continue;
             }
 
-            //            logger.info( "Pre-checking relationship %s for expansion using filter: %s", r, traversal );
+            //            logger.info( "Pre-checking relationship {} for expansion using filter: {}", r, traversal );
             if ( rels == null )
             {
                 rels = getPathRelationships( path );
@@ -280,7 +281,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             {
                 accepted.add( r.getId() );
                 expPreChecks++;
-                //                logger.info( "Adding for expansion: %s", r );
+                //                logger.info( "Adding for expansion: {}", r );
                 pathInfos.put( new PathKey( path, r ), next );
                 result.add( r );
             }
@@ -290,7 +291,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             }
         }
 
-        //        logger.info( "Expanding for %d relationships.", result.size() );
+        //        logger.info( "Expanding for {} relationships.", result.size() );
         return result;
     }
 
@@ -306,7 +307,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         else
         {
             rels = Conversions.convertToRelationships( rs );
-            //            logger.info( "Got relationship list %d entries long for filter", rels.size() );
+            //            logger.info( "Got relationship list {} entries long for filter", rels.size() );
         }
 
         if ( reversedExpander )

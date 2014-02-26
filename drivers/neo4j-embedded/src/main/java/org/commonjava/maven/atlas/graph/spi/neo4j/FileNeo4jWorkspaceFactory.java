@@ -33,14 +33,15 @@ import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.util.logging.Logger;
 import org.commonjava.web.json.ser.JsonSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class FileNeo4jWorkspaceFactory
     implements GraphWorkspaceFactory
 {
 
-    private final Logger logger = new Logger( getClass() );
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final File dbBaseDirectory;
 
@@ -76,11 +77,11 @@ public class FileNeo4jWorkspaceFactory
         final File db = new File( dbBaseDirectory, id );
         if ( db.exists() )
         {
-            throw new GraphDriverException( "Workspace directory already exists: %s. Cannot create workspace.", id );
+            throw new GraphDriverException( "Workspace directory already exists: {}. Cannot create workspace.", id );
         }
         else if ( !db.mkdirs() )
         {
-            throw new GraphDriverException( "Failed to create workspace directory for: %s. (dir: %s)", id, db );
+            throw new GraphDriverException( "Failed to create workspace directory for: {}. (dir: {})", id, db );
         }
 
         final GraphWorkspace ws = new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ) );
@@ -106,7 +107,7 @@ public class FileNeo4jWorkspaceFactory
         final File db = new File( dbBaseDirectory, id );
         if ( db.exists() || !db.mkdirs() )
         {
-            throw new GraphDriverException( "Cannot create database directory for workspace: %s", id );
+            throw new GraphDriverException( "Cannot create database directory for workspace: {}", id );
         }
 
         final GraphWorkspace ws = new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ) );
@@ -123,7 +124,7 @@ public class FileNeo4jWorkspaceFactory
         final File db = new File( dbBaseDirectory, id );
         if ( !db.isDirectory() )
         {
-            throw new GraphDriverException( "No database for workspace: %s", id );
+            throw new GraphDriverException( "No database for workspace: {}", id );
         }
 
         final File configFile = new File( db, "workspace-config.json" );
@@ -135,7 +136,7 @@ public class FileNeo4jWorkspaceFactory
         }
         catch ( final IOException e )
         {
-            throw new GraphDriverException( "Failed to write workspace config to: %s. Reason: %s", e, configFile, e.getMessage() );
+            throw new GraphDriverException( "Failed to write workspace config to: {}. Reason: {}", e, configFile, e.getMessage() );
         }
         finally
         {
@@ -166,7 +167,7 @@ public class FileNeo4jWorkspaceFactory
             }
             catch ( final IOException e )
             {
-                throw new GraphDriverException( "Cannot load workspace configuration: %s. Reason: %s", e, configFile, e.getMessage() );
+                throw new GraphDriverException( "Cannot load workspace configuration: {}. Reason: {}", e, configFile, e.getMessage() );
             }
             finally
             {
@@ -176,7 +177,7 @@ public class FileNeo4jWorkspaceFactory
 
         if ( config == null )
         {
-            throw new GraphDriverException( "No configuration found for workspace: %s. Cannot load.", id );
+            throw new GraphDriverException( "No configuration found for workspace: {}. Cannot load.", id );
         }
 
         return new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ), configFile.lastModified() );
@@ -196,18 +197,18 @@ public class FileNeo4jWorkspaceFactory
 
             if ( excludedIds.contains( id ) )
             {
-                logger.info( "Skip loading workspace: %s. It's already cached in a higher layer.", id );
+                logger.info( "Skip loading workspace: {}. It's already cached in a higher layer.", id );
                 continue;
             }
 
             try
             {
-                logger.info( "Loading workspace: %s", id );
+                logger.info( "Loading workspace: {}", id );
                 results.add( loadWorkspace( id ) );
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( "Failed to load workspace: %s. Reason: %s", e, id, e.getMessage() );
+                logger.error( "Failed to load workspace: {}. Reason: {}", e, id, e.getMessage() );
             }
         }
 

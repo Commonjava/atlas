@@ -16,21 +16,12 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.jung;
 
-import org.apache.log4j.Level;
 import org.commonjava.maven.atlas.graph.EGraphManager;
 import org.commonjava.maven.atlas.tck.graph.CycleDetectionTCK;
-import org.commonjava.util.logging.Log4jUtil;
-import org.junit.BeforeClass;
 
 public class CycleDetectionTest
     extends CycleDetectionTCK
 {
-    @BeforeClass
-    public static void logging()
-    {
-        Log4jUtil.configure( Level.DEBUG );
-    }
-
     private EGraphManager manager;
 
     @Override

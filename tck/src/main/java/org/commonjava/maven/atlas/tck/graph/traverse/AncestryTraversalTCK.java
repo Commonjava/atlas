@@ -129,6 +129,7 @@ public abstract class AncestryTraversalTCK
 
     }
 
+    @SuppressWarnings( "unchecked" )
     @Test
     public void traverseTwoAncestors_IgnoreNonParentRelationships()
         throws Exception

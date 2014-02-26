@@ -39,11 +39,11 @@ public abstract class GraphWorkspaceSPI_TCK
 
         assertThat( ws, notNullValue() );
 
-        logger.info( "Created workspace: %s", ws );
+        logger.info( "Created workspace: {}", ws );
 
         final GraphWorkspace result = getManager().getWorkspace( ws.getId() );
 
-        logger.info( "Retrieved all workspaces: %s", result );
+        logger.info( "Retrieved all workspaces: {}", result );
 
         assertThat( result, notNullValue() );
         assertThat( result.getId(), equalTo( ws.getId() ) );
@@ -59,11 +59,11 @@ public abstract class GraphWorkspaceSPI_TCK
 
         assertThat( ws, notNullValue() );
 
-        logger.info( "Created workspace: %s", ws );
+        logger.info( "Created workspace: {}", ws );
 
         final Set<GraphWorkspace> all = getManager().getAllWorkspaces();
 
-        logger.info( "Retrieved all workspaces: %s", all );
+        logger.info( "Retrieved all workspaces: {}", all );
 
         assertThat( all, notNullValue() );
         assertThat( all.size(), equalTo( 1 ) );

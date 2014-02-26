@@ -44,15 +44,16 @@ import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class Conversions
 {
 
-    private static final Logger LOGGER = new Logger( Conversions.class );
+    private static final Logger LOGGER = LoggerFactory.getLogger( Conversions.class );
 
     public static final String RELATIONSHIP_ID = "relationship_id";
 
@@ -162,7 +163,7 @@ public final class Conversions
 
         if ( empty( g ) || empty( a ) || empty( v ) )
         {
-            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: %s:%s:%s", g, a, v ) );
+            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: {}:{}:{}", g, a, v ) );
         }
 
         node.setProperty( NODE_TYPE, NodeType.PROJECT.name() );
@@ -173,7 +174,7 @@ public final class Conversions
 
         if ( ref.isVariableVersion() )
         {
-            LOGGER.debug( "Marking: %s as variable.", ref );
+            LOGGER.debug( "Marking: {} as variable.", ref );
             node.setProperty( VARIABLE, true );
         }
 
@@ -211,7 +212,7 @@ public final class Conversions
 
         if ( empty( g ) || empty( a ) || empty( v ) )
         {
-            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: %s:%s:%s", g, a, v ) );
+            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: {}:{}:{}", g, a, v ) );
         }
 
         return new ProjectVersionRef( g, a, v );
@@ -312,7 +313,7 @@ public final class Conversions
         final GraphRelType mapper = GraphRelType.valueOf( rel.getType()
                                                              .name() );
 
-        //        LOGGER.debug( "Converting relationship of type: %s (atlas type: %s)", mapper,
+        //        LOGGER.debug( "Converting relationship of type: {} (atlas type: {})", mapper,
         //                                              mapper.atlasType() );
 
         if ( !mapper.isAtlasRelationship() )
@@ -352,7 +353,7 @@ public final class Conversions
                         final String[] parts = ex.split( ":" );
                         if ( parts.length != 2 )
                         {
-                            LOGGER.error( "In: %s -> %s skipping invalid exclude specification: '%s'", from, artifact, ex );
+                            LOGGER.error( "In: {} -> {} skipping invalid exclude specification: '{}'", from, artifact, ex );
                         }
                         else
                         {
@@ -398,7 +399,7 @@ public final class Conversions
             }
         }
 
-        //        LOGGER.debug( "Returning project relationship: %s", result );
+        //        LOGGER.debug( "Returning project relationship: {}", result );
         return result;
     }
 
@@ -614,7 +615,7 @@ public final class Conversions
 
     public static void markConnected( final Node node, final boolean connected )
     {
-        //        LOGGER.info( "Marking as connected (non-missing): %s", node.getProperty( GAV ) );
+        //        LOGGER.info( "Marking as connected (non-missing): {}", node.getProperty( GAV ) );
         node.setProperty( CONNECTED, connected );
     }
 
