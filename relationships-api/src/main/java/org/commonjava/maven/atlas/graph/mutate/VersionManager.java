@@ -29,7 +29,7 @@ public class VersionManager
 
     public VersionManager( final Map<ProjectRef, ProjectVersionRef> selections )
     {
-        this.selections = selections;
+        this.selections = selections == null ? new HashMap<ProjectRef, ProjectVersionRef>() : selections;
     }
 
     public VersionManager( final VersionManager parent, final Map<ProjectRef, ProjectVersionRef> newSelections )
@@ -90,6 +90,11 @@ public class VersionManager
     public boolean hasSelectionFor( final ProjectRef ref )
     {
         return selections.containsKey( ref );
+    }
+
+    public Map<ProjectRef, ProjectVersionRef> getSelections()
+    {
+        return selections;
     }
 
 }

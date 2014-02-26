@@ -23,8 +23,15 @@ public class RelationshipPathComparator
     implements Comparator<List<ProjectRelationship<?>>>
 {
 
-    private final RelationshipComparator comp = new RelationshipComparator();
+    public static RelationshipPathComparator INSTANCE = new RelationshipPathComparator();
 
+    private final RelationshipComparator comp = RelationshipComparator.INSTANCE;
+
+    private RelationshipPathComparator()
+    {
+    }
+
+    @Override
     public int compare( final List<ProjectRelationship<?>> one, final List<ProjectRelationship<?>> two )
     {
         final int commonLen = Math.min( one.size(), two.size() );

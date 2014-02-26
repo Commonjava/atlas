@@ -31,17 +31,16 @@ public class ExtensionFilter
         super( RelationshipType.EXTENSION, RelationshipType.DEPENDENCY, false, true );
     }
 
-    // TODO: Optimize to minimize new instance creation...
     @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         if ( parent instanceof ExtensionRelationship )
         {
-            return new OrFilter( new DependencyFilter( DependencyScope.runtime ), new ParentFilter( false ) );
+            return new OrFilter( new DependencyFilter( DependencyScope.runtime ), ParentFilter.EXCLUDE_TERMINAL_PARENTS );
         }
         else
         {
-            return new NoneFilter();
+            return NoneFilter.INSTANCE;
         }
     }
 

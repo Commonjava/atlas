@@ -17,7 +17,6 @@
 package org.commonjava.maven.atlas.graph;
 
 import static org.apache.commons.lang.StringUtils.join;
-import static org.commonjava.maven.atlas.graph.model.GraphView.GLOBAL;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -37,6 +36,7 @@ import org.commonjava.maven.atlas.graph.model.EProjectKey;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.EProjectWeb;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
@@ -96,52 +96,66 @@ public class EGraphManager
                  .addRelationships( rels.getExactAllRelationships()
                                         .toArray( new ProjectRelationship[] {} ) );
 
-        return getGraph( workspace, null, project );
+        return getGraph( workspace, null, null, project );
     }
 
     public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectVersionRef project )
     {
-        return getGraph( workspace, null, project );
+        return getGraph( workspace, null, null, project );
     }
 
     public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef project )
     {
+        return getGraph( workspace, filter, null, project );
+    }
+
+    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                                   final ProjectVersionRef project )
+    {
         final GraphDatabaseDriver dbDriver = workspace.getDatabase();
-        if ( !dbDriver.containsProject( GLOBAL, project ) || dbDriver.isMissing( GLOBAL, project ) )
+        final GraphView view = new GraphView( workspace );
+        if ( !dbDriver.containsProject( view, project ) || dbDriver.isMissing( view, project ) )
         {
             return null;
         }
 
-        return new EProjectGraph( workspace, filter, project );
+        return new EProjectGraph( workspace, filter, mutator, project );
     }
 
     public EProjectNet getWeb( final GraphWorkspace workspace, final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( workspace, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
+        return getWeb( workspace, null, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
     public EProjectNet getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( workspace, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
+        return getWeb( workspace, null, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
     public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectVersionRef... refs )
     {
-        return getWeb( workspace, null, refs );
+        return getWeb( workspace, null, null, refs );
     }
 
     public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef... refs )
     {
+        return getWeb( workspace, filter, null, refs );
+    }
+
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                               final ProjectVersionRef... refs )
+    {
         final GraphDatabaseDriver dbDriver = workspace.getDatabase();
+        final GraphView view = new GraphView( workspace );
         for ( final ProjectVersionRef ref : refs )
         {
-            if ( !dbDriver.containsProject( GLOBAL, ref ) || dbDriver.isMissing( GLOBAL, ref ) )
+            if ( !dbDriver.containsProject( view, ref ) || dbDriver.isMissing( view, ref ) )
             {
                 return null;
             }
         }
 
-        return new EProjectWeb( workspace, filter, refs );
+        return new EProjectWeb( workspace, filter, mutator, refs );
     }
 
     public synchronized GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )
@@ -232,7 +246,13 @@ public class EGraphManager
 
     public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
     {
-        return containsGraph( new GraphView( workspace, filter ), ref );
+        return containsGraph( workspace, filter, null, ref );
+    }
+
+    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                                  final ProjectVersionRef ref )
+    {
+        return containsGraph( new GraphView( workspace, filter, mutator ), ref );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,

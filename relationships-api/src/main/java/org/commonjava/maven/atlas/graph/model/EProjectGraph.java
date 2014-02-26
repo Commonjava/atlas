@@ -28,6 +28,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
@@ -54,9 +55,10 @@ public class EProjectGraph
         this.project = ref;
     }
 
-    public EProjectGraph( final GraphWorkspace session, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
+    public EProjectGraph( final GraphWorkspace session, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                          final ProjectVersionRef ref )
     {
-        this.view = new GraphView( session, filter, ref );
+        this.view = new GraphView( session, filter, mutator, ref );
         this.project = ref;
     }
 
@@ -329,7 +331,7 @@ public class EProjectGraph
     public EProjectGraph filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectGraph( view.getWorkspace(), filter, project );
+        return new EProjectGraph( view.getWorkspace(), filter, view.getMutator(), project );
     }
 
     @Override

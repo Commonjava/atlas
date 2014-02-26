@@ -57,10 +57,11 @@ public abstract class SubGraphSelectionTCK
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        final ProjectVersionRef selDep = ws.selectVersion( varDep, selected );
+        final ProjectVersionRef selDep = ws.selectVersion( varDep.asProjectRef(), selected );
         assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph.getVariableSubgraphs();
+        System.out.println( variables );
         assertThat( variables.isEmpty(), equalTo( true ) );
 
         final Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
@@ -90,7 +91,7 @@ public abstract class SubGraphSelectionTCK
         System.out.println( "Variable before selecting:\n  " + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        final ProjectVersionRef selDep = ws.selectVersion( varDep, selected );
+        final ProjectVersionRef selDep = ws.selectVersion( varDep.asProjectRef(), selected );
         assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph.getVariableSubgraphs();
@@ -147,7 +148,7 @@ public abstract class SubGraphSelectionTCK
 
         // Select a concrete version for the session associated with the FIRST graph.
         // Second graph session should remain unchanged.
-        final ProjectVersionRef selDep = session.selectVersion( varDep, selected );
+        final ProjectVersionRef selDep = session.selectVersion( varDep.asProjectRef(), selected );
 
         assertThat( session.getSelection( varDep ), equalTo( selected ) );
         assertThat( session2.getSelection( varDep ), nullValue() );

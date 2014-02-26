@@ -1,20 +1,27 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
+import static org.apache.commons.lang.StringUtils.join;
+
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.util.logging.Logger;
 
 public class ManagedDependencyMutator
     extends AbstractVersionManagerMutator
     implements GraphMutator
 {
+
+    private final Logger logger = new Logger( getClass() );
 
     private final boolean accumulate;
 
@@ -47,10 +54,18 @@ public class ManagedDependencyMutator
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY )
         {
+            logger.info( "No selections for relationships of type: %s", rel.getType() );
             return rel;
         }
 
-        return super.selectFor( rel );
+        final ProjectRelationship<?> mutated = super.selectFor( rel );
+
+        if ( mutated != null && mutated != rel )
+        {
+            logger.info( "Mutated. Was:\n  %s\n\nNow:\n  %s\n\n", rel, mutated );
+        }
+
+        return mutated;
     }
 
     @Override
@@ -58,25 +73,75 @@ public class ManagedDependencyMutator
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY )
         {
+            logger.info( "Return 'this' for non-dependency relationship: %s", rel );
             return this;
         }
 
         if ( accumulate )
         {
-            final Set<ProjectRelationship<?>> rels =
+            final ProjectVersionRef declaring = rel.getDeclaring()
+                                                   .asProjectVersionRef();
+
+            logger.info( "Retrieving managed dependency relationships for: %s", declaring );
+
+            Set<ProjectRelationship<?>> rels =
                 view.getDatabase()
-                    .getDirectRelationshipsFrom( view, rel.getTarget()
-                                                          .asProjectVersionRef(), true, false, RelationshipType.DEPENDENCY );
+                    .getDirectRelationshipsFrom( new GraphView( view.getWorkspace(), view.getRoots() ), declaring, true, false,
+                                                 RelationshipType.DEPENDENCY );
 
-            final Map<ProjectRef, ProjectVersionRef> mapping = VersionManager.createMapping( RelationshipUtils.targets( rels ) );
-
-            if ( mapping != null && !mapping.isEmpty() )
+            if ( rels != null )
             {
-                return new ManagedDependencyMutator( view, new VersionManager( versions, mapping ), accumulate );
+                final Set<ProjectRelationship<?>> processed = new HashSet<ProjectRelationship<?>>( rels.size() );
+                for ( final ProjectRelationship<?> r : rels )
+                {
+                    if ( !( ( r instanceof DependencyRelationship ) && ( (DependencyRelationship) r ).isBOM() ) )
+                    {
+                        processed.add( r );
+                    }
+                    else
+                    {
+                        logger.info( "DETECTED BOM IMPORT: %s; skipping for managed deps in mutator for: %s", r.getTarget(), declaring );
+                    }
+                }
+
+                rels = processed;
+            }
+
+            if ( rels != null && !rels.isEmpty() )
+            {
+                logger.info( "Incorporating %d new managed deps from: %s", rels.size(), declaring );
+
+                final Map<ProjectRef, ProjectVersionRef> existing = versions.getSelections();
+
+                ProjectRef pr;
+                boolean construct = false;
+                for ( final ProjectRelationship<?> r : rels )
+                {
+                    pr = r.getTarget()
+                          .asProjectRef();
+                    if ( !existing.containsKey( pr ) )
+                    {
+                        construct = true;
+                        break;
+                    }
+                }
+
+                if ( construct )
+                {
+                    final Map<ProjectRef, ProjectVersionRef> mapping = VersionManager.createMapping( RelationshipUtils.targets( rels ) );
+                    final ManagedDependencyMutator result = new ManagedDependencyMutator( view, new VersionManager( versions, mapping ), accumulate );
+
+                    logger.info( "Managed dependencies for children of: %s are:\n  %s\n\n", declaring, join( result.versions.getSelections()
+                                                                                                                            .entrySet(), "\n  " ) );
+                    return result;
+                }
+            }
+            else
+            {
+                logger.info( "No managed deps for target: %s", declaring );
             }
         }
 
         return this;
     }
-
 }

@@ -20,10 +20,17 @@ import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_U
 
 import java.util.Comparator;
 
-public class RelationshipComparator
+public final class RelationshipComparator
     implements Comparator<ProjectRelationship<?>>
 {
 
+    public static final RelationshipComparator INSTANCE = new RelationshipComparator();
+
+    private RelationshipComparator()
+    {
+    }
+
+    @Override
     public int compare( final ProjectRelationship<?> one, final ProjectRelationship<?> two )
     {
         if ( one.getType() == two.getType() )

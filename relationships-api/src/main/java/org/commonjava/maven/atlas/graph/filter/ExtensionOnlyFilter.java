@@ -32,8 +32,7 @@ public class ExtensionOnlyFilter
     @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        // TODO: Optimize to minimize new instance creation...
-        return new NoneFilter();
+        return NoneFilter.INSTANCE;
     }
 
     @Override

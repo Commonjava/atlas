@@ -35,7 +35,7 @@ public abstract class AbstractFilteringTraversal
 
     protected AbstractFilteringTraversal()
     {
-        rootFilter = new AnyFilter();
+        rootFilter = AnyFilter.INSTANCE;
     }
 
     protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter )
@@ -118,7 +118,7 @@ public abstract class AbstractFilteringTraversal
         {
             if ( !filter.accept( rel ) )
             {
-                return new NoneFilter();
+                return NoneFilter.INSTANCE;
             }
             else
             {

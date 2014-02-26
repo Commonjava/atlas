@@ -23,6 +23,8 @@ import java.util.Set;
 import java.util.WeakHashMap;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
+import org.commonjava.maven.atlas.graph.mutate.ManagedDependencyMutator;
 import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -31,42 +33,47 @@ import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 public class GraphView
 {
 
-    public static final GraphView GLOBAL = new GraphView( null );
-
     private final Set<ProjectVersionRef> roots = new HashSet<ProjectVersionRef>();
 
     private final GraphWorkspace workspace;
 
     private final ProjectRelationshipFilter filter;
 
+    private final GraphMutator mutator;
+
     private final WeakHashMap<String, Object> cache = new WeakHashMap<String, Object>();
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                      final Collection<ProjectVersionRef> roots )
     {
         this.filter = filter;
         this.roots.addAll( roots );
         this.workspace = workspace;
+        this.mutator = mutator;
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef... roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                      final ProjectVersionRef... roots )
     {
         this.filter = filter;
         this.roots.addAll( Arrays.asList( roots ) );
         this.workspace = workspace;
+        this.mutator = mutator;
     }
 
     public GraphView( final GraphWorkspace workspace, final Collection<ProjectVersionRef> roots )
     {
-        this.filter = null;
-        this.roots.addAll( roots );
-        this.workspace = workspace;
+        this( workspace, null, null, roots );
     }
 
     public GraphView( final GraphWorkspace workspace, final ProjectVersionRef... roots )
     {
-        this.filter = null;
-        this.roots.addAll( Arrays.asList( roots ) );
-        this.workspace = workspace;
+        this( workspace, null, null, roots );
+    }
+
+    public GraphMutator getMutator()
+    {
+        return mutator == null ? new ManagedDependencyMutator( this, true ) : mutator;
     }
 
     public ProjectRelationshipFilter getFilter()
@@ -199,7 +206,7 @@ public class GraphView
     {
         if ( workspace != null )
         {
-          workspace.setSelections( selections );
+            workspace.setSelections( selections );
         }
     }
 }

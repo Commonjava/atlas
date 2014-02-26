@@ -23,6 +23,12 @@ public class AnyFilter
     implements ProjectRelationshipFilter
 {
 
+    public static final AnyFilter INSTANCE = new AnyFilter();
+
+    private AnyFilter()
+    {
+    }
+
     @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {

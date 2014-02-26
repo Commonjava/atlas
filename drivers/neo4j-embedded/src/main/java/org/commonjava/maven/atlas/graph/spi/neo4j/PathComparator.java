@@ -24,12 +24,19 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipPathComparator;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Path;
 
-public class PathComparator
+public final class PathComparator
     implements Comparator<Path>
 {
 
-    private final RelationshipPathComparator pathComparator = new RelationshipPathComparator();
+    public static final PathComparator INSTANCE = new PathComparator();
 
+    private final RelationshipPathComparator pathComparator = RelationshipPathComparator.INSTANCE;
+
+    private PathComparator()
+    {
+    }
+
+    @Override
     public int compare( final Path first, final Path second )
     {
         final List<ProjectRelationship<?>> firstRels = Conversions.convertToRelationships( first.relationships() );

@@ -45,11 +45,11 @@ public class PluginRuntimeFilter
 
             child =
                 new OrFilter( new DependencyFilter( DependencyScope.runtime ), new PluginDependencyFilter( plugin, true, true ),
-                              new ParentFilter( false ) );
+                              ParentFilter.EXCLUDE_TERMINAL_PARENTS );
         }
         else
         {
-            child = new NoneFilter();
+            child = NoneFilter.INSTANCE;
         }
 
         return child;

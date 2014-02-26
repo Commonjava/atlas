@@ -27,7 +27,7 @@ public class AncestryTraversal
 
     public AncestryTraversal()
     {
-        super( new ParentFilter( false ), true );
+        super( ParentFilter.EXCLUDE_TERMINAL_PARENTS, true );
     }
 
     public List<ProjectVersionRef> getAncestry()

@@ -55,7 +55,6 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
@@ -65,6 +64,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.ConnectingPathsCollector;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.CycleDetectingCollector;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.EndNodesCollector;
+import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.MembershipWrappedTraversalEvaluator;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.NodePair;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.RootedNodesCollector;
@@ -73,6 +73,8 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils;
 import org.commonjava.maven.atlas.graph.traverse.AbstractFilteringTraversal;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
+import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
@@ -526,7 +528,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private Set<ProjectRelationship<?>> markCycles( final Map<ProjectRelationship<?>, Relationship> potentialCycleInjectors )
     {
-        final Map<ProjectRelationship<?>, Set<List<Relationship>>> cycleMap = getIntroducedCycles( GraphView.GLOBAL, potentialCycleInjectors );
+        final GraphView view = new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) );
+        final Map<ProjectRelationship<?>, Set<List<Relationship>>> cycleMap = getIntroducedCycles( view, potentialCycleInjectors );
 
         final Set<ProjectRelationship<?>> cycleInjectors = new HashSet<ProjectRelationship<?>>();
         if ( cycleMap != null && !cycleMap.isEmpty() )
@@ -674,74 +677,51 @@ public abstract class AbstractNeo4JEGraphDriver
         return node;
     }
 
-    public Relationship select( final Relationship old, final GraphView view )
+    public Relationship select( final Relationship old, final GraphView view, final GraphPathInfo pathInfo )
     {
-        final VersionManager selections = view.getSelections();
-        if ( selections != null )
+        final ProjectRelationship<?> oldRel = toProjectRelationship( old );
+        final ProjectRelationship<?> selected = pathInfo.selectRelationship( oldRel );
+
+        if ( selected == null )
         {
-            final ProjectVersionRef target = toProjectVersionRef( old.getEndNode() );
-            final ProjectVersionRef selected = selections.getSelected( target );
-            if ( selected != null )
+            return null;
+        }
+
+        if ( selected != oldRel )
+        {
+            final Transaction tx = graph.beginTx();
+            try
             {
-                final Transaction tx = graph.beginTx();
-                try
+                final RelationshipIndex relIdx = graph.index()
+                                                      .forRelationships( ALL_RELATIONSHIPS );
+
+                IndexHits<Relationship> hits = relIdx.get( RELATIONSHIP_ID, id( selected ) );
+                if ( hits.hasNext() )
                 {
-                    Node selectedNode = getNode( selected );
-                    if ( selectedNode == null )
-                    {
-                        selectedNode = newProjectNode( selected );
-                    }
-
-                    Relationship result = null;
-                    if ( old.getEndNode()
-                            .getId() == selectedNode.getId() )
-                    {
-                        result = old;
-                    }
-
-                    if ( result == null )
-                    {
-                        final Iterable<Relationship> relationships = old.getStartNode()
-                                                                        .getRelationships( Direction.OUTGOING, old.getType() );
-                        for ( final Relationship r : relationships )
-                        {
-                            if ( r.getEndNode()
-                                  .getId() == selectedNode.getId() )
-                            {
-                                result = r;
-                                break;
-                            }
-                        }
-                    }
-
-                    if ( result == null )
-                    {
-                        final Relationship newR = old.getStartNode()
-                                                     .createRelationshipTo( selectedNode, old.getType() );
-
-                        logger.debug( "New selection relationship is: %s with type: %s", newR, old.getType() );
-
-                        Conversions.cloneRelationshipProperties( old, newR );
-                        newR.setProperty( Conversions.SELECTION, true );
-
-                        final RelationshipIndex relIdx = graph.index()
-                                                              .forRelationships( ALL_RELATIONSHIPS );
-
-                        final ProjectRelationship<?> rel = toProjectRelationship( newR );
-                        final String relId = id( rel );
-                        relIdx.add( newR, RELATIONSHIP_ID, relId );
-
-                        result = newR;
-                    }
-
-                    tx.success();
-
-                    return result;
+                    return hits.next();
                 }
-                finally
+
+                final Set<ProjectRelationship<?>> rejected = addRelationships( selected );
+                if ( rejected != null && !rejected.isEmpty() )
                 {
-                    tx.finish();
+                    return null;
                 }
+
+                Relationship result = null;
+                hits = relIdx.get( RELATIONSHIP_ID, id( selected ) );
+                if ( hits.hasNext() )
+                {
+                    result = hits.next();
+                    result.setProperty( Conversions.SELECTION, true );
+                }
+
+                tx.success();
+
+                return result;
+            }
+            finally
+            {
+                tx.finish();
             }
         }
 
@@ -848,7 +828,7 @@ public abstract class AbstractNeo4JEGraphDriver
             //            logger.debug( "PASS: %d", i );
 
             TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
-                                                        .sort( new PathComparator() );
+                                                        .sort( PathComparator.INSTANCE );
 
             for ( final GraphRelType grt : relTypes )
             {
@@ -984,7 +964,11 @@ public abstract class AbstractNeo4JEGraphDriver
             return false;
         }
 
-        final GraphView v = view == null ? GraphView.GLOBAL : view;
+        GraphView v = view;
+        if ( v == null )
+        {
+            v = new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) );
+        }
 
         final Set<Node> roots = getRoots( v );
         if ( roots == null || roots.isEmpty() )
@@ -1190,7 +1174,7 @@ public abstract class AbstractNeo4JEGraphDriver
         TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL );
         if ( sorted )
         {
-            description = description.sort( new PathComparator() );
+            description = description.sort( PathComparator.INSTANCE );
         }
 
         final Set<GraphRelType> relTypes = getGraphRelTypes( view.getFilter() );
@@ -1562,7 +1546,8 @@ public abstract class AbstractNeo4JEGraphDriver
         final Transaction tx = graph.beginTx();
         try
         {
-            final Iterable<Node> nodes = getAllProjectNodes( GraphView.GLOBAL );
+            final GraphView view = new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) );
+            final Iterable<Node> nodes = getAllProjectNodes( view );
             for ( final Node node : nodes )
             {
                 final String gav = getStringProperty( GAV, node );
@@ -1634,7 +1619,8 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
     {
-        if ( !containsProject( GraphView.GLOBAL, ref ) )
+        final GraphView view = new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) );
+        if ( !containsProject( view, ref ) )
         {
             synchronized ( this )
             {

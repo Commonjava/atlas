@@ -24,14 +24,13 @@ public class ParentFilter
     extends AbstractTypedFilter
 {
 
+    public static final ParentFilter EXCLUDE_TERMINAL_PARENTS = new ParentFilter( false );
+
+    public static final ParentFilter INCLUDE_TERMINAL_PARENTS = new ParentFilter( true );
+
     private final boolean allowTerminalParent;
 
-    public ParentFilter()
-    {
-        this( true );
-    }
-
-    public ParentFilter( final boolean allowTerminalParent )
+    private ParentFilter( final boolean allowTerminalParent )
     {
         super( RelationshipType.PARENT, true, false, true );
         this.allowTerminalParent = allowTerminalParent;

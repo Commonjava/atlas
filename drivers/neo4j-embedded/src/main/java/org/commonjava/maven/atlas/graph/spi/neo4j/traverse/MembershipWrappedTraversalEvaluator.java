@@ -17,8 +17,10 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphView;
@@ -45,6 +47,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     private final Set<Long> rootIds;
 
     private final ProjectNetTraversal traversal;
+
+    private final Map<PathKey, GraphPathInfo> pathInfos = new HashMap<PathKey, GraphPathInfo>();
 
     private final Set<Long> seenRels = new HashSet<Long>();
 
@@ -202,19 +206,27 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             return Collections.emptySet();
         }
 
-        final Relationship rel = path.lastRelationship();
-        if ( rel != null )
-        {
-            final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-            final Relationship sel = db == null ? null : db.select( rel, view );
+        final PathKey key = new PathKey( path );
+        GraphPathInfo pathInfo = pathInfos.remove( key );
 
-            if ( ( sel == null || sel == rel ) && Conversions.getBooleanProperty( Conversions.SELECTION, rel, false ) )
-            {
-                expMemberMisses++;
-                return Collections.emptySet();
-            }
+        if ( pathInfo == null )
+        {
+            pathInfo = new GraphPathInfo( view );
         }
 
+        //        final Relationship rel = path.lastRelationship();
+        //        if ( rel != null )
+        //        {
+        //            final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
+        //            final Relationship sel = db == null ? null : db.select( rel, view );
+        //
+        //            if ( ( sel == null || sel == rel ) && Conversions.getBooleanProperty( Conversions.SELECTION, rel, false ) )
+        //            {
+        //                expMemberMisses++;
+        //                return Collections.emptySet();
+        //            }
+        //        }
+        //
         expMemberHits++;
 
         final Iterable<Relationship> rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
@@ -229,7 +241,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         for ( Relationship r : rs )
         {
             final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-            final Relationship selected = db == null ? null : db.select( r, view );
+            final Relationship selected = db == null ? null : db.select( r, view, pathInfo );
 
             // if no selection happened and r is a selection-only relationship, skip it.
             if ( ( selected == null || selected == r ) && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
@@ -243,9 +255,12 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             }
             //            logger.info( "Attempting to expand: %s", r );
 
+            final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
+            final GraphPathInfo next = pathInfo.getChildPathInfo( projectRel );
             if ( accepted.contains( r.getId() ) )
             {
                 //                logger.info( "Previously accepted for expansion: %s", r.getId() );
+                pathInfos.put( new PathKey( path, r ), next );
                 result.add( r );
                 continue;
             }
@@ -256,7 +271,6 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             }
 
             //            logger.info( "Pre-checking relationship %s for expansion using filter: %s", r, traversal );
-            final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
             if ( rels == null )
             {
                 rels = getPathRelationships( path );
@@ -267,6 +281,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                 accepted.add( r.getId() );
                 expPreChecks++;
                 //                logger.info( "Adding for expansion: %s", r );
+                pathInfos.put( new PathKey( path, r ), next );
                 result.add( r );
             }
             else

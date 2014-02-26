@@ -186,4 +186,9 @@ public final class DependencyRelationship
                                            getExcludes().toArray( new ProjectRef[] {} ) );
     }
 
+    public boolean isBOM()
+    {
+        return DependencyScope._import == getScope() && "pom".equals( getTargetArtifact().getType() );
+    }
+
 }

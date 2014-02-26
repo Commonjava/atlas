@@ -27,9 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
-import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.rel.RelationshipPathComparator;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.junit.Rule;
@@ -75,7 +72,7 @@ public class RelationshipPathComparatorTest
 
         paths.add( rels );
 
-        Collections.sort( paths, new RelationshipPathComparator() );
+        Collections.sort( paths, RelationshipPathComparator.INSTANCE );
 
         final List<ProjectRelationship<?>> result = paths.get( 0 );
         final ProjectRelationship<?> firstResult = result.get( 0 );

@@ -53,7 +53,7 @@ public class TransitiveDependencyTraversal
 
     public TransitiveDependencyTraversal( final DependencyScope scope )
     {
-        super( new OrFilter( new DependencyFilter( scope ), new ParentFilter( false ) ) );
+        super( new OrFilter( new DependencyFilter( scope ), ParentFilter.EXCLUDE_TERMINAL_PARENTS ) );
     }
 
     @Override

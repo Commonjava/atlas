@@ -71,12 +71,6 @@ public class DependencyFilter
         }
     }
 
-    public DependencyFilter( final DependencyFilter parent, final DependencyRelationship parentRel )
-    {
-        this( parent.scopeTransitivity.getChildFor( parent.scope ), parent.scopeTransitivity, parent.isManagedInfoIncluded(),
-              parent.isConcreteInfoIncluded(), parent.useImpliedScopes, parentRel == null ? null : parentRel.getExcludes() );
-    }
-
     @Override
     public boolean doAccept( final ProjectRelationship<?> rel )
     {
@@ -119,8 +113,27 @@ public class DependencyFilter
             dr = (DependencyRelationship) parent;
         }
 
-        // TODO: Optimize to ensure we're only creating a new instance when it's critical to...
-        return new DependencyFilter( this, dr );
+        final DependencyScope nextScope = scopeTransitivity.getChildFor( scope );
+        Set<ProjectRef> newExcludes = dr == null ? null : dr.getExcludes();
+        if ( nextScope != scope || ( newExcludes != null && !newExcludes.isEmpty() ) )
+        {
+            if ( excludes != null )
+            {
+                final Set<ProjectRef> ex = new HashSet<ProjectRef>( excludes );
+
+                if ( newExcludes != null && !newExcludes.isEmpty() )
+                {
+                    ex.addAll( newExcludes );
+                }
+
+                newExcludes = ex;
+            }
+
+            return new DependencyFilter( nextScope, scopeTransitivity, isManagedInfoIncluded(), isConcreteInfoIncluded(), useImpliedScopes,
+                                         newExcludes );
+        }
+
+        return this;
     }
 
     @Override

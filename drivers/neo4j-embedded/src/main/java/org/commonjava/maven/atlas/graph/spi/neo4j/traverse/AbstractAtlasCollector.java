@@ -18,7 +18,6 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectVersionRef;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
 import java.util.Collections;
@@ -32,7 +31,6 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
-import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.util.logging.Logger;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
@@ -61,7 +59,7 @@ public abstract class AbstractAtlasCollector<T>
 
     protected GraphView view;
 
-    protected Map<Long, ProjectRelationshipFilter> relationshipFilters = new HashMap<Long, ProjectRelationshipFilter>();
+    protected Map<PathKey, GraphPathInfo> pathInfos = new HashMap<PathKey, GraphPathInfo>();
 
     protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence )
     {
@@ -115,24 +113,16 @@ public abstract class AbstractAtlasCollector<T>
 
         if ( returnChildren( path ) )
         {
-            final ProjectRelationship<?> rel = toProjectRelationship( lastRelationship );
+            final PathKey key = new PathKey( path );
+            GraphPathInfo pathInfo = pathInfos.remove( key );
 
-            ProjectRelationshipFilter nextFilter = null;
-            if ( lastRelationship != null )
+            if ( pathInfo == null )
             {
-                final Long endId = lastRelationship.getId();
-                ProjectRelationshipFilter lastFilter = relationshipFilters.remove( endId );
-                if ( lastFilter == null )
-                {
-                    lastFilter = view.getFilter();
-                }
-
-                if ( lastFilter != null )
-                {
-                    nextFilter = lastFilter.getChildFilter( rel );
-                }
+                pathInfo = new GraphPathInfo( view );
             }
 
+            final ProjectRelationship<?> rel = toProjectRelationship( lastRelationship );
+            final ProjectRelationshipFilter nextFilter = pathInfo.getFilter();
             log( "Implementation says return the children of: %s\n  lastRel=%s\n  nextFilter=%s\n\n",
                  path.endNode()
                      .hasProperty( GAV ) ? path.endNode()
@@ -144,10 +134,15 @@ public abstract class AbstractAtlasCollector<T>
             for ( Relationship r : relationships )
             {
                 final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-                final Relationship selected = db == null ? null : db.select( r, view );
+
+                final Relationship selected = db == null ? null : db.select( r, view, pathInfo );
+                if ( selected == null )
+                {
+                    continue;
+                }
 
                 // if no selection happened and r is a selection-only relationship, skip it.
-                if ( ( selected == null || selected == r ) && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
+                if ( selected == r && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
                 {
                     continue;
                 }
@@ -159,15 +154,9 @@ public abstract class AbstractAtlasCollector<T>
 
                 nextRelationships.add( r );
 
-                if ( nextFilter != null )
-                {
-                    relationshipFilters.put( r.getId(), nextFilter );
-                    log( "+= %s [%s]", logwrapper( r ), nextFilter );
-                }
-                else
-                {
-                    log( "+= %s [global: %s]", logwrapper( r ), view.getFilter() );
-                }
+                final GraphPathInfo next = pathInfo.getChildPathInfo( toProjectRelationship( r ) );
+                pathInfos.put( new PathKey( path, r ), next );
+                log( "+= %s [%s]", logwrapper( r ), next.getFilter() );
             }
 
             return nextRelationships;
@@ -186,26 +175,30 @@ public abstract class AbstractAtlasCollector<T>
             return true;
         }
 
-        ProjectRelationshipFilter filter = relationshipFilters.get( r.getId() );
-        if ( filter == null )
+        // if there's a GraphPathInfo mapped for this path, then it was accepted during expansion.
+        // If so, then we just need to verify the workspace allows the pomLocation and source
+        // TODO: Can we check the workspace restrictions during expansion??
+        if ( pathInfos.containsKey( new PathKey( path ) ) )
         {
-            filter = view.getFilter();
+            return accepted( r, null, view.getWorkspace() );
         }
 
-        final boolean accept = accepted( r, filter, view.getWorkspace() );
+        return false;
 
-        if ( logEnabled )
-        {
-            final Set<ProjectVersionRef> gavs = new HashSet<ProjectVersionRef>( startNodes.size() );
-            for ( final Node node : startNodes )
-            {
-                gavs.add( toProjectVersionRef( node ) );
-            }
-
-            log( "Checking acceptance: %s [roots: %s, filter: %s]...%s", logwrapper( r ), gavs, filter, accept );
-        }
-
-        return accept;
+        //        final boolean accept = accepted( r, info.getFilter(), view.getWorkspace() );
+        //
+        //        if ( logEnabled )
+        //        {
+        //            final Set<ProjectVersionRef> gavs = new HashSet<ProjectVersionRef>( startNodes.size() );
+        //            for ( final Node node : startNodes )
+        //            {
+        //                gavs.add( toProjectVersionRef( node ) );
+        //            }
+        //
+        //            log( "Checking acceptance: %s [roots: %s, filter: %s]...%s", logwrapper( r ), gavs, info.getFilter(), accept );
+        //        }
+        //
+        //        return accept;
     }
 
     private Object logwrapper( final Relationship r )

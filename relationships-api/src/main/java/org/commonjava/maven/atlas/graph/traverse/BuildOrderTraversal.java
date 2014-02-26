@@ -48,7 +48,7 @@ public class BuildOrderTraversal
 
     public BuildOrderTraversal( final ProjectRelationshipFilter filter )
     {
-        super( new OrFilter( filter, new ParentFilter( false ) ) );
+        super( new OrFilter( filter, ParentFilter.EXCLUDE_TERMINAL_PARENTS ) );
     }
 
     public BuildOrder getBuildOrder()
@@ -57,8 +57,7 @@ public class BuildOrderTraversal
     }
 
     @Override
-    protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
-                                          final List<ProjectRelationship<?>> path, final int pass )
+    protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         final ProjectVersionRef decl = relationship.getDeclaring();
 

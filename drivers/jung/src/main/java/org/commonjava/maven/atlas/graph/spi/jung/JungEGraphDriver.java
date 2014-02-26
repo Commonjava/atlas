@@ -28,7 +28,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -39,23 +38,18 @@ import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.mutate.VersionManager;
-import org.commonjava.maven.atlas.graph.rel.AbstractProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
-import org.commonjava.maven.atlas.graph.rel.RelationshipPathComparator;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
-import org.commonjava.maven.atlas.graph.traverse.AbstractTraversal;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.util.logging.Logger;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
@@ -249,8 +243,9 @@ public class JungEGraphDriver
 
             final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
-            dfsTraverse( GraphView.GLOBAL, traversal, 0, rel.getTarget()
-                                                            .asProjectVersionRef() );
+            dfsTraverse( new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) ), traversal, 0,
+                         rel.getTarget()
+                            .asProjectVersionRef() );
 
             final List<EProjectCycle> cycles = traversal.getCycles();
 
@@ -348,49 +343,40 @@ public class JungEGraphDriver
     // TODO: Implement without recursion.
     private void dfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
     {
-        dfsIterate( view, root, traversal, new LinkedList<ProjectRelationship<?>>(), pass );
+        dfsIterate( view, root, traversal, new GraphPath( root, view ), pass );
     }
 
-    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal,
-                             final LinkedList<ProjectRelationship<?>> path, final int pass )
+    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal, final GraphPath path,
+                             final int pass )
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
         if ( edges != null )
         {
             for ( final ProjectRelationship<?> edge : edges )
             {
-                path.addLast( edge );
-                if ( traversal.traverseEdge( edge, path, pass ) )
+                final GraphPath next = path.getChildPath( edge );
+                if ( next == null )
                 {
+                    continue;
+                }
 
+                if ( traversal.traverseEdge( next.getTargetEdge(), next.getPathElements(), pass ) )
+                {
                     if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
                     {
+                        if ( next.hasCycle() )
+                        {
+                            continue;
+                        }
+
                         final ProjectVersionRef target = edge.getTarget()
                                                              .asProjectVersionRef();
 
-                        // FIXME: Are there cases where a traversal needs to see cycles??
-                        boolean cycle = false;
-                        for ( final ProjectRelationship<?> item : path )
-                        {
-                            if ( item.getDeclaring()
-                                     .equals( target ) )
-                            {
-                                cycle = true;
-                                break;
-                            }
-                        }
-
-                        if ( !cycle )
-                        {
-                            dfsIterate( view, target, traversal, path, pass );
-                        }
-
+                        dfsIterate( view, target, traversal, next, pass );
                     }
 
-                    traversal.edgeTraversed( edge, path, pass );
+                    traversal.edgeTraversed( next.getTargetEdge(), next.getPathElements(), pass );
                 }
-
-                path.removeLast();
             }
         }
     }
@@ -398,53 +384,50 @@ public class JungEGraphDriver
     // TODO: Implement without recursion.
     private void bfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
     {
-        final List<ProjectRelationship<?>> path = new ArrayList<ProjectRelationship<?>>();
-        path.add( new SelfEdge( root ) );
+        final GraphPath path = new GraphPath( root, view );
 
         bfsIterate( view, Collections.singletonList( path ), traversal, pass );
     }
 
-    private void bfsIterate( final GraphView view, final List<List<ProjectRelationship<?>>> thisLayer, final ProjectNetTraversal traversal,
-                             final int pass )
+    private void bfsIterate( final GraphView view, final List<GraphPath> thisLayer, final ProjectNetTraversal traversal, final int pass )
     {
-        final List<List<ProjectRelationship<?>>> nextLayer = new ArrayList<List<ProjectRelationship<?>>>();
+        final List<GraphPath> nextLayer = new ArrayList<GraphPath>();
 
-        for ( final List<ProjectRelationship<?>> path : thisLayer )
+        for ( final GraphPath path : thisLayer )
         {
             if ( path.isEmpty() )
             {
                 continue;
             }
 
-            final ProjectVersionRef node = path.get( path.size() - 1 )
-                                               .getTarget()
-                                               .asProjectVersionRef();
-
-            if ( !path.isEmpty() && ( path.get( 0 ) instanceof SelfEdge ) )
-            {
-                path.remove( 0 );
-            }
+            final ProjectVersionRef node = path.getTarget();
 
             final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
             if ( edges != null )
             {
                 for ( final ProjectRelationship<?> edge : edges )
                 {
-                    final List<ProjectRelationship<?>> nextPath = new ArrayList<ProjectRelationship<?>>( path );
-
-                    // FIXME: How do we avoid cycle traversal here??
-                    nextPath.add( edge );
+                    final GraphPath next = path.getChildPath( edge );
+                    if ( next == null )
+                    {
+                        continue;
+                    }
 
                     // call traverseEdge no matter what, to allow traversal to "see" all relationships.
-                    if ( /*( edge instanceof SelfEdge ) ||*/traversal.traverseEdge( edge, nextPath, pass ) )
+                    if ( traversal.traverseEdge( next.getTargetEdge(), next.getPathElements(), pass ) )
                     {
                         // Don't account for terminal parent relationship.
                         if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
                         {
-                            nextLayer.add( nextPath );
+                            if ( next.hasCycle() )
+                            {
+                                continue;
+                            }
+
+                            nextLayer.add( next );
                         }
 
-                        traversal.edgeTraversed( edge, path, pass );
+                        traversal.edgeTraversed( next.getTargetEdge(), next.getPathElements(), pass );
                     }
                 }
             }
@@ -452,7 +435,7 @@ public class JungEGraphDriver
 
         if ( !nextLayer.isEmpty() )
         {
-            Collections.sort( nextLayer, new RelationshipPathComparator() );
+            Collections.sort( nextLayer );
             bfsIterate( view, nextLayer, traversal, pass );
         }
     }
@@ -470,64 +453,9 @@ public class JungEGraphDriver
         RelationshipUtils.filterTerminalParents( unsorted );
 
         final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( imposeSelections( view, unsorted ) );
-        Collections.sort( sorted, new RelationshipComparator() );
+        Collections.sort( sorted, RelationshipComparator.INSTANCE );
 
         return sorted;
-    }
-
-    private static final class SelfEdge
-        extends AbstractProjectRelationship<ProjectVersionRef>
-    {
-
-        private static final long serialVersionUID = 1L;
-
-        SelfEdge( final ProjectVersionRef ref )
-        {
-            super( (URI) null, null, ref.asProjectVersionRef(), ref.asProjectVersionRef(), 0 );
-        }
-
-        @Override
-        public ArtifactRef getTargetArtifact()
-        {
-            return getTarget().asPomArtifact();
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
-        {
-            return selectDeclaring( version, false );
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version, final boolean force )
-        {
-            return new SelfEdge( getDeclaring().selectVersion( version, force ) );
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
-        {
-            return selectTarget( version, false );
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
-        {
-            return new SelfEdge( getDeclaring().selectVersion( version, force ) );
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectDeclaring( final ProjectVersionRef ref )
-        {
-            return this;
-        }
-
-        @Override
-        public ProjectRelationship<ProjectVersionRef> selectTarget( final ProjectVersionRef ref )
-        {
-            return this;
-        }
-
     }
 
     //    @Override
@@ -710,9 +638,10 @@ public class JungEGraphDriver
     @Override
     public void recomputeIncompleteSubgraphs()
     {
-        for ( final ProjectVersionRef vertex : getAllProjects( GraphView.GLOBAL ) )
+        final GraphView view = new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) );
+        for ( final ProjectVersionRef vertex : getAllProjects( view ) )
         {
-            final Collection<? extends ProjectRelationship<?>> outEdges = getRelationshipsDeclaredBy( GraphView.GLOBAL, vertex );
+            final Collection<? extends ProjectRelationship<?>> outEdges = getRelationshipsDeclaredBy( view, vertex );
             if ( outEdges != null && !outEdges.isEmpty() )
             {
                 incompleteSubgraphs.remove( vertex );
@@ -889,95 +818,6 @@ public class JungEGraphDriver
     //    {
     //        return selected;
     //    }
-
-    private static final class CycleDetectionTraversal
-        extends AbstractTraversal
-    {
-        private final List<EProjectCycle> cycles = new ArrayList<EProjectCycle>();
-
-        private final ProjectRelationship<?> rel;
-
-        private CycleDetectionTraversal( final ProjectRelationship<?> rel )
-        {
-            this.rel = rel;
-        }
-
-        public List<EProjectCycle> getCycles()
-        {
-            return cycles;
-        }
-
-        @Override
-        public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
-        {
-            if ( rel.getDeclaring()
-                    .equals( rel.getTarget()
-                                .asProjectVersionRef() ) )
-            {
-                return false;
-            }
-
-            new Logger( getClass() ).info( "Checking for cycle:\n\n%s\n\n", join( path, "\n" ) );
-
-            final ProjectVersionRef from = rel.getDeclaring();
-            if ( from.equals( relationship.getTarget()
-                                          .asProjectVersionRef() ) )
-            {
-                final List<ProjectRelationship<?>> cycle = new ArrayList<ProjectRelationship<?>>( path );
-                cycle.add( rel );
-
-                cycles.add( new EProjectCycle( cycle ) );
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    private static final class PathDetectionTraversal
-        extends AbstractTraversal
-    {
-        //        private final Logger logger = new Logger( getClass() );
-
-        private final ProjectVersionRef[] to;
-
-        private final Set<List<ProjectRelationship<?>>> paths = new HashSet<List<ProjectRelationship<?>>>();
-
-        private PathDetectionTraversal( final ProjectVersionRef[] refs )
-        {
-            this.to = new ProjectVersionRef[refs.length];
-            for ( int i = 0; i < refs.length; i++ )
-            {
-                this.to[i] = refs[i].asProjectVersionRef();
-            }
-        }
-
-        public Set<List<ProjectRelationship<?>>> getPaths()
-        {
-            return paths;
-        }
-
-        @Override
-        public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
-        {
-            final ProjectVersionRef target = relationship.getTarget()
-                                                         .asProjectVersionRef();
-
-            // logger.info( "Checking path: %s to see if target: %s is in endpoints: %s", join( path, "," ), target, join( to, ", " ) );
-            boolean found = false;
-            for ( final ProjectVersionRef t : to )
-            {
-                if ( t.equals( target ) )
-                {
-                    paths.add( new ArrayList<ProjectRelationship<?>>( path ) );
-                    // logger.info( "+= %s", join( path, ", " ) );
-                    found = true;
-                }
-            }
-
-            return !found;
-        }
-    }
 
     @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )

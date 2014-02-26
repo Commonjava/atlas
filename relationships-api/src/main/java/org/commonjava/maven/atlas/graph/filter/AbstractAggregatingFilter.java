@@ -56,6 +56,11 @@ public abstract class AbstractAggregatingFilter
             //            }
         }
 
+        if ( getFilters().equals( childFilters ) )
+        {
+            return this;
+        }
+
         // TODO: Optimize to ensure we're only creating a new instance when it's critical to...
         return newChildFilter( childFilters );
     }

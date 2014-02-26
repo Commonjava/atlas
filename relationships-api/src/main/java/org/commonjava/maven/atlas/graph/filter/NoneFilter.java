@@ -23,6 +23,12 @@ public class NoneFilter
     implements ProjectRelationshipFilter
 {
 
+    public static final NoneFilter INSTANCE = new NoneFilter();
+
+    private NoneFilter()
+    {
+    }
+
     @Override
     public boolean accept( final ProjectRelationship<?> rel )
     {
