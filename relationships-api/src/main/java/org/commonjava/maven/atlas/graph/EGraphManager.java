@@ -82,7 +82,7 @@ public class EGraphManager
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final Collection<ProjectRelationship<?>> rels )
     {
-        logger.info( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
+        logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
         return workspace.getDatabase()
                         .addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
     }
