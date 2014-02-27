@@ -118,6 +118,10 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String CACHED_ALL_PROJECT_REFS = "all-project-refs";
 
+    private static final String SELECTION_RELATIONSHIPS = "selection_relationships";
+
+    private static final String RID = "ridLong";
+
     //    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
 
     /* @formatter:off */
@@ -449,6 +453,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
                     connectedSubgraphs.add( relationship.getEndNode() );
                     Conversions.removeProperty( Conversions.SELECTION, relationship );
+                    graph.index()
+                         .forRelationships( SELECTION_RELATIONSHIPS )
+                         .remove( relationship, RID, relationship.getId() );
 
                     addToURIListProperty( rel.getSources(), SOURCE_URI, relationship );
                 }
@@ -480,7 +487,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         updateCaches( skipped, rels, connectedSubgraphs );
 
-        printGraphStats();
+        //        printGraphStats();
 
         return skipped;
     }
@@ -713,6 +720,9 @@ public abstract class AbstractNeo4JEGraphDriver
                 {
                     result = hits.next();
                     result.setProperty( Conversions.SELECTION, true );
+                    graph.index()
+                         .forRelationships( SELECTION_RELATIONSHIPS )
+                         .add( result, RID, result.getId() );
                 }
 
                 tx.success();
@@ -1012,6 +1022,25 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( graph != null )
         {
+            final RelationshipIndex idx = graph.index()
+                                               .forRelationships( SELECTION_RELATIONSHIPS );
+
+            if ( idx != null )
+            {
+                final IndexHits<Relationship> hits = idx.get( RID, "*" );
+                for ( final Relationship r : hits )
+                {
+                    if ( r.hasProperty( Conversions.SELECTION ) )
+                    {
+                        r.delete();
+                    }
+                }
+
+                graph.index()
+                     .forRelationships( SELECTION_RELATIONSHIPS )
+                     .delete();
+            }
+
             try
             {
                 graph.shutdown();
