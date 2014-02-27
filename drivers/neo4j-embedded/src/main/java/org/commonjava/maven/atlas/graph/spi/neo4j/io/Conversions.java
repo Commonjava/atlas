@@ -163,7 +163,7 @@ public final class Conversions
 
         if ( empty( g ) || empty( a ) || empty( v ) )
         {
-            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: {}:{}:{}", g, a, v ) );
+            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: %s:%s:%s", g, a, v ) );
         }
 
         node.setProperty( NODE_TYPE, NodeType.PROJECT.name() );
@@ -212,7 +212,7 @@ public final class Conversions
 
         if ( empty( g ) || empty( a ) || empty( v ) )
         {
-            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: {}:{}:{}", g, a, v ) );
+            throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: %s:%s:%s", g, a, v ) );
         }
 
         return new ProjectVersionRef( g, a, v );

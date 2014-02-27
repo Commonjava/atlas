@@ -1477,7 +1477,7 @@ public abstract class AbstractNeo4JEGraphDriver
             sb.append( "*" );
         }
 
-        return execute( String.format( "START n=node({}) {}", sb, cypher ), params );
+        return execute( String.format( "START n=node(%s) %s", sb, cypher ), params );
     }
 
     @Override
@@ -1506,7 +1506,7 @@ public abstract class AbstractNeo4JEGraphDriver
             }
         }
 
-        return execute( String.format( "START r=relationship({}) {}", id, cypher ), params );
+        return execute( String.format( "START r=relationship(%s) %s", id, cypher ), params );
     }
 
     @Override
