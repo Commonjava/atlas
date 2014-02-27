@@ -16,7 +16,6 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.jung;
 
-import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 
@@ -50,6 +49,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.slf4j.LoggerFactory;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
@@ -284,7 +284,7 @@ public class JungEGraphDriver
         if ( roots == null )
         {
             LoggerFactory.getLogger( getClass() )
-                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!", join( refs, ", " ) );
+                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!", new JoinString( ", ", refs ) );
             return null;
         }
 

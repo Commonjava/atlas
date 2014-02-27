@@ -16,7 +16,6 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
-import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
@@ -77,6 +76,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.neo4j.cypher.javacompat.ExecutionEngine;
 import org.neo4j.cypher.javacompat.ExecutionResult;
@@ -981,7 +981,7 @@ public abstract class AbstractNeo4JEGraphDriver
             return true;
         }
 
-        logger.debug( "Checking for path between roots: {} and target node: {}", join( roots, "," ), node.getId() );
+        logger.debug( "Checking for path between roots: {} and target node: {}", new JoinString( ",", roots ), node.getId() );
         final EndNodesCollector checker = new EndNodesCollector( roots, Collections.singleton( node ), view, false );
 
         collectAtlasRelationships( v, checker, roots, false );

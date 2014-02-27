@@ -1,7 +1,5 @@
 package org.commonjava.maven.atlas.graph.spi.jung;
 
-import static org.apache.commons.lang.StringUtils.join;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -9,6 +7,7 @@ import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.traverse.AbstractTraversal;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.slf4j.LoggerFactory;
 
 final class CycleDetectionTraversal
@@ -39,7 +38,7 @@ final class CycleDetectionTraversal
         }
 
         LoggerFactory.getLogger( getClass() )
-                     .info( "Checking for cycle:\n\n{}\n\n", join( path, "\n" ) );
+                     .debug( "Checking for cycle:\n\n{}\n\n", new JoinString( "\n", path ) );
 
         final ProjectVersionRef from = rel.getDeclaring();
         if ( from.equals( relationship.getTarget()

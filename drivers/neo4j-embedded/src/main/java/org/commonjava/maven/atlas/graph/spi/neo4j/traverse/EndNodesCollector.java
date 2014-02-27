@@ -16,13 +16,12 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
-import static org.apache.commons.lang.StringUtils.join;
-
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -44,8 +43,8 @@ public class EndNodesCollector
     {
         super( startNodes, view, checkExistence );
         this.endNodes = endNodes;
-        logger.debug( "Collector: start=({}), end=({}), view=({}), checkExistence={}", join( startNodes, ", " ), join( endNodes, ", " ), view,
-                      checkExistence );
+        logger.debug( "Collector: start=({}), end=({}), view=({}), checkExistence={}", new JoinString( ", ", startNodes ),
+                      new JoinString( ", ", endNodes ), view, checkExistence );
         //        this.logEnabled = true;
     }
 

@@ -16,8 +16,6 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph;
 
-import static org.apache.commons.lang.StringUtils.join;
-
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -47,6 +45,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,14 +75,14 @@ public class EGraphManager
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final ProjectRelationship<?>... rels )
     {
-        logger.info( "Storing relationships for: {}\n\n  {}", workspace.getId(), join( rels, "\n  " ) );
+        logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
         return workspace.getDatabase()
                         .addRelationships( rels );
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final Collection<ProjectRelationship<?>> rels )
     {
-        logger.info( "Storing relationships for: {}\n\n  {}", workspace.getId(), join( rels, "\n  " ) );
+        logger.info( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
         return workspace.getDatabase()
                         .addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
     }

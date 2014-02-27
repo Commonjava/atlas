@@ -1,7 +1,5 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
-import static org.apache.commons.lang.StringUtils.join;
-
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -14,6 +12,7 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +54,7 @@ public class ManagedDependencyMutator
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY )
         {
-            logger.info( "No selections for relationships of type: {}", rel.getType() );
+            logger.debug( "No selections for relationships of type: {}", rel.getType() );
             return rel;
         }
 
@@ -63,7 +62,7 @@ public class ManagedDependencyMutator
 
         if ( mutated != null && mutated != rel )
         {
-            logger.info( "Mutated. Was:\n  {}\n\nNow:\n  {}\n\n", rel, mutated );
+            logger.debug( "Mutated. Was:\n  {}\n\nNow:\n  {}\n\n", rel, mutated );
         }
 
         return mutated;
@@ -74,7 +73,7 @@ public class ManagedDependencyMutator
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY )
         {
-            logger.info( "Return 'this' for non-dependency relationship: {}", rel );
+            logger.debug( "Return 'this' for non-dependency relationship: {}", rel );
             return this;
         }
 
@@ -83,7 +82,7 @@ public class ManagedDependencyMutator
             final ProjectVersionRef declaring = rel.getDeclaring()
                                                    .asProjectVersionRef();
 
-            logger.info( "Retrieving managed dependency relationships for: {}", declaring );
+            logger.debug( "Retrieving managed dependency relationships for: {}", declaring );
 
             Set<ProjectRelationship<?>> rels =
                 view.getDatabase()
@@ -101,7 +100,7 @@ public class ManagedDependencyMutator
                     }
                     else
                     {
-                        logger.info( "DETECTED BOM IMPORT: {}; skipping for managed deps in mutator for: {}", r.getTarget(), declaring );
+                        logger.debug( "DETECTED BOM IMPORT: {}; skipping for managed deps in mutator for: {}", r.getTarget(), declaring );
                     }
                 }
 
@@ -110,7 +109,7 @@ public class ManagedDependencyMutator
 
             if ( rels != null && !rels.isEmpty() )
             {
-                logger.info( "Incorporating {} new managed deps from: {}", rels.size(), declaring );
+                logger.debug( "Incorporating {} new managed deps from: {}", rels.size(), declaring );
 
                 final Map<ProjectRef, ProjectVersionRef> existing = versions.getSelections();
 
@@ -132,14 +131,15 @@ public class ManagedDependencyMutator
                     final Map<ProjectRef, ProjectVersionRef> mapping = VersionManager.createMapping( RelationshipUtils.targets( rels ) );
                     final ManagedDependencyMutator result = new ManagedDependencyMutator( view, new VersionManager( versions, mapping ), accumulate );
 
-                    logger.info( "Managed dependencies for children of: {} are:\n  {}\n\n", declaring, join( result.versions.getSelections()
-                                                                                                                            .entrySet(), "\n  " ) );
+                    logger.debug( "Managed dependencies for children of: {} are:\n  {}\n\n", declaring,
+                                  new JoinString( "\n  ", result.versions.getSelections()
+                                                                         .entrySet() ) );
                     return result;
                 }
             }
             else
             {
-                logger.info( "No managed deps for target: {}", declaring );
+                logger.debug( "No managed deps for target: {}", declaring );
             }
         }
 

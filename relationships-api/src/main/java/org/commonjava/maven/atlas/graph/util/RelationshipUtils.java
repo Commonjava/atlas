@@ -16,7 +16,6 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.util;
 
-import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.ident.util.IdentityUtils.artifact;
 import static org.commonjava.maven.atlas.ident.util.IdentityUtils.projectVersion;
 
@@ -46,6 +45,7 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -119,7 +119,7 @@ public final class RelationshipUtils
     public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<ProjectRelationship<?>> relationships )
     {
         final Logger logger = LoggerFactory.getLogger( RelationshipUtils.class );
-        logger.info( "Mapping {} relationships by declaring GAV:\n\n  {}\n\n", relationships.size(), join( relationships, "\n  " ) );
+        logger.debug( "Mapping {} relationships by declaring GAV:\n\n  {}\n\n", relationships.size(), new JoinString( "\n  ", relationships ) );
         final Map<ProjectVersionRef, List<ProjectRelationship<?>>> result = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
         for ( final ProjectRelationship<?> rel : relationships )
         {
