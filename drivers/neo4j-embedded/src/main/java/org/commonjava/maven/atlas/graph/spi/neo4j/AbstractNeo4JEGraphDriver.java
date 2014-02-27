@@ -1027,18 +1027,28 @@ public abstract class AbstractNeo4JEGraphDriver
 
             if ( idx != null )
             {
-                final IndexHits<Relationship> hits = idx.get( RID, "*" );
-                for ( final Relationship r : hits )
+                final Transaction tx = graph.beginTx();
+                try
                 {
-                    if ( r.hasProperty( Conversions.SELECTION ) )
+                    final IndexHits<Relationship> hits = idx.get( RID, "*" );
+                    for ( final Relationship r : hits )
                     {
-                        r.delete();
+                        if ( r.hasProperty( Conversions.SELECTION ) )
+                        {
+                            r.delete();
+                        }
                     }
-                }
 
-                graph.index()
-                     .forRelationships( SELECTION_RELATIONSHIPS )
-                     .delete();
+                    graph.index()
+                         .forRelationships( SELECTION_RELATIONSHIPS )
+                         .delete();
+
+                    tx.success();
+                }
+                finally
+                {
+                    tx.finish();
+                }
             }
 
             try
