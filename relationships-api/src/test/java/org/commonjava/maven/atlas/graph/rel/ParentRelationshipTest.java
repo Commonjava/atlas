@@ -22,7 +22,6 @@ import static org.junit.Assert.assertThat;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.VersionUtils;

@@ -22,7 +22,6 @@ import static org.junit.Assert.assertThat;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-import org.commonjava.maven.atlas.graph.filter.DependencyFilter;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
