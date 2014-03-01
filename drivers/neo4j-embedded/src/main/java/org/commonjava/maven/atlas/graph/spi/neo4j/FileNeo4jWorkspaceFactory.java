@@ -33,7 +33,6 @@ import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.maven.atlas.ident.util.StringFormat;
 import org.commonjava.web.json.ser.JsonSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -209,7 +208,7 @@ public class FileNeo4jWorkspaceFactory
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( "{}", e, new StringFormat( "Failed to load workspace: {}. Reason: {}", id, e.getMessage() ) );
+                logger.error( String.format( "Failed to load workspace: %s. Reason: %s", id, e.getMessage() ), e );
             }
         }
 

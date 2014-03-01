@@ -77,7 +77,6 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.util.JoinString;
-import org.commonjava.maven.atlas.ident.util.StringFormat;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.neo4j.cypher.javacompat.ExecutionEngine;
 import org.neo4j.cypher.javacompat.ExecutionResult;
@@ -382,7 +381,7 @@ public abstract class AbstractNeo4JEGraphDriver
                         {
                             // FIXME: This means we're discarding a rejected relationship without passing it back...NOT GOOD
                             // However, some code assumes rejects are cycles...also not good.
-                            logger.error( "{}", e, new StringFormat( "Failed to create node for project ref: {}. Reason: {}", ref, e.getMessage() ) );
+                            logger.error( String.format( "Failed to create node for project ref: %s. Reason: %s", ref, e.getMessage() ), e );
                             continue nextRel;
                         }
                     }

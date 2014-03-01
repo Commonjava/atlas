@@ -46,7 +46,6 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.util.JoinString;
-import org.commonjava.maven.atlas.ident.util.StringFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -477,7 +476,7 @@ public class EGraphManager
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( "{}", e, new StringFormat( "Failed to store workspace {} on detach. Reason: {}", ws.getId(), e.getMessage() ) );
+                logger.error( String.format( "Failed to store workspace %s on detach. Reason: %s", ws.getId(), e.getMessage() ), e );
             }
         }
     }
@@ -495,7 +494,7 @@ public class EGraphManager
             }
             catch ( final IOException e )
             {
-                logger.error( "{}", e, new StringFormat( "Failed to delete temporary workspace: {}. Reason: {}", workspace.getId(), e.getMessage() ) );
+                logger.error( String.format( "Failed to delete temporary workspace: %s. Reason: %s", workspace.getId(), e.getMessage() ), e );
             }
         }
         else
@@ -506,7 +505,7 @@ public class EGraphManager
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( "{}", e, new StringFormat( "Failed to store updates for workspace: {}. Reason: {}", workspace, e.getMessage() ) );
+                logger.error( String.format( "Failed to store updates for workspace: %s. Reason: %s", workspace, e.getMessage() ), e );
             }
         }
     }
