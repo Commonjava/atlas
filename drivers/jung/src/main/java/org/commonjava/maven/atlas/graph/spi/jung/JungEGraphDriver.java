@@ -923,4 +923,20 @@ public class JungEGraphDriver
         return byGA.containsKey( projectRef.asProjectRef() ) ? byGA.get( projectRef.asProjectRef() ) : Collections.<ProjectVersionRef> emptySet();
     }
 
+    @Override
+    public void deleteRelationshipsDeclaredBy( final ProjectVersionRef ref )
+        throws GraphDriverException
+    {
+        final Collection<ProjectRelationship<?>> edges = graph.getOutEdges( ref.asProjectVersionRef() );
+        if ( edges != null )
+        {
+            for ( final ProjectRelationship<?> rel : edges )
+            {
+                graph.removeEdge( rel );
+            }
+        }
+
+        incompleteSubgraphs.add( ref );
+    }
+
 }

@@ -36,13 +36,17 @@ public interface EProjectNet
     <T extends ProjectRelationship<?>> Set<T> addAll( Collection<T> rels )
         throws GraphDriverException;
 
-    void addCycle( final EProjectCycle cycle );
+    void addCycle( final EProjectCycle cycle )
+        throws GraphDriverException;
 
-    void addDisconnectedProject( ProjectVersionRef ref );
+    void addDisconnectedProject( ProjectVersionRef ref )
+        throws GraphDriverException;
 
-    void addMetadata( EProjectKey key, String name, String value );
+    void addMetadata( EProjectKey key, String name, String value )
+        throws GraphDriverException;
 
-    void addMetadata( EProjectKey key, Map<String, String> metadata );
+    void addMetadata( EProjectKey key, Map<String, String> metadata )
+        throws GraphDriverException;
 
     //    Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
     //        throws GraphDriverException;

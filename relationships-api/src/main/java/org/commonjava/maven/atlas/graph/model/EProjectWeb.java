@@ -113,6 +113,7 @@ public class EProjectWeb
     }
 
     public <T extends ProjectRelationship<?>> boolean add( final T rel )
+        throws GraphDriverException
     {
         if ( rel == null )
         {
@@ -245,6 +246,7 @@ public class EProjectWeb
 
     @Override
     public void addCycle( final EProjectCycle cycle )
+        throws GraphDriverException
     {
         view.getDatabase()
             .addCycle( cycle );
@@ -299,6 +301,7 @@ public class EProjectWeb
 
     @Override
     public void addMetadata( final EProjectKey key, final String name, final String value )
+        throws GraphDriverException
     {
         view.getDatabase()
             .addMetadata( key.getProject(), name, value );
@@ -306,6 +309,7 @@ public class EProjectWeb
 
     @Override
     public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
+        throws GraphDriverException
     {
         view.getDatabase()
             .setMetadata( key.getProject(), metadata );
@@ -362,6 +366,7 @@ public class EProjectWeb
 
     @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
+        throws GraphDriverException
     {
         view.getDatabase()
             .addDisconnectedProject( ref );

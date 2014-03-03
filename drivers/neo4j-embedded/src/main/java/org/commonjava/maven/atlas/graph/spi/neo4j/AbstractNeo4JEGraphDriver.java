@@ -1811,4 +1811,51 @@ public abstract class AbstractNeo4JEGraphDriver
         return new HashSet<ProjectVersionRef>( convertToProjects( hits ) );
     }
 
+    @Override
+    public void deleteRelationshipsDeclaredBy( final ProjectVersionRef ref )
+        throws GraphDriverException
+    {
+        checkClosed();
+
+        if ( ref == null )
+        {
+            return;
+        }
+
+        final Index<Node> index = graph.index()
+                                       .forNodes( BY_GAV_IDX );
+
+        final String gav = ref.asProjectVersionRef()
+                              .toString();
+
+        final IndexHits<Node> hits = index.get( GAV, gav );
+
+        if ( hits.hasNext() )
+        {
+            final Transaction tx = graph.beginTx();
+            try
+            {
+                final Node node = hits.next();
+                final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING );
+                if ( relationships != null )
+                {
+                    for ( final Relationship r : relationships )
+                    {
+                        r.delete();
+                    }
+                }
+
+                graph.index()
+                     .forNodes( MISSING_NODES_IDX )
+                     .add( node, GAV, gav );
+
+                tx.success();
+            }
+            finally
+            {
+                tx.finish();
+            }
+        }
+    }
+
 }

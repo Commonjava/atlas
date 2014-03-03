@@ -41,20 +41,28 @@ public interface GraphDatabaseDriver
      * #########################
      */
 
-    boolean addCycle( EProjectCycle cycle );
+    boolean addCycle( EProjectCycle cycle )
+        throws GraphDriverException;
 
-    void addDisconnectedProject( ProjectVersionRef ref );
+    void addDisconnectedProject( ProjectVersionRef ref )
+        throws GraphDriverException;
 
-    void addMetadata( ProjectVersionRef ref, String key, String value );
+    void addMetadata( ProjectVersionRef ref, String key, String value )
+        throws GraphDriverException;
 
-    void setMetadata( ProjectVersionRef ref, Map<String, String> metadata );
+    void setMetadata( ProjectVersionRef ref, Map<String, String> metadata )
+        throws GraphDriverException;
+
+    void deleteRelationshipsDeclaredBy( ProjectVersionRef root )
+        throws GraphDriverException;
 
     /**
      * Add the given relationships. Skip/return those that introduce cycles.
      * 
      * @return The set of relationships that were NOT added because they introduce cycles. NEVER null, but maybe empty.
      */
-    Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel );
+    Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel )
+        throws GraphDriverException;
 
     void recomputeIncompleteSubgraphs()
         throws GraphDriverException;

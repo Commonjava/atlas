@@ -74,6 +74,7 @@ public class EGraphManager
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final ProjectRelationship<?>... rels )
+        throws GraphDriverException
     {
         logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
         return workspace.getDatabase()
@@ -81,6 +82,7 @@ public class EGraphManager
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final Collection<ProjectRelationship<?>> rels )
+        throws GraphDriverException
     {
         logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
         return workspace.getDatabase()
@@ -88,6 +90,7 @@ public class EGraphManager
     }
 
     public EProjectGraph createGraph( final GraphWorkspace workspace, final EProjectDirectRelationships rels )
+        throws GraphDriverException
     {
         final ProjectVersionRef project = rels.getKey()
                                               .getProject();
@@ -380,24 +383,28 @@ public class EGraphManager
     }
 
     public void addMetadata( final GraphWorkspace workspace, final EProjectKey key, final String name, final String value )
+        throws GraphDriverException
     {
         workspace.getDatabase()
                  .addMetadata( key.getProject(), name, value );
     }
 
     public void setMetadata( final GraphWorkspace workspace, final EProjectKey key, final Map<String, String> metadata )
+        throws GraphDriverException
     {
         workspace.getDatabase()
                  .setMetadata( key.getProject(), metadata );
     }
 
     public void addMetadata( final GraphWorkspace workspace, final ProjectVersionRef project, final String name, final String value )
+        throws GraphDriverException
     {
         workspace.getDatabase()
                  .addMetadata( project, name, value );
     }
 
     public void setMetadata( final GraphWorkspace workspace, final ProjectVersionRef project, final Map<String, String> metadata )
+        throws GraphDriverException
     {
         workspace.getDatabase()
                  .setMetadata( project, metadata );
@@ -422,9 +429,24 @@ public class EGraphManager
     }
 
     public void addDisconnectedProject( final GraphWorkspace workspace, final ProjectVersionRef ref )
+        throws GraphDriverException
     {
         workspace.getDatabase()
                  .addDisconnectedProject( ref );
+    }
+
+    public void deleteRelationshipsDeclaredBy( final GraphView view, final ProjectVersionRef ref )
+        throws GraphDriverException
+    {
+        view.getDatabase()
+            .deleteRelationshipsDeclaredBy( ref );
+    }
+
+    public void deleteRelationshipsDeclaredBy( final GraphWorkspace workspace, final ProjectVersionRef ref )
+        throws GraphDriverException
+    {
+        workspace.getDatabase()
+                 .deleteRelationshipsDeclaredBy( ref );
     }
 
     @Override
