@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.commonjava.maven.atlas</groupId>
     <artifactId>atlas-parent</artifactId>
-    <version>0.10.1-SNAPSHOT</version>
+    <version>0.10.1</version>
   </parent>
 
   <artifactId>atlas-identities</artifactId>
