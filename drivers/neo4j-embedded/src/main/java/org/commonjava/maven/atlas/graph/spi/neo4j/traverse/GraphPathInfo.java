@@ -1,9 +1,13 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
+
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
+import org.neo4j.graphdb.Relationship;
 
 public class GraphPathInfo
 {
@@ -34,7 +38,7 @@ public class GraphPathInfo
         return mutator;
     }
 
-    public ProjectRelationship<?> selectRelationship( ProjectRelationship<?> next )
+    public ProjectRelationship<?> selectRelationship( ProjectRelationship<?> next, final Neo4jGraphPath path )
     {
         if ( filter != null && !filter.accept( next ) )
         {
@@ -43,16 +47,17 @@ public class GraphPathInfo
 
         if ( mutator != null )
         {
-            next = mutator.selectFor( next );
+            next = mutator.selectFor( next, path );
         }
 
         return next;
     }
 
-    public GraphPathInfo getChildPathInfo( final ProjectRelationship<?> next )
+    public GraphPathInfo getChildPathInfo( final Relationship r )
     {
-        final ProjectRelationshipFilter nextFilter = filter == null ? null : filter.getChildFilter( next );
-        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( next );
+        final ProjectRelationship<?> rel = toProjectRelationship( r );
+        final ProjectRelationshipFilter nextFilter = filter == null ? null : filter.getChildFilter( rel );
+        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( rel );
         if ( nextFilter == filter && nextMutator == mutator )
         {
             return this;

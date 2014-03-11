@@ -28,6 +28,8 @@ import java.util.List;
 import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
 import org.commonjava.maven.atlas.graph.model.EProjectGraph;
 import org.commonjava.maven.atlas.graph.model.EProjectKey;
+import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.mutate.ManagedDependencyMutator;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.traverse.TransitiveDependencyTraversal;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -89,7 +91,7 @@ public abstract class TransitiveDependencyTraversalTCK
 
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
+                new GraphView( simpleWorkspace(), root ), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( dependency( source, root, d1, 0 ) )
                     .build() 
@@ -99,6 +101,9 @@ public abstract class TransitiveDependencyTraversalTCK
                 dependency( source, d1, d2, 0 )
         ));
         /* @formatter:on */
+
+        graph.getView()
+             .setMutator( new ManagedDependencyMutator( graph ) );
 
         graph.getView()
              .getWorkspace()

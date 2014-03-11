@@ -102,6 +102,16 @@ public class EGraphManager
         return getGraph( workspace, null, null, project );
     }
 
+    public EProjectGraph createGraph( final GraphView view, final EProjectDirectRelationships rels )
+        throws GraphDriverException
+    {
+        view.getDatabase()
+            .addRelationships( rels.getExactAllRelationships()
+                                   .toArray( new ProjectRelationship[] {} ) );
+
+        return getGraph( view );
+    }
+
     public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectVersionRef project )
     {
         return getGraph( workspace, null, null, project );
@@ -123,6 +133,21 @@ public class EGraphManager
         }
 
         return new EProjectGraph( workspace, filter, mutator, project );
+    }
+
+    public EProjectGraph getGraph( final GraphView view )
+    {
+        final GraphDatabaseDriver dbDriver = view.getWorkspace()
+                                                 .getDatabase();
+        final ProjectVersionRef root = view.getRoots()
+                                           .iterator()
+                                           .next();
+        if ( !dbDriver.containsProject( view, root ) || dbDriver.isMissing( view, root ) )
+        {
+            return null;
+        }
+
+        return new EProjectGraph( view );
     }
 
     public EProjectNet getWeb( final GraphWorkspace workspace, final Collection<ProjectVersionRef> refs )
@@ -159,6 +184,21 @@ public class EGraphManager
         }
 
         return new EProjectWeb( workspace, filter, mutator, refs );
+    }
+
+    public EProjectWeb getWeb( final GraphView view )
+    {
+        final GraphDatabaseDriver dbDriver = view.getWorkspace()
+                                                 .getDatabase();
+        for ( final ProjectVersionRef ref : view.getRoots() )
+        {
+            if ( !dbDriver.containsProject( view, ref ) || dbDriver.isMissing( view, ref ) )
+            {
+                return null;
+            }
+        }
+
+        return new EProjectWeb( view );
     }
 
     public synchronized GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )

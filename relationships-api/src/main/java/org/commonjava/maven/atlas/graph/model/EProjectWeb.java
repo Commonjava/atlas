@@ -53,6 +53,11 @@ public class EProjectWeb
         this.view = new GraphView( session );
     }
 
+    public EProjectWeb( final GraphView view )
+    {
+        this.view = view;
+    }
+
     /* (non-Javadoc)
      * @see org.apache.maven.graph.effective.EProjectNetwork#getAllRelationships()
      */

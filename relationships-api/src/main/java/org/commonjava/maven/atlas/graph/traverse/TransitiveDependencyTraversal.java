@@ -18,9 +18,9 @@ package org.commonjava.maven.atlas.graph.traverse;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 
 import org.commonjava.maven.atlas.graph.filter.DependencyFilter;
 import org.commonjava.maven.atlas.graph.filter.OrFilter;
@@ -32,14 +32,18 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.VersionlessArtifactRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransitiveDependencyTraversal
     extends AbstractFilteringTraversal
 {
 
-    private final List<ArtifactRef> artifacts = new ArrayList<ArtifactRef>();
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    private final Set<VersionlessArtifactRef> seenArtifacts = new HashSet<VersionlessArtifactRef>();
+    private final Map<VersionlessArtifactRef, ArtifactRef> artifacts = new HashMap<VersionlessArtifactRef, ArtifactRef>();
+
+    private final Map<VersionlessArtifactRef, Integer> seenArtifacts = new HashMap<VersionlessArtifactRef, Integer>();
 
     public TransitiveDependencyTraversal()
     {
@@ -64,7 +68,7 @@ public class TransitiveDependencyTraversal
 
     public List<ArtifactRef> getArtifacts()
     {
-        return Collections.unmodifiableList( artifacts );
+        return Collections.unmodifiableList( new ArrayList<ArtifactRef>( artifacts.values() ) );
     }
 
     @Override
@@ -76,10 +80,13 @@ public class TransitiveDependencyTraversal
             final ArtifactRef target = (ArtifactRef) relationship.getTarget();
             final VersionlessArtifactRef versionlessTarget = new VersionlessArtifactRef( target );
 
-            if ( !seenArtifacts.contains( versionlessTarget ) )
+            logger.debug( "Checking for seen versionless GA[TC]: {}", versionlessTarget );
+            final Integer distance = seenArtifacts.get( versionlessTarget );
+            if ( distance == null || distance > path.size() )
             {
-                artifacts.add( target );
-                seenArtifacts.add( versionlessTarget );
+                logger.debug( "Adding: {} ({})", target, versionlessTarget );
+                artifacts.put( versionlessTarget, target );
+                seenArtifacts.put( versionlessTarget, path.size() );
                 result = true;
             }
         }

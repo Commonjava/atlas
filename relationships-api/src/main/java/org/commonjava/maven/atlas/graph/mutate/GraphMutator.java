@@ -2,6 +2,7 @@ package org.commonjava.maven.atlas.graph.mutate;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 
 /**
  * Mechanism for selecting alternative relationships (especially by changing the
@@ -23,10 +24,11 @@ public interface GraphMutator
      * this class incorporates. For example, managed versions (a la &lt;dependencyManagement/&gt;)
      * 
      * @param rel The relationship to process.
+     * @param path The path leading to this selection, which may contain management information, etc. 
      * @return The alternative relationship, or the given one if no mutation 
      * takes place.
      */
-    ProjectRelationship<?> selectFor( ProjectRelationship<?> rel );
+    ProjectRelationship<?> selectFor( ProjectRelationship<?> rel, GraphPath<?> path );
 
     /**
      * If necessary, create a new mutator instance to handle the next wave of 

@@ -23,7 +23,9 @@ import static org.junit.Assert.assertThat;
 import java.net.URI;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.filter.AnyFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectGraph;
+import org.commonjava.maven.atlas.graph.mutate.ManagedDependencyMutator;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -51,7 +53,7 @@ public abstract class SubGraphSelectionTCK
         getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
-        final EProjectGraph graph = getManager().getGraph( ws, project );
+        final EProjectGraph graph = getManager().getGraph( ws, AnyFilter.INSTANCE, new ManagedDependencyMutator( ws ), project );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
@@ -84,7 +86,7 @@ public abstract class SubGraphSelectionTCK
         getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
-        final EProjectGraph graph = getManager().getGraph( ws, project );
+        final EProjectGraph graph = getManager().getGraph( ws, AnyFilter.INSTANCE, new ManagedDependencyMutator( ws ), project );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
@@ -136,7 +138,7 @@ public abstract class SubGraphSelectionTCK
         getManager().storeRelationships( session2, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
          
-        final EProjectGraph graph = getManager().getGraph( session, project );
+        final EProjectGraph graph = getManager().getGraph( session, AnyFilter.INSTANCE, new ManagedDependencyMutator( session ), project );
         final EProjectGraph graph2 = getManager().getGraph( session2, project );
         /* @formatter:on */
 

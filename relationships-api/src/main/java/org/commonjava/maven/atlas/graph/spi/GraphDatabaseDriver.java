@@ -27,6 +27,7 @@ import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -140,5 +141,13 @@ public interface GraphDatabaseDriver
                                                           boolean includeConcreteInfo, RelationshipType... types );
 
     Set<ProjectVersionRef> getProjectsMatching( ProjectRef projectRef, GraphView eProjectNetView );
+
+    void printStats();
+
+    ProjectVersionRef getManagedTargetFor( ProjectVersionRef target, GraphPath<?> path, RelationshipType type );
+
+    GraphPath<?> createPath( ProjectVersionRef... nodes );
+
+    GraphPath<?> createPath( GraphPath<?> parent, ProjectVersionRef node );
 
 }

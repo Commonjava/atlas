@@ -43,6 +43,8 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.jung.model.JungGraphPath;
+import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -50,6 +52,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.util.JoinString;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.uci.ics.jung.graph.DirectedGraph;
@@ -58,7 +61,7 @@ import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 public class JungEGraphDriver
     implements GraphDatabaseDriver
 {
-    //    private final Logger logger = new Logger( getClass() );
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
@@ -344,10 +347,10 @@ public class JungEGraphDriver
     // TODO: Implement without recursion.
     private void dfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
     {
-        dfsIterate( view, root, traversal, new GraphPath( root, view ), pass );
+        dfsIterate( view, root, traversal, new GraphPathInfo( root, view, new JungGraphPath( root ) ), pass );
     }
 
-    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal, final GraphPath path,
+    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal, final GraphPathInfo path,
                              final int pass )
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
@@ -355,7 +358,7 @@ public class JungEGraphDriver
         {
             for ( final ProjectRelationship<?> edge : edges )
             {
-                final GraphPath next = path.getChildPath( edge );
+                final GraphPathInfo next = path.getChildPath( edge );
                 if ( next == null )
                 {
                     continue;
@@ -385,16 +388,16 @@ public class JungEGraphDriver
     // TODO: Implement without recursion.
     private void bfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
     {
-        final GraphPath path = new GraphPath( root, view );
+        final GraphPathInfo path = new GraphPathInfo( root, view, new JungGraphPath( root ) );
 
         bfsIterate( view, Collections.singletonList( path ), traversal, pass );
     }
 
-    private void bfsIterate( final GraphView view, final List<GraphPath> thisLayer, final ProjectNetTraversal traversal, final int pass )
+    private void bfsIterate( final GraphView view, final List<GraphPathInfo> thisLayer, final ProjectNetTraversal traversal, final int pass )
     {
-        final List<GraphPath> nextLayer = new ArrayList<GraphPath>();
+        final List<GraphPathInfo> nextLayer = new ArrayList<GraphPathInfo>();
 
-        for ( final GraphPath path : thisLayer )
+        for ( final GraphPathInfo path : thisLayer )
         {
             if ( path.isEmpty() )
             {
@@ -408,7 +411,7 @@ public class JungEGraphDriver
             {
                 for ( final ProjectRelationship<?> edge : edges )
                 {
-                    final GraphPath next = path.getChildPath( edge );
+                    final GraphPathInfo next = path.getChildPath( edge );
                     if ( next == null )
                     {
                         continue;
@@ -939,4 +942,59 @@ public class JungEGraphDriver
         incompleteSubgraphs.add( ref );
     }
 
+    @Override
+    public void printStats()
+    {
+        logger.info( "Graph contains {} nodes.", graph.getVertexCount() );
+        logger.info( "Graph contains {} relationships.", graph.getEdgeCount() );
+    }
+
+    @Override
+    public ProjectVersionRef getManagedTargetFor( final ProjectVersionRef target, final GraphPath<?> path, final RelationshipType type )
+    {
+        if ( path == null )
+        {
+            return null;
+        }
+
+        if ( !( path instanceof JungGraphPath ) )
+        {
+            throw new IllegalArgumentException( "Cannot process GraphPath's from other implementations. (Non-Jung GraphPath detected: " + path + ")" );
+        }
+
+        final ProjectRef targetGA = target.asProjectRef();
+
+        final JungGraphPath jungpath = (JungGraphPath) path;
+        for ( final ProjectVersionRef ref : jungpath )
+        {
+            final Collection<ProjectRelationship<?>> outEdges = graph.getOutEdges( ref );
+            for ( final ProjectRelationship<?> edge : outEdges )
+            {
+                if ( edge.isManaged() && type == edge.getType() && targetGA.equals( edge.getTarget() ) )
+                {
+                    return edge.getTarget()
+                               .asProjectVersionRef();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    @Override
+    public GraphPath<?> createPath( final ProjectVersionRef... nodes )
+    {
+        return new JungGraphPath( nodes );
+    }
+
+    @Override
+    public GraphPath<?> createPath( final GraphPath<?> parent, final ProjectVersionRef child )
+    {
+        if ( parent != null && !( parent instanceof JungGraphPath ) )
+        {
+            throw new IllegalArgumentException( "Cannot get child path for: " + parent + ". This is not a JungGraphPath instance!" );
+        }
+
+        return new JungGraphPath( (JungGraphPath) parent, child );
+    }
 }

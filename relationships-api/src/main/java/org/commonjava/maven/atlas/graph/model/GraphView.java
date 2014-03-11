@@ -24,7 +24,6 @@ import java.util.WeakHashMap;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
-import org.commonjava.maven.atlas.graph.mutate.ManagedDependencyMutator;
 import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -37,9 +36,9 @@ public class GraphView
 
     private final GraphWorkspace workspace;
 
-    private final ProjectRelationshipFilter filter;
+    private ProjectRelationshipFilter filter;
 
-    private final GraphMutator mutator;
+    private GraphMutator mutator;
 
     private final WeakHashMap<String, Object> cache = new WeakHashMap<String, Object>();
 
@@ -73,7 +72,7 @@ public class GraphView
 
     public GraphMutator getMutator()
     {
-        return mutator == null ? new ManagedDependencyMutator( this, true ) : mutator;
+        return mutator;
     }
 
     public ProjectRelationshipFilter getFilter()
@@ -208,5 +207,15 @@ public class GraphView
         {
             workspace.setSelections( selections );
         }
+    }
+
+    public void setFilter( final ProjectRelationshipFilter filter )
+    {
+        this.filter = filter;
+    }
+
+    public void setMutator( final GraphMutator mutator )
+    {
+        this.mutator = mutator;
     }
 }

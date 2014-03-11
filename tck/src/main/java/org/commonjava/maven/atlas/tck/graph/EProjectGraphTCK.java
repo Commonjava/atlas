@@ -27,6 +27,7 @@ import java.util.List;
 import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
 import org.commonjava.maven.atlas.graph.model.EProjectGraph;
 import org.commonjava.maven.atlas.graph.model.EProjectKey;
+import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.traverse.AncestryTraversal;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -64,7 +65,7 @@ public abstract class EProjectGraphTCK
         );
         
         final EProjectGraph child = getManager().createGraph(
-                session,
+                new GraphView( session, c ),
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                     .withParent( new ParentRelationship( source, c, p ) )
                     .build()

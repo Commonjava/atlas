@@ -16,9 +16,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.traverse;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.AnyFilter;
 import org.commonjava.maven.atlas.graph.filter.NoneFilter;
@@ -30,8 +28,6 @@ public abstract class AbstractFilteringTraversal
 {
 
     private final ProjectRelationshipFilter rootFilter;
-
-    private final Set<ProjectRelationship<?>> seen = new HashSet<ProjectRelationship<?>>();
 
     protected AbstractFilteringTraversal()
     {
@@ -80,7 +76,7 @@ public abstract class AbstractFilteringTraversal
             return false;
         }
 
-        seen.add( relationship );
+        //        seen.add( relationship );
 
         final boolean ok = shouldTraverseEdge( relationship, path, pass );
 
@@ -91,15 +87,10 @@ public abstract class AbstractFilteringTraversal
     public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
     {
         boolean result = true;
-        if ( seen.contains( relationship ) )
-        {
-            result = false;
-        }
 
         final ProjectRelationshipFilter filter = constructFilter( path );
         if ( result && filter != null && !filter.accept( relationship ) )
         {
-            seen.add( relationship );
             result = false;
         }
 

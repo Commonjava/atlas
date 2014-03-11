@@ -28,9 +28,9 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -54,13 +54,11 @@ public abstract class AbstractAtlasCollector<T>
 
     protected final Set<T> found = new HashSet<T>();
 
-    protected final Set<Long> seen = new HashSet<Long>();
-
     protected final boolean checkExistence;
 
     protected GraphView view;
 
-    protected Map<PathKey, GraphPathInfo> pathInfos = new HashMap<PathKey, GraphPathInfo>();
+    protected Map<Neo4jGraphPath, GraphPathInfo> pathInfos = new HashMap<Neo4jGraphPath, GraphPathInfo>();
 
     protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence )
     {
@@ -96,47 +94,37 @@ public abstract class AbstractAtlasCollector<T>
             return Collections.emptySet();
         }
 
-        final Relationship lastRelationship = path.lastRelationship();
-        if ( lastRelationship != null )
-        {
-            // NOTE: Have to use relationshipId, because multiple relationships may exist between any two GAVs.
-            // Most common is managed and unmanaged flavors of the same basic relationship (eg. dependencies).
-            final Long endId = lastRelationship.getId();
-
-            if ( seen.contains( endId ) )
-            {
-                log( "Rejecting path; already seen it:\n\t{}", path );
-                return Collections.emptySet();
-            }
-
-            seen.add( endId );
-        }
-
         if ( returnChildren( path ) )
         {
-            final PathKey key = new PathKey( path );
-            GraphPathInfo pathInfo = pathInfos.remove( key );
+            final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
+            GraphPathInfo pathInfo = pathInfos.remove( graphPath );
 
             if ( pathInfo == null )
             {
                 pathInfo = new GraphPathInfo( view );
             }
 
-            final ProjectRelationship<?> rel = toProjectRelationship( lastRelationship );
             final ProjectRelationshipFilter nextFilter = pathInfo.getFilter();
             log( "Implementation says return the children of: {}\n  lastRel={}\n  nextFilter={}\n\n",
                  path.endNode()
                      .hasProperty( GAV ) ? path.endNode()
-                                               .getProperty( GAV ) : "Unknown", rel, nextFilter );
+                                               .getProperty( GAV ) : "Unknown", path.lastRelationship(), nextFilter );
 
             final Set<Relationship> nextRelationships = new HashSet<Relationship>();
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction );
+
+            //            logger.info( "{} Determining which of {} child relationships to expand traversal into for: {}\n{}", getClass().getName(), path.length(),
+            //                         path.endNode()
+            //                             .hasProperty( GAV ) ? path.endNode()
+            //                                                       .getProperty( GAV ) : "Unknown", new JoinString( "\n  ", Thread.currentThread()
+            //                                                                                                                      .getStackTrace() ) );
+
             for ( Relationship r : relationships )
             {
                 final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
 
-                final Relationship selected = db == null ? null : db.select( r, view, pathInfo );
+                final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
                 if ( selected == null )
                 {
                     continue;
@@ -155,8 +143,10 @@ public abstract class AbstractAtlasCollector<T>
 
                 nextRelationships.add( r );
 
-                final GraphPathInfo next = pathInfo.getChildPathInfo( toProjectRelationship( r ) );
-                pathInfos.put( new PathKey( path, r ), next );
+                final GraphPathInfo next = pathInfo.getChildPathInfo( r );
+                pathInfos.put( new Neo4jGraphPath( graphPath, r.getEndNode()
+                                                               .getId() ), next );
+
                 log( "+= {} [{}]", logwrapper( r ), next.getFilter() );
             }
 
@@ -179,7 +169,7 @@ public abstract class AbstractAtlasCollector<T>
         // if there's a GraphPathInfo mapped for this path, then it was accepted during expansion.
         // If so, then we just need to verify the workspace allows the pomLocation and source
         // TODO: Can we check the workspace restrictions during expansion??
-        if ( pathInfos.containsKey( new PathKey( path ) ) )
+        if ( pathInfos.containsKey( new Neo4jGraphPath( path ) ) )
         {
             return accepted( r, null, view.getWorkspace() );
         }

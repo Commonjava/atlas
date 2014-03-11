@@ -10,10 +10,11 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipPathComparator;
+import org.commonjava.maven.atlas.graph.spi.jung.model.JungGraphPath;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
-public class GraphPath
-    implements Comparable<GraphPath>, Iterable<ProjectRelationship<?>>
+public class GraphPathInfo
+    implements Comparable<GraphPathInfo>, Iterable<ProjectRelationship<?>>
 {
 
     private static final RelationshipPathComparator COMP = RelationshipPathComparator.INSTANCE;
@@ -26,29 +27,34 @@ public class GraphPath
 
     private final ProjectVersionRef target;
 
-    public GraphPath( final ProjectVersionRef root, final GraphView view )
+    private final JungGraphPath path;
+
+    public GraphPathInfo( final ProjectVersionRef root, final GraphView view, final JungGraphPath path )
     {
         this.target = root;
+        this.path = path;
         this.pathElements = null;
         this.filter = view.getFilter();
         this.mutator = view.getMutator();
     }
 
-    public GraphPath( final ProjectVersionRef root, final ProjectRelationshipFilter filter, final GraphMutator mutator )
+    public GraphPathInfo( final ProjectVersionRef root, final ProjectRelationshipFilter filter, final GraphMutator mutator, final JungGraphPath path )
     {
         this.target = root;
+        this.path = path;
         pathElements = null;
         this.filter = filter;
         this.mutator = mutator;
     }
 
-    public GraphPath( final ProjectVersionRef target, final List<ProjectRelationship<?>> pathElements, final ProjectRelationshipFilter filter,
-                      final GraphMutator mutator )
+    public GraphPathInfo( final ProjectVersionRef target, final List<ProjectRelationship<?>> pathElements, final ProjectRelationshipFilter filter,
+                          final GraphMutator mutator, final JungGraphPath path )
     {
         this.target = target;
         this.pathElements = pathElements;
         this.filter = filter;
         this.mutator = mutator;
+        this.path = path;
     }
 
     public List<ProjectRelationship<?>> getPathElements()
@@ -77,7 +83,7 @@ public class GraphPath
         return target;
     }
 
-    public GraphPath getChildPath( ProjectRelationship<?> edge )
+    public GraphPathInfo getChildPath( ProjectRelationship<?> edge )
     {
         if ( filter != null && !filter.accept( edge ) )
         {
@@ -86,7 +92,7 @@ public class GraphPath
 
         if ( mutator != null )
         {
-            edge = mutator.selectFor( edge );
+            edge = mutator.selectFor( edge, path );
         }
 
         final List<ProjectRelationship<?>> nextElements = new ArrayList<ProjectRelationship<?>>();
@@ -100,8 +106,11 @@ public class GraphPath
         final ProjectRelationshipFilter nextFilter = filter == null ? null : filter.getChildFilter( edge );
         final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( edge );
 
-        return new GraphPath( edge.getTarget()
-                                  .asProjectVersionRef(), nextElements, nextFilter, nextMutator );
+        final ProjectVersionRef targetRef = edge.getTarget()
+                                                .asProjectVersionRef();
+
+        return new GraphPathInfo( edge.getTarget()
+                                      .asProjectVersionRef(), nextElements, nextFilter, nextMutator, new JungGraphPath( path, targetRef ) );
     }
 
     public ProjectRelationship<?> getTargetEdge()
@@ -110,7 +119,7 @@ public class GraphPath
     }
 
     @Override
-    public int compareTo( final GraphPath other )
+    public int compareTo( final GraphPathInfo other )
     {
         if ( pathElements == null && other.pathElements == null )
         {

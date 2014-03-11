@@ -3,6 +3,7 @@ package org.commonjava.maven.atlas.graph.mutate;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -10,57 +11,35 @@ public abstract class AbstractVersionManagerMutator
     implements GraphMutator
 {
 
-    protected final VersionManager versions;
-
     protected final GraphView view;
 
     protected AbstractVersionManagerMutator( final GraphView view )
     {
         this.view = view;
-        VersionManager vm = view.getSelections();
-        if ( vm == null )
-        {
-            vm = new VersionManager();
-        }
-        versions = vm;
     }
 
     protected AbstractVersionManagerMutator( final EProjectNet net )
     {
         this.view = net.getView();
-        VersionManager vm = view.getSelections();
-        if ( vm == null )
-        {
-            vm = new VersionManager();
-        }
-        versions = vm;
-    }
-
-    protected AbstractVersionManagerMutator( final GraphView view, final VersionManager versions )
-    {
-        this.view = view;
-        this.versions = versions;
-    }
-
-    protected AbstractVersionManagerMutator( final EProjectNet net, final VersionManager versions )
-    {
-        this.versions = versions;
-        this.view = net.getView();
     }
 
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path )
     {
         final ProjectRef target = rel.getTarget()
                                      .asProjectRef();
 
-        final ProjectVersionRef ref = versions.getSelected( target );
-        if ( ref == null )
+        final VersionManager selections = view.getSelections();
+        if ( selections != null )
         {
-            return rel;
+            final ProjectVersionRef ref = selections.getSelected( target );
+            if ( ref != null )
+            {
+                return rel.selectTarget( ref );
+            }
         }
 
-        return rel.selectTarget( ref );
+        return rel;
     }
 
     @Override
@@ -69,14 +48,48 @@ public abstract class AbstractVersionManagerMutator
         return this;
     }
 
-    protected VersionManager getVersions()
-    {
-        return versions;
-    }
-
     protected GraphView getView()
     {
         return view;
+    }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ( ( view == null ) ? 0 : view.hashCode() );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( obj == null )
+        {
+            return false;
+        }
+        if ( getClass() != obj.getClass() )
+        {
+            return false;
+        }
+        final AbstractVersionManagerMutator other = (AbstractVersionManagerMutator) obj;
+        if ( view == null )
+        {
+            if ( other.view != null )
+            {
+                return false;
+            }
+        }
+        else if ( !view.equals( other.view ) )
+        {
+            return false;
+        }
+        return true;
     }
 
 }

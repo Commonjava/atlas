@@ -59,6 +59,14 @@ public class EProjectGraph
         this.project = ref;
     }
 
+    public EProjectGraph( final GraphView view )
+    {
+        this.view = view;
+        this.project = view.getRoots()
+                           .iterator()
+                           .next();
+    }
+
     public Set<ProjectRelationship<?>> getFirstOrderRelationships()
     {
         final Set<ProjectRelationship<?>> rels = getExactFirstOrderRelationships();
