@@ -20,7 +20,7 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RELATIONSHIP_ID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.SOURCE_URI;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.addToURIListProperty;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.addToURISetProperty;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.convertToProjects;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.convertToRelationships;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getInjectedCycles;
@@ -38,6 +38,7 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toSet;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.getGraphRelTypes;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -110,6 +111,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String BY_GA_IDX = "by_ga";
 
+    private static final String CONFIG_NODES_IDX = "config_nodes";
+
     private static final String CYCLE_INJECTION_IDX = "cycle_injections";
 
     private static final String VARIABLE_NODES_IDX = "variable_nodes";
@@ -122,13 +125,17 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String SELECTION_RELATIONSHIPS = "selection_relationships";
 
+    private static final String CONFIG_ID = "config_id";
+
+    private static final String BASE_CONFIG_NODE = "_base";
+
     private static final String RID = "ridLong";
 
     private static final String MANAGED_GA = "managed-ga";
 
     private static final String MANAGED_KEY = "mkey";
 
-    private final GraphView globalView = new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) );
+    private final GraphView globalView = new GraphView( new GraphWorkspace( "GLOBAL", this ) );
 
     //    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
 
@@ -164,7 +171,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private final Map<GraphView, Map<String, Object>> caches = new WeakHashMap<GraphView, Map<String, Object>>();
 
-    protected AbstractNeo4JEGraphDriver( final GraphDatabaseService graph, final boolean useShutdownHook )
+    private final long configNodeId;
+
+    protected AbstractNeo4JEGraphDriver( GraphWorkspaceConfiguration config, final GraphDatabaseService graph, final boolean useShutdownHook )
     {
         this.graph = graph;
         this.useShutdownHook = useShutdownHook;
@@ -181,12 +190,53 @@ public abstract class AbstractNeo4JEGraphDriver
         try
         {
             graph.createNode();
+
+            long id = -1;
+            if ( config == null )
+            {
+                final IndexHits<Node> hits = graph.index()
+                                                  .forNodes( CONFIG_NODES_IDX )
+                                                  .get( CONFIG_ID, BASE_CONFIG_NODE );
+                if ( hits.hasNext() )
+                {
+                    id = hits.next()
+                             .getId();
+                }
+                else
+                {
+                }
+            }
+
+            if ( id < 0 )
+            {
+                if ( config == null )
+                {
+                    config = new GraphWorkspaceConfiguration();
+                }
+
+                final Node configNode = graph.createNode();
+                id = configNode.getId();
+
+                Conversions.storeConfig( configNode, config );
+
+                graph.index()
+                     .forNodes( CONFIG_NODES_IDX )
+                     .add( configNode, CONFIG_ID, BASE_CONFIG_NODE );
+
+            }
+
+            configNodeId = id;
             tx.success();
         }
         finally
         {
             tx.finish();
         }
+    }
+
+    protected AbstractNeo4JEGraphDriver( final GraphDatabaseService graph, final boolean useShutdownHook )
+    {
+        this( null, graph, useShutdownHook );
     }
 
     protected GraphDatabaseService getGraph()
@@ -480,7 +530,7 @@ public abstract class AbstractNeo4JEGraphDriver
                          .forRelationships( SELECTION_RELATIONSHIPS )
                          .remove( relationship, RID, relationship.getId() );
 
-                    addToURIListProperty( rel.getSources(), SOURCE_URI, relationship );
+                    addToURISetProperty( rel.getSources(), SOURCE_URI, relationship );
                 }
             }
 
@@ -2006,4 +2056,229 @@ public abstract class AbstractNeo4JEGraphDriver
 
         return new Neo4jGraphPath( (Neo4jGraphPath) parent, node.getId() );
     }
+
+    @Override
+    public void setLastAccess( final long lastAccess )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+            node.setProperty( Conversions.LAST_ACCESS, lastAccess );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public long getLastAccess()
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.getLongProperty( Conversions.LAST_ACCESS, node, -1 );
+    }
+
+    @Override
+    public int getActivePomLocationCount()
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.countArrayElements( Conversions.ACTIVE_POM_LOCATIONS, node );
+    }
+
+    @Override
+    public void addActivePomLocations( final URI... locations )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.addToURISetProperty( Arrays.asList( locations ), Conversions.ACTIVE_POM_LOCATIONS, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public void addActivePomLocations( final Collection<URI> locations )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.addToURISetProperty( locations, Conversions.ACTIVE_POM_LOCATIONS, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public void removeActivePomLocations( final URI... locations )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.removeFromURISetProperty( Arrays.asList( locations ), Conversions.ACTIVE_POM_LOCATIONS, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public void removeActivePomLocations( final Collection<URI> locations )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.removeFromURISetProperty( locations, Conversions.ACTIVE_POM_LOCATIONS, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public Set<URI> getActivePomLocations()
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.getURISetProperty( Conversions.ACTIVE_POM_LOCATIONS, node, null );
+    }
+
+    @Override
+    public int getActiveSourceCount()
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.countArrayElements( Conversions.ACTIVE_SOURCES, node );
+    }
+
+    @Override
+    public void addActiveSources( final Collection<URI> sources )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.addToURISetProperty( sources, Conversions.ACTIVE_SOURCES, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public void addActiveSources( final URI... sources )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.addToURISetProperty( Arrays.asList( sources ), Conversions.ACTIVE_SOURCES, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public Set<URI> getActiveSources()
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.getURISetProperty( Conversions.ACTIVE_SOURCES, node, null );
+    }
+
+    @Override
+    public void removeActiveSources( final URI... sources )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.removeFromURISetProperty( Arrays.asList( sources ), Conversions.ACTIVE_SOURCES, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public void removeActiveSources( final Collection<URI> sources )
+    {
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            final Node node = graph.getNodeById( configNodeId );
+
+            Conversions.removeFromURISetProperty( sources, Conversions.ACTIVE_SOURCES, node );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    @Override
+    public String setProperty( final String key, final String value )
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.setConfigProperty( key, value, node );
+    }
+
+    @Override
+    public String removeProperty( final String key )
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.removeConfigProperty( key, node );
+    }
+
+    @Override
+    public String getProperty( final String key )
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.getConfigProperty( key, node, null );
+    }
+
+    @Override
+    public String getProperty( final String key, final String defaultVal )
+    {
+        final Node node = graph.getNodeById( configNodeId );
+        return Conversions.getConfigProperty( key, node, defaultVal );
+    }
+
 }

@@ -136,52 +136,6 @@ public class DependencyFilter
         return this;
     }
 
-    @Override
-    public void render( final StringBuilder sb )
-    {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-
-        sb.append( "DEPENDENCIES[scope: " );
-        sb.append( scope.realName() );
-        sb.append( ", transitivity: " )
-          .append( scopeTransitivity.name() );
-        sb.append( ", managed: " )
-          .append( isManagedInfoIncluded() )
-          .append( ", concrete: " )
-          .append( isConcreteInfoIncluded() );
-        sb.append( ", useImpliedScopes: " )
-          .append( isUseImpliedScopes() );
-        if ( excludes != null && !excludes.isEmpty() )
-        {
-            sb.append( ", exclude: {" );
-            boolean first = true;
-            for ( final ProjectRef exclude : excludes )
-            {
-                if ( !first )
-                {
-                    sb.append( ", " );
-                }
-
-                first = false;
-                sb.append( exclude );
-            }
-
-            sb.append( "}" );
-        }
-        sb.append( "]" );
-    }
-
-    @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
-    }
-
     public boolean isUseImpliedScopes()
     {
         return useImpliedScopes;
@@ -239,6 +193,35 @@ public class DependencyFilter
             return false;
         }
         return true;
+    }
+
+    @Override
+    protected void renderIdAttributes( final StringBuilder sb )
+    {
+        sb.append( "scope:" );
+        sb.append( scope.realName() );
+        sb.append( ",transitivity: " )
+          .append( scopeTransitivity.name() );
+        sb.append( ",implied-scopes: " )
+          .append( isUseImpliedScopes() );
+
+        if ( excludes != null && !excludes.isEmpty() )
+        {
+            sb.append( ",excludes:{" );
+            boolean first = true;
+            for ( final ProjectRef exclude : excludes )
+            {
+                if ( !first )
+                {
+                    sb.append( ',' );
+                }
+
+                first = false;
+                sb.append( exclude );
+            }
+
+            sb.append( "}" );
+        }
     }
 
 }

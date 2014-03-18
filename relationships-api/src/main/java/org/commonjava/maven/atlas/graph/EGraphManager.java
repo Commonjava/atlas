@@ -548,7 +548,7 @@ public class EGraphManager
     {
         loadedWorkspaces.remove( workspace.getId() );
 
-        if ( workspace.getProperty( TEMP_WS, Boolean.class, Boolean.FALSE ) )
+        if ( Boolean.valueOf( workspace.getProperty( TEMP_WS, Boolean.toString( false ) ) ) )
         {
             try
             {
@@ -582,7 +582,7 @@ public class EGraphManager
         throws GraphDriverException
     {
         final GraphWorkspace ws = createWorkspace( config );
-        ws.setProperty( TEMP_WS, Boolean.TRUE );
+        ws.setProperty( TEMP_WS, Boolean.toString( true ) );
 
         return ws;
     }

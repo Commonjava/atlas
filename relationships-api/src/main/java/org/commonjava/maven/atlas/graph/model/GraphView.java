@@ -16,17 +16,24 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.model;
 
+import static org.apache.commons.lang.StringUtils.join;
+
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
-import java.util.WeakHashMap;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
-import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
+import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceListener;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class GraphView
@@ -36,11 +43,15 @@ public class GraphView
 
     private final GraphWorkspace workspace;
 
-    private ProjectRelationshipFilter filter;
+    private final ProjectRelationshipFilter filter;
 
-    private GraphMutator mutator;
+    private final GraphMutator mutator;
 
-    private final WeakHashMap<String, Object> cache = new WeakHashMap<String, Object>();
+    private transient String longId;
+
+    private transient String shortId;
+
+    private Map<ProjectRef, ProjectVersionRef> selections;
 
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                       final Collection<ProjectVersionRef> roots )
@@ -88,38 +99,6 @@ public class GraphView
     public GraphWorkspace getWorkspace()
     {
         return workspace;
-    }
-
-    public Object setCache( final String key, final Object value )
-    {
-        return cache.put( key, value );
-    }
-
-    public Object removeCache( final String key )
-    {
-        return cache.remove( key );
-    }
-
-    public <T> T getCache( final String key, final Class<T> type )
-    {
-        final Object value = cache.get( key );
-        if ( value != null )
-        {
-            return type.cast( value );
-        }
-
-        return null;
-    }
-
-    public <T> T getCache( final String key, final Class<T> type, final T def )
-    {
-        final Object value = cache.get( key );
-        if ( value != null )
-        {
-            return type.cast( value );
-        }
-
-        return def;
     }
 
     @Override
@@ -188,7 +167,7 @@ public class GraphView
     @Override
     public String toString()
     {
-        return String.format( "GraphView [\n  roots=%s\n  workspace=%s\n  filter=%s\n]", roots, workspace, filter );
+        return String.format( "GraphView [\n  roots=%s\n  workspace=%s\n  filter=%s\n  mutator=%s\n]", roots, workspace, filter, mutator );
     }
 
     public GraphDatabaseDriver getDatabase()
@@ -196,26 +175,225 @@ public class GraphView
         return workspace == null ? null : workspace.getDatabase();
     }
 
-    public VersionManager getSelections()
+    //    public void setSelections( final VersionManager selections )
+    //    {
+    //        if ( workspace != null )
+    //        {
+    //            workspace.setSelections( selections );
+    //        }
+    //    }
+    //
+    //    public void setFilter( final ProjectRelationshipFilter filter )
+    //    {
+    //        this.filter = filter;
+    //    }
+    //
+    //    public void setMutator( final GraphMutator mutator )
+    //    {
+    //        this.mutator = mutator;
+    //    }
+    //
+    public String getLongId()
     {
-        return workspace == null ? null : workspace.getSelections();
+        if ( longId == null )
+        {
+            final StringBuilder sb = new StringBuilder();
+            final String abbreviatedPackage = getClass().getPackage()
+                                                        .getName()
+                                                        .replaceAll( "([a-zA-Z])[a-zA-Z]+", "$1" );
+
+            sb.append( abbreviatedPackage )
+              .append( '.' )
+              .append( getClass().getSimpleName() )
+              .append( "(workspace:" )
+              .append( workspace.getId() )
+              .append( ",roots:" )
+              .append( join( roots, "," ) )
+              .append( ",filter:" )
+              .append( filter == null ? "none" : filter.getLongId() )
+              .append( ",mutator:" )
+              .append( mutator == null ? "none" : mutator.getLongId() )
+              .append( ",selections:\n  " )
+              .append( renderSelections() );
+
+            sb.append( ")" );
+
+            longId = sb.toString();
+        }
+
+        return longId;
     }
 
-    public void setSelections( final VersionManager selections )
+    public String getShortId()
     {
-        if ( workspace != null )
+        if ( shortId == null )
         {
-            workspace.setSelections( selections );
+            shortId = DigestUtils.shaHex( getLongId() );
+        }
+
+        return shortId;
+    }
+
+    public void touch()
+    {
+        workspace.touch();
+    }
+
+    public GraphWorkspace addActivePomLocation( final URI location )
+    {
+        return workspace.addActivePomLocation( location );
+    }
+
+    public GraphWorkspace addActivePomLocations( final Collection<URI> locations )
+    {
+        return workspace.addActivePomLocations( locations );
+    }
+
+    public GraphWorkspace addActivePomLocations( final URI... locations )
+    {
+        return workspace.addActivePomLocations( locations );
+    }
+
+    public GraphWorkspace addActiveSources( final Collection<URI> sources )
+    {
+        return workspace.addActiveSources( sources );
+    }
+
+    public GraphWorkspace addActiveSources( final URI... sources )
+    {
+        return workspace.addActiveSources( sources );
+    }
+
+    public GraphWorkspace addActiveSource( final URI source )
+    {
+        return workspace.addActiveSource( source );
+    }
+
+    public long getLastAccess()
+    {
+        return workspace.getLastAccess();
+    }
+
+    public String setProperty( final String key, final String value )
+    {
+        return workspace.setProperty( key, value );
+    }
+
+    public String removeProperty( final String key )
+    {
+        return workspace.removeProperty( key );
+    }
+
+    public String getProperty( final String key )
+    {
+        return workspace.getProperty( key );
+    }
+
+    public String getProperty( final String key, final String def )
+    {
+        return workspace.getProperty( key, def );
+    }
+
+    public final String getId()
+    {
+        return workspace.getId();
+    }
+
+    public final Set<URI> getActivePomLocations()
+    {
+        return workspace.getActivePomLocations();
+    }
+
+    public final Set<URI> getActiveSources()
+    {
+        return workspace.getActiveSources();
+    }
+
+    public final Iterable<URI> activePomLocations()
+    {
+        return workspace.activePomLocations();
+    }
+
+    public final Iterable<URI> activeSources()
+    {
+        return workspace.activeSources();
+    }
+
+    public final ProjectVersionRef selectVersion( final ProjectRef ref, final ProjectVersionRef selected )
+    {
+        if ( selections == null )
+        {
+            selections = new HashMap<ProjectRef, ProjectVersionRef>();
+        }
+
+        final ProjectVersionRef old = selections.get( ref );
+        if ( old != null )
+        {
+            return old;
+        }
+
+        this.selections.put( ref, selected );
+        return selected;
+    }
+
+    public final void clearSelections()
+    {
+        if ( selections != null )
+        {
+            selections.clear();
         }
     }
 
-    public void setFilter( final ProjectRelationshipFilter filter )
+    public final ProjectVersionRef getSelection( final ProjectRef ref )
     {
-        this.filter = filter;
+        if ( selections == null )
+        {
+            return null;
+        }
+
+        ProjectVersionRef selected = selections.get( ref );
+        if ( selected == null )
+        {
+            selected = selections.get( ref.asProjectRef() );
+        }
+
+        return selected;
     }
 
-    public void setMutator( final GraphMutator mutator )
+    public final boolean isOpen()
     {
-        this.mutator = mutator;
+        return workspace.isOpen();
+    }
+
+    public GraphWorkspace addListener( final GraphWorkspaceListener listener )
+    {
+        return workspace.addListener( listener );
+    }
+
+    public boolean hasSelection( final ProjectVersionRef ref )
+    {
+        return selections == null ? false : selections.containsKey( ref ) || selections.containsKey( ref.asProjectRef() );
+    }
+
+    public String renderSelections()
+    {
+        if ( selections == null )
+        {
+            return "";
+        }
+
+        final StringBuilder sb = new StringBuilder();
+        for ( final Entry<ProjectRef, ProjectVersionRef> entry : selections.entrySet() )
+        {
+            final ProjectRef key = entry.getKey();
+            final ProjectVersionRef value = entry.getValue();
+
+            sb.append( "\n  " )
+              .append( key )
+              .append( " => " )
+              .append( value );
+        }
+
+        return sb.toString();
     }
 }

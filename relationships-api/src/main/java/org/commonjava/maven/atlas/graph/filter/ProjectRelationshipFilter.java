@@ -49,11 +49,16 @@ public interface ProjectRelationshipFilter
     ProjectRelationshipFilter getChildFilter( ProjectRelationship<?> parent );
 
     /**
-     * Render a user-friendly description for what this filter does.
-     * 
-     * @param sb buffer used to accumulate description info (used to concatenate
-     * descriptions for embedded or aggregate filtering)
+     * Retrieve a human-readable string that uniquely identifies the logic in this filter, 
+     * along with any state stored in this instance.
      */
-    void render( StringBuilder sb );
+    String getLongId();
+
+    /**
+     * Retrieve a condensed version of the human-readable identity given in {@link #getLongId()}.
+     * If the human-readable identity is sufficiently short (eg. "ANY"), then no
+     * hashing is required.
+     */
+    String getCondensedId();
 
 }

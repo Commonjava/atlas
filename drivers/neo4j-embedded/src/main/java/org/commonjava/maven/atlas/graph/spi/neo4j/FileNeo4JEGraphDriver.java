@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j;
 
 import java.io.File;
 
+import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.neo4j.graphdb.factory.GraphDatabaseFactory;
 
 public class FileNeo4JEGraphDriver
@@ -26,9 +27,14 @@ public class FileNeo4JEGraphDriver
 
     //    private final Logger logger = new Logger( getClass() );
 
-    public FileNeo4JEGraphDriver( final File dbPath )
+    public FileNeo4JEGraphDriver( final GraphWorkspaceConfiguration config, final File dbPath )
     {
-        this( dbPath, true );
+        this( config, dbPath, true );
+    }
+
+    public FileNeo4JEGraphDriver( final GraphWorkspaceConfiguration config, final File dbPath, final boolean useShutdownHook )
+    {
+        super( config, new GraphDatabaseFactory().newEmbeddedDatabase( dbPath.getAbsolutePath() ), useShutdownHook );
     }
 
     public FileNeo4JEGraphDriver( final File dbPath, final boolean useShutdownHook )

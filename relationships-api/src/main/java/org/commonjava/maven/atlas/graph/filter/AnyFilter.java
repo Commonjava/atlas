@@ -18,7 +18,6 @@ package org.commonjava.maven.atlas.graph.filter;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
-// TODO: Optimize to ensure we're only creating a new instance when it's critical to...
 public class AnyFilter
     implements ProjectRelationshipFilter
 {
@@ -42,21 +41,15 @@ public class AnyFilter
     }
 
     @Override
-    public void render( final StringBuilder sb )
+    public String getLongId()
     {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-        sb.append( "ANY" );
+        return "ANY";
     }
 
     @Override
     public String toString()
     {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
+        return getLongId();
     }
 
     @Override
@@ -68,7 +61,13 @@ public class AnyFilter
     @Override
     public int hashCode()
     {
-        return AnyFilter.class.hashCode();
+        return AnyFilter.class.hashCode() + 1;
+    }
+
+    @Override
+    public String getCondensedId()
+    {
+        return getLongId();
     }
 
 }

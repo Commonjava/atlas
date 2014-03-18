@@ -21,7 +21,7 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 
-// TODO: Do we need to consider excludes in the direct plugin-level dependency?
+// TODO: Do we need to consider excludes in the extensions?
 public class ExtensionFilter
     extends AbstractTypedFilter
 {
@@ -42,24 +42,6 @@ public class ExtensionFilter
         {
             return NoneFilter.INSTANCE;
         }
-    }
-
-    @Override
-    public void render( final StringBuilder sb )
-    {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-        sb.append( "EXTENSIONS" );
-    }
-
-    @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
     }
 
 }

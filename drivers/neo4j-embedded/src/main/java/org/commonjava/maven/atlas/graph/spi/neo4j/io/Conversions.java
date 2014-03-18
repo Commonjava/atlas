@@ -29,6 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
@@ -40,6 +41,7 @@ import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
+import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -115,8 +117,55 @@ public final class Conversions
 
     public static final String SELECTION = "_selection";
 
+    // graph-level configuration.
+
+    public static final String LAST_ACCESS = "last_access";
+
+    public static final String ACTIVE_POM_LOCATIONS = "active-pom-locations";
+
+    public static final String ACTIVE_SOURCES = "active-pom-sources";
+
+    public static final String CONFIG_PROPERTY_PREFIX = "_p_";
+
     private Conversions()
     {
+    }
+
+    public static void storeConfig( final Node node, final GraphWorkspaceConfiguration config )
+    {
+        node.setProperty( LAST_ACCESS, config.getLastAccess() );
+        node.setProperty( ACTIVE_POM_LOCATIONS, toStringArray( config.getActivePomLocations() ) );
+        node.setProperty( ACTIVE_SOURCES, toStringArray( config.getActiveSources() ) );
+
+        final Map<String, String> properties = config.getProperties();
+        if ( properties != null )
+        {
+            for ( final Entry<String, String> entry : properties.entrySet() )
+            {
+                final String key = entry.getKey();
+                final String value = entry.getValue();
+
+                node.setProperty( CONFIG_PROPERTY_PREFIX + key, value );
+            }
+        }
+    }
+
+    public static int countArrayElements( final String property, final PropertyContainer container )
+    {
+        if ( !container.hasProperty( property ) )
+        {
+            return -1;
+        }
+
+        final Object value = container.getProperty( property );
+        if ( value.getClass()
+                  .isArray() )
+        {
+            final Object[] elements = (Object[]) value;
+            return elements.length;
+        }
+
+        return 1;
     }
 
     public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
@@ -330,7 +379,7 @@ public final class Conversions
         final ProjectVersionRef from = toProjectVersionRef( rel.getStartNode() );
         final ProjectVersionRef to = toProjectVersionRef( rel.getEndNode() );
         final int index = getIntegerProperty( INDEX, rel );
-        final List<URI> source = getURIListProperty( SOURCE_URI, rel, UNKNOWN_SOURCE_URI );
+        final Set<URI> source = getURISetProperty( SOURCE_URI, rel, UNKNOWN_SOURCE_URI );
         final URI pomLocation = getURIProperty( POM_LOCATION_URI, rel, POM_ROOT_URI );
 
         ProjectRelationship<?> result = null;
@@ -441,9 +490,9 @@ public final class Conversions
         return null;
     }
 
-    public static List<URI> getURIListProperty( final String prop, final PropertyContainer container, final URI defaultValue )
+    public static Set<URI> getURISetProperty( final String prop, final PropertyContainer container, final URI defaultValue )
     {
-        final List<URI> result = new ArrayList<URI>();
+        final Set<URI> result = new HashSet<URI>();
 
         if ( container.hasProperty( prop ) )
         {
@@ -472,18 +521,43 @@ public final class Conversions
         return result;
     }
 
-    public static void addToURIListProperty( final Collection<URI> uris, final String prop, final PropertyContainer container )
+    public static void addToURISetProperty( final Collection<URI> uris, final String prop, final PropertyContainer container )
     {
-        final List<URI> existing = getURIListProperty( prop, container, null );
+        if ( uris == null || uris.isEmpty() )
+        {
+            return;
+        }
+
+        final Set<URI> existing = getURISetProperty( prop, container, null );
         for ( final URI uri : uris )
         {
-            if ( !existing.contains( uri ) )
-            {
-                existing.add( uri );
-            }
+            existing.add( uri );
         }
 
         container.setProperty( prop, toStringArray( existing ) );
+    }
+
+    public static void removeFromURISetProperty( final Collection<URI> uris, final String prop, final PropertyContainer container )
+    {
+        if ( uris == null || uris.isEmpty() || !container.hasProperty( prop ) )
+        {
+            return;
+        }
+
+        final Set<URI> existing = getURISetProperty( prop, container, null );
+        for ( final URI uri : uris )
+        {
+            existing.remove( uri );
+        }
+
+        if ( existing.isEmpty() )
+        {
+            container.removeProperty( prop );
+        }
+        else
+        {
+            container.setProperty( prop, toStringArray( existing ) );
+        }
     }
 
     public static URI getURIProperty( final String prop, final PropertyContainer container, final URI defaultValue )
@@ -540,6 +614,37 @@ public final class Conversions
         }
 
         return defaultValue;
+    }
+
+    public static String setConfigProperty( final String key, final String value, final PropertyContainer container )
+    {
+        final String pkey = CONFIG_PROPERTY_PREFIX + key;
+        final String old = container.hasProperty( pkey ) ? (String) container.getProperty( pkey ) : null;
+
+        container.setProperty( pkey, value );
+
+        return old;
+    }
+
+    public static String removeConfigProperty( final String key, final PropertyContainer container )
+    {
+        final String pkey = CONFIG_PROPERTY_PREFIX + key;
+        String old = null;
+        if ( container.hasProperty( pkey ) )
+        {
+            old = (String) container.getProperty( pkey );
+
+            container.removeProperty( pkey );
+        }
+
+        return old;
+    }
+
+    public static String getConfigProperty( final String key, final PropertyContainer container, final String defaultValue )
+    {
+        final String result = getStringProperty( CONFIG_PROPERTY_PREFIX + key, container );
+
+        return result == null ? defaultValue : result;
     }
 
     public static void setMetadata( final String key, final String value, final PropertyContainer container )
@@ -761,4 +866,5 @@ public final class Conversions
             to.setProperty( key, from.getProperty( key ) );
         }
     }
+
 }

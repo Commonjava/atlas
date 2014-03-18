@@ -1,11 +1,9 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,23 +15,8 @@ public class ManagedDependencyMutator
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    public ManagedDependencyMutator( final GraphView view )
-    {
-        super( view );
-    }
-
-    public ManagedDependencyMutator( final EProjectNet net )
-    {
-        super( net );
-    }
-
-    public ManagedDependencyMutator( final GraphWorkspace workspace )
-    {
-        super( new GraphView( workspace ) );
-    }
-
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY )
         {
@@ -41,12 +24,12 @@ public class ManagedDependencyMutator
             return rel;
         }
 
-        ProjectRelationship<?> mutated = super.selectFor( rel, path );
+        ProjectRelationship<?> mutated = super.selectFor( rel, path, view );
 
         if ( mutated == null || mutated == rel )
         {
-            final ProjectVersionRef managed = getView().getDatabase()
-                                                       .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
+            final ProjectVersionRef managed = view.getDatabase()
+                                                  .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
             if ( managed != null )
             {
                 mutated = rel.selectTarget( managed );

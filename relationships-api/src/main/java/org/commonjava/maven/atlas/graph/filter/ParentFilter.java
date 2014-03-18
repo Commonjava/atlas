@@ -54,28 +54,6 @@ public class ParentFilter
     }
 
     @Override
-    public void render( final StringBuilder sb )
-    {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-        sb.append( "PARENTS" );
-        if ( allowTerminalParent )
-        {
-            sb.append( "[include logical terminal-parent]" );
-        }
-    }
-
-    @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
-    }
-
-    @Override
     public int hashCode()
     {
         final int prime = 31;
@@ -105,6 +83,13 @@ public class ParentFilter
             return false;
         }
         return true;
+    }
+
+    @Override
+    protected void renderIdAttributes( final StringBuilder sb )
+    {
+        sb.append( ",terminalParent:" )
+          .append( allowTerminalParent );
     }
 
 }

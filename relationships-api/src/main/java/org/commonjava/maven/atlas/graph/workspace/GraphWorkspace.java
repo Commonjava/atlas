@@ -21,54 +21,57 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.ident.ref.ProjectRef;
-import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 
 public final class GraphWorkspace
     implements Closeable
 {
 
-    private final GraphWorkspaceConfiguration config;
+    public static final Set<URI> DEFAULT_POM_LOCATIONS = Collections.singleton( RelationshipUtils.POM_ROOT_URI );
 
-    private final transient Map<String, Object> properties = new HashMap<String, Object>();
+    public static final Set<URI> DEFAULT_SOURCES = Collections.singleton( RelationshipUtils.UNKNOWN_SOURCE_URI );
+
+    //    private final GraphWorkspaceConfiguration config;
 
     private String id;
+
+    private final transient GraphDatabaseDriver dbDriver;
 
     private transient boolean open = true;
 
     private final transient List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
 
-    private long lastAccess = System.currentTimeMillis();
-
-    private final transient GraphDatabaseDriver dbDriver;
-
-    private VersionManager versionManager = new VersionManager();
-
-    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final GraphDatabaseDriver dbDriver )
+    public GraphWorkspace( final String id, final GraphDatabaseDriver dbDriver )
     {
         this.id = id;
-        this.config = config;
+        //        this.config = config;
         this.dbDriver = dbDriver;
     }
 
-    public GraphWorkspace( final String id, final GraphWorkspaceConfiguration config, final GraphDatabaseDriver dbDriver, final long lastAccess )
+    public GraphWorkspace( final String id, final GraphDatabaseDriver dbDriver, final long lastAccess )
     {
         this.id = id;
-        this.config = config;
+        //        this.config = config;
         this.dbDriver = dbDriver;
-        this.lastAccess = lastAccess;
+        this.dbDriver.setLastAccess( lastAccess );
+    }
+
+    private void initActivePomLocations()
+    {
+        if ( dbDriver.getActivePomLocationCount() < 1 )
+        {
+            dbDriver.addActivePomLocations( DEFAULT_POM_LOCATIONS );
+        }
     }
 
     protected void setLastAccess( final long lastAccess )
     {
-        this.lastAccess = lastAccess;
+        this.dbDriver.setLastAccess( lastAccess );
     }
 
     protected void setId( final String id )
@@ -88,11 +91,12 @@ public final class GraphWorkspace
 
     public GraphWorkspace addActivePomLocation( final URI location )
     {
-        final int before = config.getActivePomLocationCount();
+        final int before = dbDriver.getActivePomLocationCount();
 
-        config.withPomLocations( location );
+        initActivePomLocations();
+        dbDriver.addActivePomLocations( location );
 
-        if ( config.getActivePomLocationCount() != before )
+        if ( dbDriver.getActivePomLocationCount() != before )
         {
             fireAccessed();
         }
@@ -102,11 +106,12 @@ public final class GraphWorkspace
 
     public GraphWorkspace addActivePomLocations( final Collection<URI> locations )
     {
-        final int before = config.getActivePomLocationCount();
+        final int before = dbDriver.getActivePomLocationCount();
 
-        config.withPomLocations( locations );
+        initActivePomLocations();
+        dbDriver.addActivePomLocations( locations );
 
-        if ( config.getActivePomLocationCount() != before )
+        if ( dbDriver.getActivePomLocationCount() != before )
         {
             fireAccessed();
         }
@@ -116,11 +121,12 @@ public final class GraphWorkspace
 
     public GraphWorkspace addActivePomLocations( final URI... locations )
     {
-        final int before = config.getActivePomLocationCount();
+        final int before = dbDriver.getActivePomLocationCount();
 
-        config.withPomLocations( locations );
+        initActivePomLocations();
+        dbDriver.addActivePomLocations( locations );
 
-        if ( config.getActivePomLocationCount() != before )
+        if ( dbDriver.getActivePomLocationCount() != before )
         {
             fireAccessed();
         }
@@ -128,13 +134,19 @@ public final class GraphWorkspace
         return this;
     }
 
+    public GraphWorkspace removeRootPomLocation()
+    {
+        dbDriver.removeActivePomLocations( RelationshipUtils.POM_ROOT_URI );
+        return this;
+    }
+
     public GraphWorkspace addActiveSources( final Collection<URI> sources )
     {
-        final int before = config.getActiveSourceCount();
+        final int before = dbDriver.getActiveSourceCount();
 
-        config.withSources( sources );
+        dbDriver.addActiveSources( sources );
 
-        if ( config.getActiveSourceCount() != before )
+        if ( dbDriver.getActiveSourceCount() != before )
         {
             fireAccessed();
         }
@@ -144,11 +156,11 @@ public final class GraphWorkspace
 
     public GraphWorkspace addActiveSources( final URI... sources )
     {
-        final int before = config.getActiveSourceCount();
+        final int before = dbDriver.getActiveSourceCount();
 
-        config.withSources( sources );
+        dbDriver.addActiveSources( sources );
 
-        if ( config.getActiveSourceCount() != before )
+        if ( dbDriver.getActiveSourceCount() != before )
         {
             fireAccessed();
         }
@@ -158,11 +170,11 @@ public final class GraphWorkspace
 
     public GraphWorkspace addActiveSource( final URI source )
     {
-        final int before = config.getActiveSourceCount();
+        final int before = dbDriver.getActiveSourceCount();
 
-        config.withSources( source );
+        dbDriver.addActiveSources( source );
 
-        if ( config.getActiveSourceCount() != before )
+        if ( dbDriver.getActiveSourceCount() != before )
         {
             fireAccessed();
         }
@@ -172,45 +184,31 @@ public final class GraphWorkspace
 
     public long getLastAccess()
     {
-        return lastAccess;
+        return dbDriver.getLastAccess();
     }
 
-    /** NOTE: Non-durable!
-     */
-    public Object setProperty( final String key, final Object value )
+    public String setProperty( final String key, final String value )
     {
         fireAccessed();
-        return properties.put( key, value );
+        return dbDriver.setProperty( key, value );
     }
 
-    public Object removeProperty( final String key )
+    public String removeProperty( final String key )
     {
         fireAccessed();
-        return properties.remove( key );
+        return dbDriver.removeProperty( key );
     }
 
-    public <T> T getProperty( final String key, final Class<T> type )
+    public String getProperty( final String key )
     {
         fireAccessed();
-        final Object value = properties.get( key );
-        if ( value != null )
-        {
-            return type.cast( value );
-        }
-
-        return null;
+        return dbDriver.getProperty( key );
     }
 
-    public <T> T getProperty( final String key, final Class<T> type, final T def )
+    public String getProperty( final String key, final String def )
     {
         fireAccessed();
-        final Object value = properties.get( key );
-        if ( value != null )
-        {
-            return type.cast( value );
-        }
-
-        return def;
+        return dbDriver.getProperty( key, def );
     }
 
     public final String getId()
@@ -221,69 +219,33 @@ public final class GraphWorkspace
     public final Set<URI> getActivePomLocations()
     {
         fireAccessed();
-        return config.getActivePomLocations();
+        final Set<URI> result = dbDriver.getActivePomLocations();
+        return result == null ? DEFAULT_POM_LOCATIONS : result;
     }
 
     public final Set<URI> getActiveSources()
     {
         fireAccessed();
-        return config.getActiveSources();
+        final Set<URI> result = dbDriver.getActiveSources();
+        return result == null ? DEFAULT_SOURCES : result;
     }
 
     public final Iterable<URI> activePomLocations()
     {
         fireAccessed();
-        return config.getActivePomLocations();
+        return dbDriver.getActivePomLocations();
     }
 
     public final Iterable<URI> activeSources()
     {
         fireAccessed();
-        return config.getActiveSources();
-    }
-
-    public final ProjectVersionRef selectVersion( final ProjectRef ref, final ProjectVersionRef selected )
-    {
-        checkOpen();
-
-        if ( versionManager == null )
-        {
-            versionManager = new VersionManager();
-        }
-
-        versionManager.select( ref, selected, true );
-
-        fireSelectionAdded( ref, selected );
-
-        fireAccessed();
-        return selected;
-    }
-
-    public final void clearSelections()
-    {
-        checkOpen();
-        versionManager = null;
-        fireAccessed();
-        fireSelectionsCleared();
-    }
-
-    public final ProjectVersionRef getSelection( final ProjectVersionRef ref )
-    {
-        checkOpen();
-        fireAccessed();
-        return versionManager == null ? null : versionManager.getSelected( ref );
-    }
-
-    public final VersionManager getSelections()
-    {
-        fireAccessed();
-        return versionManager;
+        return dbDriver.getActiveSources();
     }
 
     @Override
     public String toString()
     {
-        return String.format( "GraphWorkspace (id=%s, config=[%s])", id, config );
+        return String.format( "GraphWorkspace (id=%s, driver=[%s])", id, dbDriver );
     }
 
     @Override
@@ -323,9 +285,9 @@ public final class GraphWorkspace
     {
         if ( open )
         {
+            fireClosed();
             getDatabase().close();
             open = false;
-            fireClosed();
         }
     }
 
@@ -339,7 +301,7 @@ public final class GraphWorkspace
 
     private void fireAccessed()
     {
-        lastAccess = System.currentTimeMillis();
+        dbDriver.setLastAccess( System.currentTimeMillis() );
         for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.accessed( this );
@@ -348,26 +310,10 @@ public final class GraphWorkspace
 
     private void fireDetached()
     {
-        lastAccess = System.currentTimeMillis();
+        dbDriver.setLastAccess( System.currentTimeMillis() );
         for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.detached( this );
-        }
-    }
-
-    private void fireSelectionAdded( final ProjectRef ref, final ProjectVersionRef selected )
-    {
-        for ( final GraphWorkspaceListener listener : listeners )
-        {
-            listener.selectionAdded( this, ref, selected );
-        }
-    }
-
-    private void fireSelectionsCleared()
-    {
-        for ( final GraphWorkspaceListener listener : listeners )
-        {
-            listener.selectionsCleared( this );
         }
     }
 
@@ -394,29 +340,14 @@ public final class GraphWorkspace
         return this;
     }
 
-    public boolean hasSelection( final ProjectVersionRef ref )
-    {
-        return versionManager != null && ( versionManager.hasSelectionFor( ref ) || versionManager.hasSelectionFor( ref.asProjectRef() ) );
-    }
-
-    public boolean isForceVersions()
-    {
-        return config.isForceVersions();
-    }
-
     public GraphDatabaseDriver getDatabase()
     {
         return dbDriver;
     }
 
-    public GraphWorkspaceConfiguration getConfiguration()
-    {
-        return config;
-    }
-
-    public void setSelections( final VersionManager selections )
-    {
-        this.versionManager = selections;
-    }
+    //    public GraphWorkspaceConfiguration getConfiguration()
+    //    {
+    //        return config;
+    //    }
 
 }

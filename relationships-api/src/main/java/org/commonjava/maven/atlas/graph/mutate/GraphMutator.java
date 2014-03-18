@@ -1,6 +1,7 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 
@@ -25,22 +26,37 @@ public interface GraphMutator
      * 
      * @param rel The relationship to process.
      * @param path The path leading to this selection, which may contain management information, etc. 
+     * @param view The view (context) in which this mutation is being made
      * @return The alternative relationship, or the given one if no mutation 
      * takes place.
      */
-    ProjectRelationship<?> selectFor( ProjectRelationship<?> rel, GraphPath<?> path );
+    ProjectRelationship<?> selectFor( ProjectRelationship<?> rel, GraphPath<?> path, GraphView view );
 
     /**
      * If necessary, create a new mutator instance to handle the next wave of 
      * relationships resulting from traversal of the given relationship.
      * 
      * @param rel The relationship that will be traversed next, for which mutator logic is needed.
+     * @param view The view (context) in which this mutation is being made
      * 
      * @return  This instance WHEREVER POSSIBLE, or a new mutator instance to 
      * encapsulate changing logic or metadata. NEVER Null. Decisions about 
      * whether to proceed should be handled via {@link ProjectRelationshipFilter}, 
      * not here.
      */
-    GraphMutator getMutatorFor( ProjectRelationship<?> rel );
+    GraphMutator getMutatorFor( ProjectRelationship<?> rel, GraphView view );
+
+    /**
+     * Retrieve a human-readable string that uniquely identifies the logic in this mutator, 
+     * along with any state stored in this instance.
+     */
+    String getLongId();
+
+    /**
+     * Retrieve a condensed version of the human-readable identity given in {@link #getLongId()}.
+     * If the human-readable identity is sufficiently short (eg. "ANY"), then no
+     * hashing is required.
+     */
+    String getCondensedId();
 
 }

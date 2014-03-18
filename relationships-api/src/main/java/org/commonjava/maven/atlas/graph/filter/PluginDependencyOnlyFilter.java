@@ -22,7 +22,6 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 
-// TODO: Do we need to consider excludes in the direct plugin-level dependency?
 public class PluginDependencyOnlyFilter
     extends AbstractTypedFilter
 {
@@ -68,26 +67,6 @@ public class PluginDependencyOnlyFilter
     }
 
     @Override
-    public void render( final StringBuilder sb )
-    {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-        sb.append( "PLUGIN-DEPENDENCIES ONLY[for: " )
-          .append( plugin )
-          .append( "]" );
-    }
-
-    @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
-    }
-
-    @Override
     public int hashCode()
     {
         final int prime = 31;
@@ -124,6 +103,13 @@ public class PluginDependencyOnlyFilter
             return false;
         }
         return true;
+    }
+
+    @Override
+    protected void renderIdAttributes( final StringBuilder sb )
+    {
+        sb.append( ",plugin:" )
+          .append( plugin );
     }
 
 }

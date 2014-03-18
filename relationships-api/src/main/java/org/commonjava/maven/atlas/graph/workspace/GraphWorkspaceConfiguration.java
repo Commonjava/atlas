@@ -19,23 +19,22 @@ package org.commonjava.maven.atlas.graph.workspace;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 
 public final class GraphWorkspaceConfiguration
 {
-    public static final Set<URI> DEFAULT_POM_LOCATIONS = Collections.singleton( RelationshipUtils.POM_ROOT_URI );
-
-    public static final Set<URI> DEFAULT_SOURCES = Collections.singleton( RelationshipUtils.UNKNOWN_SOURCE_URI );
-
     private Set<URI> activePomLocations;
 
     private Set<URI> activeSources;
 
-    private boolean forceVersions = true;
+    private long lastAccess = System.currentTimeMillis();
+
+    private Map<String, String> properties;
 
     public GraphWorkspaceConfiguration withPomLocations( final URI... pomLocations )
     {
@@ -48,28 +47,8 @@ public final class GraphWorkspaceConfiguration
     {
         if ( activePomLocations == null )
         {
-            activePomLocations = new HashSet<URI>();
-            activePomLocations.add( RelationshipUtils.POM_ROOT_URI );
+            activePomLocations = new HashSet<URI>( GraphWorkspace.DEFAULT_POM_LOCATIONS );
         }
-    }
-
-    private void initActiveSources()
-    {
-        if ( activeSources == null )
-        {
-            activeSources = new HashSet<URI>();
-        }
-    }
-
-    public GraphWorkspaceConfiguration withForcedVersions( final boolean forced )
-    {
-        this.forceVersions = forced;
-        return this;
-    }
-
-    public boolean isForceVersions()
-    {
-        return forceVersions;
     }
 
     public GraphWorkspaceConfiguration withPomLocations( final Collection<URI> pomLocations )
@@ -100,6 +79,14 @@ public final class GraphWorkspaceConfiguration
         return this;
     }
 
+    private void initActiveSources()
+    {
+        if ( activeSources == null )
+        {
+            activeSources = new HashSet<URI>( GraphWorkspace.DEFAULT_SOURCES );
+        }
+    }
+
     public GraphWorkspaceConfiguration withSources( final Collection<URI> sources )
     {
         initActiveSources();
@@ -116,12 +103,12 @@ public final class GraphWorkspaceConfiguration
 
     public Set<URI> getActivePomLocations()
     {
-        return activePomLocations == null ? DEFAULT_POM_LOCATIONS : activePomLocations;
+        return activePomLocations == null ? GraphWorkspace.DEFAULT_POM_LOCATIONS : activePomLocations;
     }
 
     public Set<URI> getActiveSources()
     {
-        return activeSources == null ? DEFAULT_SOURCES : activeSources;
+        return activeSources == null ? GraphWorkspace.DEFAULT_SOURCES : activeSources;
     }
 
     @Override
@@ -202,8 +189,97 @@ public final class GraphWorkspaceConfiguration
     @Override
     public String toString()
     {
-        return String.format( "GraphWorkspaceConfiguration [activePomLocations=%s, activeSources=%s, forceVersions=%s]", activePomLocations,
-                              activeSources, forceVersions );
+        return String.format( "GraphWorkspaceConfiguration [activePomLocations=%s, activeSources=%s]", activePomLocations, activeSources );
+    }
+
+    public void setLastAccess( final long lastAccess )
+    {
+        this.lastAccess = lastAccess;
+    }
+
+    public long getLastAccess()
+    {
+        return lastAccess;
+    }
+
+    public synchronized String setProperty( final String key, final String value )
+    {
+        if ( properties == null )
+        {
+            properties = new HashMap<String, String>();
+        }
+
+        return properties.put( key, value );
+    }
+
+    public String getProperty( final String key )
+    {
+        return properties.get( key );
+    }
+
+    public String getProperty( final String key, final String def )
+    {
+        final String value = properties.get( key );
+        return value != null ? value : def;
+    }
+
+    public synchronized String removeProperty( final String key )
+    {
+        if ( properties == null )
+        {
+            return null;
+        }
+
+        return properties.remove( key );
+    }
+
+    public void withoutPomLocations( final URI... locations )
+    {
+        if ( activePomLocations != null )
+        {
+            for ( final URI location : locations )
+            {
+                activePomLocations.remove( location );
+            }
+        }
+    }
+
+    public void withoutPomLocations( final Collection<URI> locations )
+    {
+        if ( activePomLocations != null )
+        {
+            for ( final URI location : locations )
+            {
+                activePomLocations.remove( location );
+            }
+        }
+    }
+
+    public void withoutSources( final Collection<URI> sources )
+    {
+        if ( activeSources != null )
+        {
+            for ( final URI source : sources )
+            {
+                activeSources.remove( source );
+            }
+        }
+    }
+
+    public void withoutSources( final URI... sources )
+    {
+        if ( activeSources != null )
+        {
+            for ( final URI source : sources )
+            {
+                activeSources.remove( source );
+            }
+        }
+    }
+
+    public Map<String, String> getProperties()
+    {
+        return properties;
     }
 
 }

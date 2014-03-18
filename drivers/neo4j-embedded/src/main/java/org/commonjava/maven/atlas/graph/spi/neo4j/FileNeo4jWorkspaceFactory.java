@@ -16,15 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
-import static org.apache.commons.io.IOUtils.closeQuietly;
-
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -33,7 +26,6 @@ import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
-import org.commonjava.web.json.ser.JsonSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,8 +38,6 @@ public class FileNeo4jWorkspaceFactory
     private final File dbBaseDirectory;
 
     private final boolean useShutdownHook;
-
-    private final JsonSerializer serializer = new JsonSerializer();
 
     public FileNeo4jWorkspaceFactory( final File dbBaseDirectory, final boolean useShutdownHook )
     {
@@ -84,7 +74,7 @@ public class FileNeo4jWorkspaceFactory
             throw new GraphDriverException( "Failed to create workspace directory for: {}. (dir: {})", id, db );
         }
 
-        final GraphWorkspace ws = new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ) );
+        final GraphWorkspace ws = new GraphWorkspace( id, new FileNeo4JEGraphDriver( config, db, useShutdownHook ) );
         storeWorkspace( ws );
 
         return ws;
@@ -110,7 +100,7 @@ public class FileNeo4jWorkspaceFactory
             throw new GraphDriverException( "Cannot create database directory for workspace: {}", id );
         }
 
-        final GraphWorkspace ws = new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ) );
+        final GraphWorkspace ws = new GraphWorkspace( id, new FileNeo4JEGraphDriver( config, db, useShutdownHook ) );
         storeWorkspace( ws );
 
         return ws;
@@ -120,28 +110,6 @@ public class FileNeo4jWorkspaceFactory
     public void storeWorkspace( final GraphWorkspace workspace )
         throws GraphDriverException
     {
-        final String id = workspace.getId();
-        final File db = new File( dbBaseDirectory, id );
-        if ( !db.isDirectory() )
-        {
-            throw new GraphDriverException( "No database for workspace: {}", id );
-        }
-
-        final File configFile = new File( db, "workspace-config.json" );
-        Writer out = null;
-        try
-        {
-            out = new OutputStreamWriter( new FileOutputStream( configFile ), "UTF-8" );
-            out.write( serializer.toString( workspace.getConfiguration() ) );
-        }
-        catch ( final IOException e )
-        {
-            throw new GraphDriverException( "Failed to write workspace config to: {}. Reason: {}", e, configFile, e.getMessage() );
-        }
-        finally
-        {
-            closeQuietly( out );
-        }
     }
 
     @Override
@@ -154,33 +122,7 @@ public class FileNeo4jWorkspaceFactory
             return null;
         }
 
-        GraphWorkspaceConfiguration config = null;
-
-        final File configFile = new File( db, "workspace-config.json" );
-        if ( configFile.exists() )
-        {
-            InputStream stream = null;
-            try
-            {
-                stream = new FileInputStream( configFile );
-                config = serializer.fromStream( stream, "UTF-8", GraphWorkspaceConfiguration.class );
-            }
-            catch ( final IOException e )
-            {
-                throw new GraphDriverException( "Cannot load workspace configuration: {}. Reason: {}", e, configFile, e.getMessage() );
-            }
-            finally
-            {
-                closeQuietly( stream );
-            }
-        }
-
-        if ( config == null )
-        {
-            throw new GraphDriverException( "No configuration found for workspace: {}. Cannot load.", id );
-        }
-
-        return new GraphWorkspace( id, config, new FileNeo4JEGraphDriver( db, useShutdownHook ), configFile.lastModified() );
+        return new GraphWorkspace( id, new FileNeo4JEGraphDriver( db, useShutdownHook ) );
     }
 
     @Override

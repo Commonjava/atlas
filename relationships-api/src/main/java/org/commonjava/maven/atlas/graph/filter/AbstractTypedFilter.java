@@ -16,12 +16,15 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 
@@ -38,6 +41,10 @@ public abstract class AbstractTypedFilter
     private final boolean includeManagedInfo;
 
     private final boolean includeConcreteInfo;
+
+    private transient String longId;
+
+    private transient String shortId;
 
     protected AbstractTypedFilter( final RelationshipType type, final RelationshipType descendantType, final boolean includeManagedInfo,
                                    final boolean includeConcreteInfo )
@@ -237,4 +244,55 @@ public abstract class AbstractTypedFilter
         return true;
     }
 
+    @Override
+    public String getLongId()
+    {
+        if ( longId == null )
+        {
+            final StringBuilder sb = new StringBuilder();
+            final String abbreviatedPackage = getClass().getPackage()
+                                                        .getName()
+                                                        .replaceAll( "([a-zA-Z])[a-zA-Z]+", "$1" );
+
+            sb.append( abbreviatedPackage )
+              .append( '.' )
+              .append( getClass().getSimpleName() )
+              .append( "[types:{" )
+              .append( join( types, "," ) )
+              .append( "},next-types:{" )
+              .append( join( descendantTypes, "," ) )
+              .append( ",concrete:" )
+              .append( includeConcreteInfo )
+              .append( ",managed:" )
+              .append( includeManagedInfo );
+
+            renderIdAttributes( sb );
+            sb.append( ']' );
+
+            longId = sb.toString();
+        }
+
+        return longId;
+    }
+
+    protected void renderIdAttributes( final StringBuilder sb )
+    {
+    }
+
+    @Override
+    public String toString()
+    {
+        return getLongId();
+    }
+
+    @Override
+    public String getCondensedId()
+    {
+        if ( shortId == null )
+        {
+            shortId = DigestUtils.shaHex( getLongId() );
+        }
+
+        return shortId;
+    }
 }

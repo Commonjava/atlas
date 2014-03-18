@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.util.Arrays;
 
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
@@ -82,44 +84,6 @@ public class DependencyOnlyFilter
     }
 
     @Override
-    public void render( final StringBuilder sb )
-    {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-
-        sb.append( "DEPENDENCIES ONLY[scopes: (" );
-        boolean first = true;
-        for ( final DependencyScope scope : scopes )
-        {
-            if ( !first )
-            {
-                sb.append( ", " );
-            }
-
-            sb.append( scope.realName() );
-            first = false;
-        }
-
-        sb.append( "), managed: " )
-          .append( isManagedInfoIncluded() )
-          .append( ", concrete: " )
-          .append( isConcreteInfoIncluded() )
-          .append( ", implied scopes: " )
-          .append( useImpliedScope )
-          .append( "]" );
-    }
-
-    @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
-    }
-
-    @Override
     public int hashCode()
     {
         final int prime = 31;
@@ -154,6 +118,15 @@ public class DependencyOnlyFilter
             return false;
         }
         return true;
+    }
+
+    @Override
+    protected void renderIdAttributes( final StringBuilder sb )
+    {
+        sb.append( ",scopes:{" )
+          .append( join( scopes, "," ) )
+          .append( ",implied-scopes: " )
+          .append( useImpliedScope );
     }
 
 }

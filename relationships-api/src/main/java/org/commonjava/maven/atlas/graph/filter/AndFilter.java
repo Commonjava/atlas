@@ -54,42 +54,12 @@ public class AndFilter
     @Override
     protected AbstractAggregatingFilter newChildFilter( final List<ProjectRelationshipFilter> childFilters )
     {
-        // TODO: Optimize to ensure we're only creating a new instance when it's critical to...
-        return new AndFilter( childFilters );
-    }
-
-    @Override
-    public void render( final StringBuilder sb )
-    {
-        final List<? extends ProjectRelationshipFilter> filters = getFilters();
-        if ( sb.length() > 0 )
+        if ( !filtersEqual( childFilters ) )
         {
-            sb.append( " " );
+            return new AndFilter( childFilters );
         }
-        sb.append( "[" );
-        boolean first = true;
-        for ( final ProjectRelationshipFilter filter : filters )
-        {
-            if ( first )
-            {
-                first = false;
-            }
-            else
-            {
-                sb.append( " && " );
-            }
 
-            filter.render( sb );
-        }
-        sb.append( "]" );
-    }
-
-    @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
+        return this;
     }
 
 }

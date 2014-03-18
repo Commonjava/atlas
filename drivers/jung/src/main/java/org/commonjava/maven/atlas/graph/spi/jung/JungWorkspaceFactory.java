@@ -42,7 +42,7 @@ public class JungWorkspaceFactory
             throw new GraphDriverException( "Workspace already exists: %s. Cannot create workspace.", id );
         }
 
-        final GraphWorkspace ws = new GraphWorkspace( id, config, new JungEGraphDriver() );
+        final GraphWorkspace ws = new GraphWorkspace( id, new JungEGraphDriver( config ) );
         workspaces.put( ws.getId(), ws );
         return ws;
     }
@@ -51,7 +51,7 @@ public class JungWorkspaceFactory
     public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
-        final GraphWorkspace ws = new GraphWorkspace( Long.toString( System.currentTimeMillis() ), config, new JungEGraphDriver() );
+        final GraphWorkspace ws = new GraphWorkspace( Long.toString( System.currentTimeMillis() ), new JungEGraphDriver( config ) );
         workspaces.put( ws.getId(), ws );
         return ws;
     }

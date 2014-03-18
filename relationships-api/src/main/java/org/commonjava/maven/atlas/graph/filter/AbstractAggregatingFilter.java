@@ -22,12 +22,17 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
 public abstract class AbstractAggregatingFilter
     implements ProjectRelationshipFilter, Iterable<ProjectRelationshipFilter>
 {
     private final List<? extends ProjectRelationshipFilter> filters;
+
+    private transient String longId;
+
+    private transient String shortId;
 
     protected AbstractAggregatingFilter( final Collection<? extends ProjectRelationshipFilter> filters )
     {
@@ -98,18 +103,95 @@ public abstract class AbstractAggregatingFilter
             return false;
         }
         final AbstractAggregatingFilter other = (AbstractAggregatingFilter) obj;
+
+        return filtersEqual( other.filters );
+    }
+
+    protected final boolean filtersEqual( final Collection<? extends ProjectRelationshipFilter> otherFilters )
+    {
         if ( filters == null )
         {
-            if ( other.filters != null )
+            if ( otherFilters != null )
             {
                 return false;
             }
         }
-        else if ( !filters.equals( other.filters ) )
+        else if ( otherFilters != null )
         {
-            return false;
+            //            if ( orderMatters )
+            //            {
+            return filters.equals( otherFilters );
+            //            }
+            //            else
+            //            {
+            //                for ( final ProjectRelationshipFilter filter : filters )
+            //                {
+            //                    if ( !otherFilters.contains( filter ) )
+            //                    {
+            //                        return false;
+            //                    }
+            //                }
+            //
+            //                for ( final ProjectRelationshipFilter filter : otherFilters )
+            //                {
+            //                    if ( !filters.contains( filter ) )
+            //                    {
+            //                        return false;
+            //                    }
+            //                }
+            //            }
         }
+
         return true;
     }
 
+    @Override
+    public String getLongId()
+    {
+        if ( longId == null )
+        {
+            final StringBuilder sb = new StringBuilder();
+            final List<? extends ProjectRelationshipFilter> filters = getFilters();
+            final String abbreviatedPackage = getClass().getPackage()
+                                                        .getName()
+                                                        .replaceAll( "([a-zA-Z])[a-zA-Z]+", "$1" );
+
+            sb.append( abbreviatedPackage )
+              .append( '.' )
+              .append( getClass().getSimpleName() )
+              .append( '(' );
+
+            for ( final ProjectRelationshipFilter filter : filters )
+            {
+                if ( sb.length() > 0 )
+                {
+                    sb.append( ',' );
+                }
+
+                sb.append( filter.getLongId() );
+            }
+            sb.append( ')' );
+
+            longId = sb.toString();
+        }
+
+        return longId;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getLongId();
+    }
+
+    @Override
+    public String getCondensedId()
+    {
+        if ( shortId == null )
+        {
+            shortId = DigestUtils.shaHex( getLongId() );
+        }
+
+        return shortId;
+    }
 }

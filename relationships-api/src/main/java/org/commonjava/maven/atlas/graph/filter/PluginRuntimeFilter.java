@@ -56,21 +56,21 @@ public class PluginRuntimeFilter
     }
 
     @Override
-    public void render( final StringBuilder sb )
+    public String getLongId()
     {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-        sb.append( "PLUGIN-RUNTIME" );
+        return "PLUGIN-RUNTIME";
     }
 
     @Override
     public String toString()
     {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
+        return getLongId();
+    }
+
+    @Override
+    public String getCondensedId()
+    {
+        return getLongId();
     }
 
 }

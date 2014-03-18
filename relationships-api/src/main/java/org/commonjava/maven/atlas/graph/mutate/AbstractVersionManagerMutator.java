@@ -1,6 +1,6 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
@@ -11,28 +11,19 @@ public abstract class AbstractVersionManagerMutator
     implements GraphMutator
 {
 
-    protected final GraphView view;
+    private transient String longId;
 
-    protected AbstractVersionManagerMutator( final GraphView view )
-    {
-        this.view = view;
-    }
-
-    protected AbstractVersionManagerMutator( final EProjectNet net )
-    {
-        this.view = net.getView();
-    }
+    private transient String shortId;
 
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
     {
         final ProjectRef target = rel.getTarget()
                                      .asProjectRef();
 
-        final VersionManager selections = view.getSelections();
-        if ( selections != null )
+        if ( view != null )
         {
-            final ProjectVersionRef ref = selections.getSelected( target );
+            final ProjectVersionRef ref = view.getSelection( target );
             if ( ref != null )
             {
                 return rel.selectTarget( ref );
@@ -43,23 +34,15 @@ public abstract class AbstractVersionManagerMutator
     }
 
     @Override
-    public GraphMutator getMutatorFor( final ProjectRelationship<?> rel )
+    public GraphMutator getMutatorFor( final ProjectRelationship<?> rel, final GraphView view )
     {
         return this;
-    }
-
-    protected GraphView getView()
-    {
-        return view;
     }
 
     @Override
     public int hashCode()
     {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + ( ( view == null ) ? 0 : view.hashCode() );
-        return result;
+        return getClass().hashCode() + 1;
     }
 
     @Override
@@ -77,19 +60,44 @@ public abstract class AbstractVersionManagerMutator
         {
             return false;
         }
-        final AbstractVersionManagerMutator other = (AbstractVersionManagerMutator) obj;
-        if ( view == null )
-        {
-            if ( other.view != null )
-            {
-                return false;
-            }
-        }
-        else if ( !view.equals( other.view ) )
-        {
-            return false;
-        }
         return true;
+    }
+
+    @Override
+    public String getLongId()
+    {
+        if ( longId == null )
+        {
+            final StringBuilder sb = new StringBuilder();
+            final String abbreviatedPackage = getClass().getPackage()
+                                                        .getName()
+                                                        .replaceAll( "([a-zA-Z])[a-zA-Z]+", "$1" );
+
+            sb.append( abbreviatedPackage )
+              .append( '.' )
+              .append( getClass().getSimpleName() );
+
+            longId = sb.toString();
+        }
+
+        return longId;
+    }
+
+    @Override
+    public String getCondensedId()
+    {
+        if ( shortId == null )
+        {
+            shortId = DigestUtils.shaHex( getLongId() );
+        }
+
+        return shortId;
+    }
+
+    @Override
+    public String toString()
+    {
+        return getLongId();
     }
 
 }

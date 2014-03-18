@@ -25,6 +25,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 
+import org.commonjava.maven.atlas.graph.filter.AnyFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
 import org.commonjava.maven.atlas.graph.model.EProjectGraph;
 import org.commonjava.maven.atlas.graph.model.EProjectKey;
@@ -89,9 +90,11 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
         final ProjectVersionRef d3 = projectVersion( "foo", "dep-L2", "1.1.2" );
 
+        final GraphView view = new GraphView( simpleWorkspace(), AnyFilter.INSTANCE, new ManagedDependencyMutator(), root );
+
         /* @formatter:off */
         final EProjectGraph graph = getManager().createGraph( 
-                new GraphView( simpleWorkspace(), root ), 
+                view, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( dependency( source, root, d1, 0 ) )
                     .build() 
@@ -103,10 +106,6 @@ public abstract class TransitiveDependencyTraversalTCK
         /* @formatter:on */
 
         graph.getView()
-             .setMutator( new ManagedDependencyMutator( graph ) );
-
-        graph.getView()
-             .getWorkspace()
              .selectVersion( d2.asProjectRef(), d3 );
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();

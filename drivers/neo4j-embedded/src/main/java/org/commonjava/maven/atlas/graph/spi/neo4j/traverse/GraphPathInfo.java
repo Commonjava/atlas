@@ -16,16 +16,20 @@ public class GraphPathInfo
 
     private final GraphMutator mutator;
 
+    private final GraphView view;
+
     public GraphPathInfo( final GraphView view )
     {
+        this.view = view;
         filter = view.getFilter();
         mutator = view.getMutator();
     }
 
-    public GraphPathInfo( final ProjectRelationshipFilter filter, final GraphMutator mutator )
+    public GraphPathInfo( final ProjectRelationshipFilter filter, final GraphMutator mutator, final GraphView view )
     {
         this.filter = filter;
         this.mutator = mutator;
+        this.view = view;
     }
 
     public ProjectRelationshipFilter getFilter()
@@ -47,7 +51,7 @@ public class GraphPathInfo
 
         if ( mutator != null )
         {
-            next = mutator.selectFor( next, path );
+            next = mutator.selectFor( next, path, view );
         }
 
         return next;
@@ -57,12 +61,12 @@ public class GraphPathInfo
     {
         final ProjectRelationship<?> rel = toProjectRelationship( r );
         final ProjectRelationshipFilter nextFilter = filter == null ? null : filter.getChildFilter( rel );
-        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( rel );
+        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( rel, view );
         if ( nextFilter == filter && nextMutator == mutator )
         {
             return this;
         }
 
-        return new GraphPathInfo( nextFilter, nextMutator );
+        return new GraphPathInfo( nextFilter, nextMutator, view );
     }
 }

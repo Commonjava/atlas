@@ -17,6 +17,7 @@
 package org.commonjava.maven.atlas.graph.spi;
 
 import java.io.Closeable;
+import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -149,5 +150,43 @@ public interface GraphDatabaseDriver
     GraphPath<?> createPath( ProjectVersionRef... nodes );
 
     GraphPath<?> createPath( GraphPath<?> parent, ProjectVersionRef node );
+
+    // Support for GraphWorkspace durable attributes...metadata about the graph as a whole.
+
+    void setLastAccess( long lastAccess );
+
+    long getLastAccess();
+
+    int getActivePomLocationCount();
+
+    void addActivePomLocations( URI... locations );
+
+    void addActivePomLocations( Collection<URI> locations );
+
+    void removeActivePomLocations( URI... locations );
+
+    void removeActivePomLocations( Collection<URI> locations );
+
+    Set<URI> getActivePomLocations();
+
+    int getActiveSourceCount();
+
+    void addActiveSources( Collection<URI> sources );
+
+    void addActiveSources( URI... sources );
+
+    Set<URI> getActiveSources();
+
+    void removeActiveSources( URI... sources );
+
+    void removeActiveSources( Collection<URI> sources );
+
+    String setProperty( String key, String value );
+
+    String removeProperty( String key );
+
+    String getProperty( String key );
+
+    String getProperty( String key, String defaultVal );
 
 }

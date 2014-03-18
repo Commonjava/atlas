@@ -29,31 +29,26 @@ public class GraphPathInfo
 
     private final JungGraphPath path;
 
+    private final GraphView view;
+
     public GraphPathInfo( final ProjectVersionRef root, final GraphView view, final JungGraphPath path )
     {
         this.target = root;
+        this.view = view;
         this.path = path;
         this.pathElements = null;
         this.filter = view.getFilter();
         this.mutator = view.getMutator();
     }
 
-    public GraphPathInfo( final ProjectVersionRef root, final ProjectRelationshipFilter filter, final GraphMutator mutator, final JungGraphPath path )
-    {
-        this.target = root;
-        this.path = path;
-        pathElements = null;
-        this.filter = filter;
-        this.mutator = mutator;
-    }
-
     public GraphPathInfo( final ProjectVersionRef target, final List<ProjectRelationship<?>> pathElements, final ProjectRelationshipFilter filter,
-                          final GraphMutator mutator, final JungGraphPath path )
+                          final GraphMutator mutator, final GraphView view, final JungGraphPath path )
     {
         this.target = target;
         this.pathElements = pathElements;
         this.filter = filter;
         this.mutator = mutator;
+        this.view = view;
         this.path = path;
     }
 
@@ -92,7 +87,7 @@ public class GraphPathInfo
 
         if ( mutator != null )
         {
-            edge = mutator.selectFor( edge, path );
+            edge = mutator.selectFor( edge, path, view );
         }
 
         final List<ProjectRelationship<?>> nextElements = new ArrayList<ProjectRelationship<?>>();
@@ -104,13 +99,13 @@ public class GraphPathInfo
         nextElements.add( edge );
 
         final ProjectRelationshipFilter nextFilter = filter == null ? null : filter.getChildFilter( edge );
-        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( edge );
+        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( edge, view );
 
         final ProjectVersionRef targetRef = edge.getTarget()
                                                 .asProjectVersionRef();
 
         return new GraphPathInfo( edge.getTarget()
-                                      .asProjectVersionRef(), nextElements, nextFilter, nextMutator, new JungGraphPath( path, targetRef ) );
+                                      .asProjectVersionRef(), nextElements, nextFilter, nextMutator, view, new JungGraphPath( path, targetRef ) );
     }
 
     public ProjectRelationship<?> getTargetEdge()

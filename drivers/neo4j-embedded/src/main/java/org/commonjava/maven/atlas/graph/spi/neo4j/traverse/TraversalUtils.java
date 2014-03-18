@@ -18,8 +18,8 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.POM_LOCATION_URI;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.SOURCE_URI;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getURIListProperty;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getURIProperty;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getURISetProperty;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
@@ -37,7 +37,6 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.slf4j.Logger;
@@ -91,11 +90,11 @@ public final class TraversalUtils
             final Set<URI> sources = workspace.getActiveSources();
             if ( sources != null && !sources.isEmpty() )
             {
-                final List<URI> s = getURIListProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
+                final Set<URI> s = getURISetProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
                 boolean found = false;
                 for ( final URI uri : s )
                 {
-                    if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
+                    if ( sources == GraphWorkspace.DEFAULT_SOURCES || sources.contains( uri ) )
                     {
                         found = true;
                         break;

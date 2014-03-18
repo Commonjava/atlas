@@ -36,7 +36,6 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.mutate.VersionManager;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
@@ -77,6 +76,15 @@ public class JungEGraphDriver
     private final Map<ProjectVersionRef, Map<String, String>> metadata = new HashMap<ProjectVersionRef, Map<String, String>>();
 
     private final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+
+    private final GraphWorkspaceConfiguration config;
+
+    private final GraphWorkspace globalView = new GraphWorkspace( "GLOBAL", this );
+
+    public JungEGraphDriver( final GraphWorkspaceConfiguration config )
+    {
+        this.config = config;
+    }
 
     @Override
     public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final GraphView view, final ProjectVersionRef ref )
@@ -127,7 +135,7 @@ public class JungEGraphDriver
                 boolean found = false;
                 for ( final URI uri : s )
                 {
-                    if ( sources == GraphWorkspaceConfiguration.DEFAULT_SOURCES || sources.contains( uri ) )
+                    if ( sources == GraphWorkspace.DEFAULT_SOURCES || sources.contains( uri ) )
                     {
                         found = true;
                         break;
@@ -156,18 +164,7 @@ public class JungEGraphDriver
                 }
             }
 
-            final VersionManager selections = view.getSelections();
-            ProjectVersionRef selected = null;
-            if ( selections != null )
-            {
-                selected = selections.getSelected( target );
-
-                if ( selected == null )
-                {
-                    selected = selections.getSelected( target.asProjectRef() );
-                }
-            }
-
+            final ProjectVersionRef selected = view == null ? null : view.getSelection( target );
             if ( selected != null )
             {
                 result.add( edge.selectTarget( selected ) );
@@ -246,9 +243,8 @@ public class JungEGraphDriver
 
             final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
-            dfsTraverse( new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) ), traversal, 0,
-                         rel.getTarget()
-                            .asProjectVersionRef() );
+            dfsTraverse( new GraphView( globalView ), traversal, 0, rel.getTarget()
+                                                                       .asProjectVersionRef() );
 
             final List<EProjectCycle> cycles = traversal.getCycles();
 
@@ -642,7 +638,7 @@ public class JungEGraphDriver
     @Override
     public void recomputeIncompleteSubgraphs()
     {
-        final GraphView view = new GraphView( new GraphWorkspace( "GLOBAL", new GraphWorkspaceConfiguration(), this ) );
+        final GraphView view = new GraphView( globalView );
         for ( final ProjectVersionRef vertex : getAllProjects( view ) )
         {
             final Collection<? extends ProjectRelationship<?>> outEdges = getRelationshipsDeclaredBy( view, vertex );
@@ -997,4 +993,113 @@ public class JungEGraphDriver
 
         return new JungGraphPath( (JungGraphPath) parent, child );
     }
+
+    @Override
+    public Set<URI> getActivePomLocations()
+    {
+        return config.getActivePomLocations();
+    }
+
+    @Override
+    public Set<URI> getActiveSources()
+    {
+        return config.getActiveSources();
+    }
+
+    @Override
+    public int getActivePomLocationCount()
+    {
+        return config.getActivePomLocationCount();
+    }
+
+    @Override
+    public int getActiveSourceCount()
+    {
+        return config.getActiveSourceCount();
+    }
+
+    @Override
+    public void setLastAccess( final long lastAccess )
+    {
+        config.setLastAccess( lastAccess );
+    }
+
+    @Override
+    public long getLastAccess()
+    {
+        return config.getLastAccess();
+    }
+
+    @Override
+    public void addActivePomLocations( final URI... locations )
+    {
+        config.withPomLocations( locations );
+    }
+
+    @Override
+    public void addActivePomLocations( final Collection<URI> locations )
+    {
+        config.withPomLocations( locations );
+    }
+
+    @Override
+    public void removeActivePomLocations( final URI... locations )
+    {
+        config.withoutPomLocations( locations );
+    }
+
+    @Override
+    public void removeActivePomLocations( final Collection<URI> locations )
+    {
+        config.withoutPomLocations( locations );
+    }
+
+    @Override
+    public void addActiveSources( final Collection<URI> sources )
+    {
+        config.withSources( sources );
+    }
+
+    @Override
+    public void addActiveSources( final URI... sources )
+    {
+        config.withSources( sources );
+    }
+
+    @Override
+    public void removeActiveSources( final URI... sources )
+    {
+        config.withoutSources( sources );
+    }
+
+    @Override
+    public void removeActiveSources( final Collection<URI> sources )
+    {
+        config.withoutSources( sources );
+    }
+
+    @Override
+    public String setProperty( final String key, final String value )
+    {
+        return config.setProperty( key, value );
+    }
+
+    @Override
+    public String removeProperty( final String key )
+    {
+        return config.removeProperty( key );
+    }
+
+    @Override
+    public String getProperty( final String key )
+    {
+        return config.getProperty( key );
+    }
+
+    @Override
+    public String getProperty( final String key, final String defaultVal )
+    {
+        return config.getProperty( key, defaultVal );
+    }
+
 }

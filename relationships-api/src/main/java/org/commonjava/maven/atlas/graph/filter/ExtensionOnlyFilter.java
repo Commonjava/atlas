@@ -19,7 +19,6 @@ package org.commonjava.maven.atlas.graph.filter;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 
-// TODO: Do we need to consider excludes in the direct plugin-level dependency?
 public class ExtensionOnlyFilter
     extends AbstractTypedFilter
 {
@@ -33,24 +32,6 @@ public class ExtensionOnlyFilter
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
         return NoneFilter.INSTANCE;
-    }
-
-    @Override
-    public void render( final StringBuilder sb )
-    {
-        if ( sb.length() > 0 )
-        {
-            sb.append( " " );
-        }
-        sb.append( "EXTENSIONS ONLY" );
-    }
-
-    @Override
-    public String toString()
-    {
-        final StringBuilder sb = new StringBuilder();
-        render( sb );
-        return sb.toString();
     }
 
 }
