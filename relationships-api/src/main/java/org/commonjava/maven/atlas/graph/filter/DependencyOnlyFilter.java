@@ -29,6 +29,11 @@ public class DependencyOnlyFilter
     extends AbstractTypedFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     // if unspecified, include all dependencies.
     private final DependencyScope[] scopes;
 

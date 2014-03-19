@@ -27,14 +27,18 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
+import org.commonjava.maven.atlas.graph.model.GraphPath;
+import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -43,7 +47,6 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.jung.model.JungGraphPath;
-import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -343,25 +346,29 @@ public class JungEGraphDriver
     // TODO: Implement without recursion.
     private void dfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
     {
-        dfsIterate( view, root, traversal, new GraphPathInfo( root, view, new JungGraphPath( root ) ), pass );
+        dfsIterate( view, root, traversal, new JungGraphPath( root ), new GraphPathInfo( view ), pass );
     }
 
-    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal, final GraphPathInfo path,
-                             final int pass )
+    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal, final JungGraphPath path,
+                             final GraphPathInfo pathInfo, final int pass )
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
         if ( edges != null )
         {
             for ( final ProjectRelationship<?> edge : edges )
             {
-                final GraphPathInfo next = path.getChildPath( edge );
-                if ( next == null )
+                final ProjectRelationship<?> realEdge = pathInfo.selectRelationship( edge, path );
+                if ( realEdge == null )
                 {
                     continue;
                 }
 
-                if ( traversal.traverseEdge( next.getTargetEdge(), next.getPathElements(), pass ) )
+                final JungGraphPath next = new JungGraphPath( path, realEdge );
+                final List<ProjectRelationship<?>> pathElements = next.getPathElements();
+
+                if ( traversal.traverseEdge( realEdge, pathElements, pass ) )
                 {
+                    final GraphPathInfo nextInfo = pathInfo.getChildPathInfo( realEdge );
                     if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
                     {
                         if ( next.hasCycle() )
@@ -372,10 +379,10 @@ public class JungEGraphDriver
                         final ProjectVersionRef target = edge.getTarget()
                                                              .asProjectVersionRef();
 
-                        dfsIterate( view, target, traversal, next, pass );
+                        dfsIterate( view, target, traversal, next, nextInfo, pass );
                     }
 
-                    traversal.edgeTraversed( next.getTargetEdge(), next.getPathElements(), pass );
+                    traversal.edgeTraversed( realEdge, pathElements, pass );
                 }
             }
         }
@@ -384,50 +391,57 @@ public class JungEGraphDriver
     // TODO: Implement without recursion.
     private void bfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
     {
-        final GraphPathInfo path = new GraphPathInfo( root, view, new JungGraphPath( root ) );
+        final GraphPathInfo pathInfo = new GraphPathInfo( view );
 
-        bfsIterate( view, Collections.singletonList( path ), traversal, pass );
+        bfsIterate( view, Collections.singletonMap( new JungGraphPath( root ), pathInfo ), traversal, pass );
     }
 
-    private void bfsIterate( final GraphView view, final List<GraphPathInfo> thisLayer, final ProjectNetTraversal traversal, final int pass )
+    private void bfsIterate( final GraphView view, final Map<JungGraphPath, GraphPathInfo> thisLayer, final ProjectNetTraversal traversal,
+                             final int pass )
     {
-        final List<GraphPathInfo> nextLayer = new ArrayList<GraphPathInfo>();
+        final Map<JungGraphPath, GraphPathInfo> nextLayer = new LinkedHashMap<JungGraphPath, GraphPathInfo>();
 
-        for ( final GraphPathInfo path : thisLayer )
+        for ( final Entry<JungGraphPath, GraphPathInfo> entry : thisLayer.entrySet() )
         {
-            if ( path.isEmpty() )
+            final JungGraphPath path = entry.getKey();
+            final GraphPathInfo pathInfo = entry.getValue();
+
+            final ProjectVersionRef node = path.getTargetGAV();
+            if ( node == null )
             {
                 continue;
             }
-
-            final ProjectVersionRef node = path.getTarget();
 
             final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
             if ( edges != null )
             {
                 for ( final ProjectRelationship<?> edge : edges )
                 {
-                    final GraphPathInfo next = path.getChildPath( edge );
-                    if ( next == null )
+                    final ProjectRelationship<?> realEdge = pathInfo.selectRelationship( edge, path );
+                    if ( realEdge == null )
                     {
                         continue;
                     }
 
+                    final List<ProjectRelationship<?>> pathElements = path.getPathElements();
                     // call traverseEdge no matter what, to allow traversal to "see" all relationships.
-                    if ( traversal.traverseEdge( next.getTargetEdge(), next.getPathElements(), pass ) )
+                    if ( traversal.traverseEdge( realEdge, pathElements, pass ) )
                     {
+                        final JungGraphPath next = new JungGraphPath( path, realEdge );
+                        final GraphPathInfo nextInfo = pathInfo.getChildPathInfo( realEdge );
+
                         // Don't account for terminal parent relationship.
-                        if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
+                        if ( !( realEdge instanceof ParentRelationship ) || !( (ParentRelationship) realEdge ).isTerminus() )
                         {
                             if ( next.hasCycle() )
                             {
                                 continue;
                             }
 
-                            nextLayer.add( next );
+                            nextLayer.put( next, nextInfo );
                         }
 
-                        traversal.edgeTraversed( next.getTargetEdge(), next.getPathElements(), pass );
+                        traversal.edgeTraversed( realEdge, pathElements, pass );
                     }
                 }
             }
@@ -435,7 +449,6 @@ public class JungEGraphDriver
 
         if ( !nextLayer.isEmpty() )
         {
-            Collections.sort( nextLayer );
             bfsIterate( view, nextLayer, traversal, pass );
         }
     }
@@ -961,9 +974,9 @@ public class JungEGraphDriver
         final ProjectRef targetGA = target.asProjectRef();
 
         final JungGraphPath jungpath = (JungGraphPath) path;
-        for ( final ProjectVersionRef ref : jungpath )
+        for ( final ProjectRelationship<?> ref : jungpath )
         {
-            final Collection<ProjectRelationship<?>> outEdges = graph.getOutEdges( ref );
+            final Collection<ProjectRelationship<?>> outEdges = graph.getOutEdges( ref.getDeclaring() );
             for ( final ProjectRelationship<?> edge : outEdges )
             {
                 if ( edge.isManaged() && type == edge.getType() && targetGA.equals( edge.getTarget() ) )
@@ -978,13 +991,13 @@ public class JungEGraphDriver
     }
 
     @Override
-    public GraphPath<?> createPath( final ProjectVersionRef... nodes )
+    public GraphPath<?> createPath( final ProjectRelationship<?>... rels )
     {
-        return new JungGraphPath( nodes );
+        return new JungGraphPath( rels );
     }
 
     @Override
-    public GraphPath<?> createPath( final GraphPath<?> parent, final ProjectVersionRef child )
+    public GraphPath<?> createPath( final GraphPath<?> parent, final ProjectRelationship<?> child )
     {
         if ( parent != null && !( parent instanceof JungGraphPath ) )
         {
@@ -1100,6 +1113,12 @@ public class JungEGraphDriver
     public String getProperty( final String key, final String defaultVal )
     {
         return config.getProperty( key, defaultVal );
+    }
+
+    @Override
+    public void registerView( final GraphView view )
+    {
+        // TODO Tracking for the new view...
     }
 
 }

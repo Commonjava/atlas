@@ -16,6 +16,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
+import java.io.Serializable;
+
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
 /**
@@ -26,6 +28,7 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
  * @author jdcasey
  */
 public interface ProjectRelationshipFilter
+    extends Serializable
 {
 
     /**

@@ -28,6 +28,11 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 public abstract class AbstractAggregatingFilter
     implements ProjectRelationshipFilter, Iterable<ProjectRelationshipFilter>
 {
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     private final List<? extends ProjectRelationshipFilter> filters;
 
     private transient String longId;

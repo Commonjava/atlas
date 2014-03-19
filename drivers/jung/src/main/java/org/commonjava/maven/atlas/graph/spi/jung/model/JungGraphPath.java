@@ -1,35 +1,67 @@
 package org.commonjava.maven.atlas.graph.spi.jung.model;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
+import org.commonjava.maven.atlas.graph.model.GraphPath;
+import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class JungGraphPath
-    implements GraphPath<ProjectVersionRef>
+    implements GraphPath<ProjectRelationship<?>>
 {
 
-    private final ProjectVersionRef[] nodes;
+    private final ProjectRelationship<?>[] rels;
 
-    public JungGraphPath( final ProjectVersionRef... nodes )
+    private final ProjectVersionRef root;
+
+    public JungGraphPath( final ProjectVersionRef root )
     {
-        this.nodes = nodes;
+        this.root = root;
+        this.rels = new ProjectRelationship<?>[] {};
     }
 
-    public JungGraphPath( final JungGraphPath parent, final ProjectVersionRef child )
+    public JungGraphPath( final ProjectRelationship<?>... rels )
     {
+        this.root = null;
+        this.rels = rels;
+    }
+
+    public JungGraphPath( final JungGraphPath parent, final ProjectRelationship<?> child )
+    {
+        this.root = null;
         if ( parent == null )
         {
-            nodes = new ProjectVersionRef[] { child };
+            rels = new ProjectRelationship<?>[] { child };
         }
         else
         {
-            final int parentLen = parent.nodes.length;
-            this.nodes = new ProjectVersionRef[parentLen + 1];
-            System.arraycopy( parent.nodes, 0, this.nodes, 0, parentLen );
-            this.nodes[parentLen] = child;
+            final int parentLen = parent.rels.length;
+            this.rels = new ProjectRelationship<?>[parentLen + 1];
+            System.arraycopy( parent.rels, 0, this.rels, 0, parentLen );
+            this.rels[parentLen] = child;
         }
+    }
+
+    public ProjectVersionRef getTargetGAV()
+    {
+        if ( root != null )
+        {
+            return root;
+        }
+        else if ( rels.length > 0 )
+        {
+            return rels[rels.length - 1].getTarget()
+                                        .asProjectVersionRef();
+        }
+
+        return null;
     }
 
     @Override
@@ -37,7 +69,7 @@ public class JungGraphPath
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + Arrays.hashCode( nodes );
+        result = prime * result + Arrays.hashCode( rels );
         return result;
     }
 
@@ -57,7 +89,7 @@ public class JungGraphPath
             return false;
         }
         final JungGraphPath other = (JungGraphPath) obj;
-        if ( !Arrays.equals( nodes, other.nodes ) )
+        if ( !Arrays.equals( rels, other.rels ) )
         {
             return false;
         }
@@ -65,22 +97,22 @@ public class JungGraphPath
     }
 
     @Override
-    public Iterator<ProjectVersionRef> iterator()
+    public Iterator<ProjectRelationship<?>> iterator()
     {
-        return new Iterator<ProjectVersionRef>()
+        return new Iterator<ProjectRelationship<?>>()
         {
             private int next = 0;
 
             @Override
             public boolean hasNext()
             {
-                return nodes.length > next;
+                return rels.length > next;
             }
 
             @Override
-            public ProjectVersionRef next()
+            public ProjectRelationship<?> next()
             {
-                return nodes[next++];
+                return rels[next++];
             }
 
             @Override
@@ -89,6 +121,38 @@ public class JungGraphPath
                 throw new UnsupportedOperationException( "Immutable array of GAV's. Remove not supported." );
             }
         };
+    }
+
+    public List<ProjectRelationship<?>> getPathElements()
+    {
+        return rels.length == 0 ? Collections.<ProjectRelationship<?>> emptyList() : Arrays.asList( rels );
+    }
+
+    public boolean hasCycle()
+    {
+        if ( rels.length < 1 )
+        {
+            return false;
+        }
+
+        final Set<ProjectVersionRef> declared = new HashSet<ProjectVersionRef>( rels.length );
+        for ( final ProjectRelationship<?> item : rels )
+        {
+            // NOTE: order is important here, in case it's a terminal parent relationship.
+            if ( declared.contains( item.getTarget()
+                                        .asProjectVersionRef() ) || !declared.add( item.getDeclaring() ) )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public String getKey()
+    {
+        return DigestUtils.shaHex( StringUtils.join( rels, "," ) );
     }
 
 }

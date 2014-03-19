@@ -1,12 +1,14 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
+import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 
 public class NoOpGraphMutator
     implements GraphMutator
 {
+
+    private static final long serialVersionUID = 1L;
 
     public static final NoOpGraphMutator INSTANCE = new NoOpGraphMutator();
 

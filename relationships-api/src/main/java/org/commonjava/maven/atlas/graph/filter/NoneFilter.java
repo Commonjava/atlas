@@ -22,6 +22,11 @@ public class NoneFilter
     implements ProjectRelationshipFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public static final NoneFilter INSTANCE = new NoneFilter();
 
     private NoneFilter()

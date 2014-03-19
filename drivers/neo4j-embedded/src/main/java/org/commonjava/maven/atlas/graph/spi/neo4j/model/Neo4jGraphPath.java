@@ -5,47 +5,48 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
-import org.neo4j.graphdb.Node;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.neo4j.graphdb.Path;
+import org.neo4j.graphdb.Relationship;
 
 public class Neo4jGraphPath
     implements GraphPath<Long>
 {
 
-    private final long[] nodes;
+    private final long[] relationships;
 
-    public Neo4jGraphPath( final long... nodeIds )
+    public Neo4jGraphPath( final long... relationshipIds )
     {
-        this.nodes = nodeIds;
+        this.relationships = relationshipIds;
     }
 
-    public Neo4jGraphPath( final Neo4jGraphPath parent, final long id )
+    public Neo4jGraphPath( final Neo4jGraphPath parent, final long relationshipId )
     {
         if ( parent == null )
         {
-            nodes = new long[] { id };
+            relationships = new long[] { relationshipId };
         }
         else
         {
-            nodes = new long[parent.nodes.length + 1];
-            System.arraycopy( parent.nodes, 0, nodes, 0, parent.nodes.length );
-            nodes[parent.nodes.length] = id;
+            relationships = new long[parent.relationships.length + 1];
+            System.arraycopy( parent.relationships, 0, relationships, 0, parent.relationships.length );
+            relationships[parent.relationships.length] = relationshipId;
         }
     }
 
     public Neo4jGraphPath( final Path path )
     {
         final List<Long> ids = new ArrayList<Long>();
-        for ( final Node n : path.nodes() )
+        for ( final Relationship r : path.relationships() )
         {
-            ids.add( n.getId() );
+            ids.add( r.getId() );
         }
 
-        this.nodes = new long[ids.size()];
+        this.relationships = new long[ids.size()];
         for ( int i = 0; i < ids.size(); i++ )
         {
-            this.nodes[i] = ids.get( i );
+            this.relationships[i] = ids.get( i );
         }
     }
 
@@ -54,7 +55,7 @@ public class Neo4jGraphPath
     {
         final int prime = 31;
         int result = 1;
-        result = prime * result + Arrays.hashCode( nodes );
+        result = prime * result + Arrays.hashCode( relationships );
         return result;
     }
 
@@ -74,7 +75,7 @@ public class Neo4jGraphPath
             return false;
         }
         final Neo4jGraphPath other = (Neo4jGraphPath) obj;
-        if ( !Arrays.equals( nodes, other.nodes ) )
+        if ( !Arrays.equals( relationships, other.relationships ) )
         {
             return false;
         }
@@ -91,19 +92,19 @@ public class Neo4jGraphPath
             @Override
             public boolean hasNext()
             {
-                return nodes.length > next;
+                return relationships.length > next;
             }
 
             @Override
             public Long next()
             {
-                return nodes[next++];
+                return relationships[next++];
             }
 
             @Override
             public void remove()
             {
-                throw new UnsupportedOperationException( "Immutable array of node ID's. Remove not supported." );
+                throw new UnsupportedOperationException( "Immutable array of relationship ID's. Remove not supported." );
             }
         };
     }
@@ -111,7 +112,38 @@ public class Neo4jGraphPath
     @Override
     public String toString()
     {
-        return String.format( "Neo4jGraphPath [nodes=%s]", Arrays.toString( nodes ) );
+        return String.format( "Neo4jGraphPath [relationships=%s]", Arrays.toString( relationships ) );
+    }
+
+    @Override
+    public String getKey()
+    {
+        final StringBuilder sb = new StringBuilder();
+        for ( final long id : relationships )
+        {
+            if ( sb.length() > 0 )
+            {
+                sb.append( ',' );
+            }
+            sb.append( id );
+        }
+
+        return DigestUtils.shaHex( sb.toString() );
+    }
+
+    public long getLastRelationshipId()
+    {
+        if ( relationships.length < 1 )
+        {
+            return -1;
+        }
+
+        return relationships[relationships.length - 1];
+    }
+
+    public long[] getRelationshipIds()
+    {
+        return relationships;
     }
 
 }

@@ -34,6 +34,11 @@ public abstract class AbstractTypedFilter
 
     //    private final Logger logger = new Logger( getClass() );
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     private final Set<RelationshipType> types;
 
     private final Set<RelationshipType> descendantTypes;

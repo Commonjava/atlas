@@ -1,9 +1,9 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
+import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,6 +12,8 @@ public class ManagedDependencyMutator
     extends AbstractVersionManagerMutator
     implements GraphMutator
 {
+
+    private static final long serialVersionUID = 1L;
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 

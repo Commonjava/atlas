@@ -22,6 +22,11 @@ public class AnyFilter
     implements ProjectRelationshipFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public static final AnyFilter INSTANCE = new AnyFilter();
 
     private AnyFilter()

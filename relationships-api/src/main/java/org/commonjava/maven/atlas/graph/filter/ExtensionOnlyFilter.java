@@ -23,6 +23,11 @@ public class ExtensionOnlyFilter
     extends AbstractTypedFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public ExtensionOnlyFilter()
     {
         super( RelationshipType.EXTENSION, false, false, true );

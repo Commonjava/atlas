@@ -24,6 +24,11 @@ public class PluginOnlyFilter
     extends AbstractTypedFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public PluginOnlyFilter()
     {
         this( false, true );

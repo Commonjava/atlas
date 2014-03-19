@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.graph.model;
 
 import static org.apache.commons.lang.StringUtils.join;
 
+import java.io.Serializable;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
@@ -37,21 +38,24 @@ import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class GraphView
+    implements Serializable
 {
 
-    private final Set<ProjectVersionRef> roots = new HashSet<ProjectVersionRef>();
+    private static final long serialVersionUID = 1L;
 
-    private final GraphWorkspace workspace;
+    private final Set<ProjectVersionRef> roots = new HashSet<ProjectVersionRef>();
 
     private final ProjectRelationshipFilter filter;
 
     private final GraphMutator mutator;
 
+    private final GraphWorkspace workspace;
+
+    private Map<ProjectRef, ProjectVersionRef> selections;
+
     private transient String longId;
 
     private transient String shortId;
-
-    private Map<ProjectRef, ProjectVersionRef> selections;
 
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                       final Collection<ProjectVersionRef> roots )
@@ -60,6 +64,7 @@ public class GraphView
         this.roots.addAll( roots );
         this.workspace = workspace;
         this.mutator = mutator;
+        workspace.registerView( this );
     }
 
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
@@ -69,6 +74,7 @@ public class GraphView
         this.roots.addAll( Arrays.asList( roots ) );
         this.workspace = workspace;
         this.mutator = mutator;
+        workspace.registerView( this );
     }
 
     public GraphView( final GraphWorkspace workspace, final Collection<ProjectVersionRef> roots )
@@ -294,7 +300,7 @@ public class GraphView
         return workspace.getProperty( key, def );
     }
 
-    public final String getId()
+    public final String getWorkspaceId()
     {
         return workspace.getId();
     }
@@ -396,4 +402,10 @@ public class GraphView
 
         return sb.toString();
     }
+
+    public void reattach( final GraphDatabaseDriver driver )
+    {
+        workspace.reattach( driver );
+    }
+
 }

@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
@@ -55,6 +56,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     private final int pass;
 
     private boolean reversedExpander;
+
+    private final Set<String> seenKeys = new HashSet<String>();
 
     private final GraphView view;
 
@@ -131,9 +134,20 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
         GraphPathInfo pathInfo = pathInfos.remove( graphPath );
 
-        if ( pathInfo == null )
+        // just starting out. Initialize the path info.
+        if ( pathInfo == null && path.lastRelationship() == null )
         {
             pathInfo = new GraphPathInfo( view );
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
+
+        final String key = graphPath.getKey() + "#" + pathInfo.getKey();
+        if ( !seenKeys.add( key ) )
+        {
+            return Collections.emptySet();
         }
 
         //        final Relationship rel = path.lastRelationship();
@@ -185,14 +199,13 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             //            logger.info( "Attempting to expand: {}", r );
 
             final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
-            final GraphPathInfo next = pathInfo.getChildPathInfo( r );
+            final GraphPathInfo next = pathInfo.getChildPathInfo( projectRel );
 
             logger.debug( "Pre-checking relationship {} for expansion using filter: {}", projectRel, traversal );
             if ( traversal.preCheck( projectRel, rels, pass ) )
             {
                 logger.debug( "Adding for expansion: {}", projectRel );
-                pathInfos.put( new Neo4jGraphPath( graphPath, r.getEndNode()
-                                                               .getId() ), next );
+                pathInfos.put( new Neo4jGraphPath( graphPath, r.getId() ), next );
                 result.add( r );
             }
             else

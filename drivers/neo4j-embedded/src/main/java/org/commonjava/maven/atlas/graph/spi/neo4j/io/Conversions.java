@@ -20,6 +20,10 @@ import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -33,14 +37,20 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.output.ByteArrayOutputStream;
+import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
+import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -126,6 +136,16 @@ public final class Conversions
     public static final String ACTIVE_SOURCES = "active-pom-sources";
 
     public static final String CONFIG_PROPERTY_PREFIX = "_p_";
+
+    public static final String VIEW_SHORT_ID = "view_sid";
+
+    private static final String VIEW_DATA = "view_data";
+
+    // cached path tracking...ONLY handled by Conversions, since the info is inlined.
+
+    private static final String PATH = "path";
+
+    private static final String PATH_INFO_DATA = "path_info_data";
 
     private Conversions()
     {
@@ -864,6 +884,129 @@ public final class Conversions
         for ( final String key : keys )
         {
             to.setProperty( key, from.getProperty( key ) );
+        }
+    }
+
+    public static Neo4jGraphPath getCachedPath( final Relationship rel )
+    {
+        if ( !rel.hasProperty( PATH ) )
+        {
+            throw new IllegalArgumentException( "Relationship " + rel + " is not a cached-path relationship!" );
+        }
+
+        final long[] ids = (long[]) rel.getProperty( PATH );
+        return new Neo4jGraphPath( ids );
+    }
+
+    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final AbstractNeo4JEGraphDriver driver )
+    {
+        if ( !rel.hasProperty( PATH_INFO_DATA ) )
+        {
+            return null;
+        }
+
+        final byte[] data = (byte[]) rel.getProperty( PATH_INFO_DATA );
+        ObjectInputStream ois = null;
+        try
+        {
+            ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
+            final GraphPathInfo pathInfo = (GraphPathInfo) ois.readObject();
+            pathInfo.reattach( driver );
+
+            return pathInfo;
+        }
+        catch ( final IOException e )
+        {
+            throw new IllegalStateException( "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing " + data.length + " bytes!",
+                                             e );
+        }
+        catch ( final ClassNotFoundException e )
+        {
+            throw new IllegalStateException( "Cannot read GraphView. A class was missing: " + e.getMessage(), e );
+        }
+        finally
+        {
+            IOUtils.closeQuietly( ois );
+        }
+    }
+
+    public static void storeCachedPath( final Neo4jGraphPath path, final GraphPathInfo pathInfo, final Relationship rel )
+    {
+        rel.setProperty( PATH, path.getRelationshipIds() );
+
+        ObjectOutputStream oos = null;
+        try
+        {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            oos = new ObjectOutputStream( baos );
+            oos.writeObject( pathInfo );
+
+            rel.setProperty( PATH_INFO_DATA, baos.toByteArray() );
+        }
+        catch ( final IOException e )
+        {
+            throw new IllegalStateException( "Cannot construct ObjectOutputStream to wrap ByteArrayOutputStream!", e );
+        }
+        finally
+        {
+            IOUtils.closeQuietly( oos );
+        }
+    }
+
+    public static void storeView( final GraphView view, final Node viewNode )
+    {
+        viewNode.setProperty( Conversions.VIEW_SHORT_ID, view.getShortId() );
+
+        ObjectOutputStream oos = null;
+        try
+        {
+            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+            oos = new ObjectOutputStream( baos );
+            oos.writeObject( view );
+
+            viewNode.setProperty( VIEW_DATA, baos.toByteArray() );
+        }
+        catch ( final IOException e )
+        {
+            throw new IllegalStateException( "Cannot construct ObjectOutputStream to wrap ByteArrayOutputStream!", e );
+        }
+        finally
+        {
+            IOUtils.closeQuietly( oos );
+        }
+    }
+
+    public static GraphView retrieveView( final Node viewNode, final AbstractNeo4JEGraphDriver driver )
+    {
+        if ( !viewNode.hasProperty( VIEW_DATA ) )
+        {
+            return null;
+        }
+
+        final byte[] data = (byte[]) viewNode.getProperty( VIEW_DATA );
+        ObjectInputStream ois = null;
+        try
+        {
+            ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
+            final GraphView view = (GraphView) ois.readObject();
+            view.reattach( driver );
+
+            return view;
+        }
+        catch ( final IOException e )
+        {
+            throw new IllegalStateException( "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing " + data.length + " bytes!",
+                                             e );
+        }
+        catch ( final ClassNotFoundException e )
+        {
+            throw new IllegalStateException( "Cannot read GraphView. A class was missing: " + e.getMessage(), e );
+        }
+        finally
+        {
+            IOUtils.closeQuietly( ois );
         }
     }
 

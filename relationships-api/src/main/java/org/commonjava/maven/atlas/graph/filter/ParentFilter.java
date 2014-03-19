@@ -24,6 +24,11 @@ public class ParentFilter
     extends AbstractTypedFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public static final ParentFilter EXCLUDE_TERMINAL_PARENTS = new ParentFilter( false );
 
     public static final ParentFilter INCLUDE_TERMINAL_PARENTS = new ParentFilter( true );

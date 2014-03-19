@@ -28,6 +28,11 @@ public class PluginDependencyFilter
     extends AbstractTypedFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     private final ProjectRef plugin;
 
     public PluginDependencyFilter( final PluginRelationship plugin )

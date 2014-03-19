@@ -1,9 +1,11 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
+import java.io.Serializable;
+
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 
 /**
  * Mechanism for selecting alternative relationships (especially by changing the
@@ -18,6 +20,7 @@ import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
  * @author jdcasey
  */
 public interface GraphMutator
+    extends Serializable
 {
 
     /**

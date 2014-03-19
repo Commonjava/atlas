@@ -24,14 +24,16 @@ import org.neo4j.graphdb.RelationshipType;
 public enum GraphRelType
     implements RelationshipType
 {
-    PARENT( org.commonjava.maven.atlas.graph.rel.RelationshipType.PARENT ), C_DEPENDENCY(
-        org.commonjava.maven.atlas.graph.rel.RelationshipType.DEPENDENCY ), C_PLUGIN(
-        org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN ), C_PLUGIN_DEP(
-        org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN_DEP ), M_DEPENDENCY(
-        org.commonjava.maven.atlas.graph.rel.RelationshipType.DEPENDENCY, true ), M_PLUGIN(
-        org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN, true ), M_PLUGIN_DEP(
-        org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN_DEP, true ), EXTENSION(
-        org.commonjava.maven.atlas.graph.rel.RelationshipType.EXTENSION ), CYCLE;
+    PARENT( org.commonjava.maven.atlas.graph.rel.RelationshipType.PARENT ),
+    C_DEPENDENCY( org.commonjava.maven.atlas.graph.rel.RelationshipType.DEPENDENCY ),
+    C_PLUGIN( org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN ),
+    C_PLUGIN_DEP( org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN_DEP ),
+    M_DEPENDENCY( org.commonjava.maven.atlas.graph.rel.RelationshipType.DEPENDENCY, true ),
+    M_PLUGIN( org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN, true ),
+    M_PLUGIN_DEP( org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN_DEP, true ),
+    EXTENSION( org.commonjava.maven.atlas.graph.rel.RelationshipType.EXTENSION ),
+    CYCLE,
+    CACHED_PATHS_RELATIONSHIP;
 
     private org.commonjava.maven.atlas.graph.rel.RelationshipType atlasType;
 

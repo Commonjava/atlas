@@ -25,6 +25,11 @@ public class AndFilter
     extends AbstractAggregatingFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public AndFilter( final Collection<? extends ProjectRelationshipFilter> filters )
     {
         super( filters );

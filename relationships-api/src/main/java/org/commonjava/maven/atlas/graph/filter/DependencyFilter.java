@@ -31,6 +31,11 @@ public class DependencyFilter
     extends AbstractTypedFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     private final DependencyScope scope;
 
     private final ScopeTransitivity scopeTransitivity;

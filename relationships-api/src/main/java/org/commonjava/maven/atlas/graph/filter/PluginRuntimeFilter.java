@@ -24,6 +24,11 @@ public class PluginRuntimeFilter
     implements ProjectRelationshipFilter
 {
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public PluginRuntimeFilter()
     {
     }

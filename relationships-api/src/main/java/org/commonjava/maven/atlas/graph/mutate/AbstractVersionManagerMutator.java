@@ -1,15 +1,17 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.model.GraphPath;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public abstract class AbstractVersionManagerMutator
     implements GraphMutator
 {
+
+    private static final long serialVersionUID = 1L;
 
     private transient String longId;
 

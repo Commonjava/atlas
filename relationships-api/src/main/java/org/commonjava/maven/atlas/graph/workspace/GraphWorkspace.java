@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 
@@ -40,11 +41,11 @@ public final class GraphWorkspace
 
     private String id;
 
-    private final transient GraphDatabaseDriver dbDriver;
+    private transient GraphDatabaseDriver dbDriver;
 
     private transient boolean open = true;
 
-    private final transient List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
+    private transient List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
 
     public GraphWorkspace( final String id, final GraphDatabaseDriver dbDriver )
     {
@@ -345,9 +346,19 @@ public final class GraphWorkspace
         return dbDriver;
     }
 
+    public void registerView( final GraphView view )
+    {
+        dbDriver.registerView( view );
+    }
+
     //    public GraphWorkspaceConfiguration getConfiguration()
     //    {
     //        return config;
     //    }
+
+    public void reattach( final GraphDatabaseDriver driver )
+    {
+        this.dbDriver = dbDriver;
+    }
 
 }

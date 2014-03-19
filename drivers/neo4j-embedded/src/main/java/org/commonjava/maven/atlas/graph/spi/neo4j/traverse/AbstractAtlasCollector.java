@@ -27,7 +27,9 @@ import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
+import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -58,24 +60,52 @@ public abstract class AbstractAtlasCollector<T>
 
     protected GraphView view;
 
+    private final Set<String> seenKeys = new HashSet<String>();
+
+    // FIXME: Optionally, allow these to accumulate for caching in the db later...
     protected Map<Neo4jGraphPath, GraphPathInfo> pathInfos = new HashMap<Neo4jGraphPath, GraphPathInfo>();
 
-    protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence )
+    private boolean accumulatePathInfos;
+
+    protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence, final boolean accumulatePathInfos )
     {
-        this( Collections.singleton( start ), view, checkExistence );
+        this( Collections.singleton( start ), view, checkExistence, accumulatePathInfos );
     }
 
-    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence,
+                                      final boolean accumulatePathInfos )
     {
         this.startNodes = startNodes;
         this.view = view;
         this.checkExistence = checkExistence;
+        this.accumulatePathInfos = accumulatePathInfos;
+    }
+
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence,
+                                      final boolean accumulatePathInfos, final Direction direction )
+    {
+        this( startNodes, view, checkExistence, accumulatePathInfos );
+        this.direction = direction;
+    }
+
+    protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence )
+    {
+        this( Collections.singleton( start ), view, checkExistence, false );
+    }
+
+    protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
+    {
+        this( startNodes, view, checkExistence, false );
     }
 
     protected AbstractAtlasCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence, final Direction direction )
     {
-        this( startNodes, view, checkExistence );
-        this.direction = direction;
+        this( startNodes, view, checkExistence, false, direction );
+    }
+
+    public Map<Neo4jGraphPath, GraphPathInfo> getPathInfoMap()
+    {
+        return pathInfos;
     }
 
     @Override
@@ -94,15 +124,27 @@ public abstract class AbstractAtlasCollector<T>
             return Collections.emptySet();
         }
 
+        final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
+        GraphPathInfo pathInfo = accumulatePathInfos ? pathInfos.get( graphPath ) : pathInfos.remove( graphPath );
+
+        // just starting out. Initialize the path info.
+        if ( pathInfo == null && path.lastRelationship() == null )
+        {
+            pathInfo = new GraphPathInfo( view );
+        }
+        else
+        {
+            return Collections.emptySet();
+        }
+
+        final String key = graphPath.getKey() + "#" + pathInfo.getKey();
+        if ( !seenKeys.add( key ) )
+        {
+            return Collections.emptySet();
+        }
+
         if ( returnChildren( path ) )
         {
-            final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
-            GraphPathInfo pathInfo = pathInfos.remove( graphPath );
-
-            if ( pathInfo == null )
-            {
-                pathInfo = new GraphPathInfo( view );
-            }
 
             final ProjectRelationshipFilter nextFilter = pathInfo.getFilter();
             log( "Implementation says return the children of: {}\n  lastRel={}\n  nextFilter={}\n\n",
@@ -143,9 +185,9 @@ public abstract class AbstractAtlasCollector<T>
 
                 nextRelationships.add( r );
 
-                final GraphPathInfo next = pathInfo.getChildPathInfo( r );
-                pathInfos.put( new Neo4jGraphPath( graphPath, r.getEndNode()
-                                                               .getId() ), next );
+                final ProjectRelationship<?> rel = toProjectRelationship( r );
+                final GraphPathInfo next = pathInfo.getChildPathInfo( rel );
+                pathInfos.put( new Neo4jGraphPath( graphPath, r.getId() ), next );
 
                 log( "+= {} [{}]", logwrapper( r ), next.getFilter() );
             }

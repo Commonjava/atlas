@@ -27,6 +27,11 @@ public class OrFilter
 
     //    private final Logger logger = new Logger( getClass() );
 
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1L;
+
     public OrFilter( final Collection<? extends ProjectRelationshipFilter> filters )
     {
         super( filters );
