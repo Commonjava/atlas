@@ -103,6 +103,11 @@ public abstract class AbstractAtlasCollector<T>
         this( startNodes, view, checkExistence, false, direction );
     }
 
+    protected final void setPathInfoMap( final Map<Neo4jGraphPath, GraphPathInfo> pathInfos )
+    {
+        this.pathInfos = pathInfos;
+    }
+
     public Map<Neo4jGraphPath, GraphPathInfo> getPathInfoMap()
     {
         return pathInfos;

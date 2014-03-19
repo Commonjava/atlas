@@ -898,6 +898,17 @@ public final class Conversions
         return new Neo4jGraphPath( ids );
     }
 
+    public static long getLastCachedPathRelationship( final Relationship rel )
+    {
+        if ( !rel.hasProperty( PATH ) )
+        {
+            throw new IllegalArgumentException( "Relationship " + rel + " is not a cached-path relationship!" );
+        }
+
+        final long[] ids = (long[]) rel.getProperty( PATH );
+        return ids.length < 1 ? -1 : ids[ids.length - 1];
+    }
+
     public static GraphPathInfo getCachedPathInfo( final Relationship rel, final AbstractNeo4JEGraphDriver driver )
     {
         if ( !rel.hasProperty( PATH_INFO_DATA ) )

@@ -17,8 +17,10 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Direction;
@@ -31,28 +33,34 @@ public class RootedPathsCollector
     extends AbstractAtlasCollector<Neo4jGraphPath>
 {
 
-    public RootedPathsCollector( final Node start, final GraphView view, final boolean checkExistence )
+    public RootedPathsCollector( final Node start, final GraphView view )
     {
-        super( start, view, checkExistence, true );
+        super( start, view, false, true );
         //        logEnabled = true;
     }
 
-    public RootedPathsCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence )
+    public RootedPathsCollector( final Set<Node> startNodes, final GraphView view )
     {
-        super( startNodes, view, checkExistence, true );
+        super( startNodes, view, false, true );
         //        this.logEnabled = true;
     }
 
-    private RootedPathsCollector( final Set<Node> startNodes, final GraphView view, final boolean checkExistence, final Direction direction )
+    private RootedPathsCollector( final Set<Node> startNodes, final GraphView view, final Direction direction )
     {
-        super( startNodes, view, checkExistence, true, direction );
+        super( startNodes, view, false, true, direction );
         //        this.logEnabled = true;
+    }
+
+    public RootedPathsCollector( final Set<Node> startNodes, final Map<Neo4jGraphPath, GraphPathInfo> pathInfos, final GraphView view )
+    {
+        super( startNodes, view, false, true );
+        setPathInfoMap( pathInfos );
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new RootedPathsCollector( startNodes, view, checkExistence, direction.reverse() );
+        return new RootedPathsCollector( startNodes, view, direction.reverse() );
     }
 
     public boolean hasFoundPaths()

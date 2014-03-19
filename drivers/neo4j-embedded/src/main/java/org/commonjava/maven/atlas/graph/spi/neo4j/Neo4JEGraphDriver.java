@@ -23,8 +23,6 @@ import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.neo4j.cypher.javacompat.ExecutionResult;
-import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Relationship;
 
 public interface Neo4JEGraphDriver
     extends GraphDatabaseDriver
@@ -48,10 +46,10 @@ public interface Neo4JEGraphDriver
     ExecutionResult execute( String cypher, Map<String, Object> params )
         throws GraphDriverException;
 
-    Node getNode( ProjectVersionRef ref )
-        throws GraphDriverException;
-
-    Relationship getRelationship( ProjectRelationship<?> rel )
-        throws GraphDriverException;
+    //    Node getNode( ProjectVersionRef ref )
+    //        throws GraphDriverException;
+    //
+    //    Relationship getRelationship( ProjectRelationship<?> rel )
+    //        throws GraphDriverException;
 
 }
