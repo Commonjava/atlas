@@ -70,6 +70,8 @@ public class EGraphManager
 
     private final GraphWorkspaceFactory workspaceFactory;
 
+    private Set<String> toDelete;
+
     public EGraphManager( final GraphWorkspaceFactory workspaceFactory )
     {
         this.workspaceFactory = workspaceFactory;
@@ -531,13 +533,13 @@ public class EGraphManager
     @Override
     public void closed( final GraphWorkspace workspace )
     {
-        loadedWorkspaces.remove( workspace.getId() );
-
-        if ( Boolean.valueOf( workspace.getProperty( TEMP_WS, Boolean.toString( false ) ) ) )
+        final String id = workspace.getId();
+        loadedWorkspaces.remove( id );
+        if ( toDelete != null && toDelete.remove( id ) )
         {
             try
             {
-                workspaceFactory.deleteWorkspace( workspace.getId() );
+                workspaceFactory.deleteWorkspace( id );
             }
             catch ( final IOException e )
             {
@@ -568,6 +570,12 @@ public class EGraphManager
     {
         final GraphWorkspace ws = createWorkspace( config );
         ws.setProperty( TEMP_WS, Boolean.toString( true ) );
+        if ( toDelete == null )
+        {
+            toDelete = new HashSet<String>();
+        }
+
+        toDelete.add( ws.getId() );
 
         return ws;
     }

@@ -289,8 +289,8 @@ public final class GraphWorkspace
     {
         if ( open )
         {
-            fireClosed();
             getDatabase().close();
+            fireClosed();
             open = false;
         }
     }

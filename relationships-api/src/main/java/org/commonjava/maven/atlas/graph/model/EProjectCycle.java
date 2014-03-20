@@ -22,12 +22,14 @@ import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.filterTerm
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class EProjectCycle
@@ -159,11 +161,13 @@ public class EProjectCycle
         return targetIdx;
     }
 
+    @Override
     public Iterator<ProjectRelationship<?>> iterator()
     {
         return participants.iterator();
     }
 
+    @Override
     public Collection<ProjectRelationship<?>> getAllRelationships()
     {
         final Collection<ProjectRelationship<?>> rels = getExactAllRelationships();
@@ -172,6 +176,7 @@ public class EProjectCycle
         return rels;
     }
 
+    @Override
     public Collection<ProjectRelationship<?>> getExactAllRelationships()
     {
         return new ArrayList<ProjectRelationship<?>>( participants );
@@ -199,10 +204,13 @@ public class EProjectCycle
     @Override
     public int hashCode()
     {
-        final Set<ProjectRelationship<?>> cycle = new HashSet<ProjectRelationship<?>>( this.participants );
         final int prime = 31;
         int result = 1;
-        result = prime * result + ( ( cycle == null ) ? 0 : cycle.hashCode() );
+
+        final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( participants );
+        Collections.sort( sorted, RelationshipComparator.INSTANCE );
+
+        result = prime * result + sorted.hashCode();
         return result;
     }
 

@@ -203,16 +203,16 @@ public class DependencyFilter
     @Override
     protected void renderIdAttributes( final StringBuilder sb )
     {
-        sb.append( "scope:" );
+        sb.append( ", scope:" );
         sb.append( scope.realName() );
-        sb.append( ",transitivity: " )
+        sb.append( ", transitivity:" )
           .append( scopeTransitivity.name() );
-        sb.append( ",implied-scopes: " )
+        sb.append( ", implied-scopes:" )
           .append( isUseImpliedScopes() );
 
         if ( excludes != null && !excludes.isEmpty() )
         {
-            sb.append( ",excludes:{" );
+            sb.append( ", excludes:{" );
             boolean first = true;
             for ( final ProjectRef exclude : excludes )
             {

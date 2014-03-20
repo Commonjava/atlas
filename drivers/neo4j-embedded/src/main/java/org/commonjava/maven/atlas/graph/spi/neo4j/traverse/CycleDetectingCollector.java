@@ -17,78 +17,51 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.PathExpander;
 import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.traversal.BranchState;
-import org.neo4j.graphdb.traversal.Evaluation;
 
 @SuppressWarnings( "rawtypes" )
 public class CycleDetectingCollector
-    implements AtlasCollector<Map.Entry<ProjectRelationship<?>, Set<Neo4jGraphPath>>>
+    extends AbstractAtlasCollector<Map.Entry<ProjectRelationship<?>, Set<CyclePath>>>
 {
 
     //    private final Logger logger = new Logger( getClass() );
 
     private final Map<NodePair, ProjectRelationship<?>> map;
 
-    private final Direction direction;
+    private final Map<ProjectRelationship<?>, Set<CyclePath>> found = new HashMap<ProjectRelationship<?>, Set<CyclePath>>();
 
-    private final Map<ProjectRelationship<?>, Set<Neo4jGraphPath>> found = new HashMap<ProjectRelationship<?>, Set<Neo4jGraphPath>>();
-
-    private final Set<Long> seen = new HashSet<Long>();
-
-    private final Set<Node> startNodes;
-
-    private final Set<Node> endNodes;
-
-    //    private final GraphView view;
-
-    public CycleDetectingCollector( final Map<NodePair, ProjectRelationship<?>> map/*, final GraphView view*/)
+    public CycleDetectingCollector( final Set<Node> startNodes, final Map<NodePair, ProjectRelationship<?>> map, final GraphView view )
     {
+        super( startNodes, view, false, false );
         this.map = map;
-        //        this.view = view;
-        this.direction = Direction.OUTGOING;
-
-        final Set<Node> start = new HashSet<Node>();
-        final Set<Node> end = new HashSet<Node>();
-        for ( final NodePair pair : map.keySet() )
-        {
-            start.add( pair.getFrom() );
-            end.add( pair.getTo() );
-        }
-
-        this.startNodes = start;
-        this.endNodes = end;
     }
 
-    private CycleDetectingCollector( final Map<NodePair, ProjectRelationship<?>> map, final Set<Node> startNodes, final Set<Node> endNodes,
-    /*final GraphView view,*/final Direction direction )
+    private CycleDetectingCollector( final Map<NodePair, ProjectRelationship<?>> map, final Set<Node> startNodes,
+    /*final GraphView view,*/final GraphView view, final Direction direction )
     {
+        super( startNodes, view, false, false, direction );
         this.map = map;
-        this.startNodes = startNodes;
-        this.endNodes = endNodes;
-        //        this.view = view;
-        this.direction = direction;
     }
 
     @Override
     public PathExpander reverse()
     {
-        return new CycleDetectingCollector( map, startNodes, endNodes, /*view,*/direction.reverse() );
+        return new CycleDetectingCollector( map, startNodes, view, direction.reverse() );
     }
 
     public boolean hasFoundPaths()
@@ -96,59 +69,28 @@ public class CycleDetectingCollector
         return !found.isEmpty();
     }
 
-    public Map<ProjectRelationship<?>, Set<Neo4jGraphPath>> getFoundPathMap()
+    public Map<ProjectRelationship<?>, Set<CyclePath>> getFoundPathMap()
     {
         return found;
     }
 
     @Override
-    public Iterator<Map.Entry<ProjectRelationship<?>, Set<Neo4jGraphPath>>> iterator()
+    public Iterator<Map.Entry<ProjectRelationship<?>, Set<CyclePath>>> iterator()
     {
         return found.entrySet()
                     .iterator();
     }
 
-    protected boolean returnChildren( final Path path )
+    private void addCycle( final NodePair pair, final ProjectRelationship<?> rel, final List<Relationship> path )
     {
-        if ( path.length() < 1 )
-        {
-            return true;
-        }
-
-        final Node end = path.endNode();
-        if ( !endNodes.contains( end ) )
-        {
-            return true;
-        }
-
-        final Node start = path.startNode();
-
-        //        logger.info( "Checking path: %s from: %s to: %s for cycle trigger.", path, start.getId(), end.getId() );
-
-        final NodePair pair = new NodePair( start, end );
-        final ProjectRelationship<?> rel = map.get( pair );
-
-        if ( rel == null )
-        {
-            //            logger.info( "No cycle. Continue traversal." );
-            return true;
-        }
-
-        addCycle( pair, rel, path.relationships() );
-
-        return false;
-    }
-
-    private void addCycle( final NodePair pair, final ProjectRelationship<?> rel, final Iterable<Relationship> path )
-    {
-        //        logger.info( "CYCLE!!! Logging: %s for: %s", path, rel );
-        Set<Neo4jGraphPath> paths;
+        logger.debug( "CYCLE!!! Logging: {} for: {}", path, rel );
+        Set<CyclePath> paths;
         synchronized ( map )
         {
             paths = found.get( rel );
             if ( paths == null )
             {
-                paths = new HashSet<Neo4jGraphPath>();
+                paths = new HashSet<CyclePath>();
                 found.put( rel, paths );
             }
         }
@@ -156,94 +98,54 @@ public class CycleDetectingCollector
         final List<Long> rels = new ArrayList<Long>();
         for ( final Relationship r : path )
         {
-            //            if ( !TraversalUtils.acceptedInView( r, view ) )
-            //            {
-            //                return;
-            //            }
-
             rels.add( r.getId() );
         }
 
-        paths.add( new Neo4jGraphPath( rels ) );
+        paths.add( new CyclePath( rels ) );
     }
 
     @Override
-    public final Iterable<Relationship> expand( final Path path, final BranchState state )
+    protected boolean returnChildren( final Path path )
     {
+        final Relationship last = path.lastRelationship();
+        if ( last == null )
+        {
+            return true;
+        }
+
+        final Relationship first = path.relationships()
+                                       .iterator()
+                                       .next();
+        if ( first == last && first.getType() == GraphRelType.PARENT )
+        {
+            return true;
+        }
+
         final Node startNode = path.startNode();
-        if ( !startNodes.isEmpty() && !startNodes.contains( path.startNode() ) )
+        final Node endNode = path.endNode();
+        if ( endNode.getId() == startNode.getId() )
         {
-            //            logger.info( "Rejecting path; it does not start with one of our roots:\n\t%s", path );
-            return Collections.emptySet();
-        }
+            // this relationship completes a cycle, so we need to pair the 
+            // cycle start-node with this RELATIONSHIP's start-node in order
+            // to lookup the node-pair and get the ProjectRelationship<?> associated.
 
-        final Relationship lastRelationship = path.lastRelationship();
-        if ( lastRelationship != null )
-        {
-            // NOTE: Have to use relationshipId, because multiple relationships may exist between any two GAVs.
-            // Most common is managed and unmanaged flavors of the same basic relationship (eg. dependencies).
-            final Long endId = lastRelationship.getId();
+            // TODO: We could just read the ProjectRelationship<?> directly from this relationship...
+            final NodePair pair = new NodePair( endNode, last.getStartNode() );
 
-            if ( seen.contains( endId ) )
+            final ProjectRelationship<?> rel = map.get( pair );
+            if ( rel != null )
             {
-                //                logger.info( "Rejecting path; already seen it:\n\t%s", path );
-                return Collections.emptySet();
-            }
+                final List<Relationship> cycleRels = new ArrayList<Relationship>();
+                for ( final Relationship r : path.relationships() )
+                {
+                    cycleRels.add( r );
+                }
 
-            seen.add( endId );
+                addCycle( pair, rel, cycleRels );
+                return false;
+            }
         }
 
-        if ( returnChildren( path ) )
-        {
-            //            logger.info( "Returning children of path: %s from end-node: %s", path, path.endNode() );
-
-            final Iterable<Relationship> relationships = path.endNode()
-                                                             .getRelationships( direction );
-
-            final Set<Relationship> expansion = new HashSet<Relationship>();
-
-            Node endNode;
-            NodePair pair;
-            ProjectRelationship<?> rel;
-            LinkedList<Relationship> pathRelationships = null;
-            for ( final Relationship r : relationships )
-            {
-                endNode = r.getEndNode();
-                pair = new NodePair( startNode, endNode );
-
-                rel = map.get( pair );
-                if ( rel != null )
-                {
-                    if ( pathRelationships == null )
-                    {
-                        pathRelationships = new LinkedList<Relationship>();
-                        for ( final Relationship pr : path.relationships() )
-                        {
-                            pathRelationships.add( pr );
-                        }
-                    }
-
-                    pathRelationships.addLast( r );
-                    addCycle( pair, rel, pathRelationships );
-                    pathRelationships.removeLast();
-                }
-                else
-                {
-                    //                    logger.info( "Expanding path: %s with included relationship: %s from: %s to: %s", path, r, r.getStartNode(), r.getEndNode() );
-                    expansion.add( r );
-                }
-            }
-
-            return expansion;
-        }
-
-        //        logger.info( "NOT expanding: %s", path );
-        return Collections.emptySet();
-    }
-
-    @Override
-    public final Evaluation evaluate( final Path path )
-    {
-        return Evaluation.INCLUDE_AND_CONTINUE;
+        return true;
     }
 }

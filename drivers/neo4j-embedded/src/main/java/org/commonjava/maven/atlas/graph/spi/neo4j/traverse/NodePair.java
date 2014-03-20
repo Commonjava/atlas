@@ -20,22 +20,22 @@ import org.neo4j.graphdb.Node;
 
 public final class NodePair
 {
-    private final Node from;
+    private final long from;
 
-    private final Node to;
+    private final long to;
 
     public NodePair( final Node from, final Node to )
     {
-        this.from = from;
-        this.to = to;
+        this.from = from.getId();
+        this.to = to.getId();
     }
 
-    public Node getFrom()
+    public long getFrom()
     {
         return from;
     }
 
-    public Node getTo()
+    public long getTo()
     {
         return to;
     }
@@ -53,13 +53,13 @@ public final class NodePair
         }
         final NodePair o = (NodePair) other;
 
-        return o.from.getId() == from.getId() && o.to.getId() == to.getId();
+        return o.from == from && o.to == to;
     }
 
     @Override
     public int hashCode()
     {
-        final int result = (int) ( 13 * from.getId() + to.getId() );
+        final int result = (int) ( 1337133713 * from / to );
 
         return result;
     }
@@ -67,6 +67,6 @@ public final class NodePair
     @Override
     public String toString()
     {
-        return String.format( "NodePair %d -> %d (%d)", from.getId(), to.getId(), hashCode() );
+        return String.format( "NodePair %d -> %d (%d)", from, to, hashCode() );
     }
 }

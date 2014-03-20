@@ -48,6 +48,7 @@ import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -265,9 +266,23 @@ public final class Conversions
 
     public static ProjectVersionRef toProjectVersionRef( final Node node )
     {
+        return toProjectVersionRef( node, null );
+    }
+
+    public static ProjectVersionRef toProjectVersionRef( final Node node, final ConversionCache cache )
+    {
         if ( node == null )
         {
             return null;
+        }
+
+        if ( cache != null )
+        {
+            final ProjectVersionRef ref = cache.getProjectVersionRef( node );
+            if ( ref != null )
+            {
+                return ref;
+            }
         }
 
         if ( !isType( node, NodeType.PROJECT ) )
@@ -284,7 +299,13 @@ public final class Conversions
             throw new IllegalArgumentException( String.format( "GAV cannot contain nulls: %s:%s:%s", g, a, v ) );
         }
 
-        return new ProjectVersionRef( g, a, v );
+        final ProjectVersionRef result = new ProjectVersionRef( g, a, v );
+        if ( cache != null )
+        {
+            cache.cache( node, result );
+        }
+
+        return result;
     }
 
     private static boolean empty( final String val )
@@ -374,9 +395,23 @@ public final class Conversions
 
     public static ProjectRelationship<?> toProjectRelationship( final Relationship rel )
     {
+        return toProjectRelationship( rel, null );
+    }
+
+    public static ProjectRelationship<?> toProjectRelationship( final Relationship rel, final ConversionCache cache )
+    {
         if ( rel == null )
         {
             return null;
+        }
+
+        if ( cache != null )
+        {
+            final ProjectRelationship<?> r = cache.getRelationship( rel );
+            if ( r != null )
+            {
+                return r;
+            }
         }
 
         final GraphRelType mapper = GraphRelType.valueOf( rel.getType()
@@ -466,6 +501,11 @@ public final class Conversions
             default:
             {
             }
+        }
+
+        if ( result != null && cache != null )
+        {
+            cache.cache( rel, result );
         }
 
         //        LOGGER.debug( "Returning project relationship: {}", result );
@@ -898,6 +938,17 @@ public final class Conversions
         return new Neo4jGraphPath( ids );
     }
 
+    public static CyclePath getCachedCyclePath( final Relationship rel )
+    {
+        if ( !rel.hasProperty( PATH ) )
+        {
+            throw new IllegalArgumentException( "Relationship " + rel + " is not a cached-path relationship!" );
+        }
+
+        final long[] ids = (long[]) rel.getProperty( PATH );
+        return new CyclePath( ids );
+    }
+
     public static long getLastCachedPathRelationship( final Relationship rel )
     {
         if ( !rel.hasProperty( PATH ) )
@@ -911,18 +962,38 @@ public final class Conversions
 
     public static GraphPathInfo getCachedPathInfo( final Relationship rel, final AbstractNeo4JEGraphDriver driver )
     {
+        return getCachedPathInfo( rel, null, driver );
+    }
+
+    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final ConversionCache cache, final AbstractNeo4JEGraphDriver driver )
+    {
         if ( !rel.hasProperty( PATH_INFO_DATA ) )
         {
             return null;
         }
 
         final byte[] data = (byte[]) rel.getProperty( PATH_INFO_DATA );
+
+        if ( cache != null )
+        {
+            final GraphPathInfo pathInfo = cache.getSerializedObject( data, GraphPathInfo.class );
+            if ( pathInfo != null )
+            {
+                return pathInfo;
+            }
+        }
+
         ObjectInputStream ois = null;
         try
         {
             ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
             final GraphPathInfo pathInfo = (GraphPathInfo) ois.readObject();
             pathInfo.reattach( driver );
+
+            if ( cache != null )
+            {
+                cache.cache( data, pathInfo );
+            }
 
             return pathInfo;
         }
@@ -996,18 +1067,38 @@ public final class Conversions
 
     public static GraphView retrieveView( final Node viewNode, final AbstractNeo4JEGraphDriver driver )
     {
+        return retrieveView( viewNode, null, driver );
+    }
+
+    public static GraphView retrieveView( final Node viewNode, final ConversionCache cache, final AbstractNeo4JEGraphDriver driver )
+    {
         if ( !viewNode.hasProperty( VIEW_DATA ) )
         {
             return null;
         }
 
         final byte[] data = (byte[]) viewNode.getProperty( VIEW_DATA );
+
+        if ( cache != null )
+        {
+            final GraphView view = cache.getSerializedObject( data, GraphView.class );
+            if ( view != null )
+            {
+                return view;
+            }
+        }
+
         ObjectInputStream ois = null;
         try
         {
             ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
             final GraphView view = (GraphView) ois.readObject();
             view.reattach( driver );
+
+            if ( cache != null )
+            {
+                cache.cache( data, view );
+            }
 
             return view;
         }

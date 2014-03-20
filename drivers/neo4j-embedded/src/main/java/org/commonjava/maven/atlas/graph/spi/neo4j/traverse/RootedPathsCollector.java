@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
@@ -30,30 +31,34 @@ import org.neo4j.graphdb.PathExpander;
 
 @SuppressWarnings( "rawtypes" )
 public class RootedPathsCollector
-    extends AbstractAtlasCollector<Neo4jGraphPath>
+    extends AbstractAtlasCollector<Entry<Neo4jGraphPath, GraphPathInfo>>
 {
 
     public RootedPathsCollector( final Node start, final GraphView view )
     {
         super( start, view, false, true );
+        setAvoidCycleRelationships( false );
         //        logEnabled = true;
     }
 
     public RootedPathsCollector( final Set<Node> startNodes, final GraphView view )
     {
         super( startNodes, view, false, true );
+        setAvoidCycleRelationships( false );
         //        this.logEnabled = true;
     }
 
     private RootedPathsCollector( final Set<Node> startNodes, final GraphView view, final Direction direction )
     {
         super( startNodes, view, false, true, direction );
+        setAvoidCycleRelationships( false );
         //        this.logEnabled = true;
     }
 
     public RootedPathsCollector( final Set<Node> startNodes, final Map<Neo4jGraphPath, GraphPathInfo> pathInfos, final GraphView view )
     {
         super( startNodes, view, false, true );
+        setAvoidCycleRelationships( false );
         setPathInfoMap( pathInfos );
     }
 
@@ -65,29 +70,26 @@ public class RootedPathsCollector
 
     public boolean hasFoundPaths()
     {
-        return !found.isEmpty();
+        return !getPathInfoMap().isEmpty();
     }
 
-    public Set<Neo4jGraphPath> getFoundRelationships()
+    public Set<Entry<Neo4jGraphPath, GraphPathInfo>> getFoundRelationships()
     {
-        return found;
+        return getPathInfoMap().entrySet();
     }
 
     @Override
-    public Iterator<Neo4jGraphPath> iterator()
+    public Iterator<Entry<Neo4jGraphPath, GraphPathInfo>> iterator()
     {
-        return found.iterator();
+        return getPathInfoMap().entrySet()
+                               .iterator();
     }
 
     @Override
     protected boolean returnChildren( final Path path )
     {
-        if ( accept( path ) )
-        {
-            return found.add( new Neo4jGraphPath( path ) );
-        }
-
-        return false;
+        logger.debug( "checking return-children for: {}", path );
+        return accept( path );
     }
 
 }

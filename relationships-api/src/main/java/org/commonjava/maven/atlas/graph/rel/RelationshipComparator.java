@@ -48,7 +48,23 @@ public final class RelationshipComparator
                 return 1;
             }
 
-            return one.getIndex() - two.getIndex();
+            if ( one.getTarget()
+                    .asProjectVersionRef()
+                    .equals( two.getDeclaring() ) )
+            {
+                return -1;
+            }
+            else if ( one.getDeclaring()
+                         .equals( two.getTarget()
+                                     .asProjectVersionRef() ) )
+            {
+                return 1;
+            }
+            else if ( one.getDeclaring()
+                         .equals( two.getDeclaring() ) )
+            {
+                return one.getIndex() - two.getIndex();
+            }
         }
         else
         {
@@ -56,6 +72,8 @@ public final class RelationshipComparator
                       .ordinal() - two.getType()
                                       .ordinal();
         }
+
+        return 0;
     }
 
 }

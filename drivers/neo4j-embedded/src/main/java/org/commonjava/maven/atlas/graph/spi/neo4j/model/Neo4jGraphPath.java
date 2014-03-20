@@ -121,7 +121,7 @@ public class Neo4jGraphPath
     @Override
     public String toString()
     {
-        return String.format( "Neo4jGraphPath [relationships=%s]", Arrays.toString( relationships ) );
+        return String.format( "%s [relationships=%s]", getClass().getSimpleName(), Arrays.toString( relationships ) );
     }
 
     @Override
@@ -148,6 +148,16 @@ public class Neo4jGraphPath
         }
 
         return relationships[relationships.length - 1];
+    }
+
+    public long getFirstRelationshipId()
+    {
+        if ( relationships.length < 1 )
+        {
+            return -1;
+        }
+
+        return relationships[0];
     }
 
     public long[] getRelationshipIds()

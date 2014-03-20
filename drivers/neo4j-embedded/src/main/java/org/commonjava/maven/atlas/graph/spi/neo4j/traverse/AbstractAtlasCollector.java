@@ -67,6 +67,8 @@ public abstract class AbstractAtlasCollector<T>
 
     private boolean accumulatePathInfos;
 
+    private boolean avoidCycleRelationships = true;
+
     protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence, final boolean accumulatePathInfos )
     {
         this( Collections.singleton( start ), view, checkExistence, accumulatePathInfos );
@@ -151,6 +153,17 @@ public abstract class AbstractAtlasCollector<T>
             return Collections.emptySet();
         }
 
+        final Set<Long> starts = new HashSet<Long>();
+        for ( final Relationship pathR : path.relationships() )
+        {
+            if ( starts.contains( pathR.getStartNode()
+                                       .getId() ) )
+            {
+                logger.debug( "Detected cycle in progress for path: {} at relationship: {}", path, pathR );
+                return Collections.emptySet();
+            }
+        }
+
         if ( returnChildren( path ) )
         {
 
@@ -172,8 +185,9 @@ public abstract class AbstractAtlasCollector<T>
 
             for ( Relationship r : relationships )
             {
-                if ( Conversions.getBooleanProperty( Conversions.CYCLES_INJECTED, r, false ) )
+                if ( avoidCycleRelationships && Conversions.getBooleanProperty( Conversions.CYCLES_INJECTED, r, false ) )
                 {
+                    logger.debug( "Detected marked cycle from path: {} in child relationship: {}", path, r );
                     continue;
                 }
 
@@ -271,6 +285,16 @@ public abstract class AbstractAtlasCollector<T>
         {
             logger.info( format, params );
         }
+    }
+
+    protected boolean isAvoidCycleRelationships()
+    {
+        return avoidCycleRelationships;
+    }
+
+    protected void setAvoidCycleRelationships( final boolean avoidCycles )
+    {
+        this.avoidCycleRelationships = avoidCycles;
     }
 
 }

@@ -264,11 +264,11 @@ public abstract class AbstractTypedFilter
               .append( getClass().getSimpleName() )
               .append( "[types:{" )
               .append( join( types, "," ) )
-              .append( "},next-types:{" )
+              .append( "}, next-types:{" )
               .append( join( descendantTypes, "," ) )
-              .append( ",concrete:" )
+              .append( "}, concrete:" )
               .append( includeConcreteInfo )
-              .append( ",managed:" )
+              .append( ", managed:" )
               .append( includeManagedInfo );
 
             renderIdAttributes( sb );
