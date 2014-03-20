@@ -134,14 +134,17 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
         GraphPathInfo pathInfo = pathInfos.remove( graphPath );
 
-        // just starting out. Initialize the path info.
-        if ( pathInfo == null && path.lastRelationship() == null )
+        if ( pathInfo == null )
         {
-            pathInfo = new GraphPathInfo( view );
-        }
-        else
-        {
-            return Collections.emptySet();
+            if ( path.lastRelationship() == null )
+            {
+                // just starting out. Initialize the path info.
+                pathInfo = new GraphPathInfo( view );
+            }
+            else
+            {
+                return Collections.emptySet();
+            }
         }
 
         final String key = graphPath.getKey() + "#" + pathInfo.getKey();
@@ -183,6 +186,11 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
         for ( Relationship r : rs )
         {
+            if ( Conversions.getBooleanProperty( Conversions.CYCLES_INJECTED, r, false ) )
+            {
+                continue;
+            }
+
             final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
             final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
 

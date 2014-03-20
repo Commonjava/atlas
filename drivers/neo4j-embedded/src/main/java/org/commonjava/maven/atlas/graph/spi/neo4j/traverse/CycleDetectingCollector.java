@@ -21,11 +21,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -36,7 +38,7 @@ import org.neo4j.graphdb.traversal.Evaluation;
 
 @SuppressWarnings( "rawtypes" )
 public class CycleDetectingCollector
-    implements AtlasCollector<Map.Entry<ProjectRelationship<?>, Set<List<Relationship>>>>
+    implements AtlasCollector<Map.Entry<ProjectRelationship<?>, Set<Neo4jGraphPath>>>
 {
 
     //    private final Logger logger = new Logger( getClass() );
@@ -45,7 +47,7 @@ public class CycleDetectingCollector
 
     private final Direction direction;
 
-    private final Map<ProjectRelationship<?>, Set<List<Relationship>>> found = new HashMap<ProjectRelationship<?>, Set<List<Relationship>>>();
+    private final Map<ProjectRelationship<?>, Set<Neo4jGraphPath>> found = new HashMap<ProjectRelationship<?>, Set<Neo4jGraphPath>>();
 
     private final Set<Long> seen = new HashSet<Long>();
 
@@ -94,13 +96,13 @@ public class CycleDetectingCollector
         return !found.isEmpty();
     }
 
-    public Map<ProjectRelationship<?>, Set<List<Relationship>>> getFoundPathMap()
+    public Map<ProjectRelationship<?>, Set<Neo4jGraphPath>> getFoundPathMap()
     {
         return found;
     }
 
     @Override
-    public Iterator<Map.Entry<ProjectRelationship<?>, Set<List<Relationship>>>> iterator()
+    public Iterator<Map.Entry<ProjectRelationship<?>, Set<Neo4jGraphPath>>> iterator()
     {
         return found.entrySet()
                     .iterator();
@@ -140,18 +142,18 @@ public class CycleDetectingCollector
     private void addCycle( final NodePair pair, final ProjectRelationship<?> rel, final Iterable<Relationship> path )
     {
         //        logger.info( "CYCLE!!! Logging: %s for: %s", path, rel );
-        Set<List<Relationship>> paths;
+        Set<Neo4jGraphPath> paths;
         synchronized ( map )
         {
             paths = found.get( rel );
             if ( paths == null )
             {
-                paths = new HashSet<List<Relationship>>();
+                paths = new HashSet<Neo4jGraphPath>();
                 found.put( rel, paths );
             }
         }
 
-        final List<Relationship> rels = new ArrayList<Relationship>();
+        final List<Long> rels = new ArrayList<Long>();
         for ( final Relationship r : path )
         {
             //            if ( !TraversalUtils.acceptedInView( r, view ) )
@@ -159,10 +161,10 @@ public class CycleDetectingCollector
             //                return;
             //            }
 
-            rels.add( r );
+            rels.add( r.getId() );
         }
 
-        paths.add( rels );
+        paths.add( new Neo4jGraphPath( rels ) );
     }
 
     @Override
@@ -203,7 +205,7 @@ public class CycleDetectingCollector
             Node endNode;
             NodePair pair;
             ProjectRelationship<?> rel;
-            List<Relationship> pathRelationships = null;
+            LinkedList<Relationship> pathRelationships = null;
             for ( final Relationship r : relationships )
             {
                 endNode = r.getEndNode();
@@ -214,16 +216,16 @@ public class CycleDetectingCollector
                 {
                     if ( pathRelationships == null )
                     {
-                        pathRelationships = new ArrayList<Relationship>();
+                        pathRelationships = new LinkedList<Relationship>();
                         for ( final Relationship pr : path.relationships() )
                         {
                             pathRelationships.add( pr );
                         }
                     }
 
-                    final List<Relationship> rels = new ArrayList<Relationship>( pathRelationships );
-                    rels.add( r );
-                    addCycle( pair, rel, rels );
+                    pathRelationships.addLast( r );
+                    addCycle( pair, rel, pathRelationships );
+                    pathRelationships.removeLast();
                 }
                 else
                 {

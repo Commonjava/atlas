@@ -173,7 +173,7 @@ public class GraphView
     @Override
     public String toString()
     {
-        return String.format( "GraphView [\n  roots=%s\n  workspace=%s\n  filter=%s\n  mutator=%s\n]", roots, workspace, filter, mutator );
+        return getLongId();
     }
 
     public GraphDatabaseDriver getDatabase()
@@ -325,6 +325,7 @@ public class GraphView
         return workspace.activeSources();
     }
 
+    // TODO: Can we really allow this to be modified safely? What are the implications for membership caching in the graph??
     public final ProjectVersionRef selectVersion( final ProjectRef ref, final ProjectVersionRef selected )
     {
         if ( selections == null )

@@ -49,6 +49,12 @@ public class JungGraphPath
         }
     }
 
+    public JungGraphPath( final List<ProjectRelationship<?>> path )
+    {
+        this.root = null;
+        this.rels = path.toArray( new ProjectRelationship<?>[path.size()] );
+    }
+
     public ProjectVersionRef getTargetGAV()
     {
         if ( root != null )

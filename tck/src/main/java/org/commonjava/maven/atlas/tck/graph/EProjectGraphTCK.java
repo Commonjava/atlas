@@ -51,21 +51,23 @@ public abstract class EProjectGraphTCK
         final URI source = sourceURI();
 
         final GraphWorkspace session = simpleWorkspace();
+        final GraphView view = new GraphView( session, c );
+
         /* @formatter:off */
         final EProjectGraph root = getManager().createGraph( 
-                session, 
+                view, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, r ) ).build()
         );
         
         final EProjectGraph parent = getManager().createGraph( 
-                session, 
+                view, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, p ) )
                     .withParent( new ParentRelationship( source, p, r ) )
                     .build()
         );
         
         final EProjectGraph child = getManager().createGraph(
-                new GraphView( session, c ),
+                view,
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                     .withParent( new ParentRelationship( source, c, p ) )
                     .build()

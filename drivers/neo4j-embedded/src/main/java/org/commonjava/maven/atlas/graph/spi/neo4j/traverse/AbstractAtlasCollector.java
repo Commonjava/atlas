@@ -132,14 +132,17 @@ public abstract class AbstractAtlasCollector<T>
         final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
         GraphPathInfo pathInfo = accumulatePathInfos ? pathInfos.get( graphPath ) : pathInfos.remove( graphPath );
 
-        // just starting out. Initialize the path info.
-        if ( pathInfo == null && path.lastRelationship() == null )
+        if ( pathInfo == null )
         {
-            pathInfo = new GraphPathInfo( view );
-        }
-        else
-        {
-            return Collections.emptySet();
+            if ( path.lastRelationship() == null )
+            {
+                // just starting out. Initialize the path info.
+                pathInfo = new GraphPathInfo( view );
+            }
+            else
+            {
+                return Collections.emptySet();
+            }
         }
 
         final String key = graphPath.getKey() + "#" + pathInfo.getKey();
@@ -169,6 +172,11 @@ public abstract class AbstractAtlasCollector<T>
 
             for ( Relationship r : relationships )
             {
+                if ( Conversions.getBooleanProperty( Conversions.CYCLES_INJECTED, r, false ) )
+                {
+                    continue;
+                }
+
                 final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
 
                 final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );

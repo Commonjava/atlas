@@ -945,6 +945,11 @@ public final class Conversions
     {
         rel.setProperty( PATH, path.getRelationshipIds() );
 
+        if ( pathInfo == null )
+        {
+            return;
+        }
+
         ObjectOutputStream oos = null;
         try
         {

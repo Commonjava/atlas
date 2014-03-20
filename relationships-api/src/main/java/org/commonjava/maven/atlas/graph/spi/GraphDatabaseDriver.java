@@ -26,6 +26,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
+import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
@@ -189,6 +190,10 @@ public interface GraphDatabaseDriver
 
     String getProperty( String key, String defaultVal );
 
-    void registerView( GraphView view );
+    boolean registerView( GraphView view );
+
+    Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( GraphView view, Set<ProjectVersionRef> refs );
+
+    ProjectVersionRef getPathTargetRef( GraphPath<?> path );
 
 }

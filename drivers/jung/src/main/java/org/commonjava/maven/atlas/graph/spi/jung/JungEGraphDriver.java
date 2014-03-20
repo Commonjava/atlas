@@ -280,7 +280,7 @@ public class JungEGraphDriver
     @Override
     public Set<List<ProjectRelationship<?>>> getAllPathsTo( final GraphView view, final ProjectVersionRef... refs )
     {
-        final PathDetectionTraversal traversal = new PathDetectionTraversal( refs );
+        final PathDetectionTraversal traversal = new PathDetectionTraversal( view, refs );
 
         final Set<ProjectVersionRef> roots = view.getRoots();
         if ( roots == null )
@@ -295,7 +295,14 @@ public class JungEGraphDriver
             dfsTraverse( view, traversal, 0, root );
         }
 
-        return traversal.getPaths();
+        final Set<JungGraphPath> paths = traversal.getPaths();
+        final Set<List<ProjectRelationship<?>>> result = new HashSet<List<ProjectRelationship<?>>>( paths.size() );
+        for ( final JungGraphPath path : paths )
+        {
+            result.add( path.getPathElements() );
+        }
+
+        return result;
     }
 
     @Override
@@ -1116,9 +1123,51 @@ public class JungEGraphDriver
     }
 
     @Override
-    public void registerView( final GraphView view )
+    public boolean registerView( final GraphView view )
     {
         // TODO Tracking for the new view...
+        return false;
+    }
+
+    @Override
+    public Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( final GraphView view, final Set<ProjectVersionRef> refs )
+    {
+        final PathDetectionTraversal traversal = new PathDetectionTraversal( view, refs );
+
+        final Set<ProjectVersionRef> roots = view.getRoots();
+        if ( roots == null )
+        {
+            LoggerFactory.getLogger( getClass() )
+                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!", new JoinString( ", ", refs ) );
+            return null;
+        }
+
+        for ( final ProjectVersionRef root : roots )
+        {
+            dfsTraverse( view, traversal, 0, root );
+        }
+
+        final Map<JungGraphPath, GraphPathInfo> allPathsMap = traversal.getPathMap();
+        final Set<JungGraphPath> paths = traversal.getPaths();
+
+        final Map<GraphPath<?>, GraphPathInfo> result = new HashMap<GraphPath<?>, GraphPathInfo>();
+        for ( final JungGraphPath path : paths )
+        {
+            result.put( path, allPathsMap.get( path ) );
+        }
+
+        return result;
+    }
+
+    @Override
+    public ProjectVersionRef getPathTargetRef( final GraphPath<?> path )
+    {
+        if ( path != null && !( path instanceof JungGraphPath ) )
+        {
+            throw new IllegalArgumentException( "Cannot get target GAV for: " + path + ". This is not a JungGraphPath instance!" );
+        }
+
+        return ( (JungGraphPath) path ).getTargetGAV();
     }
 
 }

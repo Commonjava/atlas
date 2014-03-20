@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.graph.workspace;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.Serializable;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -30,8 +31,10 @@ import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 
 public final class GraphWorkspace
-    implements Closeable
+    implements Closeable, Serializable
 {
+
+    private static final long serialVersionUID = 1L;
 
     public static final Set<URI> DEFAULT_POM_LOCATIONS = Collections.singleton( RelationshipUtils.POM_ROOT_URI );
 
@@ -45,7 +48,7 @@ public final class GraphWorkspace
 
     private transient boolean open = true;
 
-    private transient List<GraphWorkspaceListener> listeners = new ArrayList<GraphWorkspaceListener>();
+    private transient List<GraphWorkspaceListener> listeners;
 
     public GraphWorkspace( final String id, final GraphDatabaseDriver dbDriver )
     {
@@ -294,6 +297,11 @@ public final class GraphWorkspace
 
     private void fireClosed()
     {
+        if ( listeners == null )
+        {
+            return;
+        }
+
         for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.closed( this );
@@ -303,6 +311,12 @@ public final class GraphWorkspace
     private void fireAccessed()
     {
         dbDriver.setLastAccess( System.currentTimeMillis() );
+
+        if ( listeners == null )
+        {
+            return;
+        }
+
         for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.accessed( this );
@@ -312,6 +326,12 @@ public final class GraphWorkspace
     private void fireDetached()
     {
         dbDriver.setLastAccess( System.currentTimeMillis() );
+
+        if ( listeners == null )
+        {
+            return;
+        }
+
         for ( final GraphWorkspaceListener listener : listeners )
         {
             listener.detached( this );
@@ -333,6 +353,11 @@ public final class GraphWorkspace
 
     public GraphWorkspace addListener( final GraphWorkspaceListener listener )
     {
+        if ( listeners == null )
+        {
+            listeners = new ArrayList<GraphWorkspaceListener>();
+        }
+
         if ( !listeners.contains( listener ) )
         {
             listeners.add( listener );
@@ -358,7 +383,7 @@ public final class GraphWorkspace
 
     public void reattach( final GraphDatabaseDriver driver )
     {
-        this.dbDriver = dbDriver;
+        this.dbDriver = driver;
     }
 
 }

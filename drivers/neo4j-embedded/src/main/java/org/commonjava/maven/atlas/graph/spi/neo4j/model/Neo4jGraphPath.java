@@ -50,6 +50,15 @@ public class Neo4jGraphPath
         }
     }
 
+    public Neo4jGraphPath( final List<Long> ids )
+    {
+        this.relationships = new long[ids.size()];
+        for ( int i = 0; i < ids.size(); i++ )
+        {
+            this.relationships[i] = ids.get( i );
+        }
+    }
+
     @Override
     public int hashCode()
     {
@@ -144,6 +153,23 @@ public class Neo4jGraphPath
     public long[] getRelationshipIds()
     {
         return relationships;
+    }
+
+    public int length()
+    {
+        return relationships.length;
+    }
+
+    public boolean contains( final long id )
+    {
+        for ( final long rid : relationships )
+        {
+            if ( rid == id )
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
 }

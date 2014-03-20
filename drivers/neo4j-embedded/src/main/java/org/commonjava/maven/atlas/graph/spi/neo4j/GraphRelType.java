@@ -33,7 +33,8 @@ public enum GraphRelType
     M_PLUGIN_DEP( org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN_DEP, true ),
     EXTENSION( org.commonjava.maven.atlas.graph.rel.RelationshipType.EXTENSION ),
     CYCLE,
-    CACHED_PATHS_RELATIONSHIP;
+    CACHED_PATH_RELATIONSHIP,
+    CACHED_CYCLE_RELATIONSHIP;
 
     private org.commonjava.maven.atlas.graph.rel.RelationshipType atlasType;
 

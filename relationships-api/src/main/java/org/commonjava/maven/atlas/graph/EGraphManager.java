@@ -33,6 +33,8 @@ import org.commonjava.maven.atlas.graph.model.EProjectGraph;
 import org.commonjava.maven.atlas.graph.model.EProjectKey;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.EProjectWeb;
+import org.commonjava.maven.atlas.graph.model.GraphPath;
+import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -125,14 +127,7 @@ public class EGraphManager
     public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                                    final ProjectVersionRef project )
     {
-        final GraphDatabaseDriver dbDriver = workspace.getDatabase();
-        final GraphView view = new GraphView( workspace );
-        if ( !dbDriver.containsProject( view, project ) || dbDriver.isMissing( view, project ) )
-        {
-            return null;
-        }
-
-        return new EProjectGraph( workspace, filter, mutator, project );
+        return getGraph( new GraphView( workspace, filter, mutator, project ) );
     }
 
     public EProjectGraph getGraph( final GraphView view )
@@ -173,17 +168,7 @@ public class EGraphManager
     public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                                final ProjectVersionRef... refs )
     {
-        final GraphDatabaseDriver dbDriver = workspace.getDatabase();
-        final GraphView view = new GraphView( workspace );
-        for ( final ProjectVersionRef ref : refs )
-        {
-            if ( !dbDriver.containsProject( view, ref ) || dbDriver.isMissing( view, ref ) )
-            {
-                return null;
-            }
-        }
-
-        return new EProjectWeb( workspace, filter, mutator, refs );
+        return getWeb( new GraphView( workspace, filter, mutator, refs ) );
     }
 
     public EProjectWeb getWeb( final GraphView view )
@@ -591,6 +576,30 @@ public class EGraphManager
         throws GraphDriverException
     {
         workspaceFactory.storeWorkspace( ws );
+    }
+
+    public Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( final GraphView view, final Set<ProjectVersionRef> refs )
+    {
+        return view.getDatabase()
+                   .getPathMapTargeting( view, refs );
+    }
+
+    public ProjectVersionRef getPathTargetRef( final GraphView view, final GraphPath<?> path )
+    {
+        return view.getDatabase()
+                   .getPathTargetRef( path );
+    }
+
+    public GraphPath<?> createPath( final GraphView view, final GraphPath<?> parentPath, final ProjectRelationship<?> relationship )
+    {
+        return view.getDatabase()
+                   .createPath( parentPath, relationship );
+    }
+
+    public GraphPath<?> createPath( final GraphView view, final ProjectRelationship<?>... relationships )
+    {
+        return view.getDatabase()
+                   .createPath( relationships );
     }
 
 }
