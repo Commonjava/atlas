@@ -35,6 +35,7 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.junit.Ignore;
 import org.junit.Test;
 
 public abstract class CycleDetectionTCK
@@ -212,7 +213,7 @@ public abstract class CycleDetectionTCK
     }
 
     @Test
-    //    @Ignore
+    @Ignore
     public void cycleFromGraph1MissingInFilteredGraph2WhenOneRelationshipInCycleFilteredOut()
         throws Exception
     {
