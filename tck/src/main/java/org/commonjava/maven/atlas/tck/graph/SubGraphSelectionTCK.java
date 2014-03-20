@@ -31,7 +31,6 @@ import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public abstract class SubGraphSelectionTCK
@@ -39,7 +38,7 @@ public abstract class SubGraphSelectionTCK
 {
 
     @Test
-    @Ignore
+    //    @Ignore
     public void selectVersionForVariableSubgraph()
         throws Exception
     {
@@ -74,7 +73,7 @@ public abstract class SubGraphSelectionTCK
     }
 
     @Test
-    @Ignore
+    //    @Ignore
     public void selectThenClearVersionForVariableSubgraph()
         throws Exception
     {
@@ -123,7 +122,7 @@ public abstract class SubGraphSelectionTCK
     }
 
     @Test
-    @Ignore
+    //    @Ignore
     public void selectVersionForVariableSubgraph_SelectionsContextualToSession()
         throws Exception
     {
