@@ -27,6 +27,7 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
@@ -61,6 +62,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final GraphView view;
 
+    private ConversionCache cache = new ConversionCache();
+
     public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view, final int pass )
     {
         this.rootIds = rootIds;
@@ -78,6 +81,11 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.reversedExpander = reversedExpander;
     }
 
+    public void setConversionCache( final ConversionCache cache )
+    {
+        this.cache = cache;
+    }
+
     @Override
     public Evaluation evaluate( final Path path )
     {
@@ -92,9 +100,9 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         if ( roots == null || roots.isEmpty() || roots.contains( path.startNode()
                                                                      .getId() ) )
         {
-            final ProjectRelationship<?> lastRel = Conversions.toProjectRelationship( rel );
+            final ProjectRelationship<?> lastRel = Conversions.toProjectRelationship( rel, cache );
 
-            final List<ProjectRelationship<?>> relPath = Conversions.convertToRelationships( path.relationships() );
+            final List<ProjectRelationship<?>> relPath = Conversions.convertToRelationships( path.relationships(), cache );
             if ( relPath.indexOf( lastRel ) == relPath.size() - 1 )
             {
                 //                logger.warn( "\n\n\n\n\nREMOVING last-relationship: {} from path!\n\n\n\n\n" );
@@ -206,7 +214,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             }
             //            logger.info( "Attempting to expand: {}", r );
 
-            final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r );
+            final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r, cache );
             final GraphPathInfo next = pathInfo.getChildPathInfo( projectRel );
 
             logger.debug( "Pre-checking relationship {} for expansion using filter: {}", projectRel, traversal );
@@ -237,7 +245,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         }
         else
         {
-            rels = Conversions.convertToRelationships( rs );
+            rels = Conversions.convertToRelationships( rs, cache );
             //            logger.info( "Got relationship list {} entries long for filter", rels.size() );
         }
 

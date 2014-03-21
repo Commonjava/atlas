@@ -84,7 +84,7 @@ public class EndGAVsPathsCollector
             return false;
         }
 
-        final ProjectVersionRef ref = Conversions.toProjectVersionRef( end );
+        final ProjectVersionRef ref = Conversions.toProjectVersionRef( end, cache );
         if ( endRefs.contains( ref ) )
         {
             if ( accept( path ) )

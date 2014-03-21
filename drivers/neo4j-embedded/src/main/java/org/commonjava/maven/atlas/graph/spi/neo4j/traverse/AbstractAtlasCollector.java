@@ -31,6 +31,7 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Direction;
@@ -68,6 +69,8 @@ public abstract class AbstractAtlasCollector<T>
     private boolean accumulatePathInfos;
 
     private boolean avoidCycleRelationships = true;
+
+    protected ConversionCache cache = new ConversionCache();
 
     protected AbstractAtlasCollector( final Node start, final GraphView view, final boolean checkExistence, final boolean accumulatePathInfos )
     {
@@ -108,6 +111,11 @@ public abstract class AbstractAtlasCollector<T>
     protected final void setPathInfoMap( final Map<Neo4jGraphPath, GraphPathInfo> pathInfos )
     {
         this.pathInfos = pathInfos;
+    }
+
+    public void setConversionCache( final ConversionCache cache )
+    {
+        this.cache = cache;
     }
 
     public Map<Neo4jGraphPath, GraphPathInfo> getPathInfoMap()
@@ -212,7 +220,7 @@ public abstract class AbstractAtlasCollector<T>
 
                 nextRelationships.add( r );
 
-                final ProjectRelationship<?> rel = toProjectRelationship( r );
+                final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
                 final GraphPathInfo next = pathInfo.getChildPathInfo( rel );
                 pathInfos.put( new Neo4jGraphPath( graphPath, r.getId() ), next );
 
@@ -240,7 +248,7 @@ public abstract class AbstractAtlasCollector<T>
         // TODO: Can we check the workspace restrictions during expansion??
         if ( pathInfos.containsKey( new Neo4jGraphPath( path ) ) )
         {
-            return accepted( r, null, view.getWorkspace() );
+            return accepted( r, null, view.getWorkspace(), cache );
         }
 
         return false;
@@ -268,7 +276,7 @@ public abstract class AbstractAtlasCollector<T>
             @Override
             public String toString()
             {
-                return String.valueOf( toProjectRelationship( r ) );
+                return String.valueOf( toProjectRelationship( r, cache ) );
             }
         };
     }

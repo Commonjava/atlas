@@ -21,6 +21,7 @@ import java.util.List;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipPathComparator;
+import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Path;
 
@@ -32,6 +33,8 @@ public final class PathComparator
 
     private final RelationshipPathComparator pathComparator = RelationshipPathComparator.INSTANCE;
 
+    private final ConversionCache cache = new ConversionCache();
+
     private PathComparator()
     {
     }
@@ -39,8 +42,8 @@ public final class PathComparator
     @Override
     public int compare( final Path first, final Path second )
     {
-        final List<ProjectRelationship<?>> firstRels = Conversions.convertToRelationships( first.relationships() );
-        final List<ProjectRelationship<?>> secondRels = Conversions.convertToRelationships( second.relationships() );
+        final List<ProjectRelationship<?>> firstRels = Conversions.convertToRelationships( first.relationships(), cache );
+        final List<ProjectRelationship<?>> secondRels = Conversions.convertToRelationships( second.relationships(), cache );
 
         return pathComparator.compare( firstRels, secondRels );
     }

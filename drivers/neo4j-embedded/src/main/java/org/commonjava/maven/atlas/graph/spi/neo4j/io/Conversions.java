@@ -189,7 +189,7 @@ public final class Conversions
         return 1;
     }
 
-    public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
+    public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes, final ConversionCache cache )
     {
         final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>();
         for ( final Node node : nodes )
@@ -204,18 +204,18 @@ public final class Conversions
                 continue;
             }
 
-            refs.add( Conversions.toProjectVersionRef( node ) );
+            refs.add( Conversions.toProjectVersionRef( node, cache ) );
         }
 
         return refs;
     }
 
-    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Relationship> relationships )
+    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Relationship> relationships, final ConversionCache cache )
     {
         final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
         for ( final Relationship relationship : relationships )
         {
-            final ProjectRelationship<?> rel = Conversions.toProjectRelationship( relationship );
+            final ProjectRelationship<?> rel = Conversions.toProjectRelationship( relationship, cache );
             if ( rel != null )
             {
                 rels.add( rel );
@@ -264,10 +264,10 @@ public final class Conversions
         return nt != null && type == NodeType.valueOf( nt );
     }
 
-    public static ProjectVersionRef toProjectVersionRef( final Node node )
-    {
-        return toProjectVersionRef( node, null );
-    }
+    //    public static ProjectVersionRef toProjectVersionRef( final Node node )
+    //    {
+    //        return toProjectVersionRef( node, null );
+    //    }
 
     public static ProjectVersionRef toProjectVersionRef( final Node node, final ConversionCache cache )
     {
@@ -393,10 +393,10 @@ public final class Conversions
         return result.toArray( new String[result.size()] );
     }
 
-    public static ProjectRelationship<?> toProjectRelationship( final Relationship rel )
-    {
-        return toProjectRelationship( rel, null );
-    }
+    //    public static ProjectRelationship<?> toProjectRelationship( final Relationship rel )
+    //    {
+    //        return toProjectRelationship( rel, null );
+    //    }
 
     public static ProjectRelationship<?> toProjectRelationship( final Relationship rel, final ConversionCache cache )
     {
@@ -431,8 +431,8 @@ public final class Conversions
             return null;
         }
 
-        final ProjectVersionRef from = toProjectVersionRef( rel.getStartNode() );
-        final ProjectVersionRef to = toProjectVersionRef( rel.getEndNode() );
+        final ProjectVersionRef from = toProjectVersionRef( rel.getStartNode(), cache );
+        final ProjectVersionRef to = toProjectVersionRef( rel.getEndNode(), cache );
         final int index = getIntegerProperty( INDEX, rel );
         final Set<URI> source = getURISetProperty( SOURCE_URI, rel, UNKNOWN_SOURCE_URI );
         final URI pomLocation = getURIProperty( POM_LOCATION_URI, rel, POM_ROOT_URI );
@@ -960,10 +960,10 @@ public final class Conversions
         return ids.length < 1 ? -1 : ids[ids.length - 1];
     }
 
-    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final AbstractNeo4JEGraphDriver driver )
-    {
-        return getCachedPathInfo( rel, null, driver );
-    }
+    //    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final AbstractNeo4JEGraphDriver driver )
+    //    {
+    //        return getCachedPathInfo( rel, null, driver );
+    //    }
 
     public static GraphPathInfo getCachedPathInfo( final Relationship rel, final ConversionCache cache, final AbstractNeo4JEGraphDriver driver )
     {
@@ -1065,10 +1065,10 @@ public final class Conversions
         }
     }
 
-    public static GraphView retrieveView( final Node viewNode, final AbstractNeo4JEGraphDriver driver )
-    {
-        return retrieveView( viewNode, null, driver );
-    }
+    //    public static GraphView retrieveView( final Node viewNode, final AbstractNeo4JEGraphDriver driver )
+    //    {
+    //        return retrieveView( viewNode, null, driver );
+    //    }
 
     public static GraphView retrieveView( final Node viewNode, final ConversionCache cache, final AbstractNeo4JEGraphDriver driver )
     {

@@ -36,6 +36,7 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
+import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
@@ -51,21 +52,21 @@ public final class TraversalUtils
     {
     }
 
-    public static boolean acceptedInView( final Path path, final GraphView view )
+    public static boolean acceptedInView( final Path path, final GraphView view, final ConversionCache cache )
     {
         ProjectRelationshipFilter f = view.getFilter();
         final GraphWorkspace ws = view.getWorkspace();
 
         for ( final Relationship r : path.relationships() )
         {
-            if ( !accepted( r, f, ws ) )
+            if ( !accepted( r, f, ws, cache ) )
             {
                 return false;
             }
 
             if ( f != null )
             {
-                final ProjectRelationship<?> rel = toProjectRelationship( r );
+                final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
                 f = f.getChildFilter( rel );
             }
         }
@@ -74,14 +75,15 @@ public final class TraversalUtils
         return true;
     }
 
-    public static boolean acceptedInView( final Relationship r, final GraphView view )
+    public static boolean acceptedInView( final Relationship r, final GraphView view, final ConversionCache cache )
     {
-        return accepted( r, view.getFilter(), view.getWorkspace() );
+        return accepted( r, view.getFilter(), view.getWorkspace(), cache );
     }
 
-    public static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace )
+    public static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace,
+                                    final ConversionCache cache )
     {
-        final ProjectRelationship<?> rel = toProjectRelationship( r );
+        final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
 
         debug( "Checking relationship for acceptance: {} ({})", r, rel );
 
