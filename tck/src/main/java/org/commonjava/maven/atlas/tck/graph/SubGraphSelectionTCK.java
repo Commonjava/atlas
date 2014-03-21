@@ -39,7 +39,7 @@ public abstract class SubGraphSelectionTCK
 {
 
     @Test
-    @Ignore
+    //    @Ignore
     public void selectVersionForVariableSubgraph()
         throws Exception
     {
@@ -60,13 +60,14 @@ public abstract class SubGraphSelectionTCK
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
+        System.out.println( "Before selection, here are the variable nodes: " + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
         final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
         assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph.getVariableSubgraphs();
-        System.out.println( variables );
+        System.out.println( "After selection, here are the variable nodes: " + variables );
         assertThat( variables.isEmpty(), equalTo( true ) );
 
         final Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
@@ -74,7 +75,7 @@ public abstract class SubGraphSelectionTCK
     }
 
     @Test
-    @Ignore
+    @Ignore( value = "Selection clearing is not currently supported" )
     public void selectThenClearVersionForVariableSubgraph()
         throws Exception
     {
@@ -109,8 +110,6 @@ public abstract class SubGraphSelectionTCK
         System.out.println( "Incomplete after selecting:\n  " + incomplete );
         assertThat( incomplete.contains( selDep ), equalTo( true ) );
 
-        view.clearSelections();
-
         variables = graph.getVariableSubgraphs();
         System.out.println( "Variable after clearing:\n  " + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
@@ -123,8 +122,8 @@ public abstract class SubGraphSelectionTCK
     }
 
     @Test
-    @Ignore
-    public void selectVersionForVariableSubgraph_SelectionsContextualToSession()
+    //    @Ignore
+    public void selectVersionForVariableSubgraph_SelectionsContextualToView()
         throws Exception
     {
         final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );

@@ -27,7 +27,6 @@ public class ManagedDependencyMutator
         }
 
         ProjectRelationship<?> mutated = super.selectFor( rel, path, view );
-
         if ( mutated == null || mutated == rel )
         {
             final ProjectVersionRef managed = view.getDatabase()
@@ -45,5 +44,4 @@ public class ManagedDependencyMutator
 
         return mutated == null ? rel : mutated;
     }
-
 }

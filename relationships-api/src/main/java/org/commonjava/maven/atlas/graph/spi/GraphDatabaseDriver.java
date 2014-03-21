@@ -192,6 +192,8 @@ public interface GraphDatabaseDriver
 
     boolean registerView( GraphView view );
 
+    void registerViewSelection( GraphView view, ProjectRef ref, ProjectVersionRef projectVersionRef );
+
     Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( GraphView view, Set<ProjectVersionRef> refs );
 
     ProjectVersionRef getPathTargetRef( GraphPath<?> path );

@@ -1130,6 +1130,12 @@ public class JungEGraphDriver
     }
 
     @Override
+    public void registerViewSelection( final GraphView view, final ProjectRef ref, final ProjectVersionRef projectVersionRef )
+    {
+        // NOP
+    }
+
+    @Override
     public Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( final GraphView view, final Set<ProjectVersionRef> refs )
     {
         final PathDetectionTraversal traversal = new PathDetectionTraversal( view, refs );

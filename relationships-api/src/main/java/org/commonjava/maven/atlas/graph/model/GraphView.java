@@ -325,30 +325,24 @@ public class GraphView
         return workspace.activeSources();
     }
 
-    // TODO: Can we really allow this to be modified safely? What are the implications for membership caching in the graph??
     public final ProjectVersionRef selectVersion( final ProjectRef ref, final ProjectVersionRef selected )
     {
         if ( selections == null )
         {
             selections = new HashMap<ProjectRef, ProjectVersionRef>();
+            for ( final ProjectVersionRef root : roots )
+            {
+                selections.put( root.asProjectRef(), root );
+            }
         }
 
-        final ProjectVersionRef old = selections.get( ref );
-        if ( old != null )
+        if ( !selections.containsKey( ref ) )
         {
-            return old;
+            selections.put( ref, selected );
+            getDatabase().registerViewSelection( this, ref, selected );
         }
 
-        this.selections.put( ref, selected );
-        return selected;
-    }
-
-    public final void clearSelections()
-    {
-        if ( selections != null )
-        {
-            selections.clear();
-        }
+        return selections.get( ref );
     }
 
     public final ProjectVersionRef getSelection( final ProjectRef ref )
