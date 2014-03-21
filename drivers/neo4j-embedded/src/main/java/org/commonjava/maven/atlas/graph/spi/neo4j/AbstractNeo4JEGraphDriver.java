@@ -48,7 +48,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.commons.lang.StringUtils;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
@@ -458,16 +457,26 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final RelationshipIndex cachedPaths = graph.index()
                                                    .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
-        final IndexHits<Relationship> hits = cachedPaths.query( CACHED_PATH_TARGETS, StringUtils.join( refs, " " ) );
 
         final Map<GraphPath<?>, GraphPathInfo> result = new HashMap<GraphPath<?>, GraphPathInfo>();
-        while ( hits.hasNext() )
+        for ( final ProjectVersionRef ref : refs )
         {
-            final Relationship pathRel = hits.next();
-            final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
-            final GraphPathInfo pathInfo = Conversions.getCachedPathInfo( pathRel, this );
+            final Node node = getNode( ref );
+            if ( node == null )
+            {
+                continue;
+            }
 
-            result.put( path, pathInfo );
+            final IndexHits<Relationship> hits = cachedPaths.get( CACHED_PATH_TARGETS, node.getId() );
+
+            while ( hits.hasNext() )
+            {
+                final Relationship pathRel = hits.next();
+                final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
+                final GraphPathInfo pathInfo = Conversions.getCachedPathInfo( pathRel, this );
+
+                result.put( path, pathInfo );
+            }
         }
 
         return result;
@@ -505,30 +514,41 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final RelationshipIndex cachedPaths = graph.index()
                                                    .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
-        final IndexHits<Relationship> hits = cachedPaths.query( CACHED_PATH_TARGETS, StringUtils.join( refs, " " ) );
 
         final Map<Long, ProjectRelationship<?>> convertedCache = new HashMap<Long, ProjectRelationship<?>>();
         final Set<List<ProjectRelationship<?>>> result = new HashSet<List<ProjectRelationship<?>>>();
-        while ( hits.hasNext() )
+
+        for ( final ProjectVersionRef ref : refs )
         {
-            final Relationship pathRel = hits.next();
-            final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
-
-            final List<ProjectRelationship<?>> convertedPath = new ArrayList<ProjectRelationship<?>>();
-            for ( final Long rid : path )
+            final Node node = getNode( ref );
+            if ( node == null )
             {
-                ProjectRelationship<?> rel = convertedCache.get( rid );
-                if ( rel == null )
-                {
-                    final Relationship r = graph.getRelationshipById( rid );
-                    rel = toProjectRelationship( r );
-                    convertedCache.put( rid, rel );
-
-                    convertedPath.add( rel );
-                }
+                continue;
             }
 
-            result.add( convertedPath );
+            final IndexHits<Relationship> hits = cachedPaths.get( CACHED_PATH_TARGETS, node.getId() );
+
+            while ( hits.hasNext() )
+            {
+                final Relationship pathRel = hits.next();
+                final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
+
+                final List<ProjectRelationship<?>> convertedPath = new ArrayList<ProjectRelationship<?>>();
+                for ( final Long rid : path )
+                {
+                    ProjectRelationship<?> rel = convertedCache.get( rid );
+                    if ( rel == null )
+                    {
+                        final Relationship r = graph.getRelationshipById( rid );
+                        rel = toProjectRelationship( r );
+                        convertedCache.put( rid, rel );
+
+                        convertedPath.add( rel );
+                    }
+                }
+
+                result.add( convertedPath );
+            }
         }
 
         return result;
@@ -606,6 +626,7 @@ public abstract class AbstractNeo4JEGraphDriver
                         try
                         {
                             final Node node = newProjectNode( ref );
+                            logger.debug( "Node: {} created for: {}", node, ref );
                             nodes[i] = node;
                         }
                         catch ( final InvalidVersionSpecificationException e )
@@ -1297,6 +1318,7 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public Set<ProjectVersionRef> getMissingProjects( final GraphView view )
     {
+        logger.debug( "Getting missing projects for: {}", view.getLongId() );
         return getIndexedProjects( view, MISSING_NODES_IDX );
     }
 
@@ -1317,9 +1339,11 @@ public abstract class AbstractNeo4JEGraphDriver
 
             for ( final Node node : hits )
             {
+                logger.debug( "Checking for membership: {}", node );
                 final IndexHits<Node> cacheHits = cachedNodes.get( NID, node.getId() );
                 if ( cacheHits.hasNext() )
                 {
+                    logger.debug( "Including: {}", node );
                     result.add( toProjectVersionRef( node ) );
                 }
             }
@@ -1328,6 +1352,7 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             for ( final Node node : hits )
             {
+                logger.debug( "Including: {}", node );
                 result.add( toProjectVersionRef( node ) );
             }
         }
