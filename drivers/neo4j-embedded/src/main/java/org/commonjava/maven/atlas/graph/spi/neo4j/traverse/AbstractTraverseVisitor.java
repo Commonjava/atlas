@@ -96,4 +96,9 @@ public abstract class AbstractTraverseVisitor
         return seenTracker.hasSeen( graphPath, pathInfo );
     }
 
+    @Override
+    public void traverseComplete( final AtlasCollector<?> collector )
+    {
+    }
+
 }

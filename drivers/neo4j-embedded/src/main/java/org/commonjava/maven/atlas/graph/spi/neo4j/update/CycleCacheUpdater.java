@@ -1,17 +1,23 @@
-package org.commonjava.maven.atlas.graph.spi.neo4j;
+package org.commonjava.maven.atlas.graph.spi.neo4j.update;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.CACHED_PATH_TARGETS;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 
+import java.util.HashSet;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AbstractTraverseVisitor;
+import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.index.IndexHits;
@@ -20,34 +26,51 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class CycleCacheUpdater
+    extends AbstractTraverseVisitor
 {
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final ConversionCache cache;
 
-    private final GraphMaintenance maint;
+    private final GraphAdmin maint;
 
-    public CycleCacheUpdater( final GraphMaintenance maint, final ConversionCache cache )
+    private final Set<CyclePath> seenCycles = new HashSet<CyclePath>();
+
+    private final RelationshipIndex cachedPathRels;
+
+    private final GraphView view;
+
+    private final RelationshipIndex cyclePathRels;
+
+    private final Node viewNode;
+
+    private int cycleCount = 0;
+
+    public CycleCacheUpdater( final RelationshipIndex cyclePathRels, final RelationshipIndex cachedPathRels, final GraphView view,
+                              final Node viewNode, final GraphAdmin maint, final ConversionCache cache )
     {
+        this.cyclePathRels = cyclePathRels;
+        this.cachedPathRels = cachedPathRels;
+        this.view = view;
+        this.viewNode = viewNode;
         this.maint = maint;
         this.cache = cache;
     }
 
-    public boolean cacheCycle( final CyclePath cyclicPath, final Relationship injector, final RelationshipIndex cyclePathRels,
-                               final RelationshipIndex cachedPathRels, final RelationshipIndex cachedRels, final GraphView view, final Node viewNode,
-                               final Set<CyclePath> seenCycles )
+    @Override
+    public void cycleDetected( final CyclePath cyclicPath, final Relationship injector )
     {
         if ( !seenCycles.add( cyclicPath ) )
         {
             logger.debug( "Already seen cycle path: {}", cyclicPath );
-            return false;
+            return;
         }
 
         if ( cyclicPath.length() < 1 )
         {
             logger.debug( "No paths in cycle!" );
-            return false;
+            return;
         }
 
         //        if ( cachedRels != null && cycleMap != null )
@@ -126,7 +149,7 @@ public class CycleCacheUpdater
             if ( !found )
             {
                 logger.debug( "Cycle is not wholly contained in view: {}", cyclicPath );
-                return false;
+                return;
             }
         }
 
@@ -149,6 +172,19 @@ public class CycleCacheUpdater
             logger.debug( "Cycle is already contained in view cache: {}", cyclicPath );
         }
 
-        return true;
+        cycleCount++;
     }
+
+    @Override
+    public void configure( final AtlasCollector<?> collector )
+    {
+        collector.setAvoidCycles( false );
+        collector.setConversionCache( cache );
+    }
+
+    public int getCycleCount()
+    {
+        return cycleCount;
+    }
+
 }

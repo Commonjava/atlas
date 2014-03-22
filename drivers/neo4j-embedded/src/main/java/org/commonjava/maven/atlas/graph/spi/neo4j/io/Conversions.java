@@ -48,7 +48,7 @@ import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
-import org.commonjava.maven.atlas.graph.spi.neo4j.GraphMaintenance;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -165,6 +165,8 @@ public final class Conversions
     public static final String CONFIG_ID = "config_id";
 
     public static final String VIEW_ID = "view_id";
+
+    public static final String CYCLE_DETECTION_PENDING = "cycle_detect_pending";
 
     private Conversions()
     {
@@ -983,7 +985,7 @@ public final class Conversions
     //        return getCachedPathInfo( rel, null, driver );
     //    }
 
-    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final ConversionCache cache, final GraphMaintenance maint )
+    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final ConversionCache cache, final GraphAdmin maint )
     {
         if ( !rel.hasProperty( PATH_INFO_DATA ) )
         {
@@ -1088,7 +1090,7 @@ public final class Conversions
     //        return retrieveView( viewNode, null, driver );
     //    }
 
-    public static GraphView retrieveView( final Node viewNode, final ConversionCache cache, final GraphMaintenance maint )
+    public static GraphView retrieveView( final Node viewNode, final ConversionCache cache, final GraphAdmin maint )
     {
         if ( !viewNode.hasProperty( VIEW_DATA ) )
         {
@@ -1133,6 +1135,16 @@ public final class Conversions
         {
             IOUtils.closeQuietly( ois );
         }
+    }
+
+    public static boolean isCycleDetectionPending( final Node viewNode )
+    {
+        return getBooleanProperty( CYCLE_DETECTION_PENDING, viewNode, Boolean.FALSE );
+    }
+
+    public static void setCycleDetectionPending( final Node viewNode, final boolean pending )
+    {
+        viewNode.setProperty( CYCLE_DETECTION_PENDING, pending );
     }
 
 }

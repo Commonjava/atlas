@@ -17,6 +17,11 @@ public interface TraverseVisitor
     void configure( AtlasCollector<?> collector );
 
     /**
+     * MUST call this after traverse completes, to allow resource reclamation.
+     */
+    void traverseComplete( AtlasCollector<?> collector );
+
+    /**
      * Allow visitor to turn itself off and skip further traversal of a path.
      */
     boolean isEnabledFor( Path path );

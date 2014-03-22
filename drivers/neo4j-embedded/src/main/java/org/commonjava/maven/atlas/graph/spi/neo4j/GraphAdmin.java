@@ -5,7 +5,7 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Relationship;
 
-public interface GraphMaintenance
+public interface GraphAdmin
 {
 
     AbstractNeo4JEGraphDriver getDriver();

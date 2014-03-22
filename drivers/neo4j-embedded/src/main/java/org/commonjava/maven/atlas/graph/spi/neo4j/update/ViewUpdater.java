@@ -1,4 +1,4 @@
-package org.commonjava.maven.atlas.graph.spi.neo4j;
+package org.commonjava.maven.atlas.graph.spi.neo4j.update;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.CACHED_PATH_CONTAINS_NODE;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.CACHED_PATH_CONTAINS_REL;
@@ -18,6 +18,8 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -48,15 +50,9 @@ public class ViewUpdater
 
     private final RelationshipIndex cachedRels;
 
-    private final RelationshipIndex cyclePathRels;
-
     private final ConversionCache cache;
 
-    private final GraphMaintenance maint;
-
-    private final CycleCacheUpdater cycleUpdater;
-
-    private final Set<CyclePath> seenCycles = new HashSet<CyclePath>();
+    private final GraphAdmin maint;
 
     private Map<Long, Neo4jGraphPath> toExtendPaths = new HashMap<Long, Neo4jGraphPath>();
 
@@ -64,37 +60,29 @@ public class ViewUpdater
 
     private final Set<Node> toExtendRoots = new HashSet<Node>();
 
-    private int cycleCount = 0;
-
     public ViewUpdater( final GraphView view, final Node viewNode, final RelationshipIndex cachedPathRels, final RelationshipIndex cachedRels,
-                        final Index<Node> cachedNodes, final RelationshipIndex cyclePathRels, final ConversionCache cache,
-                        final GraphMaintenance maint, final CycleCacheUpdater cycleUpdater )
+                        final Index<Node> cachedNodes, final ConversionCache cache, final GraphAdmin maint )
     {
         this.view = view;
         this.viewNode = viewNode;
         this.cachedPathRels = cachedPathRels;
         this.cachedRels = cachedRels;
         this.cachedNodes = cachedNodes;
-        this.cyclePathRels = cyclePathRels;
         this.cache = cache;
         this.maint = maint;
-        this.cycleUpdater = cycleUpdater;
     }
 
     public ViewUpdater( final GraphView view, final Node viewNode, final Map<Long, Neo4jGraphPath> toExtendPaths,
                         final Map<Neo4jGraphPath, GraphPathInfo> toExtendPathInfoMap, final RelationshipIndex cachedPathRels,
-                        final RelationshipIndex cachedRels, final Index<Node> cachedNodes, final RelationshipIndex cyclePathRels,
-                        final ConversionCache cache, final GraphMaintenance maint, final CycleCacheUpdater cycleUpdater )
+                        final RelationshipIndex cachedRels, final Index<Node> cachedNodes, final ConversionCache cache, final GraphAdmin maint )
     {
         this.view = view;
         this.viewNode = viewNode;
         this.cachedPathRels = cachedPathRels;
         this.cachedRels = cachedRels;
         this.cachedNodes = cachedNodes;
-        this.cyclePathRels = cyclePathRels;
         this.cache = cache;
         this.maint = maint;
-        this.cycleUpdater = cycleUpdater;
         this.toExtendPaths = toExtendPaths;
         this.toExtendPathInfoMap = toExtendPathInfoMap;
     }
@@ -138,15 +126,6 @@ public class ViewUpdater
         }
 
         //        extendCachedPaths( toExtend, toExtendRoots, view, viewNode, cachedPathRels, cachedRels, cachedNodes );
-    }
-
-    @Override
-    public void cycleDetected( final CyclePath path, final Relationship injector )
-    {
-        if ( cycleUpdater.cacheCycle( path, injector, cyclePathRels, cachedPathRels, cachedRels, view, viewNode, seenCycles ) )
-        {
-            cycleCount++;
-        }
     }
 
     public Collection<? extends Node> getExtendRoots()
@@ -234,11 +213,6 @@ public class ViewUpdater
                 cachedNodes.add( r.getEndNode(), NID, endId );
             }
         }
-    }
-
-    public int getCycleCount()
-    {
-        return cycleCount;
     }
 
 }
