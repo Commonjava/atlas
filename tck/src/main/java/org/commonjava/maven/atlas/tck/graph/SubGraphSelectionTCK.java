@@ -60,17 +60,18 @@ public abstract class SubGraphSelectionTCK
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
-        System.out.println( "Before selection, here are the variable nodes: " + variables );
+        System.out.println( "Before selection in view: " + view.getShortId() + ", here are the variable nodes: " + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
         final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
         assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph.getVariableSubgraphs();
-        System.out.println( "After selection, here are the variable nodes: " + variables );
+        System.out.println( "After selection in view: " + view.getShortId() + ", here are the variable nodes: " + variables );
         assertThat( variables.isEmpty(), equalTo( true ) );
 
         final Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
+        System.out.println( "Checking missing subgraphs for: " + selDep );
         assertThat( incomplete.contains( selDep ), equalTo( true ) );
     }
 

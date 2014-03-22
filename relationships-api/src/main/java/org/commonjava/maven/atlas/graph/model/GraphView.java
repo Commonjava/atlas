@@ -37,6 +37,25 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceListener;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
+/**
+ * <p>
+ * View of a graph database that may include a set of traversal root-nodes, 
+ * a {@link ProjectRelationshipFilter}, and a {@link GraphMutator}. This view
+ * also supports selection of a GAV to override either all references to a GA, or
+ * references to a specific GAV. 
+ * </p>
+ * 
+ * <p>
+ * <b>NOTE(1):</b> Selections currently cannot be overridden or 
+ * cleared once set, and root GAVs cannot be overridden with a selection.
+ * </p>
+ * 
+ * <p>
+ * <b>NOTE(2):</b> If root nodes are unspecified, then neither filter nor mutator can be used!
+ * </p>
+ * 
+ * @author jdcasey
+ */
 public class GraphView
     implements Serializable
 {

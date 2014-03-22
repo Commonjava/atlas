@@ -5,6 +5,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
+import org.neo4j.graphdb.Path;
 
 public class CyclePath
     extends Neo4jGraphPath
@@ -87,6 +88,11 @@ public class CyclePath
     public CyclePath( final List<Long> ids )
     {
         super( ids );
+    }
+
+    public CyclePath( final Path path )
+    {
+        super( path );
     }
 
     public void setEntryPoint( final long entryPoint )

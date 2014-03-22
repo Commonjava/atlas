@@ -47,8 +47,8 @@ import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphMaintenance;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -147,6 +147,24 @@ public final class Conversions
     private static final String PATH = "path";
 
     private static final String PATH_INFO_DATA = "path_info_data";
+
+    // handled by other things, like updaters.
+
+    public static final String CACHED_PATH_RELATIONSHIP = "cached_path_relationship";
+
+    public static final String CACHED_PATH_CONTAINS_NODE = "cached_path_contains_node";
+
+    public static final String CACHED_PATH_CONTAINS_REL = "cached_path_contains_rel";
+
+    public static final String CACHED_PATH_TARGETS = "cached_path_targets";
+
+    public static final String RID = "rel_id";
+
+    public static final String NID = "node_id";
+
+    public static final String CONFIG_ID = "config_id";
+
+    public static final String VIEW_ID = "view_id";
 
     private Conversions()
     {
@@ -965,7 +983,7 @@ public final class Conversions
     //        return getCachedPathInfo( rel, null, driver );
     //    }
 
-    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final ConversionCache cache, final AbstractNeo4JEGraphDriver driver )
+    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final ConversionCache cache, final GraphMaintenance maint )
     {
         if ( !rel.hasProperty( PATH_INFO_DATA ) )
         {
@@ -988,7 +1006,7 @@ public final class Conversions
         {
             ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
             final GraphPathInfo pathInfo = (GraphPathInfo) ois.readObject();
-            pathInfo.reattach( driver );
+            pathInfo.reattach( maint.getDriver() );
 
             if ( cache != null )
             {
@@ -1070,7 +1088,7 @@ public final class Conversions
     //        return retrieveView( viewNode, null, driver );
     //    }
 
-    public static GraphView retrieveView( final Node viewNode, final ConversionCache cache, final AbstractNeo4JEGraphDriver driver )
+    public static GraphView retrieveView( final Node viewNode, final ConversionCache cache, final GraphMaintenance maint )
     {
         if ( !viewNode.hasProperty( VIEW_DATA ) )
         {
@@ -1093,7 +1111,7 @@ public final class Conversions
         {
             ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
             final GraphView view = (GraphView) ois.readObject();
-            view.reattach( driver );
+            view.reattach( maint.getDriver() );
 
             if ( cache != null )
             {

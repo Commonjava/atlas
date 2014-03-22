@@ -38,7 +38,6 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,41 +51,41 @@ public final class TraversalUtils
     {
     }
 
-    public static boolean acceptedInView( final Path path, final GraphView view, final ConversionCache cache )
-    {
-        ProjectRelationshipFilter f = view.getFilter();
-        final GraphWorkspace ws = view.getWorkspace();
-
-        for ( final Relationship r : path.relationships() )
-        {
-            if ( !accepted( r, f, ws, cache ) )
-            {
-                return false;
-            }
-
-            if ( f != null )
-            {
-                final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
-                f = f.getChildFilter( rel );
-            }
-        }
-
-        debug( "ACCEPT: Path: {}", path );
-        return true;
-    }
+    //    public static boolean acceptedInView( final Path path, final GraphView view, final ConversionCache cache )
+    //    {
+    //        ProjectRelationshipFilter f = view.getFilter();
+    //        final GraphWorkspace ws = view.getWorkspace();
+    //
+    //        for ( final Relationship r : path.relationships() )
+    //        {
+    //            if ( !accepted( r, f, ws, cache ) )
+    //            {
+    //                return false;
+    //            }
+    //
+    //            if ( f != null )
+    //            {
+    //                final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
+    //                f = f.getChildFilter( rel );
+    //            }
+    //        }
+    //
+    //        debug( "ACCEPT: Path: {}", path );
+    //        return true;
+    //    }
 
     public static boolean acceptedInView( final Relationship r, final GraphView view, final ConversionCache cache )
     {
-        return accepted( r, view.getFilter(), view.getWorkspace(), cache );
+        return accepted( r, view, cache );
     }
 
-    public static boolean accepted( final Relationship r, final ProjectRelationshipFilter f, final GraphWorkspace workspace,
-                                    final ConversionCache cache )
+    public static boolean accepted( final Relationship r, final GraphView view, final ConversionCache cache )
     {
         final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
 
         debug( "Checking relationship for acceptance: {} ({})", r, rel );
 
+        final GraphWorkspace workspace = view.getWorkspace();
         if ( workspace != null )
         {
             final Set<URI> sources = workspace.getActiveSources();
@@ -123,11 +122,12 @@ public final class TraversalUtils
             }
         }
 
-        if ( f != null )
+        final ProjectRelationshipFilter filter = view.getFilter();
+        if ( filter != null )
         {
-            if ( !f.accept( rel ) )
+            if ( !filter.accept( rel ) )
             {
-                debug( "Filter: {} REJECTED relationship: {} ({})", f, r, rel );
+                debug( "Filter: {} REJECTED relationship: {} ({})", filter, r, rel );
                 return false;
             }
         }

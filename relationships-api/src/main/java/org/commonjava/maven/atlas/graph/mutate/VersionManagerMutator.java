@@ -7,7 +7,7 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
-public abstract class AbstractVersionManagerMutator
+public class VersionManagerMutator
     implements GraphMutator
 {
 

@@ -4,6 +4,7 @@ import java.io.Serializable;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
+import org.commonjava.maven.atlas.graph.mutate.VersionManagerMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 
@@ -23,7 +24,7 @@ public class GraphPathInfo
     {
         this.view = view;
         filter = view.getFilter();
-        mutator = view.getMutator();
+        mutator = view.getMutator() == null ? new VersionManagerMutator() : view.getMutator();
     }
 
     public GraphPathInfo( final ProjectRelationshipFilter filter, final GraphMutator mutator, final GraphView view )
@@ -129,6 +130,12 @@ public class GraphPathInfo
     public void reattach( final GraphDatabaseDriver driver )
     {
         view.reattach( driver );
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format( "GraphPathInfo [filter=%s, mutator=%s, view=%s]", filter, mutator, view.getShortId() );
     }
 
 }

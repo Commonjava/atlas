@@ -147,7 +147,7 @@ public abstract class CycleDetectionTCK
         for ( final EProjectCycle cycle : cycles )
         {
             final Set<ProjectVersionRef> projects = cycle.getAllParticipatingProjects();
-            assertThat( projects.contains( project ), equalTo( false ) );
+            assertThat( projects.contains( project ), equalTo( true ) );
             assertThat( projects.contains( dep ), equalTo( true ) );
             assertThat( projects.contains( dep2 ), equalTo( true ) );
         }

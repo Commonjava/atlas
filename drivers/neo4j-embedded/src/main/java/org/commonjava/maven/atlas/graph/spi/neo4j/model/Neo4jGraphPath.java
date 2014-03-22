@@ -21,17 +21,17 @@ public class Neo4jGraphPath
         this.relationships = relationshipIds;
     }
 
-    public Neo4jGraphPath( final Neo4jGraphPath parent, final long relationshipId )
+    public Neo4jGraphPath( final Neo4jGraphPath parent, final long... relationshipIds )
     {
         if ( parent == null )
         {
-            relationships = new long[] { relationshipId };
+            relationships = relationshipIds;
         }
         else
         {
-            relationships = new long[parent.relationships.length + 1];
+            relationships = new long[parent.relationships.length + relationshipIds.length];
             System.arraycopy( parent.relationships, 0, relationships, 0, parent.relationships.length );
-            relationships[parent.relationships.length] = relationshipId;
+            System.arraycopy( relationshipIds, 0, relationships, parent.relationships.length, relationshipIds.length );
         }
     }
 
@@ -57,6 +57,24 @@ public class Neo4jGraphPath
         {
             this.relationships[i] = ids.get( i );
         }
+    }
+
+    public Neo4jGraphPath append( final Neo4jGraphPath childPath )
+    {
+        if ( length() > 0 && getLastRelationshipId() != childPath.getFirstRelationshipId() )
+        {
+            throw new IllegalArgumentException( "Cannot splice " + childPath + " onto " + this + ". They don't overlap on last/first relationshipId!" );
+        }
+
+        if ( childPath.length() < 2 )
+        {
+            return this;
+        }
+
+        final long[] ids = new long[childPath.length() - 1];
+        System.arraycopy( childPath.getRelationshipIds(), 1, ids, 0, ids.length );
+
+        return new Neo4jGraphPath( this, ids );
     }
 
     @Override
