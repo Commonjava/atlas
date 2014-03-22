@@ -11,7 +11,6 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AbstractTraverseVisitor;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
 import org.neo4j.graphdb.Node;
-import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.index.RelationshipIndex;
 
@@ -50,18 +49,15 @@ public class GraphUpdater
     }
 
     @Override
-    public void cycleDetected( final Path path )
+    public void cycleDetected( final CyclePath path, final Relationship injector )
     {
-        final CyclePath cpath = new CyclePath( path );
-        final Relationship last = path.lastRelationship();
-
-        final ProjectRelationship<?> rel = Conversions.toProjectRelationship( last, cache );
+        final ProjectRelationship<?> rel = Conversions.toProjectRelationship( injector, cache );
         if ( rel != null )
         {
             cycleRelationships.add( rel );
         }
 
-        if ( cycleUpdater.cacheCycle( cpath, last, allCyclePathRels, null, null, globalView, configNode, allSeenCycles ) )
+        if ( cycleUpdater.cacheCycle( path, injector, allCyclePathRels, null, null, globalView, configNode, allSeenCycles ) )
         {
             cycleCount++;
         }

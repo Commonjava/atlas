@@ -2,6 +2,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
@@ -23,7 +24,7 @@ public interface TraverseVisitor
     /**
      * Handle detected cycle (which was traversed TO, but not THROUGH).
      */
-    void cycleDetected( Path path );
+    void cycleDetected( CyclePath cp, Relationship injector );
 
     /**
      * Whether child edges of the given path should be visited.

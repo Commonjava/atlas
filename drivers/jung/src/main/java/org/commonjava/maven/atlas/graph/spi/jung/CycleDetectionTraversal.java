@@ -38,7 +38,7 @@ final class CycleDetectionTraversal
         }
 
         LoggerFactory.getLogger( getClass() )
-                     .debug( "Checking for cycle:\n\n{}\n\n", new JoinString( "\n", path ) );
+                     .debug( "Checking for cycle: {}\n\nPath: {}\n\n", relationship, new JoinString( "\n", path ) );
 
         final ProjectVersionRef from = rel.getDeclaring();
         if ( from.equals( relationship.getTarget()

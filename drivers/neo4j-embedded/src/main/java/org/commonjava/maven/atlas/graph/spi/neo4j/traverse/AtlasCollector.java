@@ -19,9 +19,11 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -29,6 +31,7 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -173,16 +176,25 @@ public final class AtlasCollector<STATE>
 
         if ( !avoidCycles )
         {
-            final Set<Long> starts = new HashSet<Long>();
+            final List<Long> rids = new ArrayList<Long>();
+            final List<Long> starts = new ArrayList<Long>();
             for ( final Relationship pathR : path.relationships() )
             {
+                rids.add( pathR.getId() );
+
                 final long sid = pathR.getStartNode()
                                       .getId();
-                if ( starts.contains( pathR.getEndNode()
-                                           .getId() ) )
+
+                final long eid = pathR.getEndNode()
+                                      .getId();
+
+                final int idx = starts.indexOf( eid );
+                if ( idx > -1 )
                 {
-                    logger.debug( "Detected cycle in progress for path: {} at relationship: {}", path, pathR );
-                    visitor.cycleDetected( path );
+                    final CyclePath cp = new CyclePath( rids.subList( idx, rids.size() - 1 ) );
+                    logger.debug( "Detected cycle in progress for path: {} at relationship: {}\n  Cycle path is: {}", path, pathR, cp );
+
+                    visitor.cycleDetected( cp, pathR );
                     return Collections.emptySet();
                 }
 

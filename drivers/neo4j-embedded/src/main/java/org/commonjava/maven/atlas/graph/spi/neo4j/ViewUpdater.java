@@ -141,12 +141,9 @@ public class ViewUpdater
     }
 
     @Override
-    public void cycleDetected( final Path path )
+    public void cycleDetected( final CyclePath path, final Relationship injector )
     {
-        final CyclePath cpath = new CyclePath( path );
-        final Relationship last = path.lastRelationship();
-
-        if ( cycleUpdater.cacheCycle( cpath, last, cyclePathRels, cachedPathRels, cachedRels, view, viewNode, seenCycles ) )
+        if ( cycleUpdater.cacheCycle( path, injector, cyclePathRels, cachedPathRels, cachedRels, view, viewNode, seenCycles ) )
         {
             cycleCount++;
         }

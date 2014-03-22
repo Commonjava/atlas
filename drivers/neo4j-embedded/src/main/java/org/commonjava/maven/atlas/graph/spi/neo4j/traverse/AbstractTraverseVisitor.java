@@ -2,6 +2,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track.MemorySeenTracker;
@@ -49,7 +50,7 @@ public abstract class AbstractTraverseVisitor
     }
 
     @Override
-    public void cycleDetected( final Path path )
+    public void cycleDetected( final CyclePath path, final Relationship injector )
     {
     }
 
