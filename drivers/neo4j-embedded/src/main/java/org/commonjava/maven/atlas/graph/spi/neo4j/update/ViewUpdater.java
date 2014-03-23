@@ -8,7 +8,6 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.NID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -87,7 +86,7 @@ public class ViewUpdater
         this.toExtendPathInfoMap = toExtendPathInfoMap;
     }
 
-    public void processAddedRelationships( final Map<Long, ProjectRelationship<?>> createdRelationshipsMap )
+    public boolean processAddedRelationships( final Map<Long, ProjectRelationship<?>> createdRelationshipsMap )
     {
         for ( final Entry<Long, ProjectRelationship<?>> entry : createdRelationshipsMap.entrySet() )
         {
@@ -125,10 +124,10 @@ public class ViewUpdater
             }
         }
 
-        //        extendCachedPaths( toExtend, toExtendRoots, view, viewNode, cachedPathRels, cachedRels, cachedNodes );
+        return !toExtendRoots.isEmpty();
     }
 
-    public Collection<? extends Node> getExtendRoots()
+    public Set<Node> getExtendRoots()
     {
         return toExtendRoots;
     }

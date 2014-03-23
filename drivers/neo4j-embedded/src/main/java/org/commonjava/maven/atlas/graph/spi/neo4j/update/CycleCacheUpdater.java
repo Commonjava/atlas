@@ -4,9 +4,12 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.CACHED_P
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -45,7 +48,7 @@ public class CycleCacheUpdater
 
     private final Node viewNode;
 
-    private int cycleCount = 0;
+    final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
     public CycleCacheUpdater( final RelationshipIndex cyclePathRels, final RelationshipIndex cachedPathRels, final GraphView view,
                               final Node viewNode, final GraphAdmin maint, final ConversionCache cache )
@@ -166,13 +169,25 @@ public class CycleCacheUpdater
 
             Conversions.storeCachedPath( reoriented, null, cyclePath );
             cyclePath.setProperty( RID, injector.getId() );
+
+            final List<ProjectRelationship<?>> cycle = new ArrayList<ProjectRelationship<?>>( cyclicPath.length() + 1 );
+            for ( final long id : cyclicPath.getRelationshipIds() )
+            {
+                ProjectRelationship<?> rel = cache.getRelationship( id );
+                if ( rel == null )
+                {
+                    final Relationship r = maint.getRelationship( id );
+                    rel = toProjectRelationship( r, cache );
+                }
+                cycle.add( rel );
+            }
+
+            cycles.add( new EProjectCycle( cycle ) );
         }
         else
         {
             logger.debug( "Cycle is already contained in view cache: {}", cyclicPath );
         }
-
-        cycleCount++;
     }
 
     @Override
@@ -184,7 +199,12 @@ public class CycleCacheUpdater
 
     public int getCycleCount()
     {
-        return cycleCount;
+        return cycles.size();
+    }
+
+    public Set<EProjectCycle> getCycles()
+    {
+        return cycles;
     }
 
 }

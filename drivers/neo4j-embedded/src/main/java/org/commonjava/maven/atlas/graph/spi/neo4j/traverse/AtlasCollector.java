@@ -168,6 +168,7 @@ public final class AtlasCollector<STATE>
 
         pathInfo = visitor.spliceGraphPathInfoFor( pathInfo, graphPath, path );
 
+        logger.info( "Checking hasSeen for graphPath: {} with pathInfo: {} (actual path: {})", graphPath, pathInfo, path );
         if ( visitor.hasSeen( graphPath, pathInfo ) )
         {
             logger.debug( "Already seen: {} (path: {})", graphPath, path );
@@ -234,7 +235,7 @@ public final class AtlasCollector<STATE>
                 }
 
                 final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-                logger.debug( "Using database: {} to check selection of: {} in path: {}", db, r, path );
+                logger.info( "Using database: {} to check selection of: {} in path: {}", db, wrap( r ), path );
 
                 final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
                 if ( selected == null )

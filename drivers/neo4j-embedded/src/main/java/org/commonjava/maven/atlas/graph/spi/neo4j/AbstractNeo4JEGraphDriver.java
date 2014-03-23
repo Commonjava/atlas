@@ -176,11 +176,11 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private Node configNode;
 
-    private final GraphMaintImpl maint;
+    private final GraphAdminImpl maint;
 
     protected AbstractNeo4JEGraphDriver( GraphWorkspaceConfiguration config, final GraphDatabaseService graph, final boolean useShutdownHook )
     {
-        this.maint = new GraphMaintImpl( this );
+        this.maint = new GraphAdminImpl( this );
 
         this.graph = graph;
         this.useShutdownHook = useShutdownHook;
@@ -804,7 +804,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final ProjectRelationship<?> oldRel = toProjectRelationship( old, null );
 
-        logger.info( "Selecting mutated relationship for: {}", oldRel );
+        logger.debug( "Selecting mutated relationship for: {}", oldRel );
         final ProjectRelationship<?> selected = pathInfo == null ? oldRel : pathInfo.selectRelationship( oldRel, path );
 
         if ( selected == null )
@@ -1389,16 +1389,29 @@ public abstract class AbstractNeo4JEGraphDriver
                 viewNode = configNode;
             }
 
-            // TODO: Accumulate the result here rather than doing a second-level query of the index below...
+            Set<Node> nodes;
+            if ( global )
+            {
+                nodes = Conversions.toSet( graph.index()
+                                                .forNodes( BY_GAV_IDX )
+                                                .query( GAV, "*" ) );
+            }
+            else
+            {
+                nodes = Conversions.toSet( graph.index()
+                                                .forNodes( NODE_CACHE_PREFIX + view.getShortId() )
+                                                .query( NID, "*" ) );
+            }
+
             if ( Conversions.isCycleDetectionPending( viewNode ) )
             {
                 final CycleCacheUpdater cycleUpdater = new CycleCacheUpdater( cycleIdx, cachedPaths, view, viewNode, maint, cache );
-                final Set<Node> roots = getRoots( view );
-
-                collectAtlasRelationships( view, cycleUpdater, roots, false, global ? Uniqueness.RELATIONSHIP_GLOBAL : Uniqueness.RELATIONSHIP_PATH );
+                collectAtlasRelationships( view, cycleUpdater, nodes, false, global ? Uniqueness.RELATIONSHIP_GLOBAL : Uniqueness.RELATIONSHIP_PATH );
 
                 final int cycleCount = cycleUpdater.getCycleCount();
                 logger.info( "Registered {} cycles in view {}'s cycle cache.", cycleCount, view.getShortId() );
+
+                return cycleUpdater.getCycles();
             }
 
             tx.success();
@@ -1459,57 +1472,6 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         return cycles;
-
-        //        final Map<String, Object> params = new HashMap<String, Object>();
-        //        params.put( "roots", ( roots == null || roots.isEmpty() ? "*" : roots ) );
-        //
-        //        final ExecutionResult result = execute( CYPHER_CYCLE_RETRIEVAL, params );
-        //
-        //        final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
-        //        nextPath: for ( final Map<String, Object> record : result )
-        //        {
-        //            final Path p = (Path) record.get( "path" );
-        //            final Node terminus = p.lastRelationship()
-        //                                   .getEndNode();
-        //
-        //            final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
-        //            boolean logging = false;
-        //
-        //            ProjectRelationshipFilter f = filter;
-        //            for ( final Relationship r : p.relationships() )
-        //            {
-        //                if ( r.getStartNode()
-        //                      .equals( terminus ) )
-        //                {
-        //                    logging = true;
-        //                }
-        //
-        //                if ( logging )
-        //                {
-        //                    final ProjectRelationship<?> rel = toProjectRelationship( r );
-        //                    if ( f != null )
-        //                    {
-        //                        if ( !f.accept( rel ) )
-        //                        {
-        //                            continue nextPath;
-        //                        }
-        //                        else
-        //                        {
-        //                            f = f.getChildFilter( rel );
-        //                        }
-        //                    }
-        //
-        //                    rels.add( rel );
-        //                }
-        //            }
-        //
-        //            if ( !rels.isEmpty() )
-        //            {
-        //                cycles.add( new EProjectCycle( rels ) );
-        //            }
-        //        }
-        //
-        //        return cycles;
     }
 
     @Override
@@ -2676,11 +2638,14 @@ public abstract class AbstractNeo4JEGraphDriver
                                                      .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
 
                 final ViewUpdater vu = new ViewUpdater( view, viewNode, cachedPathRels, cachedRels, cachedNodes, cache, maint );
+                if ( vu.processAddedRelationships( newRelationships ) )
+                {
+                    final Set<Node> extendRoots = vu.getExtendRoots();
+                    collectAtlasRelationships( view, vu, extendRoots, false, Uniqueness.RELATIONSHIP_PATH );
 
-                final Set<Node> roots = getRoots( view );
-                collectAtlasRelationships( view, vu, roots, false, Uniqueness.RELATIONSHIP_PATH );
+                    Conversions.setCycleDetectionPending( viewNode, true );
+                }
 
-                Conversions.setCycleDetectionPending( viewNode, true );
             }
 
             tx.success();
@@ -2691,13 +2656,13 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
-    private static class GraphMaintImpl
+    private static class GraphAdminImpl
         implements GraphAdmin
     {
 
         private final AbstractNeo4JEGraphDriver driver;
 
-        GraphMaintImpl( final AbstractNeo4JEGraphDriver driver )
+        GraphAdminImpl( final AbstractNeo4JEGraphDriver driver )
         {
             this.driver = driver;
         }
