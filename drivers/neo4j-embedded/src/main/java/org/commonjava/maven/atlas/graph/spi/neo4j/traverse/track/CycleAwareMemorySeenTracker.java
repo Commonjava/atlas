@@ -4,8 +4,10 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.update.CycleCacheUpdater;
 
 public class CycleAwareMemorySeenTracker
     implements TraverseSeenTracker
@@ -13,13 +15,22 @@ public class CycleAwareMemorySeenTracker
 
     private final Set<String> seenKeys = new HashSet<String>();
 
+    private final GraphAdmin admin;
+
+    public CycleAwareMemorySeenTracker( final GraphAdmin admin )
+    {
+        this.admin = admin;
+    }
+
     @Override
     public boolean hasSeen( final Neo4jGraphPath graphPath, final GraphPathInfo pathInfo )
     {
+        // TODO: This trims the path leading up to the cycle...is that alright??
+
         String key;
-        if ( graphPath.containsCycle() )
+        final CyclePath cyclePath = CycleCacheUpdater.getTerminatingCycle( graphPath, admin );
+        if ( cyclePath != null )
         {
-            final CyclePath cyclePath = graphPath instanceof CyclePath ? (CyclePath) graphPath : new CyclePath( graphPath.getRelationshipIds() );
             key = cyclePath.getKey();
         }
         else

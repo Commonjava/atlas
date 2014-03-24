@@ -5,8 +5,10 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
@@ -54,7 +56,7 @@ public class CycleCacheUpdater
     public CycleCacheUpdater( final RelationshipIndex cyclePathRels, final RelationshipIndex cachedPathRels, final GraphView view,
                               final Node viewNode, final GraphAdmin maint, final ConversionCache cache )
     {
-        super( new CycleAwareMemorySeenTracker() );
+        super( new CycleAwareMemorySeenTracker( maint ) );
         this.cyclePathRels = cyclePathRels;
         this.cachedPathRels = cachedPathRels;
         this.view = view;
@@ -212,6 +214,43 @@ public class CycleCacheUpdater
         {
             logger.debug( "Cycle is already contained in view cache: {}", cyclicPath );
         }
+    }
+
+    public static CyclePath getTerminatingCycle( final Neo4jGraphPath graphPath, final GraphAdmin admin )
+    {
+        final Map<Long, Long> startNodesToRids = new HashMap<Long, Long>();
+        final long[] rids = graphPath.getRelationshipIds();
+        Long startRid = null;
+        for ( final long rid : rids )
+        {
+            final Relationship r = admin.getRelationship( rid );
+
+            startRid = startNodesToRids.get( r.getEndNode()
+                                              .getId() );
+            if ( startRid != null )
+            {
+                break;
+            }
+        }
+
+        if ( startRid != null )
+        {
+            int i = 0;
+            for ( ; i < rids.length; i++ )
+            {
+                if ( rids[i] == startRid )
+                {
+                    break;
+                }
+            }
+
+            final long[] cycle = new long[rids.length - i];
+            System.arraycopy( rids, i, cycle, 0, cycle.length );
+
+            return new CyclePath( cycle );
+        }
+
+        return null;
     }
 
     @Override

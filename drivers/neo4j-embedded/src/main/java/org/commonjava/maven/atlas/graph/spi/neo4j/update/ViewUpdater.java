@@ -66,7 +66,7 @@ public class ViewUpdater
     public ViewUpdater( final GraphView view, final Node viewNode, final RelationshipIndex cachedPathRels, final RelationshipIndex cachedRels,
                         final Index<Node> cachedNodes, final RelationshipIndex cyclePathRels, final ConversionCache cache, final GraphAdmin maint )
     {
-        super( new CycleAwareMemorySeenTracker() );
+        super( new CycleAwareMemorySeenTracker( maint ) );
         this.view = view;
         this.viewNode = viewNode;
         this.cachedPathRels = cachedPathRels;
@@ -82,7 +82,7 @@ public class ViewUpdater
                         final RelationshipIndex cachedRels, final Index<Node> cachedNodes, final RelationshipIndex cyclePathRels,
                         final ConversionCache cache, final GraphAdmin maint )
     {
-        super( new CycleAwareMemorySeenTracker() );
+        super( new CycleAwareMemorySeenTracker( maint ) );
         this.view = view;
         this.viewNode = viewNode;
         this.cachedPathRels = cachedPathRels;
@@ -173,12 +173,13 @@ public class ViewUpdater
 
     private void cachePath( final Neo4jGraphPath path, final GraphPathInfo pathInfo )
     {
-        if ( path.containsCycle() )
+        final CyclePath cyclePath = CycleCacheUpdater.getTerminatingCycle( path, maint );
+        if ( cyclePath != null )
         {
             logger.debug( "CYCLE: {}", path );
 
             final Relationship injector = maint.getRelationship( path.getLastRelationshipId() );
-            cycleUpdater.addCycle( new CyclePath( path.getRelationshipIds() ), injector );
+            cycleUpdater.addCycle( cyclePath, injector );
 
             return;
         }

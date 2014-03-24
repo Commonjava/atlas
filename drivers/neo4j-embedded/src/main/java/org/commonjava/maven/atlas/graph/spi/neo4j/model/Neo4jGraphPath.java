@@ -200,23 +200,4 @@ public class Neo4jGraphPath
         return false;
     }
 
-    public boolean containsCycle()
-    {
-        final long[] rids = getRelationshipIds();
-        Arrays.sort( rids );
-
-        long last = -1;
-        for ( final long rid : rids )
-        {
-            if ( last == rid )
-            {
-                return true;
-            }
-
-            last = rid;
-        }
-
-        return false;
-    }
-
 }
