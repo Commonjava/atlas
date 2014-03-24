@@ -166,13 +166,15 @@ public abstract class AbstractAggregatingFilter
               .append( getClass().getSimpleName() )
               .append( '(' );
 
+            boolean first = true;
             for ( final ProjectRelationshipFilter filter : filters )
             {
-                if ( sb.length() > 0 )
+                if ( !first )
                 {
                     sb.append( ',' );
                 }
 
+                first = false;
                 sb.append( filter.getLongId() );
             }
             sb.append( ')' );

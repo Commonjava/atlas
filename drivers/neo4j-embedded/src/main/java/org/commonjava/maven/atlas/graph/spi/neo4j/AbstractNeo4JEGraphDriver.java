@@ -2315,7 +2315,7 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( view.getRoots() == null || view.getRoots()
                                             .isEmpty() )
         {
-            logger.info( "Cannot track membership in view! It has no root GAVs." );
+            logger.info( "Cannot track membership in view! It has no root GAVs.\nView: {} (short id: {})", view.getLongId(), view.getShortId() );
             return false;
         }
 
@@ -2336,6 +2336,9 @@ public abstract class AbstractNeo4JEGraphDriver
                 final Index<Node> cachedNodes = graph.index()
                                                      .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
 
+                final RelationshipIndex cyclePathRels = graph.index()
+                                                             .forRelationships( CYCLE_CACHE_PREFIX + view.getShortId() );
+
                 final Set<Node> roots = cacheRoots( view, viewNode, cachedPathRels, cachedNodes );
                 if ( roots.isEmpty() )
                 {
@@ -2343,13 +2346,12 @@ public abstract class AbstractNeo4JEGraphDriver
                     return false;
                 }
 
-                logger.info( "Registering new view: {}", view.getLongId() );
-
-                final ViewUpdater updater = new ViewUpdater( view, viewNode, cachedPathRels, cachedRels, cachedNodes, cache, maint );
+                final ViewUpdater updater = new ViewUpdater( view, viewNode, cachedPathRels, cachedRels, cachedNodes, cyclePathRels, cache, maint );
 
                 collectAtlasRelationships( view, updater, roots, false, Uniqueness.RELATIONSHIP_PATH );
 
             }
+
             tx.success();
         }
         finally
@@ -2373,10 +2375,13 @@ public abstract class AbstractNeo4JEGraphDriver
         final IndexHits<Node> hits = confIdx.get( VIEW_ID, view.getShortId() );
         if ( hits.hasNext() )
         {
+            logger.info( "View already registered: {} (short id: {})", view.getLongId(), view.getShortId() );
             return hits.next();
         }
         else
         {
+            logger.info( "Registering new view: {} (short id: {})", view.getLongId(), view.getShortId() );
+
             final Node viewNode = graph.createNode();
             Conversions.storeView( view, viewNode );
 
@@ -2420,6 +2425,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final RelationshipIndex cachedPathRels = graph.index()
                                                       .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
+
+        final RelationshipIndex cyclePathRels = graph.index()
+                                                     .forRelationships( CYCLE_CACHE_PREFIX + view.getShortId() );
 
         final ConversionCache cache = new ConversionCache();
         final Map<Long, Neo4jGraphPath> toExtendPaths = new HashMap<Long, Neo4jGraphPath>();
@@ -2541,7 +2549,8 @@ public abstract class AbstractNeo4JEGraphDriver
             if ( toExtendRoots != null && !toExtendRoots.isEmpty() )
             {
                 final ViewUpdater updater =
-                    new ViewUpdater( view, viewNode, toExtendPaths, toExtendPathInfoMap, cachedPathRels, cachedRels, cachedNodes, cache, maint );
+                    new ViewUpdater( view, viewNode, toExtendPaths, toExtendPathInfoMap, cachedPathRels, cachedRels, cachedNodes, cyclePathRels,
+                                     cache, maint );
 
                 collectAtlasRelationships( view, updater, toExtendRoots, false, Uniqueness.RELATIONSHIP_PATH );
             }
@@ -2637,15 +2646,18 @@ public abstract class AbstractNeo4JEGraphDriver
                 final Index<Node> cachedNodes = graph.index()
                                                      .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
 
-                final ViewUpdater vu = new ViewUpdater( view, viewNode, cachedPathRels, cachedRels, cachedNodes, cache, maint );
+                final RelationshipIndex cyclePathRels = graph.index()
+                                                             .forRelationships( CYCLE_CACHE_PREFIX + view.getShortId() );
+
+                final ViewUpdater vu = new ViewUpdater( view, viewNode, cachedPathRels, cachedRels, cachedNodes, cyclePathRels, cache, maint );
                 if ( vu.processAddedRelationships( newRelationships ) )
                 {
                     final Set<Node> extendRoots = vu.getExtendRoots();
                     collectAtlasRelationships( view, vu, extendRoots, false, Uniqueness.RELATIONSHIP_PATH );
 
-                    Conversions.setCycleDetectionPending( viewNode, true );
                 }
 
+                //                    Conversions.setCycleDetectionPending( viewNode, true );
             }
 
             tx.success();

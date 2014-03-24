@@ -21,9 +21,11 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AbstractTraverseVisitor;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
+import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track.CycleAwareMemorySeenTracker;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
@@ -59,9 +61,12 @@ public class ViewUpdater
 
     private final Set<Node> toExtendRoots = new HashSet<Node>();
 
+    private final CycleCacheUpdater cycleUpdater;
+
     public ViewUpdater( final GraphView view, final Node viewNode, final RelationshipIndex cachedPathRels, final RelationshipIndex cachedRels,
-                        final Index<Node> cachedNodes, final ConversionCache cache, final GraphAdmin maint )
+                        final Index<Node> cachedNodes, final RelationshipIndex cyclePathRels, final ConversionCache cache, final GraphAdmin maint )
     {
+        super( new CycleAwareMemorySeenTracker() );
         this.view = view;
         this.viewNode = viewNode;
         this.cachedPathRels = cachedPathRels;
@@ -69,12 +74,15 @@ public class ViewUpdater
         this.cachedNodes = cachedNodes;
         this.cache = cache;
         this.maint = maint;
+        this.cycleUpdater = new CycleCacheUpdater( cyclePathRels, cachedPathRels, view, viewNode, maint, cache );
     }
 
     public ViewUpdater( final GraphView view, final Node viewNode, final Map<Long, Neo4jGraphPath> toExtendPaths,
                         final Map<Neo4jGraphPath, GraphPathInfo> toExtendPathInfoMap, final RelationshipIndex cachedPathRels,
-                        final RelationshipIndex cachedRels, final Index<Node> cachedNodes, final ConversionCache cache, final GraphAdmin maint )
+                        final RelationshipIndex cachedRels, final Index<Node> cachedNodes, final RelationshipIndex cyclePathRels,
+                        final ConversionCache cache, final GraphAdmin maint )
     {
+        super( new CycleAwareMemorySeenTracker() );
         this.view = view;
         this.viewNode = viewNode;
         this.cachedPathRels = cachedPathRels;
@@ -84,6 +92,7 @@ public class ViewUpdater
         this.maint = maint;
         this.toExtendPaths = toExtendPaths;
         this.toExtendPathInfoMap = toExtendPathInfoMap;
+        this.cycleUpdater = new CycleCacheUpdater( cyclePathRels, cachedPathRels, view, viewNode, maint, cache );
     }
 
     public boolean processAddedRelationships( final Map<Long, ProjectRelationship<?>> createdRelationshipsMap )
@@ -164,6 +173,16 @@ public class ViewUpdater
 
     private void cachePath( final Neo4jGraphPath path, final GraphPathInfo pathInfo )
     {
+        if ( path.containsCycle() )
+        {
+            logger.debug( "CYCLE: {}", path );
+
+            final Relationship injector = maint.getRelationship( path.getLastRelationshipId() );
+            cycleUpdater.addCycle( new CyclePath( path.getRelationshipIds() ), injector );
+
+            return;
+        }
+
         logger.debug( "Caching path: {} with pathInfo: {}", path, pathInfo );
         final String key = path.getKey();
         final IndexHits<Relationship> pathRelHits = cachedPathRels.get( CACHED_PATH_RELATIONSHIP, key );

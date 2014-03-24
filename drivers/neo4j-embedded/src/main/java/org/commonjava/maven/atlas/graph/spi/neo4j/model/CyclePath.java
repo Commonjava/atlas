@@ -1,10 +1,9 @@
-package org.commonjava.maven.atlas.graph.spi.neo4j;
+package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Path;
 
 public class CyclePath
@@ -166,8 +165,7 @@ public class CyclePath
             return prime;
         }
 
-        final int entry = findIdentityEntryPoint();
-        final CycleIterator it = new CycleIterator( ids, entry );
+        final CycleIterator it = identityIterator();
 
         int result = prime;
 
@@ -189,27 +187,6 @@ public class CyclePath
         }
 
         return result;
-    }
-
-    private int findIdentityEntryPoint()
-    {
-        final long[] ids = super.getRelationshipIds();
-        final long[] sorted = new long[ids.length];
-
-        System.arraycopy( ids, 0, sorted, 0, ids.length );
-        Arrays.sort( sorted );
-
-        int entry = 0;
-        for ( int i = 0; i < ids.length; i++ )
-        {
-            if ( ids[i] == sorted[0] )
-            {
-                entry = i;
-                break;
-            }
-        }
-
-        return entry;
     }
 
     @Override
@@ -240,11 +217,8 @@ public class CyclePath
             return true;
         }
 
-        final int entry = findIdentityEntryPoint();
-        final int oEntry = other.findIdentityEntryPoint();
-
-        final CycleIterator it = new CycleIterator( ids, entry );
-        final CycleIterator oit = new CycleIterator( oids, oEntry );
+        final CycleIterator it = identityIterator();
+        final CycleIterator oit = other.identityIterator();
 
         while ( it.hasNext() )
         {
@@ -255,6 +229,27 @@ public class CyclePath
         }
 
         return true;
+    }
+
+    public CycleIterator identityIterator()
+    {
+        final long[] ids = super.getRelationshipIds();
+        final long[] sorted = new long[ids.length];
+
+        System.arraycopy( ids, 0, sorted, 0, ids.length );
+        Arrays.sort( sorted );
+
+        int entry = 0;
+        for ( int i = 0; i < ids.length; i++ )
+        {
+            if ( ids[i] == sorted[0] )
+            {
+                entry = i;
+                break;
+            }
+        }
+
+        return new CycleIterator( ids, entry );
     }
 
     private long[] getRawRelationshipIds()
@@ -280,6 +275,31 @@ public class CyclePath
         }
 
         return new CyclePath( reoriented );
+    }
+
+    @Override
+    public String getKey()
+    {
+        final StringBuilder sb = new StringBuilder();
+
+        final CycleIterator it = identityIterator();
+        while ( it.hasNext() )
+        {
+            if ( sb.length() > 0 )
+            {
+                sb.append( ',' );
+            }
+
+            sb.append( it.next() );
+        }
+
+        return sb.toString();
+    }
+
+    @Override
+    public String toString()
+    {
+        return "CyclePath [" + getKey() + "]";
     }
 
 }

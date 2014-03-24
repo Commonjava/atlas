@@ -2,7 +2,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;

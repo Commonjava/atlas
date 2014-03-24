@@ -13,14 +13,15 @@ import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AbstractTraverseVisitor;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
+import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track.CycleAwareMemorySeenTracker;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.index.IndexHits;
@@ -53,6 +54,7 @@ public class CycleCacheUpdater
     public CycleCacheUpdater( final RelationshipIndex cyclePathRels, final RelationshipIndex cachedPathRels, final GraphView view,
                               final Node viewNode, final GraphAdmin maint, final ConversionCache cache )
     {
+        super( new CycleAwareMemorySeenTracker() );
         this.cyclePathRels = cyclePathRels;
         this.cachedPathRels = cachedPathRels;
         this.view = view;
@@ -156,6 +158,28 @@ public class CycleCacheUpdater
             }
         }
 
+        addCycleInternal( cyclicPath, injector );
+    }
+
+    public void addCycle( final CyclePath cyclicPath, final Relationship injector )
+    {
+        if ( !seenCycles.add( cyclicPath ) )
+        {
+            logger.debug( "Already seen cycle path: {}", cyclicPath );
+            return;
+        }
+
+        if ( cyclicPath.length() < 1 )
+        {
+            logger.debug( "No paths in cycle!" );
+            return;
+        }
+
+        addCycleInternal( cyclicPath, injector );
+    }
+
+    private void addCycleInternal( final CyclePath cyclicPath, final Relationship injector )
+    {
         final IndexHits<Relationship> injectorHits = cyclePathRels.get( RID, injector.getId() );
         if ( !injectorHits.hasNext() )
         {

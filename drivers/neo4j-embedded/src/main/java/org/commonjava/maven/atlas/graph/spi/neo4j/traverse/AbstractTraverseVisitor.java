@@ -2,8 +2,8 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.spi.neo4j.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track.MemorySeenTracker;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track.TraverseSeenTracker;
