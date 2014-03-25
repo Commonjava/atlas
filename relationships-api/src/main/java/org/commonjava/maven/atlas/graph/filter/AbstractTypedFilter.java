@@ -300,4 +300,18 @@ public abstract class AbstractTypedFilter
 
         return shortId;
     }
+
+    @Override
+    public boolean includeManagedRelationships()
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
+
+    @Override
+    public boolean includeConcreteRelationships()
+    {
+        // TODO Auto-generated method stub
+        return false;
+    }
 }

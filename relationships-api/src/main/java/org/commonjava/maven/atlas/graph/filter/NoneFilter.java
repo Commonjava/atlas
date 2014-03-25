@@ -75,4 +75,16 @@ public class NoneFilter
         return getLongId();
     }
 
+    @Override
+    public boolean includeManagedRelationships()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean includeConcreteRelationships()
+    {
+        return false;
+    }
+
 }

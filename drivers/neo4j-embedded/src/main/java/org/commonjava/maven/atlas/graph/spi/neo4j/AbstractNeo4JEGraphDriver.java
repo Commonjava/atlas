@@ -65,6 +65,7 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.MembershipWrappedTraversalEvaluator;
@@ -81,6 +82,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.neo4j.cypher.javacompat.ExecutionEngine;
 import org.neo4j.cypher.javacompat.ExecutionResult;
@@ -108,8 +110,6 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String ALL_RELATIONSHIPS = "all_relationships";
 
-    private static final String ALL_CYCLES = "all_cycles";
-
     private static final String BY_GAV_IDX = "by_gav";
 
     private static final String BY_GA_IDX = "by_ga";
@@ -122,19 +122,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String METADATA_INDEX_PREFIX = "has_metadata_";
 
-    private static final String SELECTION_RELATIONSHIPS = "selection_relationships";
-
     private static final String MANAGED_GA = "managed-ga";
 
     private static final String MANAGED_KEY = "mkey";
-
-    private static final String PATH_CACHE_PREFIX = "path_cache_for_";
-
-    private static final String REL_CACHE_PREFIX = "rel_cache_for_";
-
-    private static final String NODE_CACHE_PREFIX = "node_cache_for_";
-
-    private static final String CYCLE_CACHE_PREFIX = "cycle_cache_for_";
 
     private static final String BASE_CONFIG_NODE = "_base";
 
@@ -176,11 +166,11 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private Node configNode;
 
-    private final GraphAdminImpl maint;
+    private final GraphAdminImpl adminAccess;
 
     protected AbstractNeo4JEGraphDriver( GraphWorkspaceConfiguration config, final GraphDatabaseService graph, final boolean useShutdownHook )
     {
-        this.maint = new GraphAdminImpl( this );
+        this.adminAccess = new GraphAdminImpl( this );
 
         this.graph = graph;
         this.useShutdownHook = useShutdownHook;
@@ -313,8 +303,8 @@ public abstract class AbstractNeo4JEGraphDriver
         final ConversionCache cache = new ConversionCache();
         if ( registerView( view ) )
         {
-            final RelationshipIndex cachedPaths = graph.index()
-                                                       .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
+            final RelationshipIndex cachedPaths = new ViewIndexes( graph.index(), view ).getCachedPaths();
+
             final IndexHits<Relationship> hits = cachedPaths.get( CACHED_PATH_TARGETS, ref );
 
             final Set<Long> seen = new HashSet<Long>();
@@ -323,15 +313,19 @@ public abstract class AbstractNeo4JEGraphDriver
             while ( hits.hasNext() )
             {
                 final Relationship pathRel = hits.next();
-                final long rid = Conversions.getLastCachedPathRelationship( pathRel );
-
-                if ( rid > -1 && !seen.contains( rid ) )
+                final Set<Neo4jGraphPath> paths = Conversions.getCachedPaths( pathRel );
+                for ( final Neo4jGraphPath path : paths )
                 {
-                    final Relationship r = graph.getRelationshipById( rid );
-                    final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
-                    seen.add( rid );
+                    final long rid = path.getLastRelationshipId();
 
-                    result.add( rel );
+                    if ( rid > -1 && !seen.contains( rid ) )
+                    {
+                        final Relationship r = graph.getRelationshipById( rid );
+                        final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
+                        seen.add( rid );
+
+                        result.add( rel );
+                    }
                 }
             }
 
@@ -363,8 +357,7 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( registerView( view ) )
         {
 
-            final Index<Node> cachedNodes = graph.index()
-                                                 .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), view ).getCachedNodes();
 
             final IndexHits<Node> nodeHits = cachedNodes.query( NID, "*" );
             final Set<ProjectVersionRef> nodes = new HashSet<ProjectVersionRef>();
@@ -391,8 +384,7 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( registerView( view ) )
         {
 
-            final RelationshipIndex cachedRels = graph.index()
-                                                      .forRelationships( REL_CACHE_PREFIX + view.getShortId() );
+            final RelationshipIndex cachedRels = new ViewIndexes( graph.index(), view ).getCachedRelationships();
 
             final IndexHits<Relationship> relHits = cachedRels.query( RID, "*" );
             final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
@@ -407,8 +399,11 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<Node> roots = getRoots( view );
         if ( roots != null && !roots.isEmpty() )
         {
-            final RootedRelationshipsVisitor visitor = new RootedRelationshipsVisitor();
-            collectAtlasRelationships( view, visitor, roots, false, Uniqueness.RELATIONSHIP_PATH );
+            final RootedRelationshipsVisitor visitor = new RootedRelationshipsVisitor( adminAccess );
+
+            // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+            collectAtlasRelationships( view, visitor, roots, false, Uniqueness.RELATIONSHIP_GLOBAL );
+            //            collectAtlasRelationships( view, visitor, roots, false, Uniqueness.RELATIONSHIP_PATH );
 
             return visitor.getRelationships();
         }
@@ -431,8 +426,7 @@ public abstract class AbstractNeo4JEGraphDriver
             throw new IllegalArgumentException( "You must specify at least one root GAV in order to retrieve path-related info." );
         }
 
-        final RelationshipIndex cachedPaths = graph.index()
-                                                   .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
+        final RelationshipIndex cachedPaths = new ViewIndexes( graph.index(), view ).getCachedPaths();
 
         final Map<GraphPath<?>, GraphPathInfo> result = new HashMap<GraphPath<?>, GraphPathInfo>();
         final ConversionCache cache = new ConversionCache();
@@ -446,13 +440,12 @@ public abstract class AbstractNeo4JEGraphDriver
 
             final IndexHits<Relationship> hits = cachedPaths.get( CACHED_PATH_TARGETS, node.getId() );
 
-            while ( hits.hasNext() )
+            if ( hits.hasNext() )
             {
                 final Relationship pathRel = hits.next();
-                final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
-                final GraphPathInfo pathInfo = Conversions.getCachedPathInfo( pathRel, cache, maint );
+                final Map<Neo4jGraphPath, GraphPathInfo> pathInfoMap = Conversions.getCachedPathInfoMap( pathRel, view, cache );
 
-                result.put( path, pathInfo );
+                result.putAll( pathInfoMap );
             }
         }
 
@@ -489,8 +482,7 @@ public abstract class AbstractNeo4JEGraphDriver
             throw new IllegalArgumentException( "You must specify at least one root GAV in order to retrieve path-related info." );
         }
 
-        final RelationshipIndex cachedPaths = graph.index()
-                                                   .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
+        final RelationshipIndex cachedPaths = new ViewIndexes( graph.index(), view ).getCachedPaths();
 
         final Set<List<ProjectRelationship<?>>> result = new HashSet<List<ProjectRelationship<?>>>();
 
@@ -505,25 +497,28 @@ public abstract class AbstractNeo4JEGraphDriver
 
             final IndexHits<Relationship> hits = cachedPaths.get( CACHED_PATH_TARGETS, node.getId() );
 
-            while ( hits.hasNext() )
+            if ( hits.hasNext() )
             {
                 final Relationship pathRel = hits.next();
-                final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
+                final Set<Neo4jGraphPath> paths = Conversions.getCachedPaths( pathRel );
 
-                final List<ProjectRelationship<?>> convertedPath = new ArrayList<ProjectRelationship<?>>();
-                for ( final Long rid : path )
+                for ( final Neo4jGraphPath path : paths )
                 {
-                    ProjectRelationship<?> rel = cache.getRelationship( rid );
-                    if ( rel == null )
+                    final List<ProjectRelationship<?>> convertedPath = new ArrayList<ProjectRelationship<?>>();
+                    for ( final Long rid : path )
                     {
-                        final Relationship r = graph.getRelationshipById( rid );
-                        rel = toProjectRelationship( r, cache );
+                        ProjectRelationship<?> rel = cache.getRelationship( rid );
+                        if ( rel == null )
+                        {
+                            final Relationship r = graph.getRelationshipById( rid );
+                            rel = toProjectRelationship( r, cache );
 
-                        convertedPath.add( rel );
+                            convertedPath.add( rel );
+                        }
                     }
-                }
 
-                result.add( convertedPath );
+                    result.add( convertedPath );
+                }
             }
         }
 
@@ -563,10 +558,22 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public synchronized Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
-        return addRelationshipsInternal( Collections.<String> emptySet(), rels );
+        final Map<Long, ProjectRelationship<?>> createdRelationshipsMap = addRelationshipsInternal( rels );
+
+        logger.info( "Updating all-projects caches with {} new entries", createdRelationshipsMap.size() );
+        updateCaches( createdRelationshipsMap );
+
+        // FIXME: We're delaying cycle detection, so there will NEVER be rejected relationships...
+        final Set<ProjectRelationship<?>> skipped = Collections.emptySet();
+        logger.debug( "Cycle injection detected for: {}", skipped );
+        logger.info( "Returning {} rejected relationships.", skipped.size() );
+
+        //        printGraphStats();
+
+        return skipped;
     }
 
-    private Set<ProjectRelationship<?>> addRelationshipsInternal( final Set<String> dontUpdateViews, final ProjectRelationship<?>... rels )
+    private Map<Long, ProjectRelationship<?>> addRelationshipsInternal( final ProjectRelationship<?>... rels )
     {
         checkClosed();
 
@@ -688,11 +695,6 @@ public abstract class AbstractNeo4JEGraphDriver
                     relationship = relHits.next();
                     logger.debug( "== {} ({})", relationship, toProjectRelationship( relationship, cache ) );
 
-                    Conversions.removeProperty( Conversions.SELECTION, relationship );
-                    graph.index()
-                         .forRelationships( SELECTION_RELATIONSHIPS )
-                         .remove( relationship, RID, relationship.getId() );
-
                     addToURISetProperty( rel.getSources(), SOURCE_URI, relationship );
                 }
             }
@@ -705,17 +707,7 @@ public abstract class AbstractNeo4JEGraphDriver
             tx.finish();
         }
 
-        logger.info( "Updating all-projects caches with {} new entries", createdRelationshipsMap.size() );
-        updateCaches( createdRelationshipsMap, dontUpdateViews );
-
-        // FIXME: We're delaying cycle detection, so there will NEVER be rejected relationships...
-        final Set<ProjectRelationship<?>> skipped = Collections.emptySet();
-        logger.debug( "Cycle injection detected for: {}", skipped );
-        logger.info( "Returning {} rejected relationships.", skipped.size() );
-
-        //        printGraphStats();
-
-        return skipped;
+        return createdRelationshipsMap;
     }
 
     @Override
@@ -737,20 +729,23 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( registerView( view ) )
         {
-            final RelationshipIndex cachedPaths = graph.index()
-                                                       .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
+            final RelationshipIndex cachedPaths = new ViewIndexes( graph.index(), view ).getCachedPaths();
             final IndexHits<Relationship> hits = cachedPaths.get( CACHED_PATH_TARGETS, toNode.getId() );
-            for ( final Relationship pathRel : hits )
+            if ( hits.hasNext() )
             {
-                final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
-                for ( final Long rid : path )
+                final Relationship pathRel = hits.next();
+                final Set<Neo4jGraphPath> paths = Conversions.getCachedPaths( pathRel );
+                for ( final Neo4jGraphPath path : paths )
                 {
-                    final Relationship r = graph.getRelationshipById( rid );
-                    if ( r.getStartNode()
-                          .getId() == fromNode.getId() || r.getEndNode()
-                                                           .getId() == fromNode.getId() )
+                    for ( final Long rid : path )
                     {
-                        return true;
+                        final Relationship r = graph.getRelationshipById( rid );
+                        if ( r.getStartNode()
+                              .getId() == fromNode.getId() || r.getEndNode()
+                                                               .getId() == fromNode.getId() )
+                        {
+                            return true;
+                        }
                     }
                 }
             }
@@ -760,7 +755,7 @@ public abstract class AbstractNeo4JEGraphDriver
         else
         {
             logger.debug( "Checking for existence of path from: {} to: {} in global database", fromNode, toNode );
-            final PathExistenceVisitor collector = new PathExistenceVisitor( toNode );
+            final PathExistenceVisitor collector = new PathExistenceVisitor( toNode, adminAccess );
             collectAtlasRelationships( view, collector, Collections.singleton( fromNode ), false, Uniqueness.RELATIONSHIP_GLOBAL );
 
             return collector.isFound();
@@ -804,7 +799,7 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final ProjectRelationship<?> oldRel = toProjectRelationship( old, null );
 
-        logger.debug( "Selecting mutated relationship for: {}", oldRel );
+        logger.debug( "Selecting mutated relationship for: {} with pathInfo: {}", oldRel, pathInfo );
         final ProjectRelationship<?> selected = pathInfo == null ? oldRel : pathInfo.selectRelationship( oldRel, path );
 
         if ( selected == null )
@@ -825,13 +820,11 @@ public abstract class AbstractNeo4JEGraphDriver
                 return hits.next();
             }
 
-            logger.debug( "Creating ad-hoc db relationship for: {}", selected );
-            final Set<ProjectRelationship<?>> rejected = addRelationshipsInternal( Collections.singleton( view.getShortId() ), selected );
-            if ( rejected != null && !rejected.isEmpty() )
-            {
-                logger.info( "Failed to add: {}", selected );
-                return null;
-            }
+            logger.info( "Creating ad-hoc db relationship for selection: {} (replacing: {})", selected, oldRel );
+
+            // TODO: Is there something intelligent we can do with this result to speed things up??
+            @SuppressWarnings( "unused" )
+            final Map<Long, ProjectRelationship<?>> added = addRelationshipsInternal( selected );
 
             final Transaction tx = graph.beginTx();
             try
@@ -843,16 +836,13 @@ public abstract class AbstractNeo4JEGraphDriver
                     result = hits.next();
 
                     logger.debug( "Adding relatiionship {} to selections index", result );
-                    result.setProperty( Conversions.SELECTION, true );
+                    final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
+                    indexes.getSelections()
+                           .add( result, RID, result.getId() );
 
-                    graph.index()
-                         .forNodes( NODE_CACHE_PREFIX + view.getShortId() )
-                         .add( result.getEndNode(), NID, result.getEndNode()
-                                                               .getId() );
-
-                    graph.index()
-                         .forRelationships( SELECTION_RELATIONSHIPS )
-                         .add( result, RID, result.getId() );
+                    indexes.getCachedNodes()
+                           .add( result.getEndNode(), NID, result.getEndNode()
+                                                                 .getId() );
                 }
 
                 tx.success();
@@ -905,7 +895,9 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             //            logger.debug( "PASS: {}", i );
 
-            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_PATH )
+            // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+            //            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_PATH )
+            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
                                                         .sort( PathComparator.INSTANCE );
 
             for ( final GraphRelType grt : relTypes )
@@ -930,7 +922,7 @@ public abstract class AbstractNeo4JEGraphDriver
             final ConversionCache cache = new ConversionCache();
 
             @SuppressWarnings( { "rawtypes", "unchecked" } )
-            final MembershipWrappedTraversalEvaluator checker = new MembershipWrappedTraversalEvaluator( rootIds, traversal, view, i );
+            final MembershipWrappedTraversalEvaluator checker = new MembershipWrappedTraversalEvaluator( rootIds, traversal, view, adminAccess, i );
             checker.setConversionCache( cache );
 
             description = description.expand( checker )
@@ -993,8 +985,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( registerView( view ) )
         {
-            final Index<Node> cachedNodes = graph.index()
-                                                 .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), view ).getCachedNodes();
 
             final IndexHits<Node> nodeHits = cachedNodes.query( NID, "*" );
             return nodeHits.hasNext();
@@ -1018,10 +1009,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( registerView( view ) )
         {
-            return graph.index()
-                        .forRelationships( REL_CACHE_PREFIX + view.getShortId() )
-                        .get( RID, relationship.getId() )
-                        .hasNext();
+            return new ViewIndexes( graph.index(), view ).getCachedRelationships()
+                                                         .get( RID, relationship.getId() )
+                                                         .hasNext();
         }
         else
         {
@@ -1072,37 +1062,6 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( graph != null )
         {
-
-            if ( graph.index()
-                      .existsForRelationships( SELECTION_RELATIONSHIPS ) )
-            {
-                final Transaction tx = graph.beginTx();
-                try
-                {
-                    final RelationshipIndex idx = graph.index()
-                                                       .forRelationships( SELECTION_RELATIONSHIPS );
-
-                    final IndexHits<Relationship> hits = idx.get( RID, "*" );
-                    for ( final Relationship r : hits )
-                    {
-                        if ( r.hasProperty( Conversions.SELECTION ) )
-                        {
-                            r.delete();
-                        }
-                    }
-
-                    graph.index()
-                         .forRelationships( SELECTION_RELATIONSHIPS )
-                         .delete();
-
-                    tx.success();
-                }
-                finally
-                {
-                    tx.finish();
-                }
-            }
-
             try
             {
                 graph.shutdown();
@@ -1181,8 +1140,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final ConversionCache cache = new ConversionCache();
         if ( registerView( view ) )
         {
-            final Index<Node> cachedNodes = graph.index()
-                                                 .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), view ).getCachedNodes();
 
             for ( final Node node : hits )
             {
@@ -1217,8 +1175,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( registerView( view ) )
         {
-            final Index<Node> cachedNodes = graph.index()
-                                                 .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), view ).getCachedNodes();
 
             for ( final Node node : hits )
             {
@@ -1313,23 +1270,34 @@ public abstract class AbstractNeo4JEGraphDriver
 
         description = description.breadthFirst();
 
-        final AtlasCollector<Object> checker = new AtlasCollector<Object>( visitor, start, view );
-        description = description.expand( checker )
-                                 .evaluator( checker );
-
+        final Transaction tx = graph.beginTx();
         try
         {
-            final Traverser traverser = description.traverse( start.toArray( new Node[] {} ) );
-            for ( @SuppressWarnings( "unused" )
-            final Path path : traverser )
+            final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
+
+            final AtlasCollector<Object> checker = new AtlasCollector<Object>( visitor, start, view, indexes, adminAccess );
+            description = description.expand( checker )
+                                     .evaluator( checker );
+
+            try
             {
-                //            logger.info( "Aggregating path: {}", path );
-                // Don't need this, but we need to iterate the traverser.
+                final Traverser traverser = description.traverse( start.toArray( new Node[] {} ) );
+                for ( @SuppressWarnings( "unused" )
+                final Path path : traverser )
+                {
+                    //            logger.info( "Aggregating path: {}", path );
+                    // Don't need this, but we need to iterate the traverser.
+                }
+                tx.success();
+            }
+            finally
+            {
+                visitor.traverseComplete( checker );
             }
         }
         finally
         {
-            visitor.traverseComplete( checker );
+            tx.finish();
         }
     }
 
@@ -1357,56 +1325,47 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         checkClosed();
 
-        RelationshipIndex cycleIdx;
-        RelationshipIndex cachedPaths = null;
-        boolean global = true;
-        if ( registerView( view ) )
-        {
-            logger.debug( "Getting cycles for view: {}", view.getShortId() );
-            cycleIdx = graph.index()
-                            .forRelationships( CYCLE_CACHE_PREFIX + view.getShortId() );
+        final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
 
-            cachedPaths = graph.index()
-                               .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
-
-            global = false;
-        }
-        else
-        {
-            logger.debug( "Getting ALL cycles" );
-            cycleIdx = graph.index()
-                            .forRelationships( ALL_CYCLES );
-        }
+        final boolean global = true;
+        registerView( view );
 
         final ConversionCache cache = new ConversionCache();
 
         final Transaction tx = graph.beginTx();
+        Node viewNode;
         try
         {
-            Node viewNode = getViewNode( view );
+            viewNode = getViewNode( view );
             if ( viewNode == null )
             {
                 viewNode = configNode;
             }
 
-            Set<Node> nodes;
-            if ( global )
-            {
-                nodes = Conversions.toSet( graph.index()
-                                                .forNodes( BY_GAV_IDX )
-                                                .query( GAV, "*" ) );
-            }
-            else
-            {
-                nodes = Conversions.toSet( graph.index()
-                                                .forNodes( NODE_CACHE_PREFIX + view.getShortId() )
-                                                .query( NID, "*" ) );
-            }
-
             if ( Conversions.isCycleDetectionPending( viewNode ) )
             {
-                final CycleCacheUpdater cycleUpdater = new CycleCacheUpdater( cycleIdx, cachedPaths, view, viewNode, maint, cache );
-                collectAtlasRelationships( view, cycleUpdater, nodes, false, global ? Uniqueness.RELATIONSHIP_GLOBAL : Uniqueness.RELATIONSHIP_PATH );
+                logger.debug( "Cycle-detection is pending for: {}", view.getShortId() );
+
+                Set<Node> nodes;
+                if ( global )
+                {
+                    nodes = Conversions.toSet( graph.index()
+                                                    .forNodes( BY_GAV_IDX )
+                                                    .query( GAV, "*" ) );
+                }
+                else
+                {
+                    nodes = Conversions.toSet( indexes.getCachedNodes()
+                                                      .query( NID, "*" ) );
+                }
+
+                final CycleCacheUpdater cycleUpdater = new CycleCacheUpdater( view, viewNode, indexes, adminAccess, cache );
+                // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+                //                collectAtlasRelationships( view, cycleUpdater, nodes, false, global ? Uniqueness.RELATIONSHIP_GLOBAL : Uniqueness.RELATIONSHIP_PATH );
+                collectAtlasRelationships( view, cycleUpdater, nodes, false, Uniqueness.RELATIONSHIP_GLOBAL );
+
+                logger.debug( "Clearing PENDING cycle-detection for: {} of view: {}", viewNode, view.getShortId() );
+                Conversions.setCycleDetectionPending( viewNode, false );
 
                 final int cycleCount = cycleUpdater.getCycleCount();
                 logger.info( "Registered {} cycles in view {}'s cycle cache.", cycleCount, view.getShortId() );
@@ -1421,7 +1380,8 @@ public abstract class AbstractNeo4JEGraphDriver
             tx.finish();
         }
 
-        final IndexHits<Relationship> hits = cycleIdx.query( RID, "*" );
+        final Set<CyclePath> cyclePaths = Conversions.getCachedCyclePaths( viewNode );
+        logger.debug( "Retrieved the following cached cycle paths:\n  {}", new JoinString( "\n  ", cyclePaths ) );
 
         //        final IndexHits<Relationship> hits = graph.index()
         //                                                  .forRelationships( CYCLE_INJECTION_IDX )
@@ -1436,17 +1396,8 @@ public abstract class AbstractNeo4JEGraphDriver
         //        final Set<Path> paths = getPathsTo( view, targetNodes.keySet() );
 
         final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
-        for ( final Relationship cycleRel : hits )
+        for ( final CyclePath cyclicPath : cyclePaths )
         {
-            final Neo4jGraphPath cyclicPath = Conversions.getCachedPath( cycleRel );
-            final long injectorId = Conversions.getLongProperty( RID, cycleRel, -1 );
-            if ( injectorId < 0 )
-            {
-                logger.error( "Detected improperly stored cycle! Injector relationship-id is missing in {} with cyclic path: {}", cycleRel.getId(),
-                              cyclicPath );
-                continue;
-            }
-
             final List<ProjectRelationship<?>> cycle = new ArrayList<ProjectRelationship<?>>( cyclicPath.length() + 1 );
             for ( final long id : cyclicPath.getRelationshipIds() )
             {
@@ -1459,15 +1410,7 @@ public abstract class AbstractNeo4JEGraphDriver
                 cycle.add( rel );
             }
 
-            ProjectRelationship<?> rel = cache.getRelationship( injectorId );
-            if ( rel == null )
-            {
-                final Relationship injector = graph.getRelationshipById( injectorId );
-                rel = toProjectRelationship( injector, cache );
-            }
-
-            cycle.add( rel );
-
+            logger.debug( "[cache] CYCLES += {}", cycle );
             cycles.add( new EProjectCycle( cycle ) );
         }
 
@@ -1725,8 +1668,7 @@ public abstract class AbstractNeo4JEGraphDriver
         final ConversionCache cache = new ConversionCache();
         if ( registerView( view ) )
         {
-            final Index<Node> cachedNodes = graph.index()
-                                                 .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), view ).getCachedNodes();
 
             final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
             for ( final Node node : nodes )
@@ -2323,34 +2265,25 @@ public abstract class AbstractNeo4JEGraphDriver
         try
         {
             final Node viewNode = getViewNode( view );
-            if ( viewNode.getId() != configNode.getId() )
+            final ConversionCache cache = new ConversionCache();
+
+            final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
+            final Set<Node> roots = cacheRoots( view, viewNode, indexes );
+            if ( roots.isEmpty() )
             {
-                final ConversionCache cache = new ConversionCache();
-
-                final RelationshipIndex cachedPathRels = graph.index()
-                                                              .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
-
-                final RelationshipIndex cachedRels = graph.index()
-                                                          .forRelationships( REL_CACHE_PREFIX + view.getShortId() );
-
-                final Index<Node> cachedNodes = graph.index()
-                                                     .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
-
-                final RelationshipIndex cyclePathRels = graph.index()
-                                                             .forRelationships( CYCLE_CACHE_PREFIX + view.getShortId() );
-
-                final Set<Node> roots = cacheRoots( view, viewNode, cachedPathRels, cachedNodes );
-                if ( roots.isEmpty() )
-                {
-                    logger.info( "Cannot track membership in view! It has no root GAVs." );
-                    return false;
-                }
-
-                final ViewUpdater updater = new ViewUpdater( view, viewNode, cachedPathRels, cachedRels, cachedNodes, cyclePathRels, cache, maint );
-
-                collectAtlasRelationships( view, updater, roots, false, Uniqueness.RELATIONSHIP_PATH );
-
+                logger.info( "Cannot track membership in view! It has no root GAVs." );
+                return false;
             }
+
+            final ViewUpdater updater = new ViewUpdater( view, viewNode, indexes, cache, adminAccess );
+
+            logger.debug( "{}: Performing traverse to determine view membership for: {}", view.getShortId(), view );
+            // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+            //                collectAtlasRelationships( view, updater, roots, false, Uniqueness.RELATIONSHIP_PATH );
+            collectAtlasRelationships( view, updater, roots, false, Uniqueness.RELATIONSHIP_GLOBAL );
+
+            logger.debug( "Clearing PENDING cycle-detection for: {} of view: {}", viewNode, view.getShortId() );
+            Conversions.setCycleDetectionPending( viewNode, false );
 
             tx.success();
         }
@@ -2387,6 +2320,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
             confIdx.add( viewNode, VIEW_ID, view.getShortId() );
 
+            logger.debug( "Setting cycle-detection PENDING for new viewNode: {} of: {}", viewNode, view.getShortId() );
             Conversions.setCycleDetectionPending( viewNode, true );
 
             return viewNode;
@@ -2417,18 +2351,7 @@ public abstract class AbstractNeo4JEGraphDriver
                             .get( GA, ref.asProjectRef() );
         }
 
-        final RelationshipIndex cachedRels = graph.index()
-                                                  .forRelationships( REL_CACHE_PREFIX + view.getShortId() );
-
-        final Index<Node> cachedNodes = graph.index()
-                                             .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
-
-        final RelationshipIndex cachedPathRels = graph.index()
-                                                      .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
-
-        final RelationshipIndex cyclePathRels = graph.index()
-                                                     .forRelationships( CYCLE_CACHE_PREFIX + view.getShortId() );
-
+        final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
         final ConversionCache cache = new ConversionCache();
         final Map<Long, Neo4jGraphPath> toExtendPaths = new HashMap<Long, Neo4jGraphPath>();
         final Map<Neo4jGraphPath, GraphPathInfo> toExtendPathInfoMap = new HashMap<Neo4jGraphPath, GraphPathInfo>();
@@ -2437,105 +2360,144 @@ public abstract class AbstractNeo4JEGraphDriver
         final Set<Node> toUncacheNode = new HashSet<Node>();
         final Set<Relationship> toUncache = new HashSet<Relationship>();
         final Set<Relationship> toUncachePath = new HashSet<Relationship>();
+        final Set<Relationship> toUnselect = new HashSet<Relationship>();
 
         final Transaction tx = graph.beginTx();
         try
         {
+            final RelationshipIndex cachedPaths = indexes.getCachedPaths();
+
+            final Set<GraphRelType> typeSet = GraphRelType.atlasRelationshipTypes();
+            final GraphRelType[] types = typeSet.toArray( new GraphRelType[typeSet.size()] );
             for ( final Node node : nodeHits )
             {
                 toUncacheNode.add( node );
 
-                final IndexHits<Relationship> cachedHits = cachedPathRels.get( CACHED_PATH_CONTAINS_NODE, node.getId() );
+                final Iterable<Relationship> outgoing = node.getRelationships( Direction.OUTGOING, types );
+                for ( final Relationship out : outgoing )
+                {
+                    toUnselect.add( out );
+                    toUncache.add( out );
+                }
+
+                final IndexHits<Relationship> cachedHits = cachedPaths.get( CACHED_PATH_CONTAINS_NODE, node.getId() );
 
                 for ( final Relationship pathRel : cachedHits )
                 {
                     toUncachePath.add( pathRel );
 
-                    final Neo4jGraphPath path = Conversions.getCachedPath( pathRel );
-
-                    Neo4jGraphPath newPath = new Neo4jGraphPath();
-                    GraphPathInfo newPathInfo = new GraphPathInfo( view );
-
-                    Node extendRoot = null;
-                    boolean uncache = false;
-                    for ( final Long id : path )
+                    final Set<Neo4jGraphPath> paths = Conversions.getCachedPaths( pathRel );
+                    for ( final Neo4jGraphPath path : paths )
                     {
-                        final Relationship r = graph.getRelationshipById( id );
+                        boolean matches = false;
 
-                        if ( !uncache && r.getStartNode()
-                                          .getId() != r.getEndNode()
-                                                       .getId() )
+                        for ( final Long rid : path )
                         {
+                            final Relationship r = graph.getRelationshipById( rid );
                             if ( r.getStartNode()
-                                  .getId() == node.getId() )
+                                  .getId() == node.getId() || r.getEndNode()
+                                                               .getId() == node.getId() )
                             {
-                                logger.debug( "Uncaching subgraph from root: {}. This will NOT be replaced automatically...", r.getEndNode() );
-                                toUncacheNode.add( r.getEndNode() );
-                                logger.debug( "Uncaching: {}", r );
-                                toUncache.add( r );
-                                uncache = true;
-                                continue;
-                            }
-                            else if ( r.getEndNode()
-                                       .getId() == node.getId() )
-                            {
-                                extendRoot = r.getStartNode();
-                                logger.debug( "Uncaching subgraph: {}", r.getEndNode() );
-                                logger.debug( "Uncaching: {}", r );
-                                toUncache.add( r );
-                                uncache = true;
-                                continue;
+                                matches = true;
+                                break;
                             }
                         }
-                        else if ( uncache )
-                        {
-                            logger.debug( "Uncaching: {}", r );
-                            toUncacheNode.add( r.getStartNode() );
-                            toUncacheNode.add( r.getEndNode() );
-                            toUncache.add( r );
-                            continue;
-                        }
 
-                        final Relationship selected = select( r, view, newPathInfo, newPath );
-                        if ( selected != null )
+                        if ( matches )
                         {
-                            final ProjectRelationship<?> rel = toProjectRelationship( pathRel, cache );
-                            extendRoot = r.getEndNode();
-                            newPath = new Neo4jGraphPath( newPath, r.getId() );
-                            newPathInfo = newPathInfo == null ? null : newPathInfo.getChildPathInfo( rel );
-                        }
-                    }
+                            Neo4jGraphPath newPath = new Neo4jGraphPath();
+                            GraphPathInfo newPathInfo = new GraphPathInfo( view );
 
-                    if ( extendRoot != null )
-                    {
-                        toExtendPaths.put( newPath.getLastRelationshipId(), newPath );
-                        toExtendPathInfoMap.put( new Neo4jGraphPath( newPath.getLastRelationshipId() ), newPathInfo );
-                        toExtendRoots.add( extendRoot );
-                    }
-                    else
-                    {
-                        // TODO: Is this true??
-                        logger.debug( "Whole path from root removed. Cannot rebuild without fixing view roots." );
+                            Node extendRoot = null;
+                            boolean uncache = false;
+                            for ( final Long id : path )
+                            {
+                                final Relationship r = graph.getRelationshipById( id );
+
+                                if ( !uncache && r.getStartNode()
+                                                  .getId() != r.getEndNode()
+                                                               .getId() )
+                                {
+                                    if ( r.getStartNode()
+                                          .getId() == node.getId() )
+                                    {
+                                        logger.debug( "Uncaching subgraph from root: {}. This will NOT be replaced automatically...", r.getEndNode() );
+                                        toUncacheNode.add( r.getEndNode() );
+                                        logger.debug( "Uncaching: {}", r );
+                                        toUncache.add( r );
+                                        uncache = true;
+                                        continue;
+                                    }
+                                    else if ( r.getEndNode()
+                                               .getId() == node.getId() )
+                                    {
+                                        extendRoot = r.getStartNode();
+                                        logger.debug( "Uncaching subgraph: {}", r.getEndNode() );
+                                        logger.debug( "Uncaching: {}", r );
+                                        toUncache.add( r );
+                                        uncache = true;
+                                        continue;
+                                    }
+                                }
+                                else if ( uncache )
+                                {
+                                    logger.debug( "Uncaching: {}", r );
+                                    toUncacheNode.add( r.getStartNode() );
+                                    toUncacheNode.add( r.getEndNode() );
+                                    toUncache.add( r );
+                                    continue;
+                                }
+
+                                final Relationship selected = select( r, view, newPathInfo, newPath );
+                                if ( selected != null )
+                                {
+                                    final ProjectRelationship<?> rel = toProjectRelationship( pathRel, cache );
+                                    extendRoot = r.getEndNode();
+                                    newPath = new Neo4jGraphPath( newPath, r.getId() );
+                                    newPathInfo = newPathInfo == null ? null : newPathInfo.getChildPathInfo( rel );
+                                }
+                            }
+
+                            if ( extendRoot != null )
+                            {
+                                toExtendPaths.put( newPath.getLastRelationshipId(), newPath );
+                                toExtendPathInfoMap.put( new Neo4jGraphPath( newPath.getLastRelationshipId() ), newPathInfo );
+                                toExtendRoots.add( extendRoot );
+                            }
+                            else
+                            {
+                                // TODO: Is this true??
+                                logger.debug( "Whole path from root removed. Cannot rebuild without fixing view roots." );
+                            }
+                        }
                     }
                 }
             }
 
+            final Index<Node> nodes = indexes.getCachedNodes();
             for ( final Node uncache : toUncacheNode )
             {
                 logger.debug( "Uncache: {}", uncache );
-                cachedNodes.remove( uncache );
+                nodes.remove( uncache );
             }
 
             for ( final Relationship uncache : toUncachePath )
             {
                 logger.debug( "Uncache: {}", uncache );
-                cachedPathRels.remove( uncache );
+                cachedPaths.remove( uncache );
             }
 
+            final RelationshipIndex rels = indexes.getCachedRelationships();
             for ( final Relationship uncache : toUncache )
             {
                 logger.debug( "Uncache: {}", uncache );
-                cachedRels.remove( uncache );
+                rels.remove( uncache );
+            }
+
+            final RelationshipIndex selections = indexes.getSelections();
+            for ( final Relationship unsel : toUnselect )
+            {
+                selections.remove( unsel );
             }
 
             final Index<Node> confIdx = graph.index()
@@ -2548,14 +2510,14 @@ public abstract class AbstractNeo4JEGraphDriver
 
             if ( toExtendRoots != null && !toExtendRoots.isEmpty() )
             {
-                final ViewUpdater updater =
-                    new ViewUpdater( view, viewNode, toExtendPaths, toExtendPathInfoMap, cachedPathRels, cachedRels, cachedNodes, cyclePathRels,
-                                     cache, maint );
+                final ViewUpdater updater = new ViewUpdater( view, viewNode, toExtendPaths, toExtendPathInfoMap, indexes, cache, adminAccess );
 
-                collectAtlasRelationships( view, updater, toExtendRoots, false, Uniqueness.RELATIONSHIP_PATH );
+                // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+                //                collectAtlasRelationships( view, updater, toExtendRoots, false, Uniqueness.RELATIONSHIP_PATH );
+                collectAtlasRelationships( view, updater, toExtendRoots, false, Uniqueness.RELATIONSHIP_GLOBAL );
             }
 
-            Conversions.setCycleDetectionPending( viewNode, true );
+            //            Conversions.setCycleDetectionPending( viewNode, true );
 
             tx.success();
         }
@@ -2565,7 +2527,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
     }
 
-    private Set<Node> cacheRoots( final GraphView view, final Node viewNode, final Index<Relationship> cachePathRels, final Index<Node> cachedNodes )
+    private Set<Node> cacheRoots( final GraphView view, final Node viewNode, final ViewIndexes indexes )
     {
         final Set<ProjectVersionRef> roots = view.getRoots();
         if ( roots == null || roots.isEmpty() )
@@ -2594,16 +2556,18 @@ public abstract class AbstractNeo4JEGraphDriver
             final Relationship pathsRel = viewNode.createRelationshipTo( node, GraphRelType.CACHED_PATH_RELATIONSHIP );
             Conversions.storeCachedPath( rootPath, rootPathInfo, pathsRel );
 
-            cachePathRels.add( pathsRel, CACHED_PATH_RELATIONSHIP, rootPathKey );
-            cachePathRels.add( pathsRel, CACHED_PATH_TARGETS, nid );
-            cachePathRels.add( pathsRel, CACHED_PATH_CONTAINS_NODE, nid );
-            cachedNodes.add( node, NID, nid );
+            final RelationshipIndex cachedPaths = indexes.getCachedPaths();
+            cachedPaths.add( pathsRel, CACHED_PATH_RELATIONSHIP, rootPathKey );
+            cachedPaths.add( pathsRel, CACHED_PATH_TARGETS, nid );
+            cachedPaths.add( pathsRel, CACHED_PATH_CONTAINS_NODE, nid );
+            indexes.getCachedNodes()
+                   .add( node, NID, nid );
         }
 
         return rootNodes;
     }
 
-    private void updateCaches( final Map<Long, ProjectRelationship<?>> newRelationships, final Set<String> dontUpdateViews )
+    private void updateCaches( final Map<Long, ProjectRelationship<?>> newRelationships )
     {
         if ( newRelationships.isEmpty() )
         {
@@ -2620,44 +2584,34 @@ public abstract class AbstractNeo4JEGraphDriver
         final Transaction tx = graph.beginTx();
         try
         {
+            logger.debug( "Setting global cycle-detection as PENDING" );
             Conversions.setCycleDetectionPending( configNode, true );
 
             for ( final Node viewNode : hits )
             {
-                final GraphView view = Conversions.retrieveView( viewNode, cache, maint );
-                if ( view == null )
+                final GraphView view = Conversions.retrieveView( viewNode, cache, adminAccess );
+                if ( view == null || view.getShortId()
+                                         .equals( globalView.getShortId() ) || view.getRoots() == null || view.getRoots()
+                                                                                                              .isEmpty() )
                 {
                     confIdx.remove( viewNode );
                     viewNode.delete();
                     continue;
                 }
 
-                if ( dontUpdateViews.contains( view.getShortId() ) )
-                {
-                    continue;
-                }
-
-                final RelationshipIndex cachedPathRels = graph.index()
-                                                              .forRelationships( PATH_CACHE_PREFIX + view.getShortId() );
-
-                final RelationshipIndex cachedRels = graph.index()
-                                                          .forRelationships( REL_CACHE_PREFIX + view.getShortId() );
-
-                final Index<Node> cachedNodes = graph.index()
-                                                     .forNodes( NODE_CACHE_PREFIX + view.getShortId() );
-
-                final RelationshipIndex cyclePathRels = graph.index()
-                                                             .forRelationships( CYCLE_CACHE_PREFIX + view.getShortId() );
-
-                final ViewUpdater vu = new ViewUpdater( view, viewNode, cachedPathRels, cachedRels, cachedNodes, cyclePathRels, cache, maint );
+                final ViewIndexes vi = new ViewIndexes( graph.index(), view );
+                final ViewUpdater vu = new ViewUpdater( view, viewNode, vi, cache, adminAccess );
                 if ( vu.processAddedRelationships( newRelationships ) )
                 {
                     final Set<Node> extendRoots = vu.getExtendRoots();
-                    collectAtlasRelationships( view, vu, extendRoots, false, Uniqueness.RELATIONSHIP_PATH );
+
+                    // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+                    //                    collectAtlasRelationships( view, vu, extendRoots, false, Uniqueness.RELATIONSHIP_PATH );
+                    collectAtlasRelationships( view, vu, extendRoots, false, Uniqueness.RELATIONSHIP_GLOBAL );
 
                 }
 
-                //                    Conversions.setCycleDetectionPending( viewNode, true );
+                //                Conversions.setCycleDetectionPending( viewNode, true );
             }
 
             tx.success();
@@ -2695,6 +2649,34 @@ public abstract class AbstractNeo4JEGraphDriver
         public Relationship select( final Relationship r, final GraphView view, final GraphPathInfo viewPathInfo, final Neo4jGraphPath viewPath )
         {
             return driver.select( r, view, viewPathInfo, viewPath );
+        }
+
+        @Override
+        public RelationshipIndex getRelationshipIndex( final String name )
+        {
+            return driver.graph.index()
+                               .forRelationships( name );
+        }
+
+        @Override
+        public Index<Node> getNodeIndex( final String name )
+        {
+            return driver.graph.index()
+                               .forNodes( name );
+        }
+
+        @Override
+        public Transaction beginTransaction()
+        {
+            return driver.graph.beginTx();
+        }
+
+        @Override
+        public boolean isSelection( final Relationship r, final GraphView view )
+        {
+            return new ViewIndexes( driver.graph.index(), view ).getSelections()
+                                                                .get( RID, r.getId() )
+                                                                .hasNext();
         }
 
     }

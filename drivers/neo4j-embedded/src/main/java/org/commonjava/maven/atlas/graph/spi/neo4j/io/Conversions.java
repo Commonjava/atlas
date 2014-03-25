@@ -126,8 +126,6 @@ public final class Conversions
 
     public static final String LAST_ACCESS_DATE = "last_access";
 
-    public static final String SELECTION = "_selection";
-
     // graph-level configuration.
 
     public static final String LAST_ACCESS = "last_access";
@@ -144,9 +142,11 @@ public final class Conversions
 
     // cached path tracking...ONLY handled by Conversions, since the info is inlined.
 
-    private static final String PATH = "path";
+    private static final String CYCLE_PATH_PREFIX = "cached_cycle_";
 
-    private static final String PATH_INFO_DATA = "path_info_data";
+    private static final String CACHED_PATH_PREFIX = "cached_path_";
+
+    private static final String CACHED_PATH_INFO_DATA_PREFIX = "cached_pathInfo_data";
 
     // handled by other things, like updaters.
 
@@ -947,52 +947,63 @@ public final class Conversions
         }
     }
 
-    public static Neo4jGraphPath getCachedPath( final Relationship rel )
+    public static Set<Neo4jGraphPath> getCachedPaths( final Relationship rel )
     {
-        if ( !rel.hasProperty( PATH ) )
+        final Set<Neo4jGraphPath> paths = new HashSet<Neo4jGraphPath>();
+        for ( final String key : rel.getPropertyKeys() )
         {
-            throw new IllegalArgumentException( "Relationship " + rel + " is not a cached-path relationship!" );
+            if ( key.startsWith( CACHED_PATH_PREFIX ) )
+            {
+                paths.add( new Neo4jGraphPath( (long[]) rel.getProperty( key ) ) );
+            }
         }
 
-        final long[] ids = (long[]) rel.getProperty( PATH );
-        return new Neo4jGraphPath( ids );
+        return paths;
     }
 
-    public static CyclePath getCachedCyclePath( final Relationship rel )
+    public static Neo4jGraphPath getCachedPath( final String key, final Relationship rel )
     {
-        if ( !rel.hasProperty( PATH ) )
-        {
-            throw new IllegalArgumentException( "Relationship " + rel + " is not a cached-path relationship!" );
-        }
+        final String k = key.startsWith( CACHED_PATH_PREFIX ) ? key : CACHED_PATH_PREFIX + key;
 
-        final long[] ids = (long[]) rel.getProperty( PATH );
-        return new CyclePath( ids );
-    }
-
-    public static long getLastCachedPathRelationship( final Relationship rel )
-    {
-        if ( !rel.hasProperty( PATH ) )
-        {
-            throw new IllegalArgumentException( "Relationship " + rel + " is not a cached-path relationship!" );
-        }
-
-        final long[] ids = (long[]) rel.getProperty( PATH );
-        return ids.length < 1 ? -1 : ids[ids.length - 1];
-    }
-
-    //    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final AbstractNeo4JEGraphDriver driver )
-    //    {
-    //        return getCachedPathInfo( rel, null, driver );
-    //    }
-
-    public static GraphPathInfo getCachedPathInfo( final Relationship rel, final ConversionCache cache, final GraphAdmin maint )
-    {
-        if ( !rel.hasProperty( PATH_INFO_DATA ) )
+        if ( !rel.hasProperty( k ) )
         {
             return null;
         }
 
-        final byte[] data = (byte[]) rel.getProperty( PATH_INFO_DATA );
+        final long[] ids = (long[]) rel.getProperty( k );
+        return new Neo4jGraphPath( ids );
+    }
+
+    public static void storeCachedCyclePath( final CyclePath path, final Node viewNode )
+    {
+        viewNode.setProperty( CYCLE_PATH_PREFIX + path.getKey(), path.getRelationshipIds() );
+    }
+
+    public static Set<CyclePath> getCachedCyclePaths( final Node viewNode )
+    {
+        final Set<CyclePath> cycles = new HashSet<CyclePath>();
+        for ( final String key : viewNode.getPropertyKeys() )
+        {
+            if ( key.startsWith( CYCLE_PATH_PREFIX ) )
+            {
+                final long[] ids = (long[]) viewNode.getProperty( key );
+                cycles.add( new CyclePath( ids ) );
+            }
+        }
+
+        return cycles;
+    }
+
+    public static GraphPathInfo getCachedPathInfo( final Neo4jGraphPath path, final Relationship rel, final ConversionCache cache,
+                                                   final GraphView view )
+    {
+        final String key = path.getKey();
+        if ( !rel.hasProperty( CACHED_PATH_INFO_DATA_PREFIX + key ) )
+        {
+            return null;
+        }
+
+        final byte[] data = (byte[]) rel.getProperty( CACHED_PATH_INFO_DATA_PREFIX + key );
 
         if ( cache != null )
         {
@@ -1008,7 +1019,7 @@ public final class Conversions
         {
             ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
             final GraphPathInfo pathInfo = (GraphPathInfo) ois.readObject();
-            pathInfo.reattach( maint.getDriver() );
+            pathInfo.reattach( view );
 
             if ( cache != null )
             {
@@ -1034,7 +1045,7 @@ public final class Conversions
 
     public static void storeCachedPath( final Neo4jGraphPath path, final GraphPathInfo pathInfo, final Relationship rel )
     {
-        rel.setProperty( PATH, path.getRelationshipIds() );
+        rel.setProperty( CACHED_PATH_PREFIX + path.getKey(), path.getRelationshipIds() );
 
         if ( pathInfo == null )
         {
@@ -1049,7 +1060,7 @@ public final class Conversions
             oos = new ObjectOutputStream( baos );
             oos.writeObject( pathInfo );
 
-            rel.setProperty( PATH_INFO_DATA, baos.toByteArray() );
+            rel.setProperty( CACHED_PATH_INFO_DATA_PREFIX + path.getKey(), baos.toByteArray() );
         }
         catch ( final IOException e )
         {
@@ -1145,6 +1156,28 @@ public final class Conversions
     public static void setCycleDetectionPending( final Node viewNode, final boolean pending )
     {
         viewNode.setProperty( CYCLE_DETECTION_PENDING, pending );
+    }
+
+    public static Map<Neo4jGraphPath, GraphPathInfo> getCachedPathInfoMap( final Relationship pathRel, final GraphView view,
+                                                                           final ConversionCache cache )
+    {
+        final Map<Neo4jGraphPath, GraphPathInfo> map = new HashMap<Neo4jGraphPath, GraphPathInfo>();
+        for ( final String key : pathRel.getPropertyKeys() )
+        {
+            if ( key.startsWith( CACHED_PATH_PREFIX ) )
+            {
+                final Neo4jGraphPath path = getCachedPath( key, pathRel );
+                final GraphPathInfo pathInfo = getCachedPathInfo( path, pathRel, cache, view );
+                map.put( path, pathInfo );
+            }
+        }
+
+        return map;
+    }
+
+    public static boolean hasCachedPath( final Neo4jGraphPath path, final Relationship rel )
+    {
+        return rel.hasProperty( CACHED_PATH_PREFIX + path.getKey() );
     }
 
 }

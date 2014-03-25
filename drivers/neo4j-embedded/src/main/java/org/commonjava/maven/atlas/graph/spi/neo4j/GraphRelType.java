@@ -96,4 +96,32 @@ public enum GraphRelType
 
         return types;
     }
+
+    public static Set<GraphRelType> concreteAtlasRelationshipTypes()
+    {
+        final Set<GraphRelType> types = new HashSet<GraphRelType>();
+        for ( final GraphRelType type : values() )
+        {
+            if ( type.isAtlasRelationship() && !type.managed )
+            {
+                types.add( type );
+            }
+        }
+
+        return types;
+    }
+
+    public static Set<GraphRelType> managedAtlasRelationshipTypes()
+    {
+        final Set<GraphRelType> types = new HashSet<GraphRelType>();
+        for ( final GraphRelType type : values() )
+        {
+            if ( type.isAtlasRelationship() && type.managed )
+            {
+                types.add( type );
+            }
+        }
+
+        return types;
+    }
 }

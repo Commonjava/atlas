@@ -8,4 +8,6 @@ public interface TraverseSeenTracker
 
     boolean hasSeen( Neo4jGraphPath graphPath, GraphPathInfo pathInfo );
 
+    void traverseComplete();
+
 }

@@ -156,7 +156,7 @@ public final class TraversalUtils
             final Set<RelationshipType> types = typedFilter.getRelationshipTypes();
             for ( final RelationshipType rt : types )
             {
-                if ( typedFilter.isManagedInfoIncluded() )
+                if ( typedFilter.includeManagedRelationships() )
                 {
                     final GraphRelType grt = GraphRelType.map( rt, true );
                     if ( grt != null )
@@ -165,7 +165,7 @@ public final class TraversalUtils
                     }
                 }
 
-                if ( typedFilter.isConcreteInfoIncluded() )
+                if ( typedFilter.includeConcreteRelationships() )
                 {
                     final GraphRelType grt = GraphRelType.map( rt, false );
                     if ( grt != null )
@@ -178,7 +178,7 @@ public final class TraversalUtils
             final Set<RelationshipType> dTypes = typedFilter.getDescendantRelationshipTypes();
             for ( final RelationshipType rt : dTypes )
             {
-                if ( typedFilter.isManagedInfoIncluded() )
+                if ( typedFilter.includeManagedRelationships() )
                 {
                     final GraphRelType grt = GraphRelType.map( rt, true );
                     if ( grt != null )
@@ -187,7 +187,7 @@ public final class TraversalUtils
                     }
                 }
 
-                if ( typedFilter.isConcreteInfoIncluded() )
+                if ( typedFilter.includeConcreteRelationships() )
                 {
                     final GraphRelType grt = GraphRelType.map( rt, false );
                     if ( grt != null )
@@ -209,6 +209,16 @@ public final class TraversalUtils
         else
         {
             result.addAll( GraphRelType.atlasRelationshipTypes() );
+        }
+
+        if ( !filter.includeConcreteRelationships() )
+        {
+            result.removeAll( GraphRelType.concreteAtlasRelationshipTypes() );
+        }
+
+        if ( !filter.includeManagedRelationships() )
+        {
+            result.removeAll( GraphRelType.managedAtlasRelationshipTypes() );
         }
 
         return result;

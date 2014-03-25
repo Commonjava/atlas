@@ -17,6 +17,7 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -30,8 +31,9 @@ public class PathExistenceVisitor
 
     private boolean found = false;
 
-    public PathExistenceVisitor( final Node end )
+    public PathExistenceVisitor( final Node end, final GraphAdmin admin )
     {
+        super( admin );
         this.end = end;
     }
 

@@ -192,7 +192,7 @@ public class GraphView
     @Override
     public String toString()
     {
-        return getLongId();
+        return getLongId() + " (shortId: " + getShortId() + ")";
     }
 
     public GraphDatabaseDriver getDatabase()

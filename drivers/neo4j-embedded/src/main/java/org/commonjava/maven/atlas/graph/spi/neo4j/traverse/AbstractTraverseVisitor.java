@@ -2,6 +2,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -18,9 +19,9 @@ public abstract class AbstractTraverseVisitor
 
     private ConversionCache conversionCache;
 
-    protected AbstractTraverseVisitor()
+    protected AbstractTraverseVisitor( final GraphAdmin admin )
     {
-        seenTracker = new MemorySeenTracker();
+        seenTracker = new MemorySeenTracker( admin );
     }
 
     protected AbstractTraverseVisitor( final TraverseSeenTracker seenTracker )
@@ -97,7 +98,13 @@ public abstract class AbstractTraverseVisitor
     }
 
     @Override
-    public void traverseComplete( final AtlasCollector<?> collector )
+    public final void traverseComplete( final AtlasCollector<?> collector )
+    {
+        traverseCompleting( collector );
+        seenTracker.traverseComplete();
+    }
+
+    protected void traverseCompleting( final AtlasCollector<?> collector )
     {
     }
 

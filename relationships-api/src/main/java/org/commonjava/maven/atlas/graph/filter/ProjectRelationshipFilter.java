@@ -64,4 +64,8 @@ public interface ProjectRelationshipFilter
      */
     String getCondensedId();
 
+    boolean includeManagedRelationships();
+
+    boolean includeConcreteRelationships();
+
 }

@@ -1,7 +1,6 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.update;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.CACHED_PATH_TARGETS;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 
 import java.util.ArrayList;
@@ -9,6 +8,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
@@ -16,15 +16,16 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
-import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
+import org.commonjava.maven.atlas.graph.spi.neo4j.ViewIndexes;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AbstractTraverseVisitor;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
-import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track.CycleAwareMemorySeenTracker;
+import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track.LuceneSeenTracker;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.RelationshipIndex;
@@ -43,22 +44,19 @@ public class CycleCacheUpdater
 
     private final Set<CyclePath> seenCycles = new HashSet<CyclePath>();
 
-    private final RelationshipIndex cachedPathRels;
-
     private final GraphView view;
-
-    private final RelationshipIndex cyclePathRels;
 
     private final Node viewNode;
 
     final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
-    public CycleCacheUpdater( final RelationshipIndex cyclePathRels, final RelationshipIndex cachedPathRels, final GraphView view,
-                              final Node viewNode, final GraphAdmin maint, final ConversionCache cache )
+    private final ViewIndexes indexes;
+
+    public CycleCacheUpdater( final GraphView view, final Node viewNode, final ViewIndexes indexes, final GraphAdmin maint,
+                              final ConversionCache cache )
     {
-        super( new CycleAwareMemorySeenTracker( maint ) );
-        this.cyclePathRels = cyclePathRels;
-        this.cachedPathRels = cachedPathRels;
+        super( new LuceneSeenTracker( view, viewNode, maint ) );
+        this.indexes = indexes;
         this.view = view;
         this.viewNode = viewNode;
         this.maint = maint;
@@ -103,7 +101,9 @@ public class CycleCacheUpdater
         //            }
         //        }
 
-        if ( cachedPathRels != null )
+        final RelationshipIndex cachedPaths = indexes.getCachedPaths();
+
+        if ( cachedPaths != null )
         {
             // 1. iterate relationships in the cycle path, since any of them could be a cycle entry point
             // 2. grab the start node id
@@ -117,6 +117,11 @@ public class CycleCacheUpdater
             boolean found = false;
             entryPoint: for ( final long startRid : cyclicPath )
             {
+                if ( startRid == injector.getId() )
+                {
+                    continue;
+                }
+
                 if ( startRid > -1 )
                 {
                     cyclicPath.setEntryPoint( startRid );
@@ -125,30 +130,43 @@ public class CycleCacheUpdater
                     final long startNid = startR.getStartNode()
                                                 .getId();
 
-                    final IndexHits<Relationship> pathHits = cachedPathRels.get( CACHED_PATH_TARGETS, startNid );
-                    nextCachedPath: for ( final Relationship pathRel : pathHits )
+                    final IndexHits<Relationship> pathHits = cachedPaths.get( CACHED_PATH_TARGETS, startNid );
+                    if ( pathHits.hasNext() )
                     {
-                        Neo4jGraphPath viewPath = Conversions.getCachedPath( pathRel );
-                        GraphPathInfo viewPathInfo = Conversions.getCachedPathInfo( pathRel, cache, maint );
-                        for ( final Long id : cyclicPath )
+                        final Relationship pathRel = pathHits.next();
+                        final Map<Neo4jGraphPath, GraphPathInfo> map = Conversions.getCachedPathInfoMap( pathRel, view, cache );
+
+                        nextPath: for ( final Entry<Neo4jGraphPath, GraphPathInfo> entry : map.entrySet() )
                         {
-                            Relationship r = maint.getRelationship( id );
+                            Neo4jGraphPath viewPath = entry.getKey();
+                            GraphPathInfo viewPathInfo = entry.getValue();
 
-                            r = maint.select( r, view, viewPathInfo, viewPath );
-
-                            if ( r == null )
+                            for ( final Long id : cyclicPath )
                             {
-                                continue nextCachedPath;
+                                // only run up to the injector...partial path iteration if the startRid isn't the first in the cycle.
+                                if ( id == injector.getId() )
+                                {
+                                    continue nextPath;
+                                }
+
+                                Relationship r = maint.getRelationship( id );
+
+                                r = maint.select( r, view, viewPathInfo, viewPath );
+
+                                if ( r == null )
+                                {
+                                    continue nextPath;
+                                }
+
+                                final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
+
+                                viewPath = new Neo4jGraphPath( viewPath, id );
+                                viewPathInfo = viewPathInfo.getChildPathInfo( rel );
                             }
 
-                            final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
-
-                            viewPath = new Neo4jGraphPath( viewPath, id );
-                            viewPathInfo = viewPathInfo.getChildPathInfo( rel );
+                            found = true;
+                            break entryPoint;
                         }
-
-                        found = true;
-                        break entryPoint;
                     }
                 }
             }
@@ -182,42 +200,48 @@ public class CycleCacheUpdater
 
     private void addCycleInternal( final CyclePath cyclicPath, final Relationship injector )
     {
-        final IndexHits<Relationship> injectorHits = cyclePathRels.get( RID, injector.getId() );
-        if ( !injectorHits.hasNext() )
+        Conversions.storeCachedCyclePath( cyclicPath, viewNode );
+    }
+
+    public static CyclePath getTerminatingCycle( final Path path )
+    {
+        final Logger logger = LoggerFactory.getLogger( CycleCacheUpdater.class );
+        logger.debug( "Looking for terminating cycle in: {}", path );
+
+        final List<Long> rids = new ArrayList<Long>();
+        final List<Long> starts = new ArrayList<Long>();
+        for ( final Relationship pathR : path.relationships() )
         {
-            final Relationship cyclePath = viewNode.createRelationshipTo( injector.getStartNode(), GraphRelType.CACHED_CYCLE_RELATIONSHIP );
+            rids.add( pathR.getId() );
 
-            cyclePathRels.add( cyclePath, RID, injector.getId() );
+            final long sid = pathR.getStartNode()
+                                  .getId();
 
-            final CyclePath reoriented = cyclicPath.reorientToEntryPoint();
-            logger.debug( "Caching cycle: {} for view: {} in path relationship: {} (original was: {})", reoriented, view.getShortId(), cyclePath,
-                          cyclicPath );
+            final long eid = pathR.getEndNode()
+                                  .getId();
 
-            Conversions.storeCachedPath( reoriented, null, cyclePath );
-            cyclePath.setProperty( RID, injector.getId() );
-
-            final List<ProjectRelationship<?>> cycle = new ArrayList<ProjectRelationship<?>>( cyclicPath.length() + 1 );
-            for ( final long id : cyclicPath.getRelationshipIds() )
+            final int idx = starts.indexOf( eid );
+            if ( idx > -1 )
             {
-                ProjectRelationship<?> rel = cache.getRelationship( id );
-                if ( rel == null )
-                {
-                    final Relationship r = maint.getRelationship( id );
-                    rel = toProjectRelationship( r, cache );
-                }
-                cycle.add( rel );
+                final CyclePath cp = new CyclePath( rids.subList( idx, rids.size() - 1 ) );
+                logger.debug( "Detected cycle: {}", cp );
+
+                return cp;
             }
 
-            cycles.add( new EProjectCycle( cycle ) );
+            starts.add( sid );
         }
-        else
-        {
-            logger.debug( "Cycle is already contained in view cache: {}", cyclicPath );
-        }
+
+        logger.debug( "No cycle detected" );
+
+        return null;
     }
 
     public static CyclePath getTerminatingCycle( final Neo4jGraphPath graphPath, final GraphAdmin admin )
     {
+        final Logger logger = LoggerFactory.getLogger( CycleCacheUpdater.class );
+        logger.debug( "Looking for terminating cycle in: {}", graphPath );
+
         final Map<Long, Long> startNodesToRids = new HashMap<Long, Long>();
         final long[] rids = graphPath.getRelationshipIds();
         Long startRid = null;
@@ -225,12 +249,17 @@ public class CycleCacheUpdater
         {
             final Relationship r = admin.getRelationship( rid );
 
-            startRid = startNodesToRids.get( r.getEndNode()
-                                              .getId() );
+            final long eid = r.getEndNode()
+                              .getId();
+
+            startRid = startNodesToRids.get( eid );
             if ( startRid != null )
             {
                 break;
             }
+
+            startNodesToRids.put( r.getStartNode()
+                                   .getId(), r.getId() );
         }
 
         if ( startRid != null )
@@ -247,8 +276,12 @@ public class CycleCacheUpdater
             final long[] cycle = new long[rids.length - i];
             System.arraycopy( rids, i, cycle, 0, cycle.length );
 
-            return new CyclePath( cycle );
+            final CyclePath cp = new CyclePath( cycle );
+            logger.debug( "Detected cycle: {}", cp );
+            return cp;
         }
+
+        logger.debug( "No cycle detected" );
 
         return null;
     }
@@ -256,7 +289,6 @@ public class CycleCacheUpdater
     @Override
     public void configure( final AtlasCollector<?> collector )
     {
-        collector.setAvoidCycles( false );
         collector.setConversionCache( cache );
     }
 

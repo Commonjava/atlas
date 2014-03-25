@@ -16,30 +16,33 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RID;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getCachedPathInfo;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
+import org.commonjava.maven.atlas.graph.spi.neo4j.ViewIndexes;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.update.CycleCacheUpdater;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.PathExpander;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.index.IndexHits;
+import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.graphdb.traversal.BranchState;
 import org.neo4j.graphdb.traversal.Evaluation;
 import org.neo4j.graphdb.traversal.Evaluator;
@@ -58,22 +61,27 @@ public final class AtlasCollector<STATE>
 
     private GraphView view;
 
-    private Map<Neo4jGraphPath, GraphPathInfo> pathInfos = new HashMap<Neo4jGraphPath, GraphPathInfo>();
-
-    private boolean avoidCycles = true;
-
     private ConversionCache cache = new ConversionCache();
 
     private TraverseVisitor visitor;
 
-    public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view )
+    private GraphAdmin admin;
+
+    private ViewIndexes indexes;
+
+    private long traverseId = -1;
+
+    public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view, final ViewIndexes indexes, final GraphAdmin admin )
     {
-        this( visitor, Collections.singleton( start ), view );
+        this( visitor, Collections.singleton( start ), view, indexes, admin );
     }
 
-    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view )
+    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final ViewIndexes indexes,
+                           final GraphAdmin admin )
     {
         this.visitor = visitor;
+        this.indexes = indexes;
+        this.admin = admin;
         visitor.configure( this );
 
         this.startNodes = startNodes;
@@ -81,28 +89,21 @@ public final class AtlasCollector<STATE>
         this.view = view;
     }
 
-    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final Direction direction )
+    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final ViewIndexes indexes,
+                           final GraphAdmin admin, final Direction direction )
     {
-        this( visitor, startNodes, view );
+        this( visitor, startNodes, view, indexes, admin );
         this.direction = direction;
     }
 
-    public final void setPathInfoMap( final Map<Neo4jGraphPath, GraphPathInfo> pathInfos )
+    public void setTraverseId( final long traverseId )
     {
-        if ( pathInfos != null )
-        {
-            this.pathInfos = pathInfos;
-        }
+        this.traverseId = traverseId;
     }
 
     public void setConversionCache( final ConversionCache cache )
     {
         this.cache = cache;
-    }
-
-    public Map<Neo4jGraphPath, GraphPathInfo> getPathInfoMap()
-    {
-        return pathInfos;
     }
 
     @Override
@@ -124,10 +125,6 @@ public final class AtlasCollector<STATE>
                 return Collections.emptySet();
             }
 
-            if ( visitor.shouldAvoidRedundantPaths() )
-            {
-
-            }
             for ( final Node node : path.nodes() )
             {
                 if ( !node.equals( startNode ) && startNodes.contains( node ) )
@@ -138,10 +135,30 @@ public final class AtlasCollector<STATE>
             }
         }
 
+        final RelationshipIndex cachedPaths = indexes.getCachedPaths();
+
         Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
         graphPath = visitor.spliceGraphPathFor( graphPath, path );
 
-        GraphPathInfo pathInfo = pathInfos.remove( graphPath );
+        GraphPathInfo pathInfo;
+        if ( path.lastRelationship() == null )
+        {
+            pathInfo = new GraphPathInfo( view );
+        }
+        else
+        {
+            final IndexHits<Relationship> pathRelHits = cachedPaths.get( RID, path.lastRelationship()
+                                                                                  .getId() );
+
+            if ( !pathRelHits.hasNext() )
+            {
+                return Collections.emptySet();
+            }
+
+            final Relationship pathRel = pathRelHits.next();
+            pathInfo = getCachedPathInfo( graphPath, pathRel, cache, view );
+        }
+
         logger.debug( "Retrieved pathInfo for {} of: {}", graphPath, pathInfo );
 
         if ( pathInfo == null )
@@ -168,39 +185,25 @@ public final class AtlasCollector<STATE>
 
         pathInfo = visitor.spliceGraphPathInfoFor( pathInfo, graphPath, path );
 
-        logger.info( "Checking hasSeen for graphPath: {} with pathInfo: {} (actual path: {})", graphPath, pathInfo, path );
-        if ( visitor.hasSeen( graphPath, pathInfo ) )
+        final CyclePath cyclePath = CycleCacheUpdater.getTerminatingCycle( path );
+        if ( cyclePath != null )
         {
-            logger.debug( "Already seen: {} (path: {})", graphPath, path );
-            return Collections.emptySet();
+            final Relationship injector = path.lastRelationship();
+            logger.debug( "Detected cycle in progress for path: {} at relationship: {}\n  Cycle path is: {}", path, injector, cyclePath );
+
+            visitor.cycleDetected( cyclePath, injector );
         }
 
-        if ( !avoidCycles )
+        //        logger.debug( "Checking hasSeen for graphPath: {} with pathInfo: {} (actual path: {})", graphPath, pathInfo, path );
+        //        if ( visitor.hasSeen( graphPath, pathInfo ) )
+        //        {
+        //            logger.debug( "Already seen: {} (path: {})", graphPath, path );
+        //            return Collections.emptySet();
+        //        }
+        // split this so we register both the seen and the cycle.
+        /*else*/if ( cyclePath != null )
         {
-            final List<Long> rids = new ArrayList<Long>();
-            final List<Long> starts = new ArrayList<Long>();
-            for ( final Relationship pathR : path.relationships() )
-            {
-                rids.add( pathR.getId() );
-
-                final long sid = pathR.getStartNode()
-                                      .getId();
-
-                final long eid = pathR.getEndNode()
-                                      .getId();
-
-                final int idx = starts.indexOf( eid );
-                if ( idx > -1 )
-                {
-                    final CyclePath cp = new CyclePath( rids.subList( idx, rids.size() - 1 ) );
-                    logger.debug( "Detected cycle in progress for path: {} at relationship: {}\n  Cycle path is: {}", path, pathR, cp );
-
-                    visitor.cycleDetected( cp, pathR );
-                    return Collections.emptySet();
-                }
-
-                starts.add( sid );
-            }
+            return Collections.emptySet();
         }
 
         if ( returnChildren( path, graphPath, pathInfo ) )
@@ -214,9 +217,9 @@ public final class AtlasCollector<STATE>
 
             final Set<Relationship> nextRelationships = new HashSet<Relationship>();
 
-            logger.debug( "Getting relationships from node: {} ({}) in direction: {} (path: {})", path.endNode(),
-                          path.endNode()
-                              .getProperty( Conversions.GAV ), direction, path );
+            logger.debug( "Getting relationships from node: {} ({}) in direction: {} (path: {})", path.endNode(), path.endNode()
+                                                                                                                      .getProperty( GAV ), direction,
+                          path );
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction );
 
@@ -226,16 +229,11 @@ public final class AtlasCollector<STATE>
             //                                                       .getProperty( GAV ) : "Unknown", new JoinString( "\n  ", Thread.currentThread()
             //                                                                                                                      .getStackTrace() ) );
 
+            final RelationshipIndex toExtendPaths = indexes.getToExtendPaths( traverseId );
             for ( Relationship r : relationships )
             {
-                if ( avoidCycles && Conversions.getBooleanProperty( Conversions.CYCLES_INJECTED, r, false ) )
-                {
-                    logger.debug( "Detected marked cycle from path: {} in child relationship: {}", path, r );
-                    continue;
-                }
-
                 final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-                logger.info( "Using database: {} to check selection of: {} in path: {}", db, wrap( r ), path );
+                logger.debug( "Using database: {} to check selection of: {} in path: {}", db, wrap( r ), path );
 
                 final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
                 if ( selected == null )
@@ -245,7 +243,7 @@ public final class AtlasCollector<STATE>
                 }
 
                 // if no selection happened and r is a selection-only relationship, skip it.
-                if ( selected == r && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
+                if ( selected == r && admin.isSelection( r, view ) )
                 {
                     logger.debug( "{} is NOT the result of selection, yet it is marked as a selection relationship. Path: {}", r, path );
                     continue;
@@ -262,23 +260,27 @@ public final class AtlasCollector<STATE>
                     r = selected;
                 }
 
-                logger.debug( "+= {}", wrap( r ) );
-                nextRelationships.add( r );
-
                 final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
 
                 final Neo4jGraphPath nextPath = new Neo4jGraphPath( graphPath, r.getId() );
                 GraphPathInfo nextPathInfo = pathInfo.getChildPathInfo( rel );
 
                 // allow for cases where we're bootstrapping the pathInfos map before the traverse starts.
-                if ( path.lastRelationship() == null && pathInfos.containsKey( nextPath ) )
+                if ( path.lastRelationship() == null )
                 {
-                    nextPathInfo = pathInfos.get( nextPath );
+                    final IndexHits<Relationship> hits = toExtendPaths.get( RID, r.getId() );
+                    if ( hits.hasNext() )
+                    {
+                        nextPathInfo = getCachedPathInfo( nextPath, hits.next(), cache, view );
+                        logger.debug( "Bootstrapped resumed path: {} to use pathInfo: {}", nextPath, nextPathInfo );
+                    }
                 }
 
-                pathInfos.put( nextPath, nextPathInfo );
-
+                logger.debug( "Including child: {} with next-path: {} and childPathInfo: {} from parent path: {}", r, nextPath, nextPathInfo, path );
                 visitor.includingChild( r, nextPath, nextPathInfo, path );
+
+                logger.debug( "+= {}", wrap( r ) );
+                nextRelationships.add( r );
             }
 
             return nextRelationships;
@@ -312,23 +314,13 @@ public final class AtlasCollector<STATE>
         return Evaluation.INCLUDE_AND_CONTINUE;
     }
 
-    public boolean isAvoidCycles()
-    {
-        return avoidCycles;
-    }
-
-    public void setAvoidCycles( final boolean avoidCycles )
-    {
-        this.avoidCycles = avoidCycles;
-    }
-
     @Override
     public PathExpander<STATE> reverse()
     {
-        final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, direction.reverse() );
-        collector.setPathInfoMap( pathInfos );
-        collector.setAvoidCycles( avoidCycles );
+        final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, indexes, admin, direction.reverse() );
+        //        collector.setPathInfoMap( pathInfos );
         collector.setConversionCache( cache );
+        collector.setTraverseId( traverseId );
 
         return collector;
     }

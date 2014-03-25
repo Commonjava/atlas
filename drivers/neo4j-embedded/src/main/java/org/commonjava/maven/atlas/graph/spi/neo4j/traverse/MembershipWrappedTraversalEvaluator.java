@@ -26,7 +26,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -64,11 +64,15 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private ConversionCache cache = new ConversionCache();
 
-    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view, final int pass )
+    private final GraphAdmin admin;
+
+    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view,
+                                                final GraphAdmin admin, final int pass )
     {
         this.rootIds = rootIds;
         this.traversal = traversal;
         this.view = view;
+        this.admin = admin;
         this.pass = pass;
     }
 
@@ -78,6 +82,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.traversal = ev.traversal;
         this.pass = ev.pass;
         this.view = ev.view;
+        this.admin = ev.admin;
         this.reversedExpander = reversedExpander;
     }
 
@@ -199,11 +204,10 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                 continue;
             }
 
-            final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-            final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
+            final Relationship selected = admin.select( r, view, pathInfo, graphPath );
 
             // if no selection happened and r is a selection-only relationship, skip it.
-            if ( ( selected == null || selected == r ) && Conversions.getBooleanProperty( Conversions.SELECTION, r, false ) )
+            if ( ( selected == null || selected == r ) && admin.isSelection( r, view ) )
             {
                 continue;
             }

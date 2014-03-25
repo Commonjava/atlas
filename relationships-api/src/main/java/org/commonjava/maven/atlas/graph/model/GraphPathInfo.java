@@ -6,7 +6,6 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.mutate.VersionManagerMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
 
 public class GraphPathInfo
     implements Serializable
@@ -18,7 +17,7 @@ public class GraphPathInfo
 
     private final GraphMutator mutator;
 
-    private final GraphView view;
+    private transient GraphView view;
 
     public GraphPathInfo( final GraphView view )
     {
@@ -127,9 +126,9 @@ public class GraphPathInfo
         return ( filter == null ? "none" : filter.getCondensedId() ) + "/" + ( mutator == null ? "none" : mutator.getCondensedId() );
     }
 
-    public void reattach( final GraphDatabaseDriver driver )
+    public void reattach( final GraphView view )
     {
-        view.reattach( driver );
+        this.view = view;
     }
 
     @Override

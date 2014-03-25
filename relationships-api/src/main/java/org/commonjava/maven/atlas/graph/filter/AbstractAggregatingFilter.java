@@ -201,4 +201,32 @@ public abstract class AbstractAggregatingFilter
 
         return shortId;
     }
+
+    @Override
+    public boolean includeManagedRelationships()
+    {
+        for ( final ProjectRelationshipFilter filter : filters )
+        {
+            if ( filter.includeManagedRelationships() )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean includeConcreteRelationships()
+    {
+        for ( final ProjectRelationshipFilter filter : filters )
+        {
+            if ( filter.includeConcreteRelationships() )
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
 }

@@ -271,7 +271,7 @@ public class EGraphManager
 
     public boolean containsGraph( final GraphWorkspace workspace, final ProjectVersionRef ref )
     {
-        return containsGraph( new GraphView( workspace ), ref );
+        return containsGraph( new GraphView( workspace, ref ), ref );
     }
 
     public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
@@ -282,7 +282,7 @@ public class EGraphManager
     public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                                   final ProjectVersionRef ref )
     {
-        return containsGraph( new GraphView( workspace, filter, mutator ), ref );
+        return containsGraph( new GraphView( workspace, filter, mutator, ref ), ref );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,

@@ -78,4 +78,16 @@ public class PluginRuntimeFilter
         return getLongId();
     }
 
+    @Override
+    public boolean includeManagedRelationships()
+    {
+        return false;
+    }
+
+    @Override
+    public boolean includeConcreteRelationships()
+    {
+        return true;
+    }
+
 }
