@@ -382,16 +382,16 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         final Node viewNode = getViewNode( view );
 
-        logger.debug( "Checking whether {} ({}) is in need of update.", view, viewNode );
+        logger.info( "Checking whether {} ({} / {}) is in need of update.", view, view.getShortId(), viewNode );
         final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
 
         if ( Conversions.isMembershipDetectionPending( viewNode ) )
         {
-            logger.debug( "Traversing graph to update view membership: {}", view );
+            logger.info( "Traversing graph to update view membership: {} ({})", view, view.getShortId() );
             final Set<Node> roots = getRoots( view );
             if ( roots.isEmpty() )
             {
-                logger.debug( "No root nodes found." );
+                logger.info( "{}: No root nodes found.", view.getShortId() );
                 return;
             }
 
@@ -400,7 +400,7 @@ public abstract class AbstractNeo4JEGraphDriver
         }
         else
         {
-            logger.debug( "It is not." );
+            logger.info( "{}: no update pending.", view.getShortId() );
         }
     }
 
@@ -715,12 +715,12 @@ public abstract class AbstractNeo4JEGraphDriver
     public Relationship select( final Relationship old, final GraphView view, final GraphPathInfo pathInfo, final Neo4jGraphPath path )
     {
         final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
-        final RelationshipIndex selections = indexes.getSelections();
+        final Node viewNode = getViewNode( view );
 
-        final IndexHits<Relationship> selHits = selections.get( RID, old.getId() );
-        if ( selHits.hasNext() )
+        final long targetRid = Conversions.getDeselectionTarget( old.getId(), viewNode );
+        if ( targetRid > -1 )
         {
-            return selHits.next();
+            return graph.getRelationshipById( targetRid );
         }
 
         final ProjectRelationship<?> oldRel = toProjectRelationship( old, null );
@@ -748,7 +748,6 @@ public abstract class AbstractNeo4JEGraphDriver
 
             logger.info( "Creating ad-hoc db relationship for selection: {} (replacing: {})", selected, oldRel );
 
-            // TODO: Is there something intelligent we can do with this result to speed things up??
             @SuppressWarnings( "unused" )
             final Map<Long, ProjectRelationship<?>> added = addRelationshipsInternal( selected );
 
@@ -762,8 +761,10 @@ public abstract class AbstractNeo4JEGraphDriver
                     result = hits.next();
 
                     logger.debug( "Adding relatiionship {} to selections index", result );
-                    selections.add( result, RID, old.getId() );
+                    Conversions.setSelection( old.getId(), result.getId(), viewNode );
 
+                    // Does this imply that a whole subgraph from oldRel needs to be removed from the cache??
+                    // No, because that would only happen if a new selection were added to the view, which would trigger a registerViewSelection() call...
                     indexes.getCachedNodes()
                            .add( result.getEndNode(), NID, result.getEndNode()
                                                                  .getId() );
@@ -2350,17 +2351,11 @@ public abstract class AbstractNeo4JEGraphDriver
                 rels.remove( uncache );
             }
 
-            final RelationshipIndex selections = indexes.getSelections();
+            final Node viewNode = getViewNode( view );
             for ( final Relationship unsel : toUnselect )
             {
-                selections.remove( unsel );
+                Conversions.removeSelectionByTarget( unsel.getId(), viewNode );
             }
-
-            final Index<Node> confIdx = graph.index()
-                                             .forNodes( CONFIG_NODES_IDX );
-
-            final IndexHits<Node> hits = confIdx.get( VIEW_ID, view.getShortId() );
-            final Node viewNode = hits.next();
 
             Conversions.setMembershipDetectionPending( viewNode, true );
             Conversions.setCycleDetectionPending( viewNode, true );
@@ -2488,9 +2483,8 @@ public abstract class AbstractNeo4JEGraphDriver
         @Override
         public boolean isSelection( final Relationship r, final GraphView view )
         {
-            return new ViewIndexes( driver.graph.index(), view ).getSelections()
-                                                                .get( RID, r.getId() )
-                                                                .hasNext();
+            final Node viewNode = driver.getViewNode( view );
+            return Conversions.getDeselectionTarget( r.getId(), viewNode ) > -1;
         }
 
     }

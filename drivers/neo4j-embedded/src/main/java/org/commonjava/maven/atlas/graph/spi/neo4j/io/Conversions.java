@@ -1068,4 +1068,65 @@ public final class Conversions
         viewNode.setProperty( MEMBERSHIP_DETECTION_PENDING, pending );
     }
 
+    private static final String SELECTION_ORIGIN_PREFIX = "_selection_origin_";
+
+    private static final String DESELECTION_TARGET_PREFIX = "_deselection_target_";
+
+    public static long getDeselectionTarget( final long originRid, final Node viewNode )
+    {
+        return getLongProperty( DESELECTION_TARGET_PREFIX + originRid, viewNode, -1 );
+    }
+
+    public static long getSelectionOrigin( final long targetRid, final Node viewNode )
+    {
+        return getLongProperty( SELECTION_ORIGIN_PREFIX + targetRid, viewNode, -1 );
+    }
+
+    public static void setSelection( final long originRid, final long targetRid, final Node viewNode )
+    {
+        viewNode.setProperty( DESELECTION_TARGET_PREFIX + originRid, targetRid );
+        viewNode.setProperty( SELECTION_ORIGIN_PREFIX + targetRid, originRid );
+    }
+
+    public static void removeSelectionByTarget( final long targetRid, final Node viewNode )
+    {
+        final String selKey = SELECTION_ORIGIN_PREFIX + targetRid;
+        final long originRid = getLongProperty( selKey, viewNode, -1 );
+
+        if ( originRid > -1 )
+        {
+            viewNode.removeProperty( selKey );
+        }
+        else
+        {
+            return;
+        }
+
+        final String deKey = DESELECTION_TARGET_PREFIX + originRid;
+        if ( viewNode.hasProperty( deKey ) )
+        {
+            viewNode.removeProperty( deKey );
+        }
+    }
+
+    public static void removeSelectionByOrigin( final long originRid, final Node viewNode )
+    {
+        final String deKey = DESELECTION_TARGET_PREFIX + originRid;
+        final long targetRid = getLongProperty( deKey, viewNode, -1 );
+        if ( targetRid > -1 )
+        {
+            viewNode.removeProperty( deKey );
+        }
+        else
+        {
+            return;
+        }
+
+        final String selKey = SELECTION_ORIGIN_PREFIX + targetRid;
+        if ( viewNode.hasProperty( selKey ) )
+        {
+            viewNode.removeProperty( selKey );
+        }
+    }
+
 }

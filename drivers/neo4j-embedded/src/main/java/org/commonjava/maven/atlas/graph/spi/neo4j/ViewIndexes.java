@@ -13,7 +13,7 @@ public class ViewIndexes
 
     private static final String NODE_CACHE_PREFIX = "node_cache_for_";
 
-    private static final String SELECTION_CACHE_PREFIX = "selection_cache_for_";
+    //    private static final String SELECTION_CACHE_PREFIX = "selection_cache_for_";
 
     private final IndexManager indexMgr;
 
@@ -30,10 +30,10 @@ public class ViewIndexes
         return indexMgr.forRelationships( REL_CACHE_PREFIX + view.getShortId() );
     }
 
-    public RelationshipIndex getSelections()
-    {
-        return indexMgr.forRelationships( SELECTION_CACHE_PREFIX + view.getShortId() );
-    }
+    //    public RelationshipIndex getSelections()
+    //    {
+    //        return indexMgr.forRelationships( SELECTION_CACHE_PREFIX + view.getShortId() );
+    //    }
 
     public Index<Node> getCachedNodes()
     {
@@ -43,7 +43,7 @@ public class ViewIndexes
     public void delete()
     {
         getCachedRelationships().delete();
-        getSelections().delete();
+        //        getSelections().delete();
         getCachedNodes().delete();
     }
 

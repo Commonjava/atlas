@@ -82,9 +82,10 @@ public class ViewUpdater
             final Long rid = entry.getKey();
             final Relationship add = maint.getRelationship( rid );
 
-            indexes.getSelections()
-                   .remove( add );
-
+            // TODO: WTF is the point of this??
+            //            indexes.getSelections()
+            //                   .remove( add );
+            //
             logger.debug( "Checking node cache for: {}", add.getStartNode() );
             final IndexHits<Node> hits = indexes.getCachedNodes()
                                                 .get( NID, add.getStartNode()
