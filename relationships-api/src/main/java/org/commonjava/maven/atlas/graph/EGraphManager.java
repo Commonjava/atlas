@@ -134,16 +134,6 @@ public class EGraphManager
 
     public EProjectGraph getGraph( final GraphView view )
     {
-        final GraphDatabaseDriver dbDriver = view.getWorkspace()
-                                                 .getDatabase();
-        final ProjectVersionRef root = view.getRoots()
-                                           .iterator()
-                                           .next();
-        if ( !dbDriver.containsProject( view, root ) || dbDriver.isMissing( view, root ) )
-        {
-            return null;
-        }
-
         return new EProjectGraph( view );
     }
 

@@ -6,7 +6,6 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -23,11 +22,6 @@ public class RootedRelationshipsVisitor
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final Set<ProjectRelationship<?>> found = new HashSet<ProjectRelationship<?>>();
-
-    public RootedRelationshipsVisitor( final GraphAdmin admin )
-    {
-        super( admin );
-    }
 
     public Set<ProjectRelationship<?>> getRelationships()
     {

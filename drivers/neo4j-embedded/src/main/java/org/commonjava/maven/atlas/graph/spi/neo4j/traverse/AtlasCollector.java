@@ -17,8 +17,6 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.RID;
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.getCachedPathInfo;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
@@ -41,8 +39,6 @@ import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.PathExpander;
 import org.neo4j.graphdb.Relationship;
-import org.neo4j.graphdb.index.IndexHits;
-import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.graphdb.traversal.BranchState;
 import org.neo4j.graphdb.traversal.Evaluation;
 import org.neo4j.graphdb.traversal.Evaluator;
@@ -69,7 +65,7 @@ public final class AtlasCollector<STATE>
 
     private ViewIndexes indexes;
 
-    private long traverseId = -1;
+    private boolean useSelections = true;
 
     public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view, final ViewIndexes indexes, final GraphAdmin admin )
     {
@@ -96,9 +92,9 @@ public final class AtlasCollector<STATE>
         this.direction = direction;
     }
 
-    public void setTraverseId( final long traverseId )
+    public void setUseSelections( final boolean useSelections )
     {
-        this.traverseId = traverseId;
+        this.useSelections = useSelections;
     }
 
     public void setConversionCache( final ConversionCache cache )
@@ -124,66 +120,19 @@ public final class AtlasCollector<STATE>
                 logger.debug( "Rejecting path; it does not start with one of our roots:\n\t{}", path );
                 return Collections.emptySet();
             }
-
-            for ( final Node node : path.nodes() )
-            {
-                if ( !node.equals( startNode ) && startNodes.contains( node ) )
-                {
-                    // TODO: is this safe to discard? I think so, except possibly in rare cases...
-                    logger.debug( "Redundant path detected; another start node is contained in path intermediary nodes." );
-                }
-            }
         }
 
-        final RelationshipIndex cachedPaths = indexes.getCachedPaths();
+        final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
 
-        Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
-        graphPath = visitor.spliceGraphPathFor( graphPath, path );
-
-        GraphPathInfo pathInfo;
-        if ( path.lastRelationship() == null )
+        GraphPathInfo pathInfo = new GraphPathInfo( view );
+        // if we're here, we're pre-cleared to blindly construct this pathInfo (see child iteration below)
+        for ( final Long rid : graphPath )
         {
-            pathInfo = new GraphPathInfo( view );
-        }
-        else
-        {
-            final IndexHits<Relationship> pathRelHits = cachedPaths.get( RID, path.lastRelationship()
-                                                                                  .getId() );
-
-            if ( !pathRelHits.hasNext() )
-            {
-                return Collections.emptySet();
-            }
-
-            final Relationship pathRel = pathRelHits.next();
-            pathInfo = getCachedPathInfo( graphPath, pathRel, cache, view );
+            final Relationship r = admin.getRelationship( rid );
+            pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r, cache ) );
         }
 
-        logger.debug( "Retrieved pathInfo for {} of: {}", graphPath, pathInfo );
-
-        if ( pathInfo == null )
-        {
-            if ( path.lastRelationship() == null )
-            {
-                pathInfo = visitor.initializeGraphPathInfoFor( path, graphPath, view );
-                if ( pathInfo == null )
-                {
-                    logger.debug( "Failed to initialize path info for: {}", path );
-                    return Collections.emptySet();
-                }
-                else
-                {
-                    logger.debug( "Initialized pathInfo to: {} for path: {}", pathInfo, path );
-                }
-            }
-            else
-            {
-                logger.debug( "path has at least one relationship but no associated pathInfo: {}", path );
-                return Collections.emptySet();
-            }
-        }
-
-        pathInfo = visitor.spliceGraphPathInfoFor( pathInfo, graphPath, path );
+        logger.debug( "For {}, using pathInfo: {}", graphPath, pathInfo );
 
         final CyclePath cyclePath = CycleCacheUpdater.getTerminatingCycle( path );
         if ( cyclePath != null )
@@ -229,52 +178,43 @@ public final class AtlasCollector<STATE>
             //                                                       .getProperty( GAV ) : "Unknown", new JoinString( "\n  ", Thread.currentThread()
             //                                                                                                                      .getStackTrace() ) );
 
-            final RelationshipIndex toExtendPaths = indexes.getToExtendPaths( traverseId );
             for ( Relationship r : relationships )
             {
-                final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-                logger.debug( "Using database: {} to check selection of: {} in path: {}", db, wrap( r ), path );
-
-                final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
-                if ( selected == null )
+                if ( useSelections )
                 {
-                    logger.debug( "selection failed for: {} at {}. Likely, this is filter rejection from: {}", r, graphPath, pathInfo );
-                    continue;
-                }
+                    final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
+                    logger.debug( "Using database: {} to check selection of: {} in path: {}", db, wrap( r ), path );
 
-                // if no selection happened and r is a selection-only relationship, skip it.
-                if ( selected == r && admin.isSelection( r, view ) )
-                {
-                    logger.debug( "{} is NOT the result of selection, yet it is marked as a selection relationship. Path: {}", r, path );
-                    continue;
-                }
+                    final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
+                    if ( selected == null )
+                    {
+                        logger.debug( "selection failed for: {} at {}. Likely, this is filter rejection from: {}", r, graphPath, pathInfo );
+                        continue;
+                    }
 
-                if ( !accepted( selected, view, cache ) )
-                {
-                    logger.debug( "{} NOT accepted, likely due to incompatible POM location or source URI. Path: {}", r, path );
-                    continue;
-                }
+                    // if no selection happened and r is a selection-only relationship, skip it.
+                    if ( selected == r && admin.isSelection( r, view ) )
+                    {
+                        logger.debug( "{} is NOT the result of selection, yet it is marked as a selection relationship. Path: {}", r, path );
+                        continue;
+                    }
 
-                if ( selected != null )
-                {
-                    r = selected;
+                    if ( !accepted( selected, view, cache ) )
+                    {
+                        logger.debug( "{} NOT accepted, likely due to incompatible POM location or source URI. Path: {}", r, path );
+                        continue;
+                    }
+
+                    if ( selected != null )
+                    {
+                        r = selected;
+                    }
                 }
 
                 final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
 
                 final Neo4jGraphPath nextPath = new Neo4jGraphPath( graphPath, r.getId() );
-                GraphPathInfo nextPathInfo = pathInfo.getChildPathInfo( rel );
-
-                // allow for cases where we're bootstrapping the pathInfos map before the traverse starts.
-                if ( path.lastRelationship() == null )
-                {
-                    final IndexHits<Relationship> hits = toExtendPaths.get( RID, r.getId() );
-                    if ( hits.hasNext() )
-                    {
-                        nextPathInfo = getCachedPathInfo( nextPath, hits.next(), cache, view );
-                        logger.debug( "Bootstrapped resumed path: {} to use pathInfo: {}", nextPath, nextPathInfo );
-                    }
-                }
+                final GraphPathInfo nextPathInfo = pathInfo.getChildPathInfo( rel );
 
                 logger.debug( "Including child: {} with next-path: {} and childPathInfo: {} from parent path: {}", r, nextPath, nextPathInfo, path );
                 visitor.includingChild( r, nextPath, nextPathInfo, path );
@@ -318,9 +258,8 @@ public final class AtlasCollector<STATE>
     public PathExpander<STATE> reverse()
     {
         final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, indexes, admin, direction.reverse() );
-        //        collector.setPathInfoMap( pathInfos );
         collector.setConversionCache( cache );
-        collector.setTraverseId( traverseId );
+        collector.setUseSelections( useSelections );
 
         return collector;
     }

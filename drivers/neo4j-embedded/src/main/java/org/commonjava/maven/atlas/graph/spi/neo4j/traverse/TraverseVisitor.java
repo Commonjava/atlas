@@ -1,7 +1,6 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Path;
@@ -45,39 +44,5 @@ public interface TraverseVisitor
      * @param parentPath parent {@link Path} which will be extended by this child
      */
     void includingChild( Relationship child, Neo4jGraphPath childPath, GraphPathInfo childPathInfo, Path parentPath );
-
-    /**
-     * Whether paths that pass through multiple start nodes should be discarded.
-     */
-    boolean shouldAvoidRedundantPaths();
-
-    /**
-     * Initialize {@link GraphPathInfo} for a new empty path.
-     */
-    GraphPathInfo initializeGraphPathInfoFor( Path path, Neo4jGraphPath graphPath, GraphView view );
-
-    /**
-     * Provide an opportunity to substitute a longer {@link Neo4jGraphPath} in 
-     * case of a traverse resume.
-     * 
-     * @return the parameter {@link Neo4jGraphPath} instance unless a splice 
-     * takes place.
-     */
-    Neo4jGraphPath spliceGraphPathFor( Neo4jGraphPath graphPath, Path path );
-
-    /**
-     * Provide an opportunity to substitute a longer {@link GraphPathInfo} in 
-     * case of a traverse resume.
-     * 
-     * @return the parameter {@link GraphPathInfo} instance unless a splice 
-     * takes place.
-     */
-    GraphPathInfo spliceGraphPathInfoFor( GraphPathInfo pathInfo, Neo4jGraphPath graphPath, Path path );
-
-    /**
-     * Whether this particular {@link Neo4jGraphPath} / {@link GraphPathInfo} has 
-     * been seen before. Used to prune the traverse.
-     */
-    boolean hasSeen( Neo4jGraphPath graphPath, GraphPathInfo pathInfo );
 
 }

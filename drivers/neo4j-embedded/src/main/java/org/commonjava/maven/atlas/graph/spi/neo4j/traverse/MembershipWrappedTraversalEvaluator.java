@@ -16,11 +16,11 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
+import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
+
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
@@ -52,13 +52,9 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final ProjectNetTraversal traversal;
 
-    private final Map<Neo4jGraphPath, GraphPathInfo> pathInfos = new HashMap<Neo4jGraphPath, GraphPathInfo>();
-
     private final int pass;
 
     private boolean reversedExpander;
-
-    private final Set<String> seenKeys = new HashSet<String>();
 
     private final GraphView view;
 
@@ -145,40 +141,12 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         }
 
         final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
-        GraphPathInfo pathInfo = pathInfos.remove( graphPath );
-
-        if ( pathInfo == null )
+        GraphPathInfo pathInfo = new GraphPathInfo( view );
+        for ( final Long rid : graphPath )
         {
-            if ( path.lastRelationship() == null )
-            {
-                // just starting out. Initialize the path info.
-                pathInfo = new GraphPathInfo( view );
-            }
-            else
-            {
-                return Collections.emptySet();
-            }
+            final Relationship r = admin.getRelationship( rid );
+            pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r, cache ) );
         }
-
-        final String key = graphPath.getKey() + "#" + pathInfo.getKey();
-        if ( !seenKeys.add( key ) )
-        {
-            return Collections.emptySet();
-        }
-
-        //        final Relationship rel = path.lastRelationship();
-        //        if ( rel != null )
-        //        {
-        //            final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-        //            final Relationship sel = db == null ? null : db.select( rel, view );
-        //
-        //            if ( ( sel == null || sel == rel ) && Conversions.getBooleanProperty( Conversions.SELECTION, rel, false ) )
-        //            {
-        //                expMemberMisses++;
-        //                return Collections.emptySet();
-        //            }
-        //        }
-        //
 
         final Iterable<Relationship> rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
         if ( rs == null )
@@ -219,13 +187,11 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             //            logger.info( "Attempting to expand: {}", r );
 
             final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r, cache );
-            final GraphPathInfo next = pathInfo.getChildPathInfo( projectRel );
 
             logger.debug( "Pre-checking relationship {} for expansion using filter: {}", projectRel, traversal );
             if ( traversal.preCheck( projectRel, rels, pass ) )
             {
                 logger.debug( "Adding for expansion: {}", projectRel );
-                pathInfos.put( new Neo4jGraphPath( graphPath, r.getId() ), next );
                 result.add( r );
             }
             else

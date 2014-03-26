@@ -39,7 +39,6 @@ import java.util.Set;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
@@ -51,7 +50,6 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
-import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -144,19 +142,7 @@ public final class Conversions
 
     private static final String CYCLE_PATH_PREFIX = "cached_cycle_";
 
-    private static final String CACHED_PATH_PREFIX = "cached_path_";
-
-    private static final String CACHED_PATH_INFO_DATA_PREFIX = "cached_pathInfo_data";
-
     // handled by other things, like updaters.
-
-    public static final String CACHED_PATH_RELATIONSHIP = "cached_path_relationship";
-
-    public static final String CACHED_PATH_CONTAINS_NODE = "cached_path_contains_node";
-
-    public static final String CACHED_PATH_CONTAINS_REL = "cached_path_contains_rel";
-
-    public static final String CACHED_PATH_TARGETS = "cached_path_targets";
 
     public static final String RID = "rel_id";
 
@@ -167,6 +153,8 @@ public final class Conversions
     public static final String VIEW_ID = "view_id";
 
     public static final String CYCLE_DETECTION_PENDING = "cycle_detect_pending";
+
+    private static final String MEMBERSHIP_DETECTION_PENDING = "member_detect_pending";
 
     private Conversions()
     {
@@ -235,6 +223,23 @@ public final class Conversions
         final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
         for ( final Relationship relationship : relationships )
         {
+            final ProjectRelationship<?> rel = Conversions.toProjectRelationship( relationship, cache );
+            if ( rel != null )
+            {
+                rels.add( rel );
+            }
+        }
+
+        return rels;
+    }
+
+    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Long> relationships, final GraphAdmin admin,
+                                                                       final ConversionCache cache )
+    {
+        final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
+        for ( final Long rid : relationships )
+        {
+            final Relationship relationship = admin.getRelationship( rid );
             final ProjectRelationship<?> rel = Conversions.toProjectRelationship( relationship, cache );
             if ( rel != null )
             {
@@ -947,33 +952,6 @@ public final class Conversions
         }
     }
 
-    public static Set<Neo4jGraphPath> getCachedPaths( final Relationship rel )
-    {
-        final Set<Neo4jGraphPath> paths = new HashSet<Neo4jGraphPath>();
-        for ( final String key : rel.getPropertyKeys() )
-        {
-            if ( key.startsWith( CACHED_PATH_PREFIX ) )
-            {
-                paths.add( new Neo4jGraphPath( (long[]) rel.getProperty( key ) ) );
-            }
-        }
-
-        return paths;
-    }
-
-    public static Neo4jGraphPath getCachedPath( final String key, final Relationship rel )
-    {
-        final String k = key.startsWith( CACHED_PATH_PREFIX ) ? key : CACHED_PATH_PREFIX + key;
-
-        if ( !rel.hasProperty( k ) )
-        {
-            return null;
-        }
-
-        final long[] ids = (long[]) rel.getProperty( k );
-        return new Neo4jGraphPath( ids );
-    }
-
     public static void storeCachedCyclePath( final CyclePath path, final Node viewNode )
     {
         viewNode.setProperty( CYCLE_PATH_PREFIX + path.getKey(), path.getRelationshipIds() );
@@ -992,84 +970,6 @@ public final class Conversions
         }
 
         return cycles;
-    }
-
-    public static GraphPathInfo getCachedPathInfo( final Neo4jGraphPath path, final Relationship rel, final ConversionCache cache,
-                                                   final GraphView view )
-    {
-        final String key = path.getKey();
-        if ( !rel.hasProperty( CACHED_PATH_INFO_DATA_PREFIX + key ) )
-        {
-            return null;
-        }
-
-        final byte[] data = (byte[]) rel.getProperty( CACHED_PATH_INFO_DATA_PREFIX + key );
-
-        if ( cache != null )
-        {
-            final GraphPathInfo pathInfo = cache.getSerializedObject( data, GraphPathInfo.class );
-            if ( pathInfo != null )
-            {
-                return pathInfo;
-            }
-        }
-
-        ObjectInputStream ois = null;
-        try
-        {
-            ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
-            final GraphPathInfo pathInfo = (GraphPathInfo) ois.readObject();
-            pathInfo.reattach( view );
-
-            if ( cache != null )
-            {
-                cache.cache( data, pathInfo );
-            }
-
-            return pathInfo;
-        }
-        catch ( final IOException e )
-        {
-            throw new IllegalStateException( "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing " + data.length + " bytes!",
-                                             e );
-        }
-        catch ( final ClassNotFoundException e )
-        {
-            throw new IllegalStateException( "Cannot read GraphView. A class was missing: " + e.getMessage(), e );
-        }
-        finally
-        {
-            IOUtils.closeQuietly( ois );
-        }
-    }
-
-    public static void storeCachedPath( final Neo4jGraphPath path, final GraphPathInfo pathInfo, final Relationship rel )
-    {
-        rel.setProperty( CACHED_PATH_PREFIX + path.getKey(), path.getRelationshipIds() );
-
-        if ( pathInfo == null )
-        {
-            return;
-        }
-
-        ObjectOutputStream oos = null;
-        try
-        {
-            final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-
-            oos = new ObjectOutputStream( baos );
-            oos.writeObject( pathInfo );
-
-            rel.setProperty( CACHED_PATH_INFO_DATA_PREFIX + path.getKey(), baos.toByteArray() );
-        }
-        catch ( final IOException e )
-        {
-            throw new IllegalStateException( "Cannot construct ObjectOutputStream to wrap ByteArrayOutputStream!", e );
-        }
-        finally
-        {
-            IOUtils.closeQuietly( oos );
-        }
     }
 
     public static void storeView( final GraphView view, final Node viewNode )
@@ -1158,26 +1058,14 @@ public final class Conversions
         viewNode.setProperty( CYCLE_DETECTION_PENDING, pending );
     }
 
-    public static Map<Neo4jGraphPath, GraphPathInfo> getCachedPathInfoMap( final Relationship pathRel, final GraphView view,
-                                                                           final ConversionCache cache )
+    public static boolean isMembershipDetectionPending( final Node viewNode )
     {
-        final Map<Neo4jGraphPath, GraphPathInfo> map = new HashMap<Neo4jGraphPath, GraphPathInfo>();
-        for ( final String key : pathRel.getPropertyKeys() )
-        {
-            if ( key.startsWith( CACHED_PATH_PREFIX ) )
-            {
-                final Neo4jGraphPath path = getCachedPath( key, pathRel );
-                final GraphPathInfo pathInfo = getCachedPathInfo( path, pathRel, cache, view );
-                map.put( path, pathInfo );
-            }
-        }
-
-        return map;
+        return getBooleanProperty( MEMBERSHIP_DETECTION_PENDING, viewNode, Boolean.FALSE );
     }
 
-    public static boolean hasCachedPath( final Neo4jGraphPath path, final Relationship rel )
+    public static void setMembershipDetectionPending( final Node viewNode, final boolean pending )
     {
-        return rel.hasProperty( CACHED_PATH_PREFIX + path.getKey() );
+        viewNode.setProperty( MEMBERSHIP_DETECTION_PENDING, pending );
     }
 
 }

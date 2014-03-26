@@ -16,44 +16,60 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
+
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
+import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
-import org.neo4j.graphdb.Relationship;
 
-public class PathExistenceVisitor
+public class PathCollectingVisitor
     extends AbstractTraverseVisitor
+    implements Iterable<Neo4jGraphPath>
 {
 
-    private final Node end;
+    private final Set<Node> ends;
 
-    private boolean found = false;
+    private final Set<Neo4jGraphPath> paths = new HashSet<Neo4jGraphPath>();
 
-    public PathExistenceVisitor( final Node end )
+    private final ConversionCache cache;
+
+    public PathCollectingVisitor( final Set<Node> ends, final ConversionCache cache )
     {
-        this.end = end;
+        this.ends = ends;
+        this.cache = cache;
     }
 
-    public boolean isFound()
+    public Set<Neo4jGraphPath> getPaths()
     {
-        return found;
-    }
-
-    @Override
-    public boolean isEnabledFor( final Path path )
-    {
-        return !found;
+        return paths;
     }
 
     @Override
-    public void includingChild( final Relationship child, final Neo4jGraphPath childPath, final GraphPathInfo childPathInfo, final Path parentPath )
+    public boolean includeChildren( final Path path, final Neo4jGraphPath graphPath, final GraphPathInfo pathInfo )
     {
-        final Node end = child.getEndNode();
-        if ( this.end.getId() == end.getId() )
+        if ( ends.contains( path.endNode() ) )
         {
-            found = true;
+            paths.add( graphPath );
+            return false;
         }
+
+        return true;
+    }
+
+    @Override
+    public void configure( final AtlasCollector<?> collector )
+    {
+        collector.setConversionCache( cache );
+    }
+
+    @Override
+    public Iterator<Neo4jGraphPath> iterator()
+    {
+        return paths.iterator();
     }
 
 }
