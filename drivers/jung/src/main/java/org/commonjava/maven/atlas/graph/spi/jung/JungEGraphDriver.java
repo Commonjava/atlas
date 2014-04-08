@@ -54,6 +54,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.util.JoinString;
+import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -1000,12 +1001,35 @@ public class JungEGraphDriver
     @Override
     public GraphPath<?> createPath( final ProjectRelationship<?>... rels )
     {
+        if ( rels.length > 0 )
+        {
+            try
+            {
+                rels[rels.length - 1].getTarget()
+                                     .getVersionSpec();
+            }
+            catch ( final InvalidVersionSpecificationException e )
+            {
+                return null;
+            }
+        }
+
         return new JungGraphPath( rels );
     }
 
     @Override
     public GraphPath<?> createPath( final GraphPath<?> parent, final ProjectRelationship<?> child )
     {
+        try
+        {
+            child.getTarget()
+                 .getVersionSpec();
+        }
+        catch ( final InvalidVersionSpecificationException e )
+        {
+            return null;
+        }
+
         if ( parent != null && !( parent instanceof JungGraphPath ) )
         {
             throw new IllegalArgumentException( "Cannot get child path for: " + parent + ". This is not a JungGraphPath instance!" );
