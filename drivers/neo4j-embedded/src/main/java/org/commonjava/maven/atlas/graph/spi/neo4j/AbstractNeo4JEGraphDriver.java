@@ -1918,6 +1918,11 @@ public abstract class AbstractNeo4JEGraphDriver
         for ( int i = 0; i < rels.length; i++ )
         {
             final Relationship r = getRelationship( rels[i] );
+            if ( r == null )
+            {
+                return null;
+            }
+
             relIds[i] = r.getId();
         }
 
@@ -1948,6 +1953,10 @@ public abstract class AbstractNeo4JEGraphDriver
                     }
 
                     r = getRelationship( rel );
+                    if ( r == null )
+                    {
+                        return null;
+                    }
 
                     tx.success();
                 }
@@ -2398,8 +2407,6 @@ public abstract class AbstractNeo4JEGraphDriver
                                                                                                               .isEmpty() )
                 {
                     logger.debug( "nevermind; it's the global view." );
-                    confIdx.remove( viewNode );
-                    viewNode.delete();
                     continue;
                 }
 
