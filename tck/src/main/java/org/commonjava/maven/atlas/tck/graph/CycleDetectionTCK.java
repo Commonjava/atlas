@@ -78,7 +78,7 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
         final GraphWorkspace session = simpleWorkspace();
-        //        final GraphView view = new GraphView( session, project );
+        final GraphView view = new GraphView( session, project );
 
         /* @formatter:off */
         getManager().storeRelationships( session, 
@@ -90,8 +90,8 @@ public abstract class CycleDetectionTCK
 
         System.out.println( "Rejected: " + rejected );
 
-        //        final EProjectGraph graph = getManager().getGraph( view );
-        final EProjectGraph graph = getManager().getGraph( session, project );
+        final EProjectGraph graph = getManager().getGraph( view );
+        //        final EProjectGraph graph = getManager().getGraph( session, project );
 
         final Set<EProjectCycle> cycles = graph.getCycles();
         System.out.println( "Cycles:\n\n" + join( cycles, "\n" ) );

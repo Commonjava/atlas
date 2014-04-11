@@ -425,4 +425,9 @@ public class GraphView
         workspace.reattach( driver );
     }
 
+    public boolean hasSelections()
+    {
+        return selections != null && !selections.isEmpty();
+    }
+
 }

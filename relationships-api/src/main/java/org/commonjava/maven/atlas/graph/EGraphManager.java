@@ -262,7 +262,8 @@ public class EGraphManager
 
     public boolean containsGraph( final GraphWorkspace workspace, final ProjectVersionRef ref )
     {
-        return containsGraph( new GraphView( workspace, ref ), ref );
+        return workspace.getDatabase()
+                        .containsProject( null, ref );
     }
 
     public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )

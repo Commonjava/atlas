@@ -2232,6 +2232,11 @@ public abstract class AbstractNeo4JEGraphDriver
     @Override
     public boolean registerView( final GraphView view )
     {
+        if ( view == null )
+        {
+            return false;
+        }
+
         if ( view.getRoots() == null || view.getRoots()
                                             .isEmpty() )
         {
