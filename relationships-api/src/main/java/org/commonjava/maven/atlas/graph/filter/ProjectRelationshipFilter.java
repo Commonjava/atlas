@@ -17,8 +17,10 @@
 package org.commonjava.maven.atlas.graph.filter;
 
 import java.io.Serializable;
+import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 
 /**
  * Filter used to determine which paths in a dependency graph to traverse (or discover).
@@ -67,5 +69,7 @@ public interface ProjectRelationshipFilter
     boolean includeManagedRelationships();
 
     boolean includeConcreteRelationships();
+
+    Set<RelationshipType> getAllowedTypes();
 
 }

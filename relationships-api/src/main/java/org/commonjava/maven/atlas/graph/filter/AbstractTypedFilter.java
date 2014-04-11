@@ -135,16 +135,6 @@ public abstract class AbstractTypedFilter
         this.includeConcreteInfo = includeConcreteInfo;
     }
 
-    public boolean isManagedInfoIncluded()
-    {
-        return includeManagedInfo;
-    }
-
-    public boolean isConcreteInfoIncluded()
-    {
-        return includeConcreteInfo;
-    }
-
     @Override
     public final boolean accept( final ProjectRelationship<?> rel )
     {
@@ -304,14 +294,22 @@ public abstract class AbstractTypedFilter
     @Override
     public boolean includeManagedRelationships()
     {
-        // TODO Auto-generated method stub
-        return false;
+        return includeManagedInfo;
     }
 
     @Override
     public boolean includeConcreteRelationships()
     {
-        // TODO Auto-generated method stub
-        return false;
+        return includeConcreteInfo;
+    }
+
+    @Override
+    public Set<RelationshipType> getAllowedTypes()
+    {
+        final Set<RelationshipType> result = new HashSet<RelationshipType>();
+        result.addAll( types );
+        result.addAll( descendantTypes );
+
+        return result;
     }
 }

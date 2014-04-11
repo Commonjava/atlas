@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -70,7 +69,7 @@ public class GraphView
 
     private final GraphWorkspace workspace;
 
-    private Map<ProjectRef, ProjectVersionRef> selections;
+    private final Map<ProjectRef, ProjectVersionRef> selections;
 
     private transient String longId;
 
@@ -79,7 +78,30 @@ public class GraphView
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                       final Collection<ProjectVersionRef> roots )
     {
+        this( workspace, filter, mutator, null, roots );
+    }
+
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                      final ProjectVersionRef... roots )
+    {
+        this( workspace, filter, mutator, null, roots );
+    }
+
+    public GraphView( final GraphWorkspace workspace, final Collection<ProjectVersionRef> roots )
+    {
+        this( workspace, null, null, null, roots );
+    }
+
+    public GraphView( final GraphWorkspace workspace, final ProjectVersionRef... roots )
+    {
+        this( workspace, null, null, null, roots );
+    }
+
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                      final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
+    {
         this.filter = filter;
+        this.selections = selections;
         this.roots.addAll( roots );
         this.workspace = workspace;
         this.mutator = mutator;
@@ -87,23 +109,24 @@ public class GraphView
     }
 
     public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final ProjectVersionRef... roots )
+                      final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
     {
         this.filter = filter;
+        this.selections = selections;
         this.roots.addAll( Arrays.asList( roots ) );
         this.workspace = workspace;
         this.mutator = mutator;
         workspace.registerView( this );
     }
 
-    public GraphView( final GraphWorkspace workspace, final Collection<ProjectVersionRef> roots )
+    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
     {
-        this( workspace, null, null, roots );
+        this( workspace, null, null, selections, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectVersionRef... roots )
+    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
     {
-        this( workspace, null, null, roots );
+        this( workspace, null, null, selections, roots );
     }
 
     public GraphMutator getMutator()
@@ -342,26 +365,6 @@ public class GraphView
     public final Iterable<URI> activeSources()
     {
         return workspace.activeSources();
-    }
-
-    public final ProjectVersionRef selectVersion( final ProjectRef ref, final ProjectVersionRef selected )
-    {
-        if ( selections == null )
-        {
-            selections = new HashMap<ProjectRef, ProjectVersionRef>();
-            for ( final ProjectVersionRef root : roots )
-            {
-                selections.put( root.asProjectRef(), root );
-            }
-        }
-
-        if ( !selections.containsKey( ref ) )
-        {
-            selections.put( ref, selected );
-            getDatabase().registerViewSelection( this, ref, selected );
-        }
-
-        return selections.get( ref );
     }
 
     public final ProjectVersionRef getSelection( final ProjectRef ref )

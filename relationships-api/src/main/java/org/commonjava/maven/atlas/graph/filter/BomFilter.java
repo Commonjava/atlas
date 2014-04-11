@@ -16,49 +16,35 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
-import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 
-public class PluginOnlyFilter
+public class BomFilter
     extends AbstractTypedFilter
 {
 
-    /**
-     * 
-     */
     private static final long serialVersionUID = 1L;
 
-    public PluginOnlyFilter()
-    {
-        this( false, true );
-    }
+    public static final BomFilter INSTANCE = new BomFilter();
 
-    public PluginOnlyFilter( final boolean includeManaged, final boolean includeConcrete )
+    private BomFilter()
     {
-        super( RelationshipType.PLUGIN, false, includeManaged, includeConcrete );
+        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
+        // but they're structural, so managed isn't quite correct (despite 
+        // Maven's unfortunate choice for location).
+        super( RelationshipType.BOM, true, false, true );
     }
 
     @Override
     public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        final PluginRelationship pr = (PluginRelationship) rel;
-        if ( includeManagedRelationships() && pr.isManaged() )
-        {
-            return true;
-        }
-        else if ( includeConcreteRelationships() && !pr.isManaged() )
-        {
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        return NoneFilter.INSTANCE;
+        return this;
     }
 
 }

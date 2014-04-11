@@ -25,6 +25,7 @@ public enum GraphRelType
     implements RelationshipType
 {
     PARENT( org.commonjava.maven.atlas.graph.rel.RelationshipType.PARENT ),
+    BOM( org.commonjava.maven.atlas.graph.rel.RelationshipType.BOM ),
     C_DEPENDENCY( org.commonjava.maven.atlas.graph.rel.RelationshipType.DEPENDENCY ),
     C_PLUGIN( org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN ),
     C_PLUGIN_DEP( org.commonjava.maven.atlas.graph.rel.RelationshipType.PLUGIN_DEP ),

@@ -938,7 +938,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphView eProjectNetView )
+    public Set<ProjectVersionRef> getProjectsMatching( final GraphView eProjectNetView, final ProjectRef projectRef )
     {
         return byGA.containsKey( projectRef.asProjectRef() ) ? byGA.get( projectRef.asProjectRef() ) : Collections.<ProjectVersionRef> emptySet();
     }
@@ -1198,6 +1198,30 @@ public class JungEGraphDriver
         }
 
         return ( (JungGraphPath) path ).getTargetGAV();
+    }
+
+    @Override
+    public List<ProjectVersionRef> getPathRefs( final GraphView view, final GraphPath<?> path )
+    {
+        if ( path != null && !( path instanceof JungGraphPath ) )
+        {
+            throw new IllegalArgumentException( "Cannot get target GAV for: " + path + ". This is not a JungGraphPath instance!" );
+        }
+
+        final JungGraphPath gp = (JungGraphPath) path;
+        final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>();
+        for ( final ProjectRelationship<?> rel : gp )
+        {
+            if ( refs.isEmpty() )
+            {
+                refs.add( rel.getDeclaring() );
+            }
+
+            refs.add( rel.getTarget()
+                         .asProjectVersionRef() );
+        }
+
+        return refs;
     }
 
 }

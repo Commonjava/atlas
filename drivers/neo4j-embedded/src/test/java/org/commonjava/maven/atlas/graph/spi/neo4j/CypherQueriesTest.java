@@ -18,9 +18,11 @@ package org.commonjava.maven.atlas.graph.spi.neo4j;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Map;
 
 import org.commonjava.maven.atlas.graph.EGraphManager;
+import org.commonjava.maven.atlas.graph.filter.AnyFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectGraph;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
@@ -66,7 +68,7 @@ public class CypherQueriesTest
 
         final URI source = sourceURI();
         final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
-        final GraphView view = new GraphView( workspace, project );
+        GraphView view = new GraphView( workspace, project );
 
         /* @formatter:off */
         getManager().storeRelationships( workspace,
@@ -74,9 +76,12 @@ public class CypherQueriesTest
             new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
         );
         
-        final EProjectGraph graph = getManager().getGraph( view );
+        EProjectGraph graph = getManager().getGraph( view );
 
-        view.selectVersion( varDep, selected );
+        view = new GraphView( workspace, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
+        graph = getManager().getGraph( view );
+
+//        view.selectVersion( varDep, selected );
         
         final String cypher = "START a=node(1) "
             + "\nMATCH p=(a)-[:M_PLUGIN_DEP|C_PLUGIN|PARENT|EXTENSION|M_DEPENDENCY|M_PLUGIN|C_PLUGIN_DEP|C_DEPENDENCY*]->(n) "
@@ -110,7 +115,7 @@ public class CypherQueriesTest
 
         final URI source = sourceURI();
         final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
-        final GraphView view = new GraphView( workspace, project );
+        GraphView view = new GraphView( workspace, project );
 
         /* @formatter:off */
         getManager().storeRelationships( workspace,
@@ -118,9 +123,10 @@ public class CypherQueriesTest
             new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
         );
         
-        final EProjectGraph graph = getManager().getGraph( view );
+        EProjectGraph graph = getManager().getGraph( view );
 
-        view.selectVersion( varDep, selected );
+        view = new GraphView( workspace, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
+        graph = getManager().getGraph( view );
         
         final String cypher = "START a=node(1) "
             + "\nMATCH p=(a)-[:M_PLUGIN_DEP|C_PLUGIN|PARENT|EXTENSION|M_DEPENDENCY|M_PLUGIN|C_PLUGIN_DEP|C_DEPENDENCY*]->(n) "

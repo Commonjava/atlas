@@ -16,7 +16,11 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
+import java.util.Collections;
+import java.util.Set;
+
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 
 public class NoneFilter
     implements ProjectRelationshipFilter
@@ -85,6 +89,12 @@ public class NoneFilter
     public boolean includeConcreteRelationships()
     {
         return false;
+    }
+
+    @Override
+    public Set<RelationshipType> getAllowedTypes()
+    {
+        return Collections.emptySet();
     }
 
 }

@@ -23,6 +23,7 @@ import static org.junit.Assert.assertThat;
 
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.commonjava.maven.atlas.graph.filter.AnyFilter;
@@ -91,10 +92,10 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
         final ProjectVersionRef d3 = projectVersion( "foo", "dep-L2", "1.1.2" );
 
-        final GraphView view = new GraphView( simpleWorkspace(), AnyFilter.INSTANCE, new ManagedDependencyMutator(), root );
+        GraphView view = new GraphView( simpleWorkspace(), AnyFilter.INSTANCE, new ManagedDependencyMutator(), root );
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
+        EProjectGraph graph = getManager().createGraph( 
                 view, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( dependency( source, root, d1, 0 ) )
@@ -106,8 +107,11 @@ public abstract class TransitiveDependencyTraversalTCK
         ));
         /* @formatter:on */
 
-        graph.getView()
-             .selectVersion( d2.asProjectRef(), d3 );
+        view = new GraphView( view.getWorkspace(), AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( d2.asProjectRef(), d3 ), root );
+        graph = getManager().getGraph( view );
+
+        //        graph.getView()
+        //             .selectVersion( d2.asProjectRef(), d3 );
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
         graph.traverse( depTraversal );

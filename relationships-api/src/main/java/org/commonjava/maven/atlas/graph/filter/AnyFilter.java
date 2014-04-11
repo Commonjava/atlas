@@ -16,7 +16,12 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 
 public class AnyFilter
     implements ProjectRelationshipFilter
@@ -85,6 +90,12 @@ public class AnyFilter
     public boolean includeConcreteRelationships()
     {
         return true;
+    }
+
+    @Override
+    public Set<RelationshipType> getAllowedTypes()
+    {
+        return new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) );
     }
 
 }

@@ -9,6 +9,7 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
@@ -16,9 +17,11 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AbstractTraverseVisitor;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,10 +39,13 @@ public class CycleCacheUpdater
 
     private final GraphView view;
 
-    public CycleCacheUpdater( final GraphView view, final Node viewNode, final ConversionCache cache )
+    private final GraphAdmin admin;
+
+    public CycleCacheUpdater( final GraphView view, final Node viewNode, final GraphAdmin admin, final ConversionCache cache )
     {
         this.view = view;
         this.viewNode = viewNode;
+        this.admin = admin;
         this.cache = cache;
     }
 
@@ -68,8 +74,22 @@ public class CycleCacheUpdater
 
     private void addCycleInternal( final CyclePath cyclicPath, final Relationship injector )
     {
-        logger.debug( "Adding cycle: {} (via: {})", cyclicPath, injector );
-        Conversions.storeCachedCyclePath( cyclicPath, viewNode );
+        final Transaction tx = admin.beginTransaction();
+        try
+        {
+            logger.debug( "Adding cycle: {} (via: {})", cyclicPath, injector );
+            Conversions.storeCachedCyclePath( cyclicPath, viewNode );
+
+            final List<ProjectRelationship<?>> cycle = Conversions.convertToRelationships( cyclicPath, admin, cache );
+            logger.info( "CYCLES += {\n  {}\n}", new JoinString( "\n  ", cycle ) );
+            cycles.add( new EProjectCycle( cycle ) );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
     public static CyclePath getTerminatingCycle( final Path path )
@@ -174,8 +194,17 @@ public class CycleCacheUpdater
     @Override
     public void traverseComplete( final AtlasCollector<?> collector )
     {
-        logger.debug( "Clearing PENDING cycle-detection for: {} of view: {}", viewNode, view.getShortId() );
-        Conversions.setCycleDetectionPending( viewNode, false );
+        final Transaction tx = admin.beginTransaction();
+        try
+        {
+            logger.info( "Clearing PENDING cycle-detection for: {} of view: {}", viewNode, view.getShortId() );
+            Conversions.setCycleDetectionPending( viewNode, false );
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
 }

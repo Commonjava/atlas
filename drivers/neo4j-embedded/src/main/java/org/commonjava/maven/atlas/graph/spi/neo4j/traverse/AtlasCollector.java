@@ -27,9 +27,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.AbstractNeo4JEGraphDriver;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
-import org.commonjava.maven.atlas.graph.spi.neo4j.ViewIndexes;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -63,20 +61,20 @@ public final class AtlasCollector<STATE>
 
     private GraphAdmin admin;
 
-    private ViewIndexes indexes;
-
     private boolean useSelections = true;
 
-    public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view, final ViewIndexes indexes, final GraphAdmin admin )
+    private Node viewNode;
+
+    public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view, final Node viewNode, final GraphAdmin admin )
     {
-        this( visitor, Collections.singleton( start ), view, indexes, admin );
+        this( visitor, Collections.singleton( start ), view, viewNode, admin );
     }
 
-    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final ViewIndexes indexes,
+    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final Node viewNode,
                            final GraphAdmin admin )
     {
         this.visitor = visitor;
-        this.indexes = indexes;
+        this.viewNode = viewNode;
         this.admin = admin;
         visitor.configure( this );
 
@@ -85,10 +83,10 @@ public final class AtlasCollector<STATE>
         this.view = view;
     }
 
-    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final ViewIndexes indexes,
+    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final Node viewNode,
                            final GraphAdmin admin, final Direction direction )
     {
-        this( visitor, startNodes, view, indexes, admin );
+        this( visitor, startNodes, view, viewNode, admin );
         this.direction = direction;
     }
 
@@ -182,10 +180,7 @@ public final class AtlasCollector<STATE>
             {
                 if ( useSelections )
                 {
-                    final AbstractNeo4JEGraphDriver db = (AbstractNeo4JEGraphDriver) view.getDatabase();
-                    logger.debug( "Using database: {} to check selection of: {} in path: {}", db, wrap( r ), path );
-
-                    final Relationship selected = db == null ? null : db.select( r, view, pathInfo, graphPath );
+                    final Relationship selected = admin.select( r, view, viewNode, pathInfo, graphPath );
                     if ( selected == null )
                     {
                         logger.debug( "selection failed for: {} at {}. Likely, this is filter rejection from: {}", r, graphPath, pathInfo );
@@ -193,7 +188,7 @@ public final class AtlasCollector<STATE>
                     }
 
                     // if no selection happened and r is a selection-only relationship, skip it.
-                    if ( selected == r && admin.isSelection( r, view ) )
+                    if ( selected == r && admin.isSelection( r, viewNode ) )
                     {
                         logger.debug( "{} is NOT the result of selection, yet it is marked as a selection relationship. Path: {}", r, path );
                         continue;
@@ -257,7 +252,7 @@ public final class AtlasCollector<STATE>
     @Override
     public PathExpander<STATE> reverse()
     {
-        final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, indexes, admin, direction.reverse() );
+        final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, viewNode, admin, direction.reverse() );
         collector.setConversionCache( cache );
         collector.setUseSelections( useSelections );
 

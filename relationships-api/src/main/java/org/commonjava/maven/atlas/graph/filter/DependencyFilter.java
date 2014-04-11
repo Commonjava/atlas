@@ -97,11 +97,11 @@ public class DependencyFilter
             }
         }
 
-        if ( !isManagedInfoIncluded() && dr.isManaged() )
+        if ( !includeManagedRelationships() && dr.isManaged() )
         {
             return false;
         }
-        else if ( !isConcreteInfoIncluded() && !dr.isManaged() )
+        else if ( !includeConcreteRelationships() && !dr.isManaged() )
         {
             return false;
         }
@@ -134,8 +134,8 @@ public class DependencyFilter
                 newExcludes = ex;
             }
 
-            return new DependencyFilter( nextScope, scopeTransitivity, isManagedInfoIncluded(), isConcreteInfoIncluded(), useImpliedScopes,
-                                         newExcludes );
+            return new DependencyFilter( nextScope, scopeTransitivity, includeManagedRelationships(), includeConcreteRelationships(),
+                                         useImpliedScopes, newExcludes );
         }
 
         return this;

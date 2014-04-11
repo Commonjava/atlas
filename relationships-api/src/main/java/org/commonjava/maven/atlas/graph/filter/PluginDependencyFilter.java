@@ -64,11 +64,11 @@ public class PluginDependencyFilter
         final PluginDependencyRelationship pdr = (PluginDependencyRelationship) rel;
         if ( plugin == null || plugin.equals( pdr.getPlugin() ) )
         {
-            if ( isManagedInfoIncluded() && pdr.isManaged() )
+            if ( includeManagedRelationships() && pdr.isManaged() )
             {
                 return true;
             }
-            else if ( isConcreteInfoIncluded() && !pdr.isManaged() )
+            else if ( includeConcreteRelationships() && !pdr.isManaged() )
             {
                 return true;
             }

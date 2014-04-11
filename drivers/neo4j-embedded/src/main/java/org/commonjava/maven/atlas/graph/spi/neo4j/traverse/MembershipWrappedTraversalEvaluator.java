@@ -62,12 +62,15 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final GraphAdmin admin;
 
+    private final Node viewNode;
+
     public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view,
-                                                final GraphAdmin admin, final int pass )
+                                                final Node viewNode, final GraphAdmin admin, final int pass )
     {
         this.rootIds = rootIds;
         this.traversal = traversal;
         this.view = view;
+        this.viewNode = viewNode;
         this.admin = admin;
         this.pass = pass;
     }
@@ -79,6 +82,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.pass = ev.pass;
         this.view = ev.view;
         this.admin = ev.admin;
+        this.viewNode = ev.viewNode;
         this.reversedExpander = reversedExpander;
     }
 
@@ -172,10 +176,10 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                 continue;
             }
 
-            final Relationship selected = admin.select( r, view, pathInfo, graphPath );
+            final Relationship selected = admin.select( r, view, viewNode, pathInfo, graphPath );
 
             // if no selection happened and r is a selection-only relationship, skip it.
-            if ( ( selected == null || selected == r ) && admin.isSelection( r, view ) )
+            if ( ( selected == null || selected == r ) && admin.isSelection( r, viewNode ) )
             {
                 continue;
             }

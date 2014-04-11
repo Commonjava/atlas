@@ -19,11 +19,14 @@ package org.commonjava.maven.atlas.graph.filter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 
 public abstract class AbstractAggregatingFilter
     implements ProjectRelationshipFilter, Iterable<ProjectRelationshipFilter>
@@ -228,5 +231,17 @@ public abstract class AbstractAggregatingFilter
         }
 
         return false;
+    }
+
+    @Override
+    public Set<RelationshipType> getAllowedTypes()
+    {
+        final Set<RelationshipType> result = new HashSet<RelationshipType>();
+        for ( final ProjectRelationshipFilter filter : filters )
+        {
+            result.addAll( filter.getAllowedTypes() );
+        }
+
+        return result;
     }
 }

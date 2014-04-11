@@ -16,8 +16,12 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.filter;
 
+import java.util.HashSet;
+import java.util.Set;
+
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 
 public class PluginRuntimeFilter
@@ -88,6 +92,20 @@ public class PluginRuntimeFilter
     public boolean includeConcreteRelationships()
     {
         return true;
+    }
+
+    @Override
+    public Set<RelationshipType> getAllowedTypes()
+    {
+        final Set<RelationshipType> result = new HashSet<RelationshipType>();
+        result.add( RelationshipType.PLUGIN );
+
+        // for descendants
+        result.add( RelationshipType.PARENT );
+        result.add( RelationshipType.DEPENDENCY );
+        result.add( RelationshipType.PLUGIN_DEP );
+
+        return result;
     }
 
 }

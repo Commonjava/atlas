@@ -23,6 +23,7 @@ import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -549,10 +550,10 @@ public class EGraphManager
         }
     }
 
-    public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef, final GraphWorkspace workspace )
+    public Set<ProjectVersionRef> getProjectsMatching( final GraphWorkspace workspace, final ProjectRef projectRef )
     {
         return workspace.getDatabase()
-                        .getProjectsMatching( projectRef, new GraphView( workspace ) );
+                        .getProjectsMatching( new GraphView( workspace ), projectRef );
     }
 
     public GraphWorkspace createTemporaryWorkspace( final GraphWorkspaceConfiguration config )
@@ -598,6 +599,12 @@ public class EGraphManager
     {
         return view.getDatabase()
                    .createPath( relationships );
+    }
+
+    public List<ProjectVersionRef> getPathRefs( final GraphView view, final GraphPath<?> path )
+    {
+        return view.getDatabase()
+                   .getPathRefs( view, path );
     }
 
 }

@@ -26,11 +26,8 @@ import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SO
 
 import java.net.URI;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.filter.AbstractAggregatingFilter;
-import org.commonjava.maven.atlas.graph.filter.AbstractTypedFilter;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -150,75 +147,26 @@ public final class TraversalUtils
 
         final Set<GraphRelType> result = new HashSet<GraphRelType>();
 
-        if ( filter instanceof AbstractTypedFilter )
+        final Set<RelationshipType> types = filter.getAllowedTypes();
+        for ( final RelationshipType rt : types )
         {
-            final AbstractTypedFilter typedFilter = (AbstractTypedFilter) filter;
-            final Set<RelationshipType> types = typedFilter.getRelationshipTypes();
-            for ( final RelationshipType rt : types )
+            if ( filter.includeManagedRelationships() )
             {
-                if ( typedFilter.includeManagedRelationships() )
+                final GraphRelType grt = GraphRelType.map( rt, true );
+                if ( grt != null )
                 {
-                    final GraphRelType grt = GraphRelType.map( rt, true );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
-                }
-
-                if ( typedFilter.includeConcreteRelationships() )
-                {
-                    final GraphRelType grt = GraphRelType.map( rt, false );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
+                    result.add( grt );
                 }
             }
 
-            final Set<RelationshipType> dTypes = typedFilter.getDescendantRelationshipTypes();
-            for ( final RelationshipType rt : dTypes )
+            if ( filter.includeConcreteRelationships() )
             {
-                if ( typedFilter.includeManagedRelationships() )
+                final GraphRelType grt = GraphRelType.map( rt, false );
+                if ( grt != null )
                 {
-                    final GraphRelType grt = GraphRelType.map( rt, true );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
-                }
-
-                if ( typedFilter.includeConcreteRelationships() )
-                {
-                    final GraphRelType grt = GraphRelType.map( rt, false );
-                    if ( grt != null )
-                    {
-                        result.add( grt );
-                    }
+                    result.add( grt );
                 }
             }
-        }
-        else if ( filter instanceof AbstractAggregatingFilter )
-        {
-            final List<? extends ProjectRelationshipFilter> filters = ( (AbstractAggregatingFilter) filter ).getFilters();
-
-            for ( final ProjectRelationshipFilter f : filters )
-            {
-                result.addAll( getGraphRelTypes( f ) );
-            }
-        }
-        else
-        {
-            result.addAll( GraphRelType.atlasRelationshipTypes() );
-        }
-
-        if ( !filter.includeConcreteRelationships() )
-        {
-            result.removeAll( GraphRelType.concreteAtlasRelationshipTypes() );
-        }
-
-        if ( !filter.includeManagedRelationships() )
-        {
-            result.removeAll( GraphRelType.managedAtlasRelationshipTypes() );
         }
 
         return result;

@@ -22,6 +22,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.AtlasCollector;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.RelationshipIndex;
@@ -38,7 +39,7 @@ public class ViewUpdater
 
     private final ConversionCache cache;
 
-    private final GraphAdmin maint;
+    private final GraphAdmin admin;
 
     private final CycleCacheUpdater cycleUpdater;
 
@@ -46,32 +47,41 @@ public class ViewUpdater
 
     private Node stopNode;
 
-    public ViewUpdater( final GraphView view, final Node viewNode, final ViewIndexes indexes, final ConversionCache cache, final GraphAdmin maint )
+    public ViewUpdater( final GraphView view, final Node viewNode, final ViewIndexes indexes, final ConversionCache cache, final GraphAdmin admin )
     {
         this.viewNode = viewNode;
         this.indexes = indexes;
         this.cache = cache;
-        this.maint = maint;
-        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, cache );
+        this.admin = admin;
+        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin, cache );
     }
 
     public ViewUpdater( final Node stopNode, final GraphView view, final Node viewNode, final ViewIndexes indexes, final ConversionCache cache,
-                        final GraphAdmin maint )
+                        final GraphAdmin admin )
     {
         this.stopNode = stopNode;
         this.viewNode = viewNode;
         this.indexes = indexes;
         this.cache = cache;
-        this.maint = maint;
-        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, cache );
+        this.admin = admin;
+        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin, cache );
     }
 
     public void cacheRoots( final Set<Node> roots )
     {
-        final Index<Node> cachedNodes = indexes.getCachedNodes();
-        for ( final Node node : roots )
+        final Transaction tx = admin.beginTransaction();
+        try
         {
-            cachedNodes.add( node, NID, node.getId() );
+            final Index<Node> cachedNodes = indexes.getCachedNodes();
+            for ( final Node node : roots )
+            {
+                cachedNodes.add( node, NID, node.getId() );
+            }
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
         }
     }
 
@@ -80,21 +90,32 @@ public class ViewUpdater
         for ( final Entry<Long, ProjectRelationship<?>> entry : createdRelationshipsMap.entrySet() )
         {
             final Long rid = entry.getKey();
-            final Relationship add = maint.getRelationship( rid );
+            final Relationship add = admin.getRelationship( rid );
 
             // TODO: WTF is the point of this??
             //            indexes.getSelections()
             //                   .remove( add );
             //
-            logger.debug( "Checking node cache for: {}", add.getStartNode() );
-            final IndexHits<Node> hits = indexes.getCachedNodes()
-                                                .get( NID, add.getStartNode()
-                                                              .getId() );
-            if ( hits.hasNext() )
+
+            final Transaction tx = admin.beginTransaction();
+            try
             {
-                Conversions.setMembershipDetectionPending( viewNode, true );
-                Conversions.setCycleDetectionPending( viewNode, true );
-                return true;
+                logger.debug( "Checking node cache for: {}", add.getStartNode() );
+                final IndexHits<Node> hits = indexes.getCachedNodes()
+                                                    .get( NID, add.getStartNode()
+                                                                  .getId() );
+                if ( hits.hasNext() )
+                {
+                    Conversions.setMembershipDetectionPending( viewNode, true );
+                    Conversions.setCycleDetectionPending( viewNode, true );
+
+                    tx.success();
+                    return true;
+                }
+            }
+            finally
+            {
+                tx.finish();
             }
         }
 
@@ -116,42 +137,54 @@ public class ViewUpdater
 
     private void cachePath( final Neo4jGraphPath path, final GraphPathInfo pathInfo )
     {
-        final CyclePath cyclePath = CycleCacheUpdater.getTerminatingCycle( path, maint );
+        final CyclePath cyclePath = CycleCacheUpdater.getTerminatingCycle( path, admin );
         if ( cyclePath != null )
         {
-            logger.info( "CYCLE: {}", cyclePath );
+            //            logger.info( "CYCLE: {}", cyclePath );
 
-            final Relationship injector = maint.getRelationship( path.getLastRelationshipId() );
+            final Relationship injector = admin.getRelationship( path.getLastRelationshipId() );
             cycleUpdater.addCycle( cyclePath, injector );
 
             return;
         }
 
-        logger.debug( "Caching path: {}", path );
-
-        final RelationshipIndex cachedRels = indexes.getCachedRelationships();
-        final Index<Node> cachedNodes = indexes.getCachedNodes();
-
-        final Set<Long> nodes = new HashSet<Long>();
-        for ( final Long relId : path )
+        final Transaction tx = admin.beginTransaction();
+        try
         {
-            final Relationship r = maint.getRelationship( relId );
+            logger.debug( "Caching path: {}", path );
 
-            cachedRels.add( r, RID, relId );
+            final RelationshipIndex cachedRels = indexes.getCachedRelationships();
+            final Index<Node> cachedNodes = indexes.getCachedNodes();
 
-            final long startId = r.getStartNode()
-                                  .getId();
-            if ( nodes.add( startId ) )
+            final Set<Long> nodes = new HashSet<Long>();
+            for ( final Long relId : path )
             {
-                cachedNodes.add( r.getStartNode(), NID, startId );
-            }
+                final Relationship r = admin.getRelationship( relId );
 
-            final long endId = r.getEndNode()
-                                .getId();
-            if ( nodes.add( endId ) )
-            {
-                cachedNodes.add( r.getEndNode(), NID, endId );
+                logger.debug( "rel-membership += " + relId );
+                cachedRels.add( r, RID, relId );
+
+                final long startId = r.getStartNode()
+                                      .getId();
+                if ( nodes.add( startId ) )
+                {
+                    logger.debug( "node-membership += " + startId );
+                    cachedNodes.add( r.getStartNode(), NID, startId );
+                }
+
+                final long endId = r.getEndNode()
+                                    .getId();
+                if ( nodes.add( endId ) )
+                {
+                    logger.debug( "node-membership += " + endId );
+                    cachedNodes.add( r.getEndNode(), NID, endId );
+                }
             }
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
         }
     }
 
@@ -178,8 +211,18 @@ public class ViewUpdater
     {
         if ( stopNode == null )
         {
-            // we did a complete traversal.
-            Conversions.setMembershipDetectionPending( viewNode, false );
+            final Transaction tx = admin.beginTransaction();
+            try
+            {
+                // we did a complete traversal.
+                Conversions.setMembershipDetectionPending( viewNode, false );
+                tx.success();
+            }
+            finally
+            {
+                tx.finish();
+            }
+
             cycleUpdater.traverseComplete( collector );
         }
     }

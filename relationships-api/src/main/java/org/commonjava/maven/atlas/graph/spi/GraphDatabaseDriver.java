@@ -142,7 +142,7 @@ public interface GraphDatabaseDriver
     Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
                                                           boolean includeConcreteInfo, RelationshipType... types );
 
-    Set<ProjectVersionRef> getProjectsMatching( ProjectRef projectRef, GraphView eProjectNetView );
+    Set<ProjectVersionRef> getProjectsMatching( GraphView eProjectNetView, ProjectRef projectRef );
 
     void printStats();
 
@@ -197,5 +197,7 @@ public interface GraphDatabaseDriver
     Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( GraphView view, Set<ProjectVersionRef> refs );
 
     ProjectVersionRef getPathTargetRef( GraphPath<?> path );
+
+    List<ProjectVersionRef> getPathRefs( GraphView view, GraphPath<?> path );
 
 }

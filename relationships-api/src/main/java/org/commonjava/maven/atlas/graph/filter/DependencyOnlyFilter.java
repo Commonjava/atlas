@@ -72,7 +72,7 @@ public class DependencyOnlyFilter
         {
             if ( scope == s || ( useImpliedScope && s.implies( scope ) ) )
             {
-                if ( ( dr.isManaged() && isManagedInfoIncluded() ) || ( !dr.isManaged() && isConcreteInfoIncluded() ) )
+                if ( ( dr.isManaged() && includeManagedRelationships() ) || ( !dr.isManaged() && includeConcreteRelationships() ) )
                 {
                     return true;
                 }
