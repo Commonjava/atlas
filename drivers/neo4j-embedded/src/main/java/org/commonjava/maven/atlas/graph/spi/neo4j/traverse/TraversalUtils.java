@@ -138,7 +138,7 @@ public final class TraversalUtils
         logger.debug( message, params );
     }
 
-    public static Set<GraphRelType> getGraphRelTypes( final ProjectRelationshipFilter filter )
+    public static GraphRelType[] getGraphRelTypes( final ProjectRelationshipFilter filter )
     {
         if ( filter == null )
         {
@@ -169,7 +169,7 @@ public final class TraversalUtils
             }
         }
 
-        return result;
+        return result.toArray( new GraphRelType[result.size()] );
     }
 
 }

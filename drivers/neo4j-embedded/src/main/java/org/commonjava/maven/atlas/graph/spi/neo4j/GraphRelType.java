@@ -84,7 +84,7 @@ public enum GraphRelType
         return null;
     }
 
-    public static Set<GraphRelType> atlasRelationshipTypes()
+    public static GraphRelType[] atlasRelationshipTypes()
     {
         final Set<GraphRelType> types = new HashSet<GraphRelType>();
         for ( final GraphRelType type : values() )
@@ -95,10 +95,10 @@ public enum GraphRelType
             }
         }
 
-        return types;
+        return types.toArray( new GraphRelType[types.size()] );
     }
 
-    public static Set<GraphRelType> concreteAtlasRelationshipTypes()
+    public static GraphRelType[] concreteAtlasRelationshipTypes()
     {
         final Set<GraphRelType> types = new HashSet<GraphRelType>();
         for ( final GraphRelType type : values() )
@@ -109,10 +109,10 @@ public enum GraphRelType
             }
         }
 
-        return types;
+        return types.toArray( new GraphRelType[types.size()] );
     }
 
-    public static Set<GraphRelType> managedAtlasRelationshipTypes()
+    public static GraphRelType[] managedAtlasRelationshipTypes()
     {
         final Set<GraphRelType> types = new HashSet<GraphRelType>();
         for ( final GraphRelType type : values() )
@@ -123,6 +123,6 @@ public enum GraphRelType
             }
         }
 
-        return types;
+        return types.toArray( new GraphRelType[types.size()] );
     }
 }

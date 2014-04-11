@@ -27,6 +27,7 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -64,8 +65,10 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final Node viewNode;
 
+    private final GraphRelType[] types;
+
     public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view,
-                                                final Node viewNode, final GraphAdmin admin, final int pass )
+                                                final Node viewNode, final GraphAdmin admin, final int pass, final GraphRelType... types )
     {
         this.rootIds = rootIds;
         this.traversal = traversal;
@@ -73,6 +76,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.viewNode = viewNode;
         this.admin = admin;
         this.pass = pass;
+        this.types = types;
     }
 
     private MembershipWrappedTraversalEvaluator( final MembershipWrappedTraversalEvaluator<STATE> ev, final boolean reversedExpander )
@@ -83,6 +87,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.view = ev.view;
         this.admin = ev.admin;
         this.viewNode = ev.viewNode;
+        this.types = ev.types;
         this.reversedExpander = reversedExpander;
     }
 
@@ -152,7 +157,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r, cache ) );
         }
 
-        final Iterable<Relationship> rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING );
+        final Iterable<Relationship> rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING, types );
         if ( rs == null )
         {
             //            logger.info( "No relationships from end-node: {}", node );

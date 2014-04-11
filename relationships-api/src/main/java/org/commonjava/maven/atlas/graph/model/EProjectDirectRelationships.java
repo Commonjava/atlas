@@ -258,7 +258,7 @@ public class EProjectDirectRelationships
             for ( BomRelationship bom : boms )
             {
                 bom = adjustDeclaring( bom );
-                boms.add( bom );
+                this.boms.add( bom );
             }
 
             return this;

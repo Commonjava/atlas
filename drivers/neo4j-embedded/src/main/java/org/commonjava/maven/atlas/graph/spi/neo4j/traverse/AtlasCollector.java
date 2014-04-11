@@ -28,6 +28,7 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
+import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -65,17 +66,22 @@ public final class AtlasCollector<STATE>
 
     private Node viewNode;
 
-    public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view, final Node viewNode, final GraphAdmin admin )
+    private GraphRelType[] types;
+
+    public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view, final Node viewNode, final GraphAdmin admin,
+                           final GraphRelType... types )
     {
         this( visitor, Collections.singleton( start ), view, viewNode, admin );
+        this.types = types;
     }
 
     public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final Node viewNode,
-                           final GraphAdmin admin )
+                           final GraphAdmin admin, final GraphRelType... types )
     {
         this.visitor = visitor;
         this.viewNode = viewNode;
         this.admin = admin;
+        this.types = types;
         visitor.configure( this );
 
         this.startNodes = startNodes;
@@ -84,9 +90,9 @@ public final class AtlasCollector<STATE>
     }
 
     public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final Node viewNode,
-                           final GraphAdmin admin, final Direction direction )
+                           final GraphAdmin admin, final GraphRelType[] types, final Direction direction )
     {
-        this( visitor, startNodes, view, viewNode, admin );
+        this( visitor, startNodes, view, viewNode, admin, types );
         this.direction = direction;
     }
 
@@ -168,7 +174,7 @@ public final class AtlasCollector<STATE>
                                                                                                                       .getProperty( GAV ), direction,
                           path );
             final Iterable<Relationship> relationships = path.endNode()
-                                                             .getRelationships( direction );
+                                                             .getRelationships( direction, types );
 
             //            logger.info( "{} Determining which of {} child relationships to expand traversal into for: {}\n{}", getClass().getName(), path.length(),
             //                         path.endNode()
@@ -252,7 +258,7 @@ public final class AtlasCollector<STATE>
     @Override
     public PathExpander<STATE> reverse()
     {
-        final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, viewNode, admin, direction.reverse() );
+        final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, viewNode, admin, types, direction.reverse() );
         collector.setConversionCache( cache );
         collector.setUseSelections( useSelections );
 
