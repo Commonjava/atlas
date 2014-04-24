@@ -18,7 +18,6 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -39,8 +38,9 @@ public class DependencyTreeRelationshipPrinter
     }
 
     @Override
-    public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget, final StringBuilder builder,
-                       final Map<String, Set<ProjectVersionRef>> labels, final int depth, final String indent )
+    public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget,
+                       final StringBuilder builder, final Map<String, Set<ProjectVersionRef>> labels, final int depth,
+                       final String indent )
     {
         indent( builder, depth, indent );
 
@@ -68,15 +68,8 @@ public class DependencyTreeRelationshipPrinter
         if ( type == RelationshipType.DEPENDENCY )
         {
             final DependencyRelationship dr = (DependencyRelationship) relationship;
-            if ( DependencyScope._import == dr.getScope() /*&& dr.isManaged() && "pom".equals( dr.getType() )*/)
-            {
-                localLabels.add( "BOM" );
-            }
-            else
-            {
-                suffix = ":" + dr.getScope()
-                                 .name();
-            }
+            suffix = ":" + dr.getScope()
+                             .name();
 
             if ( dr.getTargetArtifact()
                    .isOptional() )
@@ -111,8 +104,9 @@ public class DependencyTreeRelationshipPrinter
     }
 
     @Override
-    public void printProjectVersionRef( final ProjectVersionRef targetArtifact, final StringBuilder builder, final String targetSuffix,
-                                        final Map<String, Set<ProjectVersionRef>> labels, final Set<String> localLabels )
+    public void printProjectVersionRef( final ProjectVersionRef targetArtifact, final StringBuilder builder,
+                                        final String targetSuffix, final Map<String, Set<ProjectVersionRef>> labels,
+                                        final Set<String> localLabels )
     {
         // the original could be an artifact ref!
         final ProjectVersionRef target = targetArtifact.asProjectVersionRef();
