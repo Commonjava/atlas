@@ -505,7 +505,7 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
+    public synchronized Set<ProjectRelationship<?>> addRelationships( final ProjectRelationship<?>... rels )
     {
         final Map<Long, ProjectRelationship<?>> createdRelationshipsMap = addRelationshipsInternal( rels );
 
@@ -695,6 +695,7 @@ public abstract class AbstractNeo4JEGraphDriver
     private Node newProjectNode( final ProjectVersionRef ref )
     {
         final Node node = graph.createNode();
+
         toNodeProperties( ref, node, false );
 
         final String gav = ref.asProjectVersionRef()

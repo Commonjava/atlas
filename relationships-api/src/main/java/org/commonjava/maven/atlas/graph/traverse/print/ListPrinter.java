@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.traverse.print;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -17,6 +19,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -43,59 +46,69 @@ public class ListPrinter
         this.relationshipPrinter = relationshipPrinter;
     }
 
-    public String printStructure( final ProjectVersionRef from, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                                  final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from,
+                                final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
+                                final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
     {
-        return printStructure( from, links, null, null, labels );
+        printStructure( from, links, null, null, labels, writer );
     }
 
-    public String printStructure( final ProjectVersionRef from, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                                  final String header, final String footer, final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from,
+                                final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links, final String header,
+                                final String footer, final Map<String, Set<ProjectVersionRef>> labels,
+                                PrintWriter writer )
     {
-        final StringBuilder builder = new StringBuilder();
         if ( header != null )
         {
-            builder.append( header );
+            writer.print( header );
         }
 
-        builder.append( "  " );
-        relationshipPrinter.printProjectVersionRef( from, builder, null, labels, null );
-        //      builder.append( from );
+        writer.print( "  " );
+        relationshipPrinter.printProjectVersionRef( from, writer, null, labels, null );
+        //      writer.print( from );
 
         final Set<String> lines = new LinkedHashSet<String>();
 
-        printLinks( from, lines, links, labels, new HashSet<ProjectRef>() );
+        printLinks( from, lines, links, labels, new HashSet<ProjectRef>(), new Stack<ProjectVersionRef>() );
 
         final List<String> sorted = new ArrayList<String>( lines );
         Collections.sort( sorted );
 
         for ( final String line : sorted )
         {
-            builder.append( "\n  " )
-                   .append( line );
+            writer.print( "\n  " );
+            writer.print( line );
         }
-        builder.append( "\n" );
+        writer.print( "\n" );
 
         if ( footer != null )
         {
-            builder.append( footer );
+            writer.print( footer );
         }
-
-        return builder.toString();
     }
 
     private void printLinks( final ProjectVersionRef from, final Set<String> lines, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                             final Map<String, Set<ProjectVersionRef>> labels, final Set<ProjectRef> excluded )
+                             final Map<String, Set<ProjectVersionRef>> labels, final Set<ProjectRef> excluded,
+                             final Stack<ProjectVersionRef> inPath )
     {
+        inPath.push( from );
 
         final List<ProjectRelationship<?>> outbound = links.get( from );
         if ( outbound != null )
         {
-            final StringBuilder builder = new StringBuilder();
+            StringWriter sw;
             for ( final ProjectRelationship<?> out : outbound )
             {
-                if ( excluded.contains( out.getTarget()
-                                           .asProjectVersionRef() ) )
+                sw = new StringWriter();
+
+                ProjectVersionRef outRef = out.getTarget()
+                                              .asProjectVersionRef();
+                if ( inPath.contains( outRef ) )
+                {
+                    continue;
+                }
+
+                if ( excluded.contains( outRef ) )
                 {
                     continue;
                 }
@@ -106,10 +119,9 @@ public class ListPrinter
                 //                    return;
                 //                }
 
-                builder.setLength( 0 );
 
-                relationshipPrinter.print( out, null, builder, labels, 0, "" );
-                lines.add( builder.toString() );
+                relationshipPrinter.print( out, null, new PrintWriter( sw ), labels, 0, "" );
+                lines.add( sw.toString() );
 
                 if ( !from.equals( out.getTarget()
                                       .asProjectRef() ) )
@@ -133,7 +145,7 @@ public class ListPrinter
                     }
 
                     printLinks( out.getTarget()
-                                   .asProjectVersionRef(), lines, links, labels, excluded );
+                                   .asProjectVersionRef(), lines, links, labels, excluded, inPath );
 
                     if ( newExcluded != null && !newExcluded.isEmpty() )
                     {
@@ -142,6 +154,8 @@ public class ListPrinter
                 }
             }
         }
+
+        inPath.pop();
     }
 
 }

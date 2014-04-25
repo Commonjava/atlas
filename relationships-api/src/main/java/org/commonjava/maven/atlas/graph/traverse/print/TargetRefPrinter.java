@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.traverse.print;
 
+import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -22,36 +23,38 @@ public final class TargetRefPrinter
 {
 
     @Override
-    public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget, final StringBuilder builder,
+    public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget,
+                       final PrintWriter writer,
                        final Map<String, Set<ProjectVersionRef>> labels, final int depth, final String indent )
     {
         for ( int i = 0; i < depth; i++ )
         {
-            builder.append( indent );
+            writer.print( indent );
         }
 
         final ProjectVersionRef originalTarget = relationship.getTarget()
                                                              .asProjectVersionRef();
         final ProjectVersionRef target = selectedTarget == null ? originalTarget : selectedTarget;
 
-        printProjectVersionRef( target, builder, null, labels, null );
+        printProjectVersionRef( target, writer, null, labels, null );
 
         if ( target != originalTarget )
         {
-            builder.append( " [was: " )
-                   .append( originalTarget )
-                   .append( "]" );
+            writer.print( " [was: " );
+            writer.print( originalTarget );
+            writer.print( "]" );
         }
     }
 
     @Override
-    public void printProjectVersionRef( final ProjectVersionRef target, final StringBuilder builder, final String targetSuffix,
+    public void printProjectVersionRef( final ProjectVersionRef target, final PrintWriter writer,
+                                        final String targetSuffix,
                                         final Map<String, Set<ProjectVersionRef>> labels, final Set<String> localLabels )
     {
-        builder.append( target );
+        writer.print( target );
         if ( targetSuffix != null )
         {
-            builder.append( targetSuffix );
+            writer.print( targetSuffix );
         }
 
         boolean hasLabel = false;
@@ -65,21 +68,21 @@ public final class TargetRefPrinter
                 if ( !hasLabel )
                 {
                     hasLabel = true;
-                    builder.append( " (" );
+                    writer.print( " (" );
                 }
                 else
                 {
-                    builder.append( ", " );
+                    writer.print( ", " );
                 }
 
-                builder.append( label );
+                writer.print( label );
             }
 
         }
 
         if ( hasLabel )
         {
-            builder.append( ')' );
+            writer.print( ')' );
         }
     }
 

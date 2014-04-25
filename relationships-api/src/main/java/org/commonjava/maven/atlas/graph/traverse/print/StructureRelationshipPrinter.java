@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.traverse.print;
 
+import java.io.PrintWriter;
 import java.util.Map;
 import java.util.Set;
 
@@ -18,9 +19,9 @@ import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public interface StructureRelationshipPrinter
 {
-    void print( ProjectRelationship<?> relationship, ProjectVersionRef targetOverride, StringBuilder builder,
+    void print( ProjectRelationship<?> relationship, ProjectVersionRef targetOverride, PrintWriter writer,
                 Map<String, Set<ProjectVersionRef>> labels, int depth, String indent );
 
-    void printProjectVersionRef( ProjectVersionRef targetArtifact, StringBuilder builder, String targetSuffix,
+    void printProjectVersionRef( ProjectVersionRef targetArtifact, PrintWriter writer, String targetSuffix,
                                  Map<String, Set<ProjectVersionRef>> labels, Set<String> localLabels );
 }

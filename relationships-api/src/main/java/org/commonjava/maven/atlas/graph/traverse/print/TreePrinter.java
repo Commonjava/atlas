@@ -10,22 +10,26 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.traverse.print;
 
+import java.io.PrintWriter;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TreePrinter
 {
 
-    //    private final Logger logger = new Logger( getClass() );
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final StructureRelationshipPrinter relationshipPrinter;
 
@@ -53,46 +57,50 @@ public class TreePrinter
     //        this.collapseTransitives = collapseTransitives;
     //    }
 
-    public String printStructure( final ProjectVersionRef from, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                                  final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from,
+                                  final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
+                                final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
     {
-        return printStructure( from, links, null, null, "  ", labels );
+        printStructure( from, links, null, null, "  ", labels, writer );
     }
 
-    public String printStructure( final ProjectVersionRef from, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                                  final String indent, final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from,
+                                  final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
+ final String indent,
+                                final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
     {
-        return printStructure( from, links, null, null, indent, labels );
+        printStructure( from, links, null, null, indent, labels, writer );
     }
 
-    public String printStructure( final ProjectVersionRef from, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                                  final String header, final String footer, final String indent, final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from,
+                                  final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
+                                  final String header, final String footer, final String indent,
+                                final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
     {
-        final StringBuilder builder = new StringBuilder();
         if ( header != null )
         {
-            builder.append( header );
+            writer.print( header );
         }
 
-        builder.append( "\n" );
-        relationshipPrinter.printProjectVersionRef( from, builder, null, labels, null );
-        //        builder.append( from );
+        writer.print( "\n" );
+        relationshipPrinter.printProjectVersionRef( from, writer, null, labels, null );
+        //        writer.print( from );
 
-        printLinks( from, builder, indent, 1, links, labels, new HashSet<ProjectRef>() );
-        builder.append( "\n" );
+        printLinks( from, writer, indent, 1, links, labels, new HashSet<ProjectRef>(), new Stack<ProjectVersionRef>() );
+        writer.print( "\n" );
 
         if ( footer != null )
         {
-            builder.append( footer );
+            writer.print( footer );
         }
-
-        return builder.toString();
     }
 
-    private void printLinks( final ProjectVersionRef from, final StringBuilder builder, final String indent, final int depth,
-                             final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links, final Map<String, Set<ProjectVersionRef>> labels,
-                             final Set<ProjectRef> excluded )
+    private void printLinks( final ProjectVersionRef from, final PrintWriter writer, final String indent,
+                             final int depth, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
+                             final Map<String, Set<ProjectVersionRef>> labels, final Set<ProjectRef> excluded,
+                             final Stack<ProjectVersionRef> inPath )
     {
+        inPath.push( from );
         selected.put( from.asProjectRef(), from );
 
         final List<ProjectRelationship<?>> outbound = links.get( from );
@@ -100,11 +108,19 @@ public class TreePrinter
         {
             for ( final ProjectRelationship<?> out : outbound )
             {
+                ProjectVersionRef outRef = out.getTarget()
+                                              .asProjectVersionRef();
+                if ( inPath.contains( outRef ) )
+                {
+                    continue;
+                }
+
                 if ( excluded.contains( out.getTarget()
                                            .asProjectVersionRef() ) )
                 {
                     continue;
                 }
+
                 // TODO: Reinstate transitive collapse IF we can find a way to make output consistent.
                 //                else if ( collapseTransitives && !seen.add( out.getTarget()
                 //                                                               .asProjectRef() ) )
@@ -112,7 +128,7 @@ public class TreePrinter
                 //                    return;
                 //                }
 
-                builder.append( "\n" );
+                writer.append( "\n" );
 
                 final ProjectVersionRef selection = selected.get( out.getTarget()
                                                                      .asProjectRef() );
@@ -123,11 +139,12 @@ public class TreePrinter
                                      .asProjectRef(), selection );
                 }
 
-                relationshipPrinter.print( out, selection, builder, labels, depth, indent );
+                relationshipPrinter.print( out, selection, writer, labels, depth, indent );
 
                 if ( ( selection == null || selection.equals( out.getTarget()
-                                                                 .asProjectVersionRef() ) ) && !from.equals( out.getTarget()
-                                                                                                                .asProjectVersionRef() ) )
+                                                                 .asProjectVersionRef() ) )
+                    && !from.equals( out.getTarget()
+                                        .asProjectVersionRef() ) )
                 {
                     Set<ProjectRef> newExcluded = null;
                     if ( out instanceof DependencyRelationship )
@@ -148,7 +165,7 @@ public class TreePrinter
                     }
 
                     printLinks( out.getTarget()
-                                   .asProjectVersionRef(), builder, indent, depth + 1, links, labels, excluded );
+                                   .asProjectVersionRef(), writer, indent, depth + 1, links, labels, excluded, inPath );
 
                     if ( newExcluded != null && !newExcluded.isEmpty() )
                     {
@@ -157,6 +174,8 @@ public class TreePrinter
                 }
             }
         }
+
+        inPath.pop();
     }
 
 }

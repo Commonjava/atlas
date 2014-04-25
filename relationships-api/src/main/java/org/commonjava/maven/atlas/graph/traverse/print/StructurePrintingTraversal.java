@@ -10,12 +10,14 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.traverse.print;
 
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Stack;
 
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
@@ -88,56 +90,64 @@ public class StructurePrintingTraversal
         return false;
     }
 
-    public String printStructure( final ProjectVersionRef from, final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from, final Map<String, Set<ProjectVersionRef>> labels,
+                                final PrintWriter writer )
     {
-        return printStructure( from, null, null, "  ", labels );
+        printStructure( from, null, null, "  ", labels, writer );
     }
 
-    public String printStructure( final ProjectVersionRef from, final String indent, final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from, final String indent,
+                                final Map<String, Set<ProjectVersionRef>> labels, final PrintWriter writer )
     {
-        return printStructure( from, null, null, indent, labels );
+        printStructure( from, null, null, indent, labels, writer );
     }
 
-    public String printStructure( final ProjectVersionRef from, final String header, final String footer, final String indent,
-                                  final Map<String, Set<ProjectVersionRef>> labels )
+    public void printStructure( final ProjectVersionRef from, final String header, final String footer,
+                                final String indent, final Map<String, Set<ProjectVersionRef>> labels,
+                                final PrintWriter writer )
     {
-        final StringBuilder builder = new StringBuilder();
         if ( header != null )
         {
-            builder.append( header );
+            writer.print( header );
         }
 
-        builder.append( "\n" );
-        builder.append( from );
+        writer.print( "\n" );
+        writer.print( from );
 
-        printLinks( from, builder, indent, 1, labels, new HashSet<ProjectRef>() );
-        builder.append( "\n" );
+        printLinks( from, writer, indent, 1, labels, new HashSet<ProjectRef>(), new Stack<ProjectVersionRef>() );
+        writer.print( "\n" );
 
         if ( footer != null )
         {
-            builder.append( footer );
+            writer.print( footer );
         }
-
-        return builder.toString();
     }
 
-    private void printLinks( final ProjectVersionRef from, final StringBuilder builder, final String indent, final int depth,
-                             final Map<String, Set<ProjectVersionRef>> labels, final Set<ProjectRef> excluded )
+    private void printLinks( final ProjectVersionRef from, final PrintWriter writer, final String indent,
+                             final int depth, final Map<String, Set<ProjectVersionRef>> labels,
+                             final Set<ProjectRef> excluded, final Stack<ProjectVersionRef> inPath )
     {
+        inPath.push( from );
         final List<ProjectRelationship<?>> outbound = outboundLinks.get( from );
         if ( outbound != null )
         {
             for ( final ProjectRelationship<?> out : outbound )
             {
-                if ( excluded.contains( out.getTarget()
-                                           .asProjectVersionRef() ) )
+                final ProjectVersionRef outRef = out.getTarget()
+                                              .asProjectVersionRef();
+                if ( inPath.contains( outRef ) )
                 {
                     continue;
                 }
 
-                builder.append( "\n" );
+                if ( excluded.contains( outRef ) )
+                {
+                    continue;
+                }
 
-                relationshipPrinter.print( out, null, builder, labels, depth, indent );
+                writer.append( "\n" );
+
+                relationshipPrinter.print( out, null, writer, labels, depth, indent );
 
                 if ( !from.equals( out.getTarget()
                                       .asProjectVersionRef() ) )
@@ -161,7 +171,7 @@ public class StructurePrintingTraversal
                     }
 
                     printLinks( out.getTarget()
-                                   .asProjectVersionRef(), builder, indent, depth + 1, labels, excluded );
+                                   .asProjectVersionRef(), writer, indent, depth + 1, labels, excluded, inPath );
 
                     if ( newExcluded != null && !newExcluded.isEmpty() )
                     {
@@ -170,6 +180,7 @@ public class StructurePrintingTraversal
                 }
             }
         }
+        inPath.pop();
     }
 
     @Override

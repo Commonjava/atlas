@@ -52,13 +52,9 @@ import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public final class Conversions
 {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger( Conversions.class );
 
     public static final String RELATIONSHIP_ID = "relationship_id";
 
@@ -263,7 +259,6 @@ public final class Conversions
 
         if ( ref.isVariableVersion() )
         {
-            LOGGER.debug( "Marking: {} as variable.", ref );
             node.setProperty( VARIABLE, true );
         }
 
@@ -476,7 +471,7 @@ public final class Conversions
                         final String[] parts = ex.split( ":" );
                         if ( parts.length != 2 )
                         {
-                            LOGGER.error( "In: {} -> {} skipping invalid exclude specification: '{}'", from, artifact, ex );
+                            //                            LOGGER.error( "In: {} -> {} skipping invalid exclude specification: '{}'", from, artifact, ex );
                         }
                         else
                         {
