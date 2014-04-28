@@ -16,7 +16,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
@@ -29,11 +29,11 @@ public class JungWorkspaceFactory
 
     @Override
     public GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( workspaces.containsKey( id ) )
         {
-            throw new GraphDriverException( "Workspace already exists: %s. Cannot create workspace.", id );
+            throw new RelationshipGraphConnectionException( "Workspace already exists: %s. Cannot create workspace.", id );
         }
 
         final GraphWorkspace ws = new GraphWorkspace( id, new JungEGraphDriver( config ) );
@@ -43,7 +43,7 @@ public class JungWorkspaceFactory
 
     @Override
     public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final GraphWorkspace ws = new GraphWorkspace( Long.toString( System.currentTimeMillis() ), new JungEGraphDriver( config ) );
         workspaces.put( ws.getId(), ws );
@@ -58,14 +58,14 @@ public class JungWorkspaceFactory
 
     @Override
     public void storeWorkspace( final GraphWorkspace workspace )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         // currently just stored in memory...
     }
 
     @Override
     public GraphWorkspace loadWorkspace( final String id )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         return workspaces.get( id );
     }

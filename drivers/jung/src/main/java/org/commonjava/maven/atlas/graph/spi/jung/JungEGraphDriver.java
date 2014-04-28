@@ -38,8 +38,8 @@ import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.jung.model.JungGraphPath;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
@@ -56,7 +56,7 @@ import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 
 public class JungEGraphDriver
-    implements GraphDatabaseDriver
+    implements RelationshipGraphConnection
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
@@ -320,7 +320,7 @@ public class JungEGraphDriver
 
     @Override
     public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final int passes = traversal.getRequiredPasses();
         for ( int i = 0; i < passes; i++ )
@@ -739,7 +739,7 @@ public class JungEGraphDriver
 
     @Override
     public synchronized void reindex()
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         for ( final Map.Entry<ProjectVersionRef, Map<String, String>> refEntry : metadata.entrySet() )
         {
@@ -939,7 +939,7 @@ public class JungEGraphDriver
 
     @Override
     public void deleteRelationshipsDeclaredBy( final ProjectVersionRef ref )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final Collection<ProjectRelationship<?>> edges = graph.getOutEdges( ref.asProjectVersionRef() );
         if ( edges != null )

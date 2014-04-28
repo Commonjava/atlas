@@ -17,7 +17,7 @@ import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.mutate.VersionManagerMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
-public class GraphPathInfo
+public final class GraphPathInfo
     implements Serializable
 {
 

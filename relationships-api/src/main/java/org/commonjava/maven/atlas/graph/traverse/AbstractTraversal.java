@@ -16,7 +16,7 @@ import java.util.List;
 
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 
 public abstract class AbstractTraversal
     implements ProjectNetTraversal
@@ -59,7 +59,7 @@ public abstract class AbstractTraversal
     }
 
     public void startTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
     }
 
@@ -69,7 +69,7 @@ public abstract class AbstractTraversal
     }
 
     public void endTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
     }
 

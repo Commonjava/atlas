@@ -52,7 +52,7 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
@@ -827,7 +827,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     @Override
     public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final Node rootNode = getNode( root );
         if ( rootNode == null )
@@ -1470,18 +1470,18 @@ public abstract class AbstractNeo4JEGraphDriver
 
     @Override
     public ExecutionResult executeFrom( final String cypher, final ProjectVersionRef... roots )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         return executeFrom( cypher, null, roots );
     }
 
     @Override
     public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params, final ProjectVersionRef... roots )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( cypher.startsWith( "START" ) )
         {
-            throw new GraphDriverException( "Leave off the START clause when supplying ProjectVersionRef instances as query roots:\n'{}'", cypher );
+            throw new RelationshipGraphConnectionException( "Leave off the START clause when supplying ProjectVersionRef instances as query roots:\n'{}'", cypher );
         }
 
         final StringBuilder sb = new StringBuilder();
@@ -1508,18 +1508,18 @@ public abstract class AbstractNeo4JEGraphDriver
 
     @Override
     public ExecutionResult executeFrom( final String cypher, final ProjectRelationship<?> rootRel )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         return executeFrom( cypher, null, rootRel );
     }
 
     @Override
     public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params, final ProjectRelationship<?> rootRel )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( cypher.startsWith( "START" ) )
         {
-            throw new GraphDriverException( "Leave off the START clause when supplying ProjectRelationship instances as query roots:\n'{}'", cypher );
+            throw new RelationshipGraphConnectionException( "Leave off the START clause when supplying ProjectRelationship instances as query roots:\n'{}'", cypher );
         }
 
         String id = "*";
@@ -1567,7 +1567,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     @Override
     public void reindex()
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final Transaction tx = graph.beginTx();
         try
@@ -1794,7 +1794,7 @@ public abstract class AbstractNeo4JEGraphDriver
 
     @Override
     public void deleteRelationshipsDeclaredBy( final ProjectVersionRef ref )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         checkClosed();
 

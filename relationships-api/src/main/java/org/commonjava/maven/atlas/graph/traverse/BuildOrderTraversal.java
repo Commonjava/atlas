@@ -22,7 +22,7 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.traverse.model.BuildOrder;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -82,7 +82,7 @@ public class BuildOrderTraversal
 
     @Override
     public void endTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         super.endTraverse( pass, network );
 

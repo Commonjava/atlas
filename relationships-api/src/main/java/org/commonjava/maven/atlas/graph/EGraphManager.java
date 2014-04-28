@@ -34,8 +34,8 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
 import org.commonjava.maven.atlas.graph.workspace.AbstractGraphWorkspaceListener;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
@@ -73,7 +73,7 @@ public class EGraphManager
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final ProjectRelationship<?>... rels )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
         return workspace.getDatabase()
@@ -81,7 +81,7 @@ public class EGraphManager
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final Collection<ProjectRelationship<?>> rels )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
         return workspace.getDatabase()
@@ -89,7 +89,7 @@ public class EGraphManager
     }
 
     public EProjectGraph createGraph( final GraphWorkspace workspace, final EProjectDirectRelationships rels )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final ProjectVersionRef project = rels.getKey()
                                               .getProject();
@@ -102,7 +102,7 @@ public class EGraphManager
     }
 
     public EProjectGraph createGraph( final GraphView view, final EProjectDirectRelationships rels )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .addRelationships( rels.getExactAllRelationships()
@@ -160,7 +160,7 @@ public class EGraphManager
 
     public EProjectWeb getWeb( final GraphView view )
     {
-        final GraphDatabaseDriver dbDriver = view.getWorkspace()
+        final RelationshipGraphConnection dbDriver = view.getWorkspace()
                                                  .getDatabase();
         for ( final ProjectVersionRef ref : view.getRoots() )
         {
@@ -174,7 +174,7 @@ public class EGraphManager
     }
 
     public synchronized GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final GraphWorkspace ws = workspaceFactory.createWorkspace( id, config )
                                                   .addListener( this );
@@ -184,7 +184,7 @@ public class EGraphManager
     }
 
     public synchronized GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final GraphWorkspace ws = workspaceFactory.createWorkspace( config )
                                                   .addListener( this );
@@ -215,7 +215,7 @@ public class EGraphManager
     }
 
     public synchronized GraphWorkspace getWorkspace( final String id )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         GraphWorkspace ws = loadedWorkspaces.get( id );
         if ( ws != null )
@@ -250,7 +250,7 @@ public class EGraphManager
 
     public boolean containsGraph( final GraphView view, final ProjectVersionRef ref )
     {
-        final GraphDatabaseDriver dbDriver = view.getDatabase();
+        final RelationshipGraphConnection dbDriver = view.getDatabase();
         return dbDriver.containsProject( view, ref ) && !dbDriver.isMissing( view, ref );
     }
 
@@ -396,35 +396,35 @@ public class EGraphManager
     }
 
     public void addMetadata( final GraphWorkspace workspace, final EProjectKey key, final String name, final String value )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspace.getDatabase()
                  .addMetadata( key.getProject(), name, value );
     }
 
     public void setMetadata( final GraphWorkspace workspace, final EProjectKey key, final Map<String, String> metadata )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspace.getDatabase()
                  .setMetadata( key.getProject(), metadata );
     }
 
     public void addMetadata( final GraphWorkspace workspace, final ProjectVersionRef project, final String name, final String value )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspace.getDatabase()
                  .addMetadata( project, name, value );
     }
 
     public void setMetadata( final GraphWorkspace workspace, final ProjectVersionRef project, final Map<String, String> metadata )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspace.getDatabase()
                  .setMetadata( project, metadata );
     }
 
     public void reindex( final GraphWorkspace workspace )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspace.getDatabase()
                  .reindex();
@@ -442,21 +442,21 @@ public class EGraphManager
     }
 
     public void addDisconnectedProject( final GraphWorkspace workspace, final ProjectVersionRef ref )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspace.getDatabase()
                  .addDisconnectedProject( ref );
     }
 
     public void deleteRelationshipsDeclaredBy( final GraphView view, final ProjectVersionRef ref )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .deleteRelationshipsDeclaredBy( ref );
     }
 
     public void deleteRelationshipsDeclaredBy( final GraphWorkspace workspace, final ProjectVersionRef ref )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspace.getDatabase()
                  .deleteRelationshipsDeclaredBy( ref );
@@ -484,7 +484,7 @@ public class EGraphManager
             }
             catch ( final IOException e )
             {
-                new GraphDriverException( "Failed to close workspace: {}.", e, wsid ).printStackTrace( new PrintWriter( sw ) );
+                new RelationshipGraphConnectionException( "Failed to close workspace: {}.", e, wsid ).printStackTrace( new PrintWriter( sw ) );
                 if ( sb.length() > 0 )
                 {
                     sb.append( "\n\n" );
@@ -509,7 +509,7 @@ public class EGraphManager
             {
                 storeWorkspace( ws );
             }
-            catch ( final GraphDriverException e )
+            catch ( final RelationshipGraphConnectionException e )
             {
                 logger.error( String.format( "Failed to store workspace %s on detach. Reason: %s", ws.getId(), e.getMessage() ), e );
             }
@@ -538,7 +538,7 @@ public class EGraphManager
             {
                 workspaceFactory.storeWorkspace( workspace );
             }
-            catch ( final GraphDriverException e )
+            catch ( final RelationshipGraphConnectionException e )
             {
                 logger.error( String.format( "Failed to store updates for workspace: %s. Reason: %s", workspace, e.getMessage() ), e );
             }
@@ -552,7 +552,7 @@ public class EGraphManager
     }
 
     public GraphWorkspace createTemporaryWorkspace( final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final GraphWorkspace ws = createWorkspace( config );
         ws.setProperty( TEMP_WS, Boolean.toString( true ) );
@@ -567,7 +567,7 @@ public class EGraphManager
     }
 
     public void storeWorkspace( final GraphWorkspace ws )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         workspaceFactory.storeWorkspace( ws );
     }
