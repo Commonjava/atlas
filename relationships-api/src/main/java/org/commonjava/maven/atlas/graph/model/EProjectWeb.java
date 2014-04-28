@@ -22,8 +22,8 @@ import java.util.Set;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -106,13 +106,13 @@ public class EProjectWeb
      * @see org.apache.maven.graph.effective.EProjectNetwork#add(org.apache.maven.graph.effective.EProjectRelationships)
      */
     public Set<ProjectRelationship<?>> add( final EProjectDirectRelationships rels )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         return addAll( rels.getAllRelationships() );
     }
 
     public <T extends ProjectRelationship<?>> boolean add( final T rel )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( rel == null )
         {
@@ -126,7 +126,7 @@ public class EProjectWeb
 
     @Override
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( rels == null )
         {
@@ -149,7 +149,7 @@ public class EProjectWeb
     }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final T... rels )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( rels == null )
         {
@@ -175,7 +175,7 @@ public class EProjectWeb
      * @see org.apache.maven.graph.effective.EProjectNetwork#connect(org.apache.maven.graph.effective.EProjectWeb)
      */
     public void connect( final EProjectNet otherWeb )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( !otherWeb.getDatabase()
                       .equals( getDatabase() ) )
@@ -188,7 +188,7 @@ public class EProjectWeb
      * @see org.apache.maven.graph.effective.EProjectNetwork#traverse(org.apache.maven.graph.common.ref.ProjectVersionRef, org.apache.maven.graph.effective.traverse.ProjectGraphTraversal)
      */
     public void traverse( final ProjectVersionRef start, final ProjectNetTraversal traversal )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .traverse( view, traversal, this, start );
@@ -245,7 +245,7 @@ public class EProjectWeb
 
     @Override
     public void addCycle( final EProjectCycle cycle )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .addCycle( cycle );
@@ -272,7 +272,7 @@ public class EProjectWeb
     }
 
     @Override
-    public GraphDatabaseDriver getDatabase()
+    public RelationshipGraphConnection getDatabase()
     {
         return view.getDatabase();
     }
@@ -300,7 +300,7 @@ public class EProjectWeb
 
     @Override
     public void addMetadata( final EProjectKey key, final String name, final String value )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .addMetadata( key.getProject(), name, value );
@@ -308,7 +308,7 @@ public class EProjectWeb
 
     @Override
     public void addMetadata( final EProjectKey key, final Map<String, String> metadata )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .setMetadata( key.getProject(), metadata );
@@ -323,7 +323,7 @@ public class EProjectWeb
 
     @Override
     public void reindex()
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .reindex();
@@ -358,14 +358,14 @@ public class EProjectWeb
     @Override
     @SuppressWarnings( "unchecked" )
     public EProjectNet filteredInstance( final ProjectRelationshipFilter filter )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         return new EProjectWeb( view.getWorkspace(), filter, view.getMutator(), getRoots().toArray( new ProjectVersionRef[] {} ) );
     }
 
     @Override
     public void addDisconnectedProject( final ProjectVersionRef ref )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         view.getDatabase()
             .addDisconnectedProject( ref );

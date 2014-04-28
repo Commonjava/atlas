@@ -8,7 +8,7 @@
  * Contributors:
  *     Red Hat, Inc. - initial API and implementation
  ******************************************************************************/
-package org.commonjava.maven.atlas.graph.model;
+package org.commonjava.maven.atlas.graph;
 
 import static org.apache.commons.lang.StringUtils.join;
 
@@ -24,9 +24,6 @@ import java.util.Set;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
-import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceListener;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -49,7 +46,7 @@ import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
  * 
  * @author jdcasey
  */
-public class GraphView
+public class ViewParams
     implements Serializable
 {
 
@@ -61,7 +58,13 @@ public class GraphView
 
     private final GraphMutator mutator;
 
-    private final GraphWorkspace workspace;
+    private Set<URI> activePomLocations;
+
+    private Set<URI> activeSources;
+
+    private long lastAccess = System.currentTimeMillis();
+
+    private Map<String, String> properties;
 
     private final Map<ProjectRef, ProjectVersionRef> selections;
 
@@ -69,58 +72,60 @@ public class GraphView
 
     private transient String shortId;
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+    private final String workspaceId;
+
+    public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                       final Collection<ProjectVersionRef> roots )
     {
-        this( workspace, filter, mutator, null, roots );
+        this( workspaceId, filter, mutator, null, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+    public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                       final ProjectVersionRef... roots )
     {
-        this( workspace, filter, mutator, null, roots );
+        this( workspaceId, filter, mutator, null, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final Collection<ProjectVersionRef> roots )
+    public ViewParams( final String workspaceId, final Collection<ProjectVersionRef> roots )
     {
-        this( workspace, null, null, null, roots );
+        this( workspaceId, null, null, null, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectVersionRef... roots )
+    public ViewParams( final String workspaceId, final ProjectVersionRef... roots )
     {
-        this( workspace, null, null, null, roots );
+        this( workspaceId, null, null, null, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+    public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                       final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
     {
+        this.workspaceId = workspaceId;
         this.filter = filter;
         this.selections = selections;
         this.roots.addAll( roots );
-        this.workspace = workspace;
         this.mutator = mutator;
-        workspace.registerView( this );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
+    public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                       final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
     {
+        this.workspaceId = workspaceId;
         this.filter = filter;
         this.selections = selections;
         this.roots.addAll( Arrays.asList( roots ) );
-        this.workspace = workspace;
         this.mutator = mutator;
-        workspace.registerView( this );
     }
 
-    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
+    public ViewParams( final String workspaceId, final Map<ProjectRef, ProjectVersionRef> selections,
+                       final Collection<ProjectVersionRef> roots )
     {
-        this( workspace, null, null, selections, roots );
+        this( workspaceId, null, null, selections, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
+    public ViewParams( final String workspaceId, final Map<ProjectRef, ProjectVersionRef> selections,
+                       final ProjectVersionRef... roots )
     {
-        this( workspace, null, null, selections, roots );
+        this( workspaceId, null, null, selections, roots );
     }
 
     public GraphMutator getMutator()
@@ -138,11 +143,6 @@ public class GraphView
         return roots;
     }
 
-    public GraphWorkspace getWorkspace()
-    {
-        return workspace;
-    }
-
     @Override
     public int hashCode()
     {
@@ -150,7 +150,6 @@ public class GraphView
         int result = 1;
         result = prime * result + ( ( filter == null ) ? 0 : filter.hashCode() );
         result = prime * result + ( ( roots == null ) ? 0 : roots.hashCode() );
-        result = prime * result + ( ( workspace == null ) ? 0 : workspace.hashCode() );
         return result;
     }
 
@@ -169,7 +168,7 @@ public class GraphView
         {
             return false;
         }
-        final GraphView other = (GraphView) obj;
+        final ViewParams other = (ViewParams) obj;
         if ( filter == null )
         {
             if ( other.filter != null )
@@ -192,17 +191,6 @@ public class GraphView
         {
             return false;
         }
-        if ( workspace == null )
-        {
-            if ( other.workspace != null )
-            {
-                return false;
-            }
-        }
-        else if ( !workspace.equals( other.workspace ) )
-        {
-            return false;
-        }
         return true;
     }
 
@@ -212,29 +200,6 @@ public class GraphView
         return getLongId() + " (shortId: " + getShortId() + ")";
     }
 
-    public RelationshipGraphConnection getDatabase()
-    {
-        return workspace == null ? null : workspace.getDatabase();
-    }
-
-    //    public void setSelections( final VersionManager selections )
-    //    {
-    //        if ( workspace != null )
-    //        {
-    //            workspace.setSelections( selections );
-    //        }
-    //    }
-    //
-    //    public void setFilter( final ProjectRelationshipFilter filter )
-    //    {
-    //        this.filter = filter;
-    //    }
-    //
-    //    public void setMutator( final GraphMutator mutator )
-    //    {
-    //        this.mutator = mutator;
-    //    }
-    //
     public String getLongId()
     {
         if ( longId == null )
@@ -247,9 +212,7 @@ public class GraphView
             sb.append( abbreviatedPackage )
               .append( '.' )
               .append( getClass().getSimpleName() )
-              .append( "(workspace:" )
-              .append( workspace.getId() )
-              .append( ",roots:" )
+              .append( "(roots:" )
               .append( join( roots, "," ) )
               .append( ",filter:" )
               .append( filter == null ? "none" : filter.getLongId() )
@@ -278,87 +241,94 @@ public class GraphView
 
     public void touch()
     {
-        workspace.touch();
+        lastAccess = System.currentTimeMillis();
     }
 
-    public GraphWorkspace addActivePomLocation( final URI location )
+    public ViewParams addActivePomLocation( final URI location )
     {
-        return workspace.addActivePomLocation( location );
+        activePomLocations.add( location );
+        return this;
     }
 
-    public GraphWorkspace addActivePomLocations( final Collection<URI> locations )
+    public ViewParams addActivePomLocations( final Collection<URI> locations )
     {
-        return workspace.addActivePomLocations( locations );
+        activePomLocations.addAll( locations );
+        return this;
     }
 
-    public GraphWorkspace addActivePomLocations( final URI... locations )
+    public ViewParams addActivePomLocations( final URI... locations )
     {
-        return workspace.addActivePomLocations( locations );
+        activePomLocations.addAll( Arrays.asList( locations ) );
+        return this;
     }
 
-    public GraphWorkspace addActiveSources( final Collection<URI> sources )
+    public ViewParams addActiveSources( final Collection<URI> sources )
     {
-        return workspace.addActiveSources( sources );
+        activeSources.addAll( sources );
+        return this;
     }
 
-    public GraphWorkspace addActiveSources( final URI... sources )
+    public ViewParams addActiveSources( final URI... sources )
     {
-        return workspace.addActiveSources( sources );
+        activeSources.addAll( Arrays.asList( sources ) );
+        return this;
     }
 
-    public GraphWorkspace addActiveSource( final URI source )
+    public ViewParams addActiveSource( final URI source )
     {
-        return workspace.addActiveSource( source );
+        activeSources.add( source );
+        return this;
     }
 
     public long getLastAccess()
     {
-        return workspace.getLastAccess();
+        return lastAccess;
     }
 
     public String setProperty( final String key, final String value )
     {
-        return workspace.setProperty( key, value );
+        return properties.put( key, value );
     }
 
     public String removeProperty( final String key )
     {
-        return workspace.removeProperty( key );
+        return properties.remove( key );
     }
 
     public String getProperty( final String key )
     {
-        return workspace.getProperty( key );
+        return properties.get( key );
     }
 
     public String getProperty( final String key, final String def )
     {
-        return workspace.getProperty( key, def );
+        final String val = properties.get( key );
+        return val == null ? def : val;
     }
 
     public final String getWorkspaceId()
     {
-        return workspace.getId();
+        return workspaceId;
     }
 
     public final Set<URI> getActivePomLocations()
     {
-        return workspace.getActivePomLocations();
+        return activePomLocations;
     }
 
     public final Set<URI> getActiveSources()
     {
-        return workspace.getActiveSources();
+        return activeSources;
     }
 
     public final Iterable<URI> activePomLocations()
     {
-        return workspace.activePomLocations();
+        return activePomLocations;
     }
 
     public final Iterable<URI> activeSources()
     {
-        return workspace.activeSources();
+        return activeSources;
     }
 
     public final ProjectVersionRef getSelection( final ProjectRef ref )
@@ -375,16 +345,6 @@ public class GraphView
         }
 
         return selected;
-    }
-
-    public final boolean isOpen()
-    {
-        return workspace.isOpen();
-    }
-
-    public GraphWorkspace addListener( final GraphWorkspaceListener listener )
-    {
-        return workspace.addListener( listener );
     }
 
     public boolean hasSelection( final ProjectVersionRef ref )
@@ -412,11 +372,6 @@ public class GraphView
         }
 
         return sb.toString();
-    }
-
-    public void reattach( final RelationshipGraphConnection driver )
-    {
-        workspace.reattach( driver );
     }
 
     public boolean hasSelections()

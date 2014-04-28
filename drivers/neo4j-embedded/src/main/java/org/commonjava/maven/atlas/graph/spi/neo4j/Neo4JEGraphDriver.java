@@ -13,32 +13,32 @@ package org.commonjava.maven.atlas.graph.spi.neo4j;
 import java.util.Map;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 
 public interface Neo4JEGraphDriver
-    extends GraphDatabaseDriver
+    extends RelationshipGraphConnection
 {
 
     ExecutionResult executeFrom( String cypher, ProjectVersionRef... roots )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     ExecutionResult executeFrom( String cypher, ProjectRelationship<?> rootRel )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     ExecutionResult execute( String cypher )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     ExecutionResult executeFrom( String cypher, Map<String, Object> params, ProjectVersionRef... roots )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     ExecutionResult executeFrom( String cypher, Map<String, Object> params, ProjectRelationship<?> rootRel )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     ExecutionResult execute( String cypher, Map<String, Object> params )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     //    Node getNode( ProjectVersionRef ref )
     //        throws GraphDriverException;

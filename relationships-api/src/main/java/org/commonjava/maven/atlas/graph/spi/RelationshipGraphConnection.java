@@ -28,7 +28,7 @@ import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
-public interface GraphDatabaseDriver
+public interface RelationshipGraphConnection
     extends Closeable
 {
 
@@ -39,19 +39,19 @@ public interface GraphDatabaseDriver
      */
 
     boolean addCycle( EProjectCycle cycle )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void addDisconnectedProject( ProjectVersionRef ref )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void addMetadata( ProjectVersionRef ref, String key, String value )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void setMetadata( ProjectVersionRef ref, Map<String, String> metadata )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void deleteRelationshipsDeclaredBy( ProjectVersionRef root )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     /**
      * Add the given relationships. Skip/return those that introduce cycles.
@@ -59,13 +59,13 @@ public interface GraphDatabaseDriver
      * @return The set of relationships that were NOT added because they introduce cycles. NEVER null, but maybe empty.
      */
     Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void recomputeIncompleteSubgraphs()
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void reindex()
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     /* 
      * ################################################
@@ -88,7 +88,7 @@ public interface GraphDatabaseDriver
     Set<ProjectVersionRef> getAllProjects( GraphView view );
 
     void traverse( GraphView view, ProjectNetTraversal traversal, EProjectNet net, ProjectVersionRef root )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     boolean containsProject( GraphView view, ProjectVersionRef ref );
 

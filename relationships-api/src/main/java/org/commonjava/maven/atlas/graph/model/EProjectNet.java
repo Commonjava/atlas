@@ -18,8 +18,8 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -28,19 +28,19 @@ public interface EProjectNet
 {
 
     <T extends ProjectRelationship<?>> Set<T> addAll( Collection<T> rels )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void addCycle( final EProjectCycle cycle )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void addDisconnectedProject( ProjectVersionRef ref )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void addMetadata( EProjectKey key, String name, String value )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void addMetadata( EProjectKey key, Map<String, String> metadata )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     //    Map<ProjectVersionRef, SingleVersion> clearSelectedVersions()
     //        throws GraphDriverException;
@@ -48,7 +48,7 @@ public interface EProjectNet
     boolean containsGraph( ProjectVersionRef ref );
 
     <T extends EProjectNet> T filteredInstance( ProjectRelationshipFilter filter )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     boolean introducesCycle( ProjectRelationship<?> rel );
 
@@ -64,7 +64,7 @@ public interface EProjectNet
 
     Set<EProjectCycle> getCycles();
 
-    GraphDatabaseDriver getDatabase();
+    RelationshipGraphConnection getDatabase();
 
     GraphWorkspace getWorkspace();
 
@@ -99,7 +99,7 @@ public interface EProjectNet
     Set<ProjectVersionRef> getProjectsWithMetadata( String key );
 
     void reindex()
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     boolean isMissing( ProjectVersionRef ref );
 

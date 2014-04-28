@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 
 public final class GraphWorkspace
@@ -38,20 +38,20 @@ public final class GraphWorkspace
 
     private String id;
 
-    private transient GraphDatabaseDriver dbDriver;
+    private transient RelationshipGraphConnection dbDriver;
 
     private transient boolean open = true;
 
     private transient List<GraphWorkspaceListener> listeners;
 
-    public GraphWorkspace( final String id, final GraphDatabaseDriver dbDriver )
+    public GraphWorkspace( final String id, final RelationshipGraphConnection dbDriver )
     {
         this.id = id;
         //        this.config = config;
         this.dbDriver = dbDriver;
     }
 
-    public GraphWorkspace( final String id, final GraphDatabaseDriver dbDriver, final long lastAccess )
+    public GraphWorkspace( final String id, final RelationshipGraphConnection dbDriver, final long lastAccess )
     {
         this.id = id;
         //        this.config = config;
@@ -354,7 +354,7 @@ public final class GraphWorkspace
         return this;
     }
 
-    public GraphDatabaseDriver getDatabase()
+    public RelationshipGraphConnection getDatabase()
     {
         return dbDriver;
     }
@@ -369,7 +369,7 @@ public final class GraphWorkspace
     //        return config;
     //    }
 
-    public void reattach( final GraphDatabaseDriver driver )
+    public void reattach( final RelationshipGraphConnection driver )
     {
         this.dbDriver = driver;
     }

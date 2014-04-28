@@ -22,7 +22,7 @@ import java.util.Stack;
 import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
@@ -191,7 +191,7 @@ public class StructurePrintingTraversal
 
     @Override
     public void startTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( traversal != null )
         {
@@ -201,7 +201,7 @@ public class StructurePrintingTraversal
 
     @Override
     public void endTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         if ( traversal != null )
         {

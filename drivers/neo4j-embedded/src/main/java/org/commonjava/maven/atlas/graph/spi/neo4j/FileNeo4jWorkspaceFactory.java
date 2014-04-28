@@ -16,7 +16,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.commons.io.FileUtils;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.GraphWorkspaceFactory;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
@@ -56,16 +56,16 @@ public class FileNeo4jWorkspaceFactory
 
     @Override
     public synchronized GraphWorkspace createWorkspace( final String id, final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final File db = new File( dbBaseDirectory, id );
         if ( db.exists() )
         {
-            throw new GraphDriverException( "Workspace directory already exists: {}. Cannot create workspace.", id );
+            throw new RelationshipGraphConnectionException( "Workspace directory already exists: {}. Cannot create workspace.", id );
         }
         else if ( !db.mkdirs() )
         {
-            throw new GraphDriverException( "Failed to create workspace directory for: {}. (dir: {})", id, db );
+            throw new RelationshipGraphConnectionException( "Failed to create workspace directory for: {}. (dir: {})", id, db );
         }
 
         final GraphWorkspace ws = new GraphWorkspace( id, new FileNeo4JEGraphDriver( config, db, useShutdownHook ) );
@@ -76,7 +76,7 @@ public class FileNeo4jWorkspaceFactory
 
     @Override
     public synchronized GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         try
         {
@@ -91,7 +91,7 @@ public class FileNeo4jWorkspaceFactory
         final File db = new File( dbBaseDirectory, id );
         if ( db.exists() || !db.mkdirs() )
         {
-            throw new GraphDriverException( "Cannot create database directory for workspace: {}", id );
+            throw new RelationshipGraphConnectionException( "Cannot create database directory for workspace: {}", id );
         }
 
         final GraphWorkspace ws = new GraphWorkspace( id, new FileNeo4JEGraphDriver( config, db, useShutdownHook ) );
@@ -102,13 +102,13 @@ public class FileNeo4jWorkspaceFactory
 
     @Override
     public void storeWorkspace( final GraphWorkspace workspace )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
     }
 
     @Override
     public GraphWorkspace loadWorkspace( final String id )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final File db = new File( dbBaseDirectory, id );
         if ( !db.isDirectory() )
@@ -142,7 +142,7 @@ public class FileNeo4jWorkspaceFactory
                 logger.info( "Loading workspace: {}", id );
                 results.add( loadWorkspace( id ) );
             }
-            catch ( final GraphDriverException e )
+            catch ( final RelationshipGraphConnectionException e )
             {
                 logger.error( String.format( "Failed to load workspace: %s. Reason: %s", id, e.getMessage() ), e );
             }

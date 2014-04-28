@@ -23,16 +23,16 @@ public interface GraphWorkspaceFactory
         throws IOException;
 
     GraphWorkspace createWorkspace( GraphWorkspaceConfiguration config )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     GraphWorkspace createWorkspace( String id, GraphWorkspaceConfiguration config )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     void storeWorkspace( GraphWorkspace workspace )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     GraphWorkspace loadWorkspace( String id )
-        throws GraphDriverException;
+        throws RelationshipGraphConnectionException;
 
     Set<GraphWorkspace> loadAllWorkspaces( Set<String> excludedIds );
 

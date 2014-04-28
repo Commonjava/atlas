@@ -8,11 +8,11 @@
  * Contributors:
  *     Red Hat, Inc. - initial API and implementation
  ******************************************************************************/
-package org.commonjava.maven.atlas.graph.spi;
+package org.commonjava.maven.atlas.graph;
 
 import java.util.IllegalFormatException;
 
-public class GraphDriverException
+public class RelationshipGraphException
     extends Exception
 {
 
@@ -20,13 +20,13 @@ public class GraphDriverException
 
     private final Object[] params;
 
-    public GraphDriverException( final String message, final Throwable error, final Object... params )
+    public RelationshipGraphException( final String message, final Throwable error, final Object... params )
     {
         super( message, error );
         this.params = params;
     }
 
-    public GraphDriverException( final String message, final Object... params )
+    public RelationshipGraphException( final String message, final Object... params )
     {
         super( message );
         this.params = params;
