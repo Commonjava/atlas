@@ -295,4 +295,17 @@ public class ProjectVersionRef
         return isCompound() || ( isSpecificVersion() && ( (SingleVersion) getVersionSpec() ).isLocalSnapshot() );
     }
 
+    @Override
+    public int compareTo( final ProjectRef o )
+    {
+        int comp = super.compareTo( o );
+        if ( comp == 0 && ( o instanceof ProjectVersionRef ) )
+        {
+            final ProjectVersionRef or = (ProjectVersionRef) o;
+            comp = getVersionString().compareTo( or.getVersionString() );
+        }
+
+        return comp;
+    }
+
 }
