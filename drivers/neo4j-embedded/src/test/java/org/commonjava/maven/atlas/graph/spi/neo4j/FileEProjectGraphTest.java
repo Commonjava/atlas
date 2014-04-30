@@ -11,18 +11,19 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
 import org.commonjava.maven.atlas.graph.EGraphManager;
+import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
 import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileDriverFixture;
-import org.commonjava.maven.atlas.tck.graph.EProjectGraphTCK;
+import org.commonjava.maven.atlas.tck.graph.RelationshipGraphTCK;
 import org.junit.Rule;
 
 public class FileEProjectGraphTest
-    extends EProjectGraphTCK
+    extends RelationshipGraphTCK
 {
     @Rule
     public FileDriverFixture fixture = new FileDriverFixture();
 
     @Override
-    protected synchronized EGraphManager getManager()
+    protected synchronized RelationshipGraphFactory graphFactory()
         throws Exception
     {
         return fixture.manager();

@@ -1,15 +1,173 @@
 package org.commonjava.maven.atlas.graph;
 
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 
-public interface RelationshipGraphFactory
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+
+public final class RelationshipGraphFactory
 {
 
-    RelationshipGraph open( ViewParams params, boolean create )
-        throws RelationshipGraphException;
+    private final RelationshipGraphConnectionFactory connectionManager;
 
-    Set<String> listWorkspaces();
+    private final Map<String, ConnectionCache> connectionCaches = new HashMap<String, ConnectionCache>();
 
-    void deleteWorkspace( String workspaceId );
+    private boolean closed;
+
+    public RelationshipGraphFactory( final RelationshipGraphConnectionFactory connectionFactory )
+    {
+        this.connectionManager = connectionFactory;
+    }
+
+    public RelationshipGraph open( final ViewParams params, final boolean create )
+        throws RelationshipGraphException
+    {
+        checkClosed();
+
+        final String wsid = params.getWorkspaceId();
+        ConnectionCache cache = connectionCaches.get( wsid );
+        if ( cache == null )
+        {
+            if ( !create )
+            {
+                throw new RelationshipGraphException( "No such workspace: %s", wsid );
+            }
+
+            final RelationshipGraphConnection connection =
+                connectionManager.openConnection( params.getWorkspaceId(), create );
+
+            cache = new ConnectionCache( connection );
+            connectionCaches.put( wsid, cache );
+        }
+
+        RelationshipGraph graph = cache.getGraph( params );
+
+        if ( graph == null )
+        {
+            graph = new RelationshipGraph( params, cache.getConnection() );
+            graph.addListener( cache );
+            cache.registerGraph( params, graph );
+        }
+
+        return graph;
+    }
+
+    public Set<String> listWorkspaces()
+    {
+        return connectionManager.listWorkspaces();
+    }
+
+    public void store( final RelationshipGraph graph )
+        throws RelationshipGraphException
+    {
+        checkClosed();
+        connectionManager.flush( graph.getConnection() );
+    }
+
+    public void deleteWorkspace( final String workspaceId )
+        throws RelationshipGraphException
+    {
+        checkClosed();
+        connectionManager.delete( workspaceId );
+    }
+
+    private void checkClosed()
+        throws RelationshipGraphException
+    {
+        if ( closed )
+        {
+            throw new RelationshipGraphException( "Graph factory is closed!" );
+        }
+    }
+
+    public void close()
+        throws RelationshipGraphException
+    {
+        closed = true;
+
+        for ( final ConnectionCache cache : connectionCaches.values() )
+        {
+            cache.close();
+        }
+
+        connectionCaches.clear();
+
+        connectionManager.close();
+    }
+
+    private static final class ConnectionCache
+        implements Iterable<RelationshipGraph>, RelationshipGraphListener
+    {
+        private final RelationshipGraphConnection connection;
+
+        private final Map<ViewParams, RelationshipGraph> graphs = new HashMap<ViewParams, RelationshipGraph>();
+
+        ConnectionCache( final RelationshipGraphConnection connection )
+        {
+            this.connection = connection;
+        }
+
+        public void close()
+            throws RelationshipGraphException
+        {
+            graphs.clear();
+            connection.close();
+        }
+
+        RelationshipGraph getGraph( final ViewParams params )
+        {
+            return graphs.get( params );
+        }
+
+        RelationshipGraphConnection getConnection()
+        {
+            return connection;
+        }
+
+        void registerGraph( final ViewParams params, final RelationshipGraph graph )
+        {
+            graphs.put( params, graph );
+        }
+
+        void deregisterGraph( final ViewParams params )
+        {
+            graphs.remove( params );
+        }
+
+        boolean isEmpty()
+        {
+            return graphs.isEmpty();
+        }
+
+        @Override
+        public Iterator<RelationshipGraph> iterator()
+        {
+            return graphs.values()
+                         .iterator();
+        }
+
+        @Override
+        public void closing( final RelationshipGraph graph )
+        {
+        }
+
+        @Override
+        public void closed( final RelationshipGraph graph )
+            throws RelationshipGraphException
+        {
+            // TODO: It'd be nice to be able to flush to disk without wrecking the connection for all other views on the 
+            // same workspace...
+
+            // factory.flush( cache.getConnection() );
+            deregisterGraph( graph.getParams() );
+            if ( isEmpty() )
+            {
+                close();
+            }
+        }
+    }
 
 }

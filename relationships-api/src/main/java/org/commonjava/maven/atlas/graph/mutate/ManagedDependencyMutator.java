@@ -10,10 +10,11 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.mutate;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class ManagedDependencyMutator
@@ -24,7 +25,8 @@ public class ManagedDependencyMutator
     private static final long serialVersionUID = 1L;
 
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
+                                             final RelationshipGraphConnection connection, final ViewParams params )
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY )
         {
@@ -32,10 +34,11 @@ public class ManagedDependencyMutator
             return rel;
         }
 
-        ProjectRelationship<?> mutated = super.selectFor( rel, path, view );
+        ProjectRelationship<?> mutated = super.selectFor( rel, path, connection, params );
         if ( mutated == null || mutated == rel )
         {
-            final ProjectVersionRef managed = view.getDatabase()
+            final ProjectVersionRef managed =
+                connection
                                                   .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
             if ( managed != null )
             {

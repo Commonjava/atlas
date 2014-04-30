@@ -20,7 +20,7 @@ import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.junit.Test;
 
-public abstract class GraphWorkspaceSPI_TCK
+public abstract class RelationshipGraphConnection_TCK
     extends AbstractSPI_TCK
 {
 
@@ -28,14 +28,14 @@ public abstract class GraphWorkspaceSPI_TCK
     public void createWorkspaceAndRetrieveById()
         throws Exception
     {
-        final GraphWorkspace ws = getManager().createWorkspace( new GraphWorkspaceConfiguration() );
+        final GraphWorkspace ws = graphFactory().createWorkspace( new GraphWorkspaceConfiguration() );
         System.out.println( "wsid: " + ws.getId() );
 
         assertThat( ws, notNullValue() );
 
         logger.info( "Created workspace: {}", ws );
 
-        final GraphWorkspace result = getManager().getWorkspace( ws.getId() );
+        final GraphWorkspace result = graphFactory().getWorkspace( ws.getId() );
 
         logger.info( "Retrieved all workspaces: {}", result );
 
@@ -48,14 +48,14 @@ public abstract class GraphWorkspaceSPI_TCK
     public void createWorkspaceAndFindInAllWorkspacesListing()
         throws Exception
     {
-        final GraphWorkspace ws = getManager().createWorkspace( new GraphWorkspaceConfiguration() );
+        final GraphWorkspace ws = graphFactory().createWorkspace( new GraphWorkspaceConfiguration() );
         System.out.println( "wsid: " + ws.getId() );
 
         assertThat( ws, notNullValue() );
 
         logger.info( "Created workspace: {}", ws );
 
-        final Set<GraphWorkspace> all = getManager().getAllWorkspaces();
+        final Set<GraphWorkspace> all = graphFactory().getAllWorkspaces();
 
         logger.info( "Retrieved all workspaces: {}", all );
 

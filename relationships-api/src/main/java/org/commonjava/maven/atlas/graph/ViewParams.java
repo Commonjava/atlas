@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -287,22 +288,27 @@ public class ViewParams
 
     public String setProperty( final String key, final String value )
     {
+        if ( properties == null )
+        {
+            properties = new HashMap<String, String>();
+        }
+        
         return properties.put( key, value );
     }
 
     public String removeProperty( final String key )
     {
-        return properties.remove( key );
+        return properties == null ? null : properties.remove( key );
     }
 
     public String getProperty( final String key )
     {
-        return properties.get( key );
+        return properties == null ? null : properties.get( key );
     }
 
     public String getProperty( final String key, final String def )
     {
-        final String val = properties.get( key );
+        final String val = properties == null ? null : properties.get( key );
         return val == null ? def : val;
     }
 
@@ -377,6 +383,31 @@ public class ViewParams
     public boolean hasSelections()
     {
         return selections != null && !selections.isEmpty();
+    }
+
+    public ViewParams copy()
+    {
+        return copy( null, null, new ProjectVersionRef[0] );
+    }
+
+    public ViewParams copy( final ProjectVersionRef... roots )
+    {
+        return copy( null, null, roots );
+    }
+
+    public ViewParams copy( final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                            final ProjectVersionRef... roots )
+    {
+        final ViewParams p =
+            new ViewParams( workspaceId, filter == null ? this.filter : filter, mutator == null ? this.mutator
+                            : mutator, roots.length < 1 ? this.roots : Arrays.asList( roots ) );
+
+        p.activePomLocations = activePomLocations;
+        p.activeSources= activeSources;
+        p.lastAccess = lastAccess;
+        p.properties = properties == null ? null : new HashMap<String, String>( properties );
+        
+        return p;
     }
 
 }

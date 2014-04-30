@@ -11,15 +11,16 @@
 package org.commonjava.maven.atlas.graph.spi.jung;
 
 import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.tck.graph.GraphWorkspaceSPI_TCK;
+import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
+import org.commonjava.maven.atlas.tck.graph.RelationshipGraphConnection_TCK;
 
 public class GraphWorkspaceTest
-    extends GraphWorkspaceSPI_TCK
+    extends RelationshipGraphConnection_TCK
 {
     private EGraphManager manager;
 
     @Override
-    protected EGraphManager getManager()
+    protected RelationshipGraphFactory graphFactory()
         throws Exception
     {
         if ( manager == null )

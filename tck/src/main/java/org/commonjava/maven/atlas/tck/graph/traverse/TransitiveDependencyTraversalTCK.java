@@ -48,8 +48,8 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
+        final EProjectGraph graph = graphFactory().createGraph( 
+                simpleGraph(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( dependency( source, root, d1, 0 ) )
                     .build() 
@@ -86,10 +86,10 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
         final ProjectVersionRef d3 = projectVersion( "foo", "dep-L2", "1.1.2" );
 
-        GraphView view = new GraphView( simpleWorkspace(), AnyFilter.INSTANCE, new ManagedDependencyMutator(), root );
+        GraphView view = new GraphView( simpleGraph(), AnyFilter.INSTANCE, new ManagedDependencyMutator(), root );
 
         /* @formatter:off */
-        EProjectGraph graph = getManager().createGraph( 
+        EProjectGraph graph = graphFactory().createGraph( 
                 view, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( dependency( source, root, d1, 0 ) )
@@ -102,7 +102,7 @@ public abstract class TransitiveDependencyTraversalTCK
         /* @formatter:on */
 
         view = new GraphView( view.getWorkspace(), AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( d2.asProjectRef(), d3 ), root );
-        graph = getManager().getGraph( view );
+        graph = graphFactory().getGraph( view );
 
         //        graph.getView()
         //             .selectVersion( d2.asProjectRef(), d3 );
@@ -136,8 +136,8 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d2b = projectVersion( "foo", "dep-L2", "1.0" );
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
+        final EProjectGraph graph = graphFactory().createGraph( 
+                simpleGraph(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( 
                         dependency( source, root, d1, 0 ),
@@ -183,8 +183,8 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d2b = projectVersion( "foo", "dep-L2", "1.0" );
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
+        final EProjectGraph graph = graphFactory().createGraph( 
+                simpleGraph(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( 
                         dependency( source, root, d1, 0 )
@@ -229,8 +229,8 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d1b = projectVersion( "other.group", "dep-L1", "1.0" );
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
+        final EProjectGraph graph = graphFactory().createGraph( 
+                simpleGraph(), 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
                     .withDependencies( 
                         dependency( source, root, d1a, 0 )

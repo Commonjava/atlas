@@ -12,28 +12,22 @@ package org.commonjava.maven.atlas.graph.traverse;
 
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 
-public interface ProjectNetTraversal
+public interface RelationshipGraphTraversal
 {
 
-    TraversalType getType( int pass );
-
-    int getRequiredPasses();
-
-    void startTraverse( int pass, EProjectNet network )
+    void startTraverse( RelationshipGraph graph )
         throws RelationshipGraphConnectionException;
 
-    void endTraverse( int pass, EProjectNet network )
+    void endTraverse( RelationshipGraph graph )
         throws RelationshipGraphConnectionException;
 
-    boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
+    boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path );
 
-    void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
+    void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path );
 
-    boolean preCheck( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
-
-    TraversalType[] getTraversalTypes();
+    boolean preCheck( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path );
 }

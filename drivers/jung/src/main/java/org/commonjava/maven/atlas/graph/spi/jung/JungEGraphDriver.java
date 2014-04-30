@@ -41,7 +41,7 @@ import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.jung.model.JungGraphPath;
-import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
+import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
@@ -319,7 +319,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
+    public void traverse( final GraphView view, final RelationshipGraphTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
         throws RelationshipGraphConnectionException
     {
         final int passes = traversal.getRequiredPasses();
@@ -346,12 +346,12 @@ public class JungEGraphDriver
     }
 
     // TODO: Implement without recursion.
-    private void dfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
+    private void dfsTraverse( final GraphView view, final RelationshipGraphTraversal traversal, final int pass, final ProjectVersionRef root )
     {
         dfsIterate( view, root, traversal, new JungGraphPath( root ), new GraphPathInfo( view ), pass );
     }
 
-    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal, final JungGraphPath path,
+    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final RelationshipGraphTraversal traversal, final JungGraphPath path,
                              final GraphPathInfo pathInfo, final int pass )
     {
         final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
@@ -391,14 +391,14 @@ public class JungEGraphDriver
     }
 
     // TODO: Implement without recursion.
-    private void bfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass, final ProjectVersionRef root )
+    private void bfsTraverse( final GraphView view, final RelationshipGraphTraversal traversal, final int pass, final ProjectVersionRef root )
     {
         final GraphPathInfo pathInfo = new GraphPathInfo( view );
 
         bfsIterate( view, Collections.singletonMap( new JungGraphPath( root ), pathInfo ), traversal, pass );
     }
 
-    private void bfsIterate( final GraphView view, final Map<JungGraphPath, GraphPathInfo> thisLayer, final ProjectNetTraversal traversal,
+    private void bfsIterate( final GraphView view, final Map<JungGraphPath, GraphPathInfo> thisLayer, final RelationshipGraphTraversal traversal,
                              final int pass )
     {
         final Map<JungGraphPath, GraphPathInfo> nextLayer = new LinkedHashMap<JungGraphPath, GraphPathInfo>();

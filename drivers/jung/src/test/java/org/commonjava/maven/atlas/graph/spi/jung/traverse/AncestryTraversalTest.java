@@ -11,6 +11,7 @@
 package org.commonjava.maven.atlas.graph.spi.jung.traverse;
 
 import org.commonjava.maven.atlas.graph.EGraphManager;
+import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
 import org.commonjava.maven.atlas.graph.spi.jung.JungWorkspaceFactory;
 import org.commonjava.maven.atlas.tck.graph.traverse.AncestryTraversalTCK;
 
@@ -20,7 +21,7 @@ public class AncestryTraversalTest
     private EGraphManager manager;
 
     @Override
-    protected EGraphManager getManager()
+    protected RelationshipGraphFactory graphFactory()
         throws Exception
     {
         if ( manager == null )
