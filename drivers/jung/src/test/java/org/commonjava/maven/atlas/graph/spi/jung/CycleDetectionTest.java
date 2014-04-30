@@ -11,6 +11,7 @@
 package org.commonjava.maven.atlas.graph.spi.jung;
 
 import org.commonjava.maven.atlas.graph.EGraphManager;
+import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
 import org.commonjava.maven.atlas.tck.graph.CycleDetectionTCK;
 
 public class CycleDetectionTest
@@ -19,7 +20,7 @@ public class CycleDetectionTest
     private EGraphManager manager;
 
     @Override
-    protected EGraphManager getManager()
+    protected RelationshipGraphFactory graphFactory()
         throws Exception
     {
         if ( manager == null )

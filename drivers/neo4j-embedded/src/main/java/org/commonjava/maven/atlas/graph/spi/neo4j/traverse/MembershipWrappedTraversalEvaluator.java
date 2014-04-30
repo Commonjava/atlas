@@ -26,7 +26,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
-import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
+import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -46,7 +46,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final Set<Long> rootIds;
 
-    private final ProjectNetTraversal traversal;
+    private final RelationshipGraphTraversal traversal;
 
     private final int pass;
 
@@ -62,7 +62,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final GraphRelType[] types;
 
-    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view,
+    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final RelationshipGraphTraversal traversal, final GraphView view,
                                                 final Node viewNode, final GraphAdmin admin, final int pass, final GraphRelType... types )
     {
         this.rootIds = rootIds;

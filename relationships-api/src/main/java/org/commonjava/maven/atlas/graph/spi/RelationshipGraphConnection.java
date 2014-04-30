@@ -10,26 +10,25 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi;
 
-import java.io.Closeable;
 import java.net.URI;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
+import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
+import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public interface RelationshipGraphConnection
-    extends Closeable
 {
 
     /* 
@@ -75,68 +74,73 @@ public interface RelationshipGraphConnection
      * ################################################
      */
 
-    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( GraphView view, ProjectVersionRef root );
+    Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( ViewParams params, ProjectVersionRef root );
 
-    Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( GraphView view, ProjectVersionRef root );
+    Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( ViewParams params, ProjectVersionRef root );
 
-    Collection<ProjectRelationship<?>> getAllRelationships( GraphView view );
+    Collection<ProjectRelationship<?>> getAllRelationships( ViewParams params );
 
-    Set<List<ProjectRelationship<?>>> getAllPathsTo( GraphView view, ProjectVersionRef... projectVersionRefs );
+    Set<List<ProjectRelationship<?>>> getAllPathsTo( ViewParams params, ProjectVersionRef... projectVersionRefs );
 
-    boolean introducesCycle( GraphView view, ProjectRelationship<?> rel );
+    boolean introducesCycle( ViewParams params, ProjectRelationship<?> rel );
 
-    Set<ProjectVersionRef> getAllProjects( GraphView view );
+    Set<ProjectVersionRef> getAllProjects( ViewParams params );
 
-    void traverse( GraphView view, ProjectNetTraversal traversal, EProjectNet net, ProjectVersionRef root )
+    void traverse( RelationshipGraphTraversal traversal, ProjectVersionRef root, RelationshipGraph graph,
+                   TraversalType type )
         throws RelationshipGraphConnectionException;
 
-    boolean containsProject( GraphView view, ProjectVersionRef ref );
+    boolean containsProject( ViewParams params, ProjectVersionRef ref );
 
-    boolean containsRelationship( GraphView view, ProjectRelationship<?> rel );
+    boolean containsRelationship( ViewParams params, ProjectRelationship<?> rel );
 
-    boolean isMissing( GraphView view, ProjectVersionRef project );
+    boolean isMissing( ViewParams params, ProjectVersionRef project );
 
-    boolean hasMissingProjects( GraphView view );
+    boolean hasMissingProjects( ViewParams params );
 
-    Set<ProjectVersionRef> getMissingProjects( GraphView view );
+    Set<ProjectVersionRef> getMissingProjects( ViewParams params );
 
-    boolean hasVariableProjects( GraphView view );
+    boolean hasVariableProjects( ViewParams params );
 
-    Set<ProjectVersionRef> getVariableProjects( GraphView view );
+    Set<ProjectVersionRef> getVariableProjects( ViewParams params );
 
-    Set<EProjectCycle> getCycles( GraphView view );
+    Set<EProjectCycle> getCycles( ViewParams params );
 
-    boolean isCycleParticipant( GraphView view, ProjectRelationship<?> rel );
+    boolean isCycleParticipant( ViewParams params, ProjectRelationship<?> rel );
 
-    boolean isCycleParticipant( GraphView view, ProjectVersionRef ref );
+    boolean isCycleParticipant( ViewParams params, ProjectVersionRef ref );
 
     Map<String, String> getMetadata( ProjectVersionRef ref );
 
     Map<String, String> getMetadata( ProjectVersionRef ref, Set<String> keys );
 
-    Set<ProjectVersionRef> getProjectsWithMetadata( GraphView view, String key );
+    Set<ProjectVersionRef> getProjectsWithMetadata( ViewParams params, String key );
 
     /**
      * @deprecated Use {@link #getDirectRelationshipsFrom(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
      */
     @Deprecated
-    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( ViewParams params, ProjectVersionRef from,
+                                                            boolean includeManagedInfo,
                                                             RelationshipType... types );
 
     /**
      * @deprecated Use {@link #getDirectRelationshipsTo(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
      */
     @Deprecated
-    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( ViewParams params, ProjectVersionRef to,
+                                                          boolean includeManagedInfo,
                                                           RelationshipType... types );
 
-    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( ViewParams params, ProjectVersionRef from,
+                                                            boolean includeManagedInfo,
                                                             boolean includeConcreteInfo, RelationshipType... types );
 
-    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( ViewParams params, ProjectVersionRef to,
+                                                          boolean includeManagedInfo,
                                                           boolean includeConcreteInfo, RelationshipType... types );
 
-    Set<ProjectVersionRef> getProjectsMatching( GraphView eProjectNetView, ProjectRef projectRef );
+    Set<ProjectVersionRef> getProjectsMatching( ViewParams params, ProjectRef projectRef );
 
     void printStats();
 
@@ -184,14 +188,17 @@ public interface RelationshipGraphConnection
 
     String getProperty( String key, String defaultVal );
 
-    boolean registerView( GraphView view );
+    boolean registerView( ViewParams params );
 
-    void registerViewSelection( GraphView view, ProjectRef ref, ProjectVersionRef projectVersionRef );
+    void registerViewSelection( ViewParams params, ProjectRef ref, ProjectVersionRef projectVersionRef );
 
-    Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( GraphView view, Set<ProjectVersionRef> refs );
+    Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( ViewParams params, Set<ProjectVersionRef> refs );
 
     ProjectVersionRef getPathTargetRef( GraphPath<?> path );
 
-    List<ProjectVersionRef> getPathRefs( GraphView view, GraphPath<?> path );
+    List<ProjectVersionRef> getPathRefs( ViewParams params, GraphPath<?> path );
+
+    void close()
+        throws RelationshipGraphConnectionException;
 
 }

@@ -19,14 +19,13 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.filter.DependencyFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
-import org.commonjava.maven.atlas.graph.model.EProjectGraph;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.junit.Test;
@@ -46,14 +45,12 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef dep = new ProjectVersionRef( "org.other", "dep", "1.0" );
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
-        final GraphWorkspace session = simpleWorkspace();
+        final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        getManager().storeRelationships( session, new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+        graph.storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ) );
         
-        final EProjectGraph graph = getManager().getGraph( session, project );
-
         final boolean introduces = graph.introducesCycle( new DependencyRelationship( source, dep,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
@@ -71,20 +68,18 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef dep = new ProjectVersionRef( "org.other", "dep", "1.0" );
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
-        final GraphWorkspace session = simpleWorkspace();
-        final GraphView view = new GraphView( session, project );
+        final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        getManager().storeRelationships( session, 
-                                         new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                         new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ));
-        final Set<ProjectRelationship<?>> rejected = getManager().storeRelationships( session,
+        graph.storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
+                                  new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ));
+
+        final Set<ProjectRelationship<?>> rejected = graph.storeRelationships(
                                          new DependencyRelationship( source, dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
         System.out.println( "Rejected: " + rejected );
 
-        final EProjectGraph graph = getManager().getGraph( view );
         //        final EProjectGraph graph = getManager().getGraph( session, project );
 
         final Set<EProjectCycle> cycles = graph.getCycles();
@@ -111,11 +106,10 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef dep = new ProjectVersionRef( "org.other", "dep", "1.0" );
         final ProjectVersionRef dep2 = new ProjectVersionRef( "org.other", "dep2", "1.0" );
 
-        final GraphWorkspace session = simpleWorkspace();
-        final GraphView view = new GraphView( session, project );
+        final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        final Set<ProjectRelationship<?>> rejected = getManager().storeRelationships( session, 
+        final Set<ProjectRelationship<?>> rejected = graph.storeRelationships( 
                                          new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, dep2,  new ArtifactRef( dep,  null, null, false ), null, 0, false ) );
@@ -131,8 +125,6 @@ public abstract class CycleDetectionTCK
         //        assertThat( reject.getDeclaring(), equalTo( dep2 ) );
         //        assertThat( reject.getTarget()
         //                          .asProjectVersionRef(), equalTo( dep ) );
-
-        final EProjectGraph graph = getManager().getGraph( view );
 
         final Set<EProjectCycle> cycles = graph.getCycles();
         System.out.println( "Cycles:\n\n" + join( cycles, "\n" ) );
@@ -161,22 +153,22 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef d = new ProjectVersionRef( "project", "D", "1.0" );
         final ProjectVersionRef e = new ProjectVersionRef( "project", "E", "1.0" );
 
-        final GraphWorkspace session = simpleWorkspace();
+        final RelationshipGraph graph = simpleGraph( a );
 
         /* @formatter:off */
         // a --> b --> c --> a
         // d --> e --> c --> a --> b --> c
-        getManager().storeRelationships( session, new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
+        graph.storeRelationships( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, b,  new ArtifactRef( c,  null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final EProjectGraph graph1 = getManager().getGraph( session, a );
-        final EProjectGraph graph2 = getManager().getGraph( session, d );
+        final RelationshipGraph graph2 = graphFactory().open( graph.getParams()
+                                                                   .copy( d ), false );
 
-        final Set<EProjectCycle> cycles1 = graph1.getCycles();
+        final Set<EProjectCycle> cycles1 = graph.getCycles();
         System.out.println( "Graph 1 Cycles:\n\n" + join( cycles1, "\n" ) );
 
         final Set<EProjectCycle> cycles2 = graph2.getCycles();
@@ -219,22 +211,24 @@ public abstract class CycleDetectionTCK
         final ProjectVersionRef d = new ProjectVersionRef( "project", "D", "1.0" );
         final ProjectVersionRef e = new ProjectVersionRef( "project", "E", "1.0" );
 
-        final GraphWorkspace session = simpleWorkspace();
+        final RelationshipGraph graph = simpleGraph( a );
 
         /* @formatter:off */
         // a --> b --> c --> a
         // d --> e --> c --> a --> b --> c
-        getManager().storeRelationships( session, new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
+        graph.storeRelationships( new DependencyRelationship( source, a, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, c,  new ArtifactRef( a,  null, null, false ), null, 0, false ),
                                          new PluginRelationship( source, b,  c, 0, false ),
                                          new DependencyRelationship( source, d, new ArtifactRef( e, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, e, new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final EProjectGraph graph1 = getManager().getGraph( session, a );
-        final EProjectGraph graph2 = getManager().getGraph( session, new DependencyFilter(), d );
+        final ViewParams params2 = graph.getParams()
+                                        .copy( new DependencyFilter(), graph.getParams()
+                                                                            .getMutator(), d );
+        final RelationshipGraph graph2 = graphFactory().open( params2, false );
 
-        final Set<EProjectCycle> cycles1 = graph1.getCycles();
+        final Set<EProjectCycle> cycles1 = graph.getCycles();
         System.out.println( "Graph 1 Cycles:\n\n" + join( cycles1, "\n" ) );
 
         final Set<EProjectCycle> cycles2 = graph2.getCycles();

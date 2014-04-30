@@ -14,9 +14,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
+import org.commonjava.maven.atlas.graph.ViewParams;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,16 +38,30 @@ public abstract class AbstractSPI_TCK
         return new URI( "test:repo:" + naming.getMethodName() );
     }
 
-    protected GraphWorkspace simpleWorkspace()
+    protected RelationshipGraph simpleGraph( final ProjectVersionRef... roots )
         throws Exception
     {
-        return getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( sourceURI() ) );
+        final ViewParams params = new ViewParams( newWorkspaceId(), roots );
+        params.addActiveSource( sourceURI() );
+
+        return graphFactory().open( params, true );
+    }
+
+    protected String newWorkspaceId()
+    {
+        return "Test-" + System.currentTimeMillis();
     }
 
     protected final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    protected abstract EGraphManager getManager()
+    protected abstract RelationshipGraphConnectionFactory connectionFactory()
         throws Exception;
+
+    protected final RelationshipGraphFactory graphFactory()
+        throws Exception
+    {
+        return new RelationshipGraphFactory( connectionFactory() );
+    }
 
     private long start;
 

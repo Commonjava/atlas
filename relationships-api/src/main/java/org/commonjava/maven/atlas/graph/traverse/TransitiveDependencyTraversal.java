@@ -54,19 +54,14 @@ public class TransitiveDependencyTraversal
         super( new OrFilter( new DependencyFilter( scope ), ParentFilter.EXCLUDE_TERMINAL_PARENTS ) );
     }
 
-    @Override
-    public TraversalType getType( final int pass )
-    {
-        return TraversalType.breadth_first;
-    }
-
     public List<ArtifactRef> getArtifacts()
     {
         return Collections.unmodifiableList( new ArrayList<ArtifactRef>( artifacts.values() ) );
     }
 
     @Override
-    public boolean shouldTraverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
+                                       final List<ProjectRelationship<?>> path )
     {
         boolean result = false;
         if ( relationship instanceof DependencyRelationship )

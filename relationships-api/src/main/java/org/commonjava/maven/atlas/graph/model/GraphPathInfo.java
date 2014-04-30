@@ -12,10 +12,12 @@ package org.commonjava.maven.atlas.graph.model;
 
 import java.io.Serializable;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.mutate.VersionManagerMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 
 public final class GraphPathInfo
     implements Serializable
@@ -27,20 +29,25 @@ public final class GraphPathInfo
 
     private final GraphMutator mutator;
 
-    private transient GraphView view;
+    private transient RelationshipGraphConnection connection;
 
-    public GraphPathInfo( final GraphView view )
+    private transient ViewParams params;
+
+    public GraphPathInfo( final RelationshipGraphConnection connection, final ViewParams params )
     {
-        this.view = view;
-        filter = view.getFilter();
-        mutator = view.getMutator() == null ? new VersionManagerMutator() : view.getMutator();
+        this.connection = connection;
+        this.params = params;
+        filter = params.getFilter();
+        mutator = params.getMutator() == null ? new VersionManagerMutator() : params.getMutator();
     }
 
-    public GraphPathInfo( final ProjectRelationshipFilter filter, final GraphMutator mutator, final GraphView view )
+    public GraphPathInfo( final ProjectRelationshipFilter filter, final GraphMutator mutator,
+                          final RelationshipGraphConnection connection, final ViewParams params )
     {
+        this.connection = connection;
+        this.params = params;
         this.filter = filter;
         this.mutator = mutator;
-        this.view = view;
     }
 
     public ProjectRelationshipFilter getFilter()
@@ -62,7 +69,7 @@ public final class GraphPathInfo
 
         if ( mutator != null )
         {
-            next = mutator.selectFor( next, path, view );
+            next = mutator.selectFor( next, path, connection, params );
         }
 
         return next;
@@ -71,13 +78,13 @@ public final class GraphPathInfo
     public GraphPathInfo getChildPathInfo( final ProjectRelationship<?> rel )
     {
         final ProjectRelationshipFilter nextFilter = filter == null ? null : filter.getChildFilter( rel );
-        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( rel, view );
+        final GraphMutator nextMutator = mutator == null ? null : mutator.getMutatorFor( rel, connection, params );
         if ( nextFilter == filter && nextMutator == mutator )
         {
             return this;
         }
 
-        return new GraphPathInfo( nextFilter, nextMutator, view );
+        return new GraphPathInfo( nextFilter, nextMutator, connection, params );
     }
 
     @Override
@@ -136,15 +143,16 @@ public final class GraphPathInfo
         return ( filter == null ? "none" : filter.getCondensedId() ) + "/" + ( mutator == null ? "none" : mutator.getCondensedId() );
     }
 
-    public void reattach( final GraphView view )
+    public void reattach( final RelationshipGraphConnection connection, final ViewParams params )
     {
-        this.view = view;
+        this.connection = connection;
+        this.params = params;
     }
 
     @Override
     public String toString()
     {
-        return String.format( "GraphPathInfo [filter=%s, mutator=%s, view=%s]", filter, mutator, view.getShortId() );
+        return String.format( "GraphPathInfo [filter=%s, mutator=%s, view=%s]", filter, mutator, params.getShortId() );
     }
 
 }

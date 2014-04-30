@@ -66,7 +66,7 @@ public class FilteringTraversal
 
     @Override
     protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
-                                          final List<ProjectRelationship<?>> path, final int pass )
+                                          final List<ProjectRelationship<?>> path )
     {
         if ( doCapture )
         {

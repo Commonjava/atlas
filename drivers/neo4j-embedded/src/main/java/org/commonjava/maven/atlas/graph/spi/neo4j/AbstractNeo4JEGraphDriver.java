@@ -66,7 +66,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraverseVisitor;
 import org.commonjava.maven.atlas.graph.spi.neo4j.update.CycleCacheUpdater;
 import org.commonjava.maven.atlas.graph.spi.neo4j.update.ViewUpdater;
-import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
+import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
@@ -826,7 +826,7 @@ public abstract class AbstractNeo4JEGraphDriver
     //    }
 
     @Override
-    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
+    public void traverse( final GraphView view, final RelationshipGraphTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
         throws RelationshipGraphConnectionException
     {
         final Node rootNode = getNode( root );

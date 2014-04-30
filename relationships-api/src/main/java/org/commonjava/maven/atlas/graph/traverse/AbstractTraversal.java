@@ -10,82 +10,37 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.traverse;
 
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 
 public abstract class AbstractTraversal
-    implements ProjectNetTraversal
+    implements RelationshipGraphTraversal
 {
 
-    private final List<TraversalType> types;
 
-    private final int passes;
-
-    protected AbstractTraversal()
-    {
-        this.passes = 1;
-        this.types = Collections.singletonList( TraversalType.depth_first );
-    }
-
-    protected AbstractTraversal( final int passes, final TraversalType... types )
-    {
-        this.passes = passes;
-        this.types = Arrays.asList( types );
-    }
-
-    protected AbstractTraversal( final TraversalType... types )
-    {
-        this.passes = 1;
-        this.types = Arrays.asList( types );
-    }
-
-    public TraversalType getType( final int pass )
-    {
-        if ( types == null || types.isEmpty() )
-        {
-            return TraversalType.depth_first;
-        }
-        else if ( pass >= types.size() )
-        {
-            return types.get( types.size() - 1 );
-        }
-
-        return types.get( pass );
-    }
-
-    public void startTraverse( final int pass, final EProjectNet network )
+    @Override
+    public void startTraverse( final RelationshipGraph graph )
         throws RelationshipGraphConnectionException
     {
     }
 
-    public int getRequiredPasses()
-    {
-        return passes;
-    }
-
-    public void endTraverse( final int pass, final EProjectNet network )
+    @Override
+    public void endTraverse( final RelationshipGraph graph )
         throws RelationshipGraphConnectionException
     {
     }
 
-    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                               final int pass )
+    @Override
+    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
     }
 
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                                 final int pass )
+    @Override
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
-        return preCheck( relationship, path, pass );
-    }
-
-    public TraversalType[] getTraversalTypes()
-    {
-        return types.toArray( new TraversalType[] {} );
+        return preCheck( relationship, path );
     }
 }

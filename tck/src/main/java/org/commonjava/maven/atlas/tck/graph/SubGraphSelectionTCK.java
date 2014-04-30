@@ -44,14 +44,14 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
         GraphView view = new GraphView( ws, AnyFilter.INSTANCE, new ManagedDependencyMutator(), project );
 
         /* @formatter:off */
-        getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+        graphFactory().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
-        EProjectGraph graph = getManager().getGraph( view );
+        EProjectGraph graph = graphFactory().getGraph( view );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
@@ -59,7 +59,7 @@ public abstract class SubGraphSelectionTCK
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
         view = new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
-        graph = getManager().getGraph( view );
+        graph = graphFactory().getGraph( view );
 
         //        final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
         //        assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
@@ -84,14 +84,14 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
         GraphView view = new GraphView( ws, AnyFilter.INSTANCE, new ManagedDependencyMutator(), project );
 
         /* @formatter:off */
-        getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+        graphFactory().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
-        EProjectGraph graph = getManager().getGraph( view );
+        EProjectGraph graph = graphFactory().getGraph( view );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
@@ -99,7 +99,7 @@ public abstract class SubGraphSelectionTCK
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
         view = new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
-        graph = getManager().getGraph( view );
+        graph = graphFactory().getGraph( view );
 
         //        final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
         //        assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
@@ -134,21 +134,21 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace session = simpleWorkspace();
+        final GraphWorkspace session = simpleGraph();
         GraphView view = new GraphView( session, AnyFilter.INSTANCE, new ManagedDependencyMutator(), project );
 
-        final GraphWorkspace session2 = simpleWorkspace();
+        final GraphWorkspace session2 = simpleGraph();
         final GraphView view2 = new GraphView( session2, project );
 
         /* @formatter:off */
-        getManager().storeRelationships( session, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+        graphFactory().storeRelationships( session, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         
-        getManager().storeRelationships( session2, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+        graphFactory().storeRelationships( session2, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
                                          new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
          
-        EProjectGraph graph = getManager().getGraph( view );
-        final EProjectGraph graph2 = getManager().getGraph( view2 );
+        EProjectGraph graph = graphFactory().getGraph( view );
+        final EProjectGraph graph2 = graphFactory().getGraph( view2 );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
@@ -160,7 +160,7 @@ public abstract class SubGraphSelectionTCK
         // Select a concrete version for the session associated with the FIRST graph.
         // Second graph session should remain unchanged.
         view = new GraphView( session, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
-        graph = getManager().getGraph( view );
+        graph = graphFactory().getGraph( view );
 
         assertThat( view.getSelection( varDep ), equalTo( selected ) );
         assertThat( view2.getSelection( varDep ), nullValue() );

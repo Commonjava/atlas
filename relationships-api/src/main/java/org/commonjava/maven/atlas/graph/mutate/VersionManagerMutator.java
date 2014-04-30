@@ -11,9 +11,10 @@
 package org.commonjava.maven.atlas.graph.mutate;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -28,14 +29,15 @@ public class VersionManagerMutator
     private transient String shortId;
 
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
+                                             final RelationshipGraphConnection connection, final ViewParams params )
     {
         final ProjectRef target = rel.getTarget()
                                      .asProjectRef();
 
-        if ( view != null )
+        if ( params != null )
         {
-            final ProjectVersionRef ref = view.getSelection( target );
+            final ProjectVersionRef ref = params.getSelection( target );
             if ( ref != null )
             {
                 return rel.selectTarget( ref );
@@ -46,7 +48,8 @@ public class VersionManagerMutator
     }
 
     @Override
-    public GraphMutator getMutatorFor( final ProjectRelationship<?> rel, final GraphView view )
+    public GraphMutator getMutatorFor( final ProjectRelationship<?> rel, final RelationshipGraphConnection connection,
+                                       final ViewParams params )
     {
         return this;
     }

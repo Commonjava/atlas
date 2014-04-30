@@ -23,13 +23,11 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TreePrinter
 {
 
-    private final Logger logger = LoggerFactory.getLogger( getClass() );
+    //    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private final StructureRelationshipPrinter relationshipPrinter;
 
@@ -59,7 +57,7 @@ public class TreePrinter
 
     public void printStructure( final ProjectVersionRef from,
                                   final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                                final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
+                                final Map<String, Set<ProjectVersionRef>> labels, final PrintWriter writer )
     {
         printStructure( from, links, null, null, "  ", labels, writer );
     }
@@ -67,7 +65,7 @@ public class TreePrinter
     public void printStructure( final ProjectVersionRef from,
                                   final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
  final String indent,
-                                final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
+                                final Map<String, Set<ProjectVersionRef>> labels, final PrintWriter writer )
     {
         printStructure( from, links, null, null, indent, labels, writer );
     }
@@ -75,7 +73,7 @@ public class TreePrinter
     public void printStructure( final ProjectVersionRef from,
                                   final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
                                   final String header, final String footer, final String indent,
-                                final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
+                                final Map<String, Set<ProjectVersionRef>> labels, final PrintWriter writer )
     {
         if ( header != null )
         {
@@ -108,7 +106,7 @@ public class TreePrinter
         {
             for ( final ProjectRelationship<?> out : outbound )
             {
-                ProjectVersionRef outRef = out.getTarget()
+                final ProjectVersionRef outRef = out.getTarget()
                                               .asProjectVersionRef();
                 if ( inPath.contains( outRef ) )
                 {

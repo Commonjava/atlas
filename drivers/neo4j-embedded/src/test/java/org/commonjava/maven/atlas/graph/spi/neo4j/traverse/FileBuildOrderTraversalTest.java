@@ -11,6 +11,7 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import org.commonjava.maven.atlas.graph.EGraphManager;
+import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
 import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileDriverFixture;
 import org.commonjava.maven.atlas.tck.graph.traverse.BuildOrderTraversalTCK;
 import org.junit.Rule;
@@ -22,7 +23,7 @@ public class FileBuildOrderTraversalTest
     public FileDriverFixture fixture = new FileDriverFixture();
 
     @Override
-    protected synchronized EGraphManager getManager()
+    protected synchronized RelationshipGraphFactory graphFactory()
         throws Exception
     {
         return fixture.manager();

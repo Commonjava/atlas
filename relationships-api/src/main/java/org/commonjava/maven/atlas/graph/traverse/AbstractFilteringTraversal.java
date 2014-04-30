@@ -33,21 +33,11 @@ public abstract class AbstractFilteringTraversal
         rootFilter = filter;
     }
 
-    protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter, final TraversalType... types )
-    {
-        super( types );
-        rootFilter = filter;
-    }
+    protected abstract boolean shouldTraverseEdge( ProjectRelationship<?> relationship,
+                                                   List<ProjectRelationship<?>> path );
 
-    protected AbstractFilteringTraversal( final ProjectRelationshipFilter filter, final int passes, final TraversalType... types )
-    {
-        super( passes, types );
-        rootFilter = filter;
-    }
-
-    protected abstract boolean shouldTraverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path, int pass );
-
-    protected void edgeTraversalFinished( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    protected void edgeTraversalFinished( final ProjectRelationship<?> relationship,
+                                          final List<ProjectRelationship<?>> path )
     {
     }
 
@@ -57,28 +47,29 @@ public abstract class AbstractFilteringTraversal
     }
 
     @Override
-    public final void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public final void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
-        edgeTraversalFinished( relationship, path, pass );
+        edgeTraversalFinished( relationship, path );
     }
 
     @Override
-    public final boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public final boolean traverseEdge( final ProjectRelationship<?> relationship,
+                                       final List<ProjectRelationship<?>> path )
     {
-        if ( !preCheck( relationship, path, pass ) )
+        if ( !preCheck( relationship, path ) )
         {
             return false;
         }
 
         //        seen.add( relationship );
 
-        final boolean ok = shouldTraverseEdge( relationship, path, pass );
+        final boolean ok = shouldTraverseEdge( relationship, path );
 
         return ok;
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
         boolean result = true;
 

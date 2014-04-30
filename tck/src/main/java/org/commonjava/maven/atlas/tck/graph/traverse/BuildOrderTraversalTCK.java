@@ -55,13 +55,13 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
 
         /* @formatter:off */
-        getManager().storeRelationships( ws, new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
+        graphFactory().storeRelationships( ws, new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
                                        new DependencyRelationship( source, b, new ArtifactRef( a, null, null, false ), null, 0, false ) );
         
-        final EProjectGraph graph = getManager().getGraph( ws, c );
+        final EProjectGraph graph = graphFactory().getGraph( ws, c );
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()
@@ -95,10 +95,10 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( b, p );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
+        final EProjectGraph graph = graphFactory().createGraph( 
                 ws, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                     .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ) )
@@ -144,10 +144,10 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
+        final EProjectGraph graph = graphFactory().createGraph( 
                 ws, 
                 new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                     .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ) )
@@ -191,10 +191,10 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
+        final EProjectGraph graph = graphFactory().createGraph( 
                   ws, 
                   new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                       .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false ),
@@ -240,10 +240,10 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( b, a );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
+        final EProjectGraph graph = graphFactory().createGraph( 
                   ws, 
                   new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                       .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false, d )
@@ -290,10 +290,10 @@ public abstract class BuildOrderTraversalTCK
         relativeOrder.put( pb, pa );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
+        final GraphWorkspace ws = simpleGraph();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
+        final EProjectGraph graph = graphFactory().createGraph( 
                   ws, 
                   new EProjectDirectRelationships.Builder( new EProjectKey( source, c ) )
                       .withDependencies( new DependencyRelationship( source, c, new ArtifactRef( b, null, null, false ), null, 0, false )
