@@ -380,25 +380,27 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final Node viewNode = getViewNode( view );
 
-        logger.info( "Checking whether {} ({} / {}) is in need of update.", view, view.getShortId(), viewNode );
+        logger.debug( "Checking whether {} ({} / {}) is in need of update.", view.getShortId(), viewNode, view );
         final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
 
         if ( Conversions.isMembershipDetectionPending( viewNode ) )
         {
-            logger.info( "Traversing graph to update view membership: {} ({})", view, view.getShortId() );
+            logger.debug( "Traversing graph to update view membership: {} ({})", view.getShortId(), view );
             final Set<Node> roots = getRoots( view );
             if ( roots.isEmpty() )
             {
-                logger.info( "{}: No root nodes found.", view.getShortId() );
+                logger.debug( "{}: No root nodes found.", view.getShortId() );
                 return;
             }
 
             final ViewUpdater updater = new ViewUpdater( view, viewNode, indexes, cache, adminAccess );
             collectAtlasRelationships( view, updater, roots, false, Uniqueness.RELATIONSHIP_GLOBAL );
+
+            logger.debug( "Traverse complete for update of view: {}", view.getShortId() );
         }
         else
         {
-            logger.info( "{}: no update pending.", view.getShortId() );
+            logger.debug( "{}: no update pending.", view.getShortId() );
         }
     }
 

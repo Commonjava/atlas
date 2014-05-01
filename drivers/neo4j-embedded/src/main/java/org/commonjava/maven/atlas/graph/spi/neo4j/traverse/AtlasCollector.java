@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -27,6 +28,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.update.CycleCacheUpdater;
+import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.neo4j.graphdb.Direction;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -164,11 +166,20 @@ public final class AtlasCollector<STATE>
 
             final Set<Relationship> nextRelationships = new HashSet<Relationship>();
 
-            logger.debug( "Getting relationships from node: {} ({}) in direction: {} (path: {})", path.endNode(), path.endNode()
-                                                                                                                      .getProperty( GAV ), direction,
+            GraphRelType[] childTypes = types;
+            final ProjectRelationshipFilter filter = pathInfo.getFilter();
+            if ( filter != null )
+            {
+                childTypes = TraversalUtils.getGraphRelTypes( filter );
+            }
+
+            logger.debug( "Getting relationships from node: {} ({}) with type in [{}] and direction: {} (path: {})",
+                          path.endNode(), path.endNode()
+                                              .getProperty( GAV ), new JoinString( ", ", childTypes ), direction,
                           path );
+
             final Iterable<Relationship> relationships = path.endNode()
-                                                             .getRelationships( direction, types );
+                                                             .getRelationships( direction, childTypes );
 
             //            logger.info( "{} Determining which of {} child relationships to expand traversal into for: {}\n{}", getClass().getName(), path.length(),
             //                         path.endNode()
@@ -178,6 +189,8 @@ public final class AtlasCollector<STATE>
 
             for ( Relationship r : relationships )
             {
+                logger.debug( "Analyzing child relationship for traversal potential: {}", r );
+
                 if ( useSelections )
                 {
                     final Relationship selected = admin.select( r, view, viewNode, pathInfo, graphPath );
@@ -204,6 +217,8 @@ public final class AtlasCollector<STATE>
                     {
                         r = selected;
                     }
+
+                    logger.debug( "After selection, using child relationship: {}", r );
                 }
 
                 final ProjectRelationship<?> rel = toProjectRelationship( r, cache );

@@ -15,8 +15,6 @@ import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class ManagedDependencyMutator
     extends VersionManagerMutator
@@ -24,8 +22,6 @@ public class ManagedDependencyMutator
 {
 
     private static final long serialVersionUID = 1L;
-
-    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     @Override
     public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
@@ -45,11 +41,6 @@ public class ManagedDependencyMutator
             {
                 mutated = rel.selectTarget( managed );
             }
-        }
-
-        if ( rel != mutated )
-        {
-            logger.debug( "Mutated. Was:\n  {}\n\nNow:\n  {}\n\n", rel, mutated );
         }
 
         return mutated == null ? rel : mutated;

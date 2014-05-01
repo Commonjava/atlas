@@ -17,6 +17,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
@@ -151,7 +152,16 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r, cache ) );
         }
 
-        final Iterable<Relationship> rs = node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING, types );
+        GraphRelType[] childTypes = types;
+        final ProjectRelationshipFilter filter = pathInfo.getFilter();
+        if ( filter != null )
+        {
+            childTypes = TraversalUtils.getGraphRelTypes( filter );
+        }
+
+        final Iterable<Relationship> rs =
+            node.getRelationships( reversedExpander ? Direction.INCOMING : Direction.OUTGOING, childTypes );
+
         if ( rs == null )
         {
             //            logger.info( "No relationships from end-node: {}", node );
