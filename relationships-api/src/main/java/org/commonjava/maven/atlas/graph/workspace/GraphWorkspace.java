@@ -199,13 +199,11 @@ public final class GraphWorkspace
 
     public String getProperty( final String key )
     {
-        fireAccessed();
         return dbDriver.getProperty( key );
     }
 
     public String getProperty( final String key, final String def )
     {
-        fireAccessed();
         return dbDriver.getProperty( key, def );
     }
 
@@ -216,27 +214,23 @@ public final class GraphWorkspace
 
     public final Set<URI> getActivePomLocations()
     {
-        fireAccessed();
         final Set<URI> result = dbDriver.getActivePomLocations();
         return result == null ? DEFAULT_POM_LOCATIONS : result;
     }
 
     public final Set<URI> getActiveSources()
     {
-        fireAccessed();
         final Set<URI> result = dbDriver.getActiveSources();
         return result == null ? DEFAULT_SOURCES : result;
     }
 
     public final Iterable<URI> activePomLocations()
     {
-        fireAccessed();
         return dbDriver.getActivePomLocations();
     }
 
     public final Iterable<URI> activeSources()
     {
-        fireAccessed();
         return dbDriver.getActiveSources();
     }
 

@@ -13,9 +13,9 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
@@ -168,7 +168,9 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             return Collections.emptySet();
         }
 
-        final Set<Relationship> result = new HashSet<Relationship>();
+        // sort the child relationships to make the traversal deterministic
+        final Set<Relationship> result = new TreeSet<Relationship>( new AtlasRelIndexComparator() );
+
         final List<ProjectRelationship<?>> rels = getPathRelationships( path );
 
         //        logger.info( "For: {} Determining which of {} child relationships to expand traversal into for: {}\n{}", traversal.getClass()

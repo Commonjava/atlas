@@ -680,6 +680,17 @@ public final class Conversions
         return null;
     }
 
+    public static Integer getIntegerProperty( final String prop, final PropertyContainer container,
+                                              final int defaultValue )
+    {
+        if ( container.hasProperty( prop ) )
+        {
+            return (Integer) container.getProperty( prop );
+        }
+
+        return defaultValue;
+    }
+
     public static Long getLongProperty( final String prop, final PropertyContainer container, final long defaultValue )
     {
         if ( container.hasProperty( prop ) )
@@ -1060,6 +1071,10 @@ public final class Conversions
     private static final String SELECTION_ORIGIN_PREFIX = "_selection_origin_";
 
     private static final String DESELECTION_TARGET_PREFIX = "_deselection_target_";
+
+    public static final String ATLAS_RELATIONSHIP_COUNT = "_atlas_relationship_count";
+
+    public static final String ATLAS_RELATIONSHIP_INDEX = "_atlas_relationship_index";
 
     public static long getDeselectionTarget( final long originRid, final Node viewNode )
     {

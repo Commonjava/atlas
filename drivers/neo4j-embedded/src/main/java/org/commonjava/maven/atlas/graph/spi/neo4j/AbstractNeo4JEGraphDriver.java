@@ -51,6 +51,7 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
@@ -531,11 +532,14 @@ public abstract class AbstractNeo4JEGraphDriver
         final ConversionCache cache = new ConversionCache();
         final Map<Long, ProjectRelationship<?>> createdRelationshipsMap = new HashMap<Long, ProjectRelationship<?>>();
 
+        final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( Arrays.asList( rels ) );
+        Collections.sort( sorted, RelationshipComparator.INSTANCE );
+
         final Transaction tx = graph.beginTx();
         try
         {
             //            int txBatchCount = 0;
-            nextRel: for ( final ProjectRelationship<?> rel : rels )
+            nextRel: for ( final ProjectRelationship<?> rel : sorted )
             {
                 logger.debug( "Checking relationship: {}", rel );
 
@@ -606,6 +610,14 @@ public abstract class AbstractNeo4JEGraphDriver
                         final GraphRelType grt = GraphRelType.map( rel.getType(), rel.isManaged() );
 
                         relationship = from.createRelationshipTo( to, grt );
+
+                        // now, we set an index on the relationship of where it is in the range of ALL atlas relationships 
+                        // for this node. ProjectRelationship<?>.getIndex() only gives the index for that TYPE, so we can't
+                        // use it. The next value will be stored on the from node for the next go.
+                        int nodeRelIdx = Conversions.getIntegerProperty( Conversions.ATLAS_RELATIONSHIP_COUNT, from, 0 );
+
+                        relationship.setProperty( Conversions.ATLAS_RELATIONSHIP_INDEX, nodeRelIdx );
+                        from.setProperty( Conversions.ATLAS_RELATIONSHIP_COUNT, ++nodeRelIdx );
 
                         logger.debug( "New relationship is: {} with type: {}", relationship, grt );
 

@@ -15,8 +15,8 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjec
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
@@ -164,7 +164,7 @@ public final class AtlasCollector<STATE>
             //                     .hasProperty( GAV ) ? path.endNode()
             //                                               .getProperty( GAV ) : "Unknown", path.lastRelationship(), nextFilter );
 
-            final Set<Relationship> nextRelationships = new HashSet<Relationship>();
+            final Set<Relationship> nextRelationships = new TreeSet<Relationship>( new AtlasRelIndexComparator() );
 
             GraphRelType[] childTypes = types;
             final ProjectRelationshipFilter filter = pathInfo.getFilter();
