@@ -914,11 +914,17 @@ public abstract class AbstractNeo4JEGraphDriver
             return false;
         }
 
+        final Node node = getNode( ref );
+        if ( node == null )
+        {
+            return false;
+        }
+
         if ( registerView( view ) )
         {
             final Index<Node> cachedNodes = new ViewIndexes( graph.index(), view ).getCachedNodes();
 
-            final IndexHits<Node> nodeHits = cachedNodes.query( NID, "*" );
+            final IndexHits<Node> nodeHits = cachedNodes.get( NID, node.getId() );
             return nodeHits.hasNext();
         }
         else
@@ -2276,6 +2282,21 @@ public abstract class AbstractNeo4JEGraphDriver
                 logger.debug( "Setting cycle-detection PENDING for new viewNode: {} of: {}", viewNode, view.getShortId() );
                 Conversions.setCycleDetectionPending( viewNode, true );
                 Conversions.setMembershipDetectionPending( viewNode, true );
+
+                final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
+                final Index<Node> cachedNodes = indexes.getCachedNodes();
+
+                for ( final ProjectVersionRef rootRef : view.getRoots() )
+                {
+                    Node rootNode = getNode( rootRef );
+                    if ( rootNode == null )
+                    {
+                        logger.info( "Creating node for root: {}", rootRef );
+                        rootNode = newProjectNode( rootRef );
+                    }
+
+                    cachedNodes.add( rootNode, NID, rootNode.getId() );
+                }
 
                 tx.success();
 
