@@ -16,8 +16,7 @@ import static org.junit.Assert.assertThat;
 
 import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.junit.Test;
 
 public abstract class RelationshipGraphConnection_TCK
@@ -28,40 +27,44 @@ public abstract class RelationshipGraphConnection_TCK
     public void createWorkspaceAndRetrieveById()
         throws Exception
     {
-        final GraphWorkspace ws = graphFactory().createWorkspace( new GraphWorkspaceConfiguration() );
-        System.out.println( "wsid: " + ws.getId() );
+        final String wsid = newWorkspaceId();
+        final RelationshipGraphConnection connection = connectionFactory().openConnection( wsid, true );
 
-        assertThat( ws, notNullValue() );
+        System.out.println( "wsid: " + connection.getWorkspaceId() );
 
-        logger.info( "Created workspace: {}", ws );
+        assertThat( connection, notNullValue() );
 
-        final GraphWorkspace result = graphFactory().getWorkspace( ws.getId() );
+        logger.info( "Created connection: {}", connection );
 
-        logger.info( "Retrieved all workspaces: {}", result );
+        final RelationshipGraphConnection result = connectionFactory().openConnection( wsid, false );
+
+        logger.info( "Retrieved connection: {}", result );
 
         assertThat( result, notNullValue() );
-        assertThat( result.getId(), equalTo( ws.getId() ) );
-        assertThat( result.equals( ws ), equalTo( true ) );
+        assertThat( result.getWorkspaceId(), equalTo( connection.getWorkspaceId() ) );
+        assertThat( result.equals( connection ), equalTo( true ) );
     }
 
     @Test
     public void createWorkspaceAndFindInAllWorkspacesListing()
         throws Exception
     {
-        final GraphWorkspace ws = graphFactory().createWorkspace( new GraphWorkspaceConfiguration() );
-        System.out.println( "wsid: " + ws.getId() );
+        final String wsid = newWorkspaceId();
+        final RelationshipGraphConnection connection = connectionFactory().openConnection( wsid, true );
 
-        assertThat( ws, notNullValue() );
+        System.out.println( "wsid: " + connection.getWorkspaceId() );
 
-        logger.info( "Created workspace: {}", ws );
+        assertThat( connection, notNullValue() );
 
-        final Set<GraphWorkspace> all = graphFactory().getAllWorkspaces();
+        logger.info( "Created connection: {}", connection );
+
+        final Set<String> all = connectionFactory().listWorkspaces();
 
         logger.info( "Retrieved all workspaces: {}", all );
 
         assertThat( all, notNullValue() );
         assertThat( all.size(), equalTo( 1 ) );
-        assertThat( all.contains( ws ), equalTo( true ) );
+        assertThat( all.contains( connection.getWorkspaceId() ), equalTo( true ) );
     }
 
 }

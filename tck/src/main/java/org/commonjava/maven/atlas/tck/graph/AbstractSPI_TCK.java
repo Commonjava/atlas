@@ -57,10 +57,17 @@ public abstract class AbstractSPI_TCK
     protected abstract RelationshipGraphConnectionFactory connectionFactory()
         throws Exception;
 
+    private RelationshipGraphFactory graphFactory;
+
     protected final RelationshipGraphFactory graphFactory()
         throws Exception
     {
-        return new RelationshipGraphFactory( connectionFactory() );
+        if ( graphFactory == null )
+        {
+            graphFactory = new RelationshipGraphFactory( connectionFactory() );
+        }
+
+        return graphFactory;
     }
 
     private long start;
@@ -74,9 +81,17 @@ public abstract class AbstractSPI_TCK
 
     @After
     public void printEnd()
+        throws Exception
     {
         System.out.printf( "\n\n***END [%s#%s] - %sms (%s)\n", naming.getClass(), naming.getMethodName(), ( System.currentTimeMillis() - start ),
                            new Date().toString() );
+
+        if ( graphFactory != null )
+        {
+            graphFactory.close();
+        }
+
+        connectionFactory().close();
     }
 
 }

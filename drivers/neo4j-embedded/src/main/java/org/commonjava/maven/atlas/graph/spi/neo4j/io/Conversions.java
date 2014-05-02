@@ -27,13 +27,12 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
-import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
@@ -44,7 +43,6 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -148,25 +146,6 @@ public final class Conversions
 
     private Conversions()
     {
-    }
-
-    public static void storeConfig( final Node node, final GraphWorkspaceConfiguration config )
-    {
-        node.setProperty( LAST_ACCESS, config.getLastAccess() );
-        node.setProperty( ACTIVE_POM_LOCATIONS, toStringArray( config.getActivePomLocations() ) );
-        node.setProperty( ACTIVE_SOURCES, toStringArray( config.getActiveSources() ) );
-
-        final Map<String, String> properties = config.getProperties();
-        if ( properties != null )
-        {
-            for ( final Entry<String, String> entry : properties.entrySet() )
-            {
-                final String key = entry.getKey();
-                final String value = entry.getValue();
-
-                node.setProperty( CONFIG_PROPERTY_PREFIX + key, value );
-            }
-        }
     }
 
     public static int countArrayElements( final String property, final PropertyContainer container )
@@ -972,9 +951,9 @@ public final class Conversions
         return cycles;
     }
 
-    public static void storeView( final GraphView view, final Node viewNode )
+    public static void storeView( final ViewParams params, final Node viewNode )
     {
-        viewNode.setProperty( Conversions.VIEW_SHORT_ID, view.getShortId() );
+        viewNode.setProperty( Conversions.VIEW_SHORT_ID, params.getShortId() );
 
         ObjectOutputStream oos = null;
         try
@@ -982,7 +961,7 @@ public final class Conversions
             final ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
             oos = new ObjectOutputStream( baos );
-            oos.writeObject( view );
+            oos.writeObject( params );
 
             viewNode.setProperty( VIEW_DATA, baos.toByteArray() );
         }
@@ -1001,7 +980,7 @@ public final class Conversions
     //        return retrieveView( viewNode, null, driver );
     //    }
 
-    public static GraphView retrieveView( final Node viewNode, final ConversionCache cache, final GraphAdmin maint )
+    public static ViewParams retrieveView( final Node viewNode, final ConversionCache cache, final GraphAdmin maint )
     {
         if ( !viewNode.hasProperty( VIEW_DATA ) )
         {
@@ -1012,7 +991,7 @@ public final class Conversions
 
         if ( cache != null )
         {
-            final GraphView view = cache.getSerializedObject( data, GraphView.class );
+            final ViewParams view = cache.getSerializedObject( data, ViewParams.class );
             if ( view != null )
             {
                 return view;
@@ -1023,8 +1002,7 @@ public final class Conversions
         try
         {
             ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
-            final GraphView view = (GraphView) ois.readObject();
-            view.reattach( maint.getDriver() );
+            final ViewParams view = (ViewParams) ois.readObject();
 
             if ( cache != null )
             {

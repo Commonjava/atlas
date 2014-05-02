@@ -1,6 +1,7 @@
 package org.commonjava.maven.atlas.graph;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -62,12 +63,20 @@ public final class RelationshipGraph
 
     public void addListener( final RelationshipGraphListener listener )
     {
+        if ( listeners == null )
+        {
+            listeners = new ArrayList<RelationshipGraphListener>();
+        }
+
         listeners.add( listener );
     }
 
     public void removeListener( final RelationshipGraphListener listener )
     {
-        listeners.remove( listener );
+        if ( listeners != null )
+        {
+            listeners.remove( listener );
+        }
     }
 
     public void close()

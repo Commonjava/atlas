@@ -165,8 +165,9 @@ public abstract class CycleDetectionTCK
                                          new DependencyRelationship( source, e,  new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final RelationshipGraph graph2 = graphFactory().open( graph.getParams()
-                                                                   .copy( d ), false );
+        final RelationshipGraph graph2 =
+            graphFactory().open( new ViewParams.Builder( graph.getParams() ).withRoots( d )
+                                                                            .build(), false );
 
         final Set<EProjectCycle> cycles1 = graph.getCycles();
         System.out.println( "Graph 1 Cycles:\n\n" + join( cycles1, "\n" ) );
@@ -223,10 +224,10 @@ public abstract class CycleDetectionTCK
                                          new DependencyRelationship( source, e, new ArtifactRef( c,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
-        final ViewParams params2 = graph.getParams()
-                                        .copy( new DependencyFilter(), graph.getParams()
-                                                                            .getMutator(), d );
-        final RelationshipGraph graph2 = graphFactory().open( params2, false );
+        final RelationshipGraph graph2 =
+            graphFactory().open( new ViewParams.Builder( graph.getParams() ).withFilter( new DependencyFilter() )
+                                                                            .withRoots( d )
+                                                                            .build(), false );
 
         final Set<EProjectCycle> cycles1 = graph.getCycles();
         System.out.println( "Graph 1 Cycles:\n\n" + join( cycles1, "\n" ) );

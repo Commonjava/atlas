@@ -10,25 +10,19 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.jung;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
 import org.commonjava.maven.atlas.tck.graph.RelationshipGraphTCK;
 
 public class SubGraphSelectionTest
     extends RelationshipGraphTCK
 {
-    private EGraphManager manager;
+    private final JungGraphConnectionFactory connFac = new JungGraphConnectionFactory();
 
     @Override
-    protected RelationshipGraphFactory graphFactory()
+    protected RelationshipGraphConnectionFactory connectionFactory()
         throws Exception
     {
-        if ( manager == null )
-        {
-            manager = new EGraphManager( new JungWorkspaceFactory() );
-        }
-
-        return manager;
+        return connFac;
     }
 
 }

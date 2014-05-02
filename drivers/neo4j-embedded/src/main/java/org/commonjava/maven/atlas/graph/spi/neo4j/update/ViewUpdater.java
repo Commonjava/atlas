@@ -18,8 +18,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.ViewIndexes;
@@ -57,7 +57,8 @@ public class ViewUpdater
 
     private Node stopNode;
 
-    public ViewUpdater( final GraphView view, final Node viewNode, final ViewIndexes indexes, final ConversionCache cache, final GraphAdmin admin )
+    public ViewUpdater( final ViewParams view, final Node viewNode, final ViewIndexes indexes,
+                        final ConversionCache cache, final GraphAdmin admin )
     {
         this.viewNode = viewNode;
         this.indexes = indexes;
@@ -66,7 +67,8 @@ public class ViewUpdater
         this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin, cache );
     }
 
-    public ViewUpdater( final Node stopNode, final GraphView view, final Node viewNode, final ViewIndexes indexes, final ConversionCache cache,
+    public ViewUpdater( final Node stopNode, final ViewParams view, final Node viewNode, final ViewIndexes indexes,
+                        final ConversionCache cache,
                         final GraphAdmin admin )
     {
         this.stopNode = stopNode;

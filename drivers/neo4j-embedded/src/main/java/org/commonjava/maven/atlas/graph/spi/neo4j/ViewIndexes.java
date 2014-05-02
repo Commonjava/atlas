@@ -10,7 +10,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
-import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexManager;
@@ -27,9 +27,9 @@ public class ViewIndexes
 
     private final IndexManager indexMgr;
 
-    private final GraphView view;
+    private final ViewParams view;
 
-    public ViewIndexes( final IndexManager indexMgr, final GraphView view )
+    public ViewIndexes( final IndexManager indexMgr, final ViewParams view )
     {
         this.indexMgr = indexMgr;
         this.view = view;

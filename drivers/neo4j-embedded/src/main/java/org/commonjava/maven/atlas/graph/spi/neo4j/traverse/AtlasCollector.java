@@ -18,10 +18,11 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
@@ -50,7 +51,7 @@ public final class AtlasCollector<STATE>
 
     private final Set<Node> startNodes;
 
-    private GraphView view;
+    private ViewParams view;
 
     private ConversionCache cache = new ConversionCache();
 
@@ -64,17 +65,23 @@ public final class AtlasCollector<STATE>
 
     private GraphRelType[] types;
 
-    public AtlasCollector( final TraverseVisitor visitor, final Node start, final GraphView view, final Node viewNode, final GraphAdmin admin,
+    private RelationshipGraphConnection connection;
+
+    public AtlasCollector( final TraverseVisitor visitor, final Node start,
+                           final RelationshipGraphConnection connection, final ViewParams view, final Node viewNode,
+                           final GraphAdmin admin,
                            final GraphRelType... types )
     {
-        this( visitor, Collections.singleton( start ), view, viewNode, admin );
+        this( visitor, Collections.singleton( start ), connection, view, viewNode, admin );
         this.types = types;
     }
 
-    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final Node viewNode,
+    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes,
+                           final RelationshipGraphConnection connection, final ViewParams view, final Node viewNode,
                            final GraphAdmin admin, final GraphRelType... types )
     {
         this.visitor = visitor;
+        this.connection = connection;
         this.viewNode = viewNode;
         this.admin = admin;
         this.types = types;
@@ -85,10 +92,11 @@ public final class AtlasCollector<STATE>
         this.view = view;
     }
 
-    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes, final GraphView view, final Node viewNode,
+    public AtlasCollector( final TraverseVisitor visitor, final Set<Node> startNodes,
+                           final RelationshipGraphConnection connection, final ViewParams view, final Node viewNode,
                            final GraphAdmin admin, final GraphRelType[] types, final Direction direction )
     {
-        this( visitor, startNodes, view, viewNode, admin, types );
+        this( visitor, startNodes, connection, view, viewNode, admin, types );
         this.direction = direction;
     }
 
@@ -124,7 +132,7 @@ public final class AtlasCollector<STATE>
 
         final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
 
-        GraphPathInfo pathInfo = new GraphPathInfo( view );
+        GraphPathInfo pathInfo = new GraphPathInfo( connection, view );
         // if we're here, we're pre-cleared to blindly construct this pathInfo (see child iteration below)
         for ( final Long rid : graphPath )
         {
@@ -267,7 +275,9 @@ public final class AtlasCollector<STATE>
     @Override
     public PathExpander<STATE> reverse()
     {
-        final AtlasCollector<STATE> collector = new AtlasCollector<STATE>( visitor, startNodes, view, viewNode, admin, types, direction.reverse() );
+        final AtlasCollector<STATE> collector =
+            new AtlasCollector<STATE>( visitor, startNodes, connection, view, viewNode, admin, types,
+                                       direction.reverse() );
         collector.setConversionCache( cache );
         collector.setUseSelections( useSelections );
 

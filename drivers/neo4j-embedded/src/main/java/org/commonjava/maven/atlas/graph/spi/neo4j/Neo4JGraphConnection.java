@@ -18,7 +18,7 @@ import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 
-public interface Neo4JEGraphDriver
+public interface Neo4JGraphConnection
     extends RelationshipGraphConnection
 {
 

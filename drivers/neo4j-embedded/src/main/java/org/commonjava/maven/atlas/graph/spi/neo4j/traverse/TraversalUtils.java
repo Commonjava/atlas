@@ -22,13 +22,12 @@ import java.net.URI;
 import java.util.HashSet;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.neo4j.graphdb.Relationship;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -65,28 +64,26 @@ public final class TraversalUtils
     //        return true;
     //    }
 
-    public static boolean acceptedInView( final Relationship r, final GraphView view, final ConversionCache cache )
+    public static boolean acceptedInView( final Relationship r, final ViewParams view, final ConversionCache cache )
     {
         return accepted( r, view, cache );
     }
 
-    public static boolean accepted( final Relationship r, final GraphView view, final ConversionCache cache )
+    public static boolean accepted( final Relationship r, final ViewParams view, final ConversionCache cache )
     {
         final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
 
         debug( "Checking relationship for acceptance: {} ({})", r, rel );
 
-        final GraphWorkspace workspace = view.getWorkspace();
-        if ( workspace != null )
-        {
-            final Set<URI> sources = workspace.getActiveSources();
+            final Set<URI> sources = view.getActiveSources();
             if ( sources != null && !sources.isEmpty() )
             {
                 final Set<URI> s = getURISetProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
                 boolean found = false;
                 for ( final URI uri : s )
                 {
-                    if ( sources == GraphWorkspace.DEFAULT_SOURCES || sources.contains( uri ) )
+                    // TODO: What are the default sources anyway?? any:any??
+                    if ( /*sources == GraphWorkspace.DEFAULT_SOURCES ||*/ sources.contains( uri ) )
                     {
                         found = true;
                         break;
@@ -101,7 +98,7 @@ public final class TraversalUtils
                 }
             }
 
-            final Set<URI> pomLocations = workspace.getActivePomLocations();
+            final Set<URI> pomLocations = view.getActivePomLocations();
             if ( pomLocations != null && !pomLocations.isEmpty() )
             {
                 final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
@@ -111,7 +108,6 @@ public final class TraversalUtils
                     return false;
                 }
             }
-        }
 
         final ProjectRelationshipFilter filter = view.getFilter();
         if ( filter != null )

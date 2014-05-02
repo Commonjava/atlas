@@ -11,45 +11,30 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
 import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
 import java.util.Map;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.filter.AnyFilter;
-import org.commonjava.maven.atlas.graph.model.EProjectGraph;
-import org.commonjava.maven.atlas.graph.model.GraphView;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileDriverFixture;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileConnectionFixture;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.tck.graph.AbstractSPI_TCK;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.neo4j.cypher.javacompat.ExecutionResult;
 
 public class CypherQueriesTest
+    extends AbstractSPI_TCK
 {
 
     @Rule
-    public FileDriverFixture fixture = new FileDriverFixture();
+    public FileConnectionFixture fixture = new FileConnectionFixture();
 
     @Rule
     public TestName naming = new TestName();
-
-    private URI sourceURI()
-        throws URISyntaxException
-    {
-        return new URI( "test:repo:" + naming.getMethodName() );
-    }
-
-    protected synchronized EGraphManager getManager()
-        throws Exception
-    {
-        return fixture.manager();
-    }
 
     @Test
     public void projectsWithVariableFlag_PartialQuery()
@@ -61,19 +46,15 @@ public class CypherQueriesTest
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
-        GraphView view = new GraphView( workspace, project );
+        RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        getManager().storeRelationships( workspace,
+        graph.storeRelationships(
             new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
             new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
         );
-        
-        EProjectGraph graph = getManager().getGraph( view );
 
-        view = new GraphView( workspace, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
-        graph = getManager().getGraph( view );
+        graph = graphFactory().open( new ViewParams.Builder( graph.getParams() ).withSelection( varDep.asProjectRef(), selected ).build(), false );
 
 //        view.selectVersion( varDep, selected );
         
@@ -87,7 +68,7 @@ public class CypherQueriesTest
             + "\nRETURN n as node, p as path";
         /* @formatter:on */
 
-        final AbstractNeo4JEGraphDriver driver = (AbstractNeo4JEGraphDriver) graph.getDatabase();
+        final FileNeo4JGraphConnection driver = (FileNeo4JGraphConnection) graph.getDatabase();
 
         final ExecutionResult result = driver.execute( cypher );
         int i = 0;
@@ -108,19 +89,15 @@ public class CypherQueriesTest
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
-        GraphView view = new GraphView( workspace, project );
+        RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        getManager().storeRelationships( workspace,
+        graph.storeRelationships( 
             new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
             new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false )
         );
         
-        EProjectGraph graph = getManager().getGraph( view );
-
-        view = new GraphView( workspace, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
-        graph = getManager().getGraph( view );
+        graph = graphFactory().open( new ViewParams.Builder( graph.getParams()).withSelection( varDep.asProjectRef(), selected ).build(), false );
         
         final String cypher = "START a=node(1) "
             + "\nMATCH p=(a)-[:M_PLUGIN_DEP|C_PLUGIN|PARENT|EXTENSION|M_DEPENDENCY|M_PLUGIN|C_PLUGIN_DEP|C_DEPENDENCY*]->(n) "
@@ -135,7 +112,7 @@ public class CypherQueriesTest
             + "\nRETURN n as node, p as path";
         /* @formatter:on */
 
-        final AbstractNeo4JEGraphDriver driver = (AbstractNeo4JEGraphDriver) graph.getDatabase();
+        final FileNeo4JGraphConnection driver = (FileNeo4JGraphConnection) graph.getDatabase();
 
         final ExecutionResult result = driver.execute( cypher );
         int i = 0;
@@ -143,6 +120,13 @@ public class CypherQueriesTest
         {
             System.out.printf( "%d:  %s", i++, record );
         }
+    }
+
+    @Override
+    protected RelationshipGraphConnectionFactory connectionFactory()
+        throws Exception
+    {
+        return fixture.connectionFactory();
     }
 
 }

@@ -17,10 +17,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
@@ -48,11 +49,9 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final RelationshipGraphTraversal traversal;
 
-    private final int pass;
-
     private boolean reversedExpander;
 
-    private final GraphView view;
+    private final ViewParams view;
 
     private ConversionCache cache = new ConversionCache();
 
@@ -62,15 +61,19 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final GraphRelType[] types;
 
-    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final RelationshipGraphTraversal traversal, final GraphView view,
-                                                final Node viewNode, final GraphAdmin admin, final int pass, final GraphRelType... types )
+    private final RelationshipGraphConnection connection;
+
+    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final RelationshipGraphTraversal traversal,
+                                                final RelationshipGraphConnection connection, final ViewParams view,
+                                                final Node viewNode, final GraphAdmin admin,
+                                                final GraphRelType... types )
     {
         this.rootIds = rootIds;
         this.traversal = traversal;
+        this.connection = connection;
         this.view = view;
         this.viewNode = viewNode;
         this.admin = admin;
-        this.pass = pass;
         this.types = types;
     }
 
@@ -78,7 +81,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     {
         this.rootIds = ev.rootIds;
         this.traversal = ev.traversal;
-        this.pass = ev.pass;
+        this.connection = ev.connection;
         this.view = ev.view;
         this.admin = ev.admin;
         this.viewNode = ev.viewNode;
@@ -114,7 +117,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
                 relPath.remove( relPath.size() - 1 );
             }
 
-            if ( traversal.preCheck( lastRel, relPath, pass ) )
+            if ( traversal.preCheck( lastRel, relPath ) )
             {
                 logger.debug( "Include-and-continue: {}, {}", relPath, lastRel );
                 return Evaluation.INCLUDE_AND_CONTINUE;
@@ -145,7 +148,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         }
 
         final Neo4jGraphPath graphPath = new Neo4jGraphPath( path );
-        GraphPathInfo pathInfo = new GraphPathInfo( view );
+        GraphPathInfo pathInfo = new GraphPathInfo( connection, view );
         for ( final Long rid : graphPath )
         {
             final Relationship r = admin.getRelationship( rid );
@@ -204,7 +207,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             final ProjectRelationship<?> projectRel = Conversions.toProjectRelationship( r, cache );
 
             logger.debug( "Pre-checking relationship {} for expansion using filter: {}", projectRel, traversal );
-            if ( traversal.preCheck( projectRel, rels, pass ) )
+            if ( traversal.preCheck( projectRel, rels ) )
             {
                 logger.debug( "Adding for expansion: {}", projectRel );
                 result.add( r );
