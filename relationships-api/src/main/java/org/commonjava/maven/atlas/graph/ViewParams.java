@@ -309,29 +309,7 @@ public class ViewParams
             return false;
         }
         final ViewParams other = (ViewParams) obj;
-        if ( filter == null )
-        {
-            if ( other.filter != null )
-            {
-                return false;
-            }
-        }
-        else if ( !filter.equals( other.filter ) )
-        {
-            return false;
-        }
-        if ( roots == null )
-        {
-            if ( other.roots != null )
-            {
-                return false;
-            }
-        }
-        else if ( !roots.equals( other.roots ) )
-        {
-            return false;
-        }
-        return true;
+        return getShortId().equals( other.getShortId() );
     }
 
     @Override

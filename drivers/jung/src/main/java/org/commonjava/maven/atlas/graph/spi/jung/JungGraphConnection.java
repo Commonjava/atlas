@@ -29,6 +29,7 @@ import java.util.Set;
 import org.apache.commons.lang.StringUtils;
 import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.ViewParams;
+import org.commonjava.maven.atlas.graph.filter.AnyFilter;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
@@ -108,14 +109,14 @@ public class JungGraphConnection
             return edges;
         }
 
-        if ( !params.hasSelections() )
-        {
-            return edges;
-        }
-
         final List<ProjectRelationship<?>> result = new ArrayList<ProjectRelationship<?>>( edges.size() );
         for ( final ProjectRelationship<?> edge : edges )
         {
+            if ( ( edge instanceof ParentRelationship ) && ( (ParentRelationship) edge ).isTerminus() )
+            {
+                continue;
+            }
+
             final ProjectVersionRef target = edge.getTarget()
                                                  .asProjectVersionRef();
 
@@ -599,7 +600,8 @@ public class JungGraphConnection
     public Set<EProjectCycle> getCycles( final ViewParams params )
     {
         final Set<EProjectCycle> result = new HashSet<EProjectCycle>();
-        if ( params.getFilter() == null )
+        if ( params.getFilter() == null || params.getFilter()
+                                                 .equals( AnyFilter.INSTANCE ) )
         {
             result.addAll( cycles );
         }
@@ -615,6 +617,8 @@ public class JungGraphConnection
                         continue nextCycle;
                     }
                 }
+
+                result.add( cycle );
             }
         }
 

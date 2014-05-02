@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.tck.graph.traverse;
 
+import static org.apache.commons.lang.StringUtils.join;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
@@ -268,6 +269,7 @@ public abstract class BuildOrderTraversalTCK
         );
         /* @formatter:on */
 
+        System.out.println( "Got relationships:\n\n  " + join( graph.getAllRelationships(), "\n  " ) );
         assertThat( graph.getAllRelationships()
                          .size(), equalTo( 4 ) );
 

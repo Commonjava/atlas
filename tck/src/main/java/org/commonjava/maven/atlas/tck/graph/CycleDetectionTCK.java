@@ -71,14 +71,10 @@ public abstract class CycleDetectionTCK
         final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        graph.storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( dep, null, null, false ), null, 0, false ),
-                                  new DependencyRelationship( source, dep,  new ArtifactRef( dep2,  null, null, false ), null, 0, false ));
-
-        final Set<ProjectRelationship<?>> rejected = graph.storeRelationships(
-                                         new DependencyRelationship( source, dep2,  new ArtifactRef( project,  null, null, false ), null, 0, false ) );
+        graph.storeRelationships( new DependencyRelationship( source, project, dep.asJarArtifact(), null, 0, false ),
+                                  new DependencyRelationship( source, dep,  dep2.asJarArtifact(), null, 0, false ),
+                                  new DependencyRelationship( source, dep2,  project.asJarArtifact(), null, 0, false ) );
         /* @formatter:on */
-
-        System.out.println( "Rejected: " + rejected );
 
         //        final EProjectGraph graph = getManager().getGraph( session, project );
 

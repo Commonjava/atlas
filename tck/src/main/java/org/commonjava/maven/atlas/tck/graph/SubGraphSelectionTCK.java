@@ -62,7 +62,7 @@ public abstract class SubGraphSelectionTCK
         System.out.println( "After selection here are the variable nodes: " + variables );
         assertThat( variables.isEmpty(), equalTo( true ) );
 
-        final Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
+        final Set<ProjectVersionRef> incomplete = graph2.getIncompleteSubgraphs();
         System.out.println( "Checking missing subgraphs for: " + selected );
         assertThat( incomplete.contains( selected ), equalTo( true ) );
     }
@@ -111,7 +111,7 @@ public abstract class SubGraphSelectionTCK
         variables = graph2.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( false ) );
 
-        Set<ProjectVersionRef> incomplete = graph2.getIncompleteSubgraphs();
+        Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
         assertThat( incomplete.contains( selected ), equalTo( false ) );
 
         incomplete = graph2.getIncompleteSubgraphs();

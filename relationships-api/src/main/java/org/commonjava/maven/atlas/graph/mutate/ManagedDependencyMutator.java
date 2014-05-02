@@ -28,7 +28,7 @@ public class ManagedDependencyMutator
     public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
                                              final RelationshipGraphConnection connection, final ViewParams params )
     {
-        if ( rel.getType() != RelationshipType.DEPENDENCY )
+        if ( rel.getType() != RelationshipType.DEPENDENCY ) // TODO: BOM types??
         {
             //            logger.debug( "No selections for relationships of type: {}", rel.getType() );
             return rel;
