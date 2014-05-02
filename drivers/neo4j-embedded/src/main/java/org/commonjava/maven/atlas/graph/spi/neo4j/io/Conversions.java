@@ -33,6 +33,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.commonjava.maven.atlas.graph.ViewParams;
+import org.commonjava.maven.atlas.graph.rel.BomRelationship;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
@@ -486,6 +487,11 @@ public final class Conversions
                 result = new ExtensionRelationship( source, from, to, index );
                 break;
             }
+            case BOM:
+            {
+                result = new BomRelationship( source, from, to, index );
+                break;
+            }
             case PARENT:
             {
                 result = new ParentRelationship( source, from, to );
@@ -493,6 +499,8 @@ public final class Conversions
             }
             default:
             {
+                throw new IllegalArgumentException( "I don't know how to construct the atlas relationship for type: "
+                    + mapper.atlasType() );
             }
         }
 
