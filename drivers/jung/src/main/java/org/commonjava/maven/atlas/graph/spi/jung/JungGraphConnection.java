@@ -74,6 +74,8 @@ public class JungGraphConnection
 
     private final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
+    private final Map<ProjectVersionRef, Throwable> errors = new HashMap<ProjectVersionRef, Throwable>();
+
     private final String workspaceId;
 
     public JungGraphConnection( final String workspaceId )
@@ -756,6 +758,24 @@ public class JungGraphConnection
     }
 
     @Override
+    public synchronized void reindex( final ProjectVersionRef ref )
+    {
+        if ( ref == null )
+        {
+            return;
+        }
+
+        final Map<String, String> map = metadata.get( ref );
+        if ( map != null )
+        {
+            for ( final Map.Entry<String, String> mdEntry : map.entrySet() )
+            {
+                addMetadataOwner( mdEntry.getKey(), ref );
+            }
+        }
+    }
+
+    @Override
     public Set<ProjectVersionRef> getProjectsWithMetadata( final ViewParams params, final String key )
     {
         return metadataOwners.get( key );
@@ -1126,6 +1146,32 @@ public class JungGraphConnection
     public String getWorkspaceId()
     {
         return workspaceId;
+    }
+
+    @Override
+    public void addProjectError( final ProjectVersionRef ref, final Throwable error )
+        throws RelationshipGraphConnectionException
+    {
+        errors.put( ref, error );
+    }
+
+    @Override
+    public Throwable getProjectError( final ProjectVersionRef ref )
+    {
+        return errors.get( ref );
+    }
+
+    @Override
+    public boolean hasProjectError( final ProjectVersionRef ref )
+    {
+        return errors.containsKey( ref );
+    }
+
+    @Override
+    public void clearProjectError( final ProjectVersionRef ref )
+        throws RelationshipGraphConnectionException
+    {
+        errors.remove( ref );
     }
 
 }

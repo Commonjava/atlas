@@ -111,4 +111,10 @@ public final class ParentRelationship
         return new ParentRelationship( getSources(), d, ref );
     }
 
+    @Override
+    public ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef declaring )
+    {
+        return new ParentRelationship( getSources(), declaring, getTarget() );
+    }
+
 }

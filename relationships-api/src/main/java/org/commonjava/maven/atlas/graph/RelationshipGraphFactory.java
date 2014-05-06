@@ -1,6 +1,8 @@
 package org.commonjava.maven.atlas.graph;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -15,11 +17,19 @@ public final class RelationshipGraphFactory
 
     private final Map<String, ConnectionCache> connectionCaches = new HashMap<String, ConnectionCache>();
 
+    private final Set<RelationshipGraphListenerFactory> listenerFactories =
+        new HashSet<RelationshipGraphListenerFactory>();
+
     private boolean closed;
 
-    public RelationshipGraphFactory( final RelationshipGraphConnectionFactory connectionFactory )
+    public RelationshipGraphFactory( final RelationshipGraphConnectionFactory connectionFactory,
+                                     final RelationshipGraphListenerFactory... listenerFactories )
     {
         this.connectionManager = connectionFactory;
+        if ( listenerFactories.length > 0 )
+        {
+            this.listenerFactories.addAll( Arrays.asList( listenerFactories ) );
+        }
     }
 
     public RelationshipGraph open( final ViewParams params, final boolean create )
@@ -99,7 +109,8 @@ public final class RelationshipGraphFactory
     }
 
     private static final class ConnectionCache
-        implements Iterable<RelationshipGraph>, RelationshipGraphListener
+        extends AbstractRelationshipGraphListener
+        implements Iterable<RelationshipGraph>
     {
         private final RelationshipGraphConnection connection;
 
@@ -150,11 +161,6 @@ public final class RelationshipGraphFactory
         }
 
         @Override
-        public void closing( final RelationshipGraph graph )
-        {
-        }
-
-        @Override
         public void closed( final RelationshipGraph graph )
             throws RelationshipGraphException
         {
@@ -167,6 +173,33 @@ public final class RelationshipGraphFactory
             {
                 close();
             }
+        }
+
+        @Override
+        public int hashCode()
+        {
+            return connection.getWorkspaceId()
+                             .hashCode() + 13;
+        }
+
+        @Override
+        public boolean equals( final Object obj )
+        {
+            if ( this == obj )
+            {
+                return true;
+            }
+            if ( obj == null )
+            {
+                return false;
+            }
+            if ( getClass() != obj.getClass() )
+            {
+                return false;
+            }
+            final ConnectionCache other = (ConnectionCache) obj;
+            return connection.getWorkspaceId()
+                             .equals( other.connection.getWorkspaceId() );
         }
     }
 

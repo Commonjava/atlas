@@ -2,6 +2,7 @@ package org.commonjava.maven.atlas.graph;
 
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -10,10 +11,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
+import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
@@ -49,16 +52,70 @@ public final class RelationshipGraph
         return params;
     }
 
+    public void storeProjectError( final ProjectVersionRef ref, final Throwable error )
+        throws RelationshipGraphException
+    {
+        connection.addProjectError( ref, error );
+
+        for ( final RelationshipGraphListener listener : listeners )
+        {
+            listener.projectError( this, ref, error );
+        }
+    }
+
+    public Throwable getProjectError( final ProjectVersionRef ref )
+    {
+        return connection.getProjectError( ref );
+    }
+
+    public boolean hasProjectError( final ProjectVersionRef ref )
+    {
+        return connection.hasProjectError( ref );
+    }
+
+    public void clearProjectError( final ProjectVersionRef ref )
+        throws RelationshipGraphException
+    {
+        connection.clearProjectError( ref );
+    }
+
     public Set<ProjectRelationship<?>> storeRelationships( final ProjectRelationship<?>... relationships )
         throws RelationshipGraphException
     {
-        return connection.addRelationships( relationships );
+        final List<ProjectRelationship<?>> rels = Arrays.asList( relationships );
+
+        for ( final RelationshipGraphListener listener : listeners )
+        {
+            listener.storing( this, rels );
+        }
+
+        final Set<ProjectRelationship<?>> rejected = connection.addRelationships( relationships );
+
+        for ( final RelationshipGraphListener listener : listeners )
+        {
+            listener.stored( this, rels, rejected );
+        }
+
+        return rejected;
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final Collection<? extends ProjectRelationship<?>> relationships )
         throws RelationshipGraphException
     {
-        return connection.addRelationships( relationships.toArray( new ProjectRelationship<?>[relationships.size()] ) );
+        for ( final RelationshipGraphListener listener : listeners )
+        {
+            listener.storing( this, relationships );
+        }
+
+        final Set<ProjectRelationship<?>> rejected =
+            connection.addRelationships( relationships.toArray( new ProjectRelationship<?>[relationships.size()] ) );
+
+        for ( final RelationshipGraphListener listener : listeners )
+        {
+            listener.stored( this, relationships, rejected );
+        }
+
+        return rejected;
     }
 
     public void addListener( final RelationshipGraphListener listener )
@@ -134,13 +191,13 @@ public final class RelationshipGraph
     }
 
     public Set<ProjectRelationship<?>> add( final EProjectDirectRelationships rels )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         return addAll( rels.getAllRelationships() );
     }
 
     public boolean add( final ProjectRelationship<?> rel )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         if ( rel == null )
         {
@@ -152,7 +209,7 @@ public final class RelationshipGraph
     }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         if ( rels == null )
         {
@@ -174,7 +231,7 @@ public final class RelationshipGraph
     }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final T... rels )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         if ( rels == null )
         {
@@ -197,19 +254,19 @@ public final class RelationshipGraph
 
     public void traverse( final ProjectVersionRef start, final RelationshipGraphTraversal traversal,
                           final TraversalType type )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.traverse( traversal, start, this, type );
     }
 
     public void traverse( final ProjectVersionRef start, final RelationshipGraphTraversal traversal )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         traverse( start, traversal, TraversalType.breadth_first );
     }
 
     public void traverse( final RelationshipGraphTraversal traversal, final TraversalType type )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         for ( final ProjectVersionRef root : params.getRoots() )
         {
@@ -218,7 +275,7 @@ public final class RelationshipGraph
     }
 
     public void traverse( final RelationshipGraphTraversal traversal )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         traverse( traversal, TraversalType.breadth_first );
     }
@@ -264,7 +321,7 @@ public final class RelationshipGraph
     }
 
     public void addCycle( final EProjectCycle cycle )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.addCycle( cycle );
     }
@@ -297,13 +354,13 @@ public final class RelationshipGraph
     }
 
     public void addMetadata( final ProjectVersionRef ref, final String name, final String value )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.addMetadata( ref, name, value );
     }
 
     public void addMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.setMetadata( ref, metadata );
     }
@@ -314,9 +371,15 @@ public final class RelationshipGraph
     }
 
     public void reindex()
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.reindex();
+    }
+
+    public void reindex( final ProjectVersionRef ref )
+        throws RelationshipGraphConnectionException
+    {
+        connection.reindex( ref );
     }
 
     public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... projectVersionRefs )
@@ -330,7 +393,7 @@ public final class RelationshipGraph
     }
 
     public void addDisconnectedProject( final ProjectVersionRef ref )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.addDisconnectedProject( ref );
     }
@@ -342,14 +405,95 @@ public final class RelationshipGraph
 
     public Set<URI> getSources()
     {
-        final Set<ProjectRelationship<?>> rels = getAllRelationships();
-        final Set<URI> sources = new HashSet<URI>();
-        for ( final ProjectRelationship<?> rel : rels )
-        {
-            sources.addAll( rel.getSources() );
-        }
+        return params.getActiveSources();
+        //        final Set<ProjectRelationship<?>> rels = getAllRelationships();
+        //        final Set<URI> sources = new HashSet<URI>();
+        //        for ( final ProjectRelationship<?> rel : rels )
+        //        {
+        //            sources.addAll( rel.getSources() );
+        //        }
+        //
+        //        return sources;
+    }
 
-        return sources;
+    public GraphMutator getMutator()
+    {
+        return params.getMutator();
+    }
+
+    public ProjectRelationshipFilter getFilter()
+    {
+        return params.getFilter();
+    }
+
+    public ViewParams addActivePomLocation( final URI location )
+    {
+        return params.addActivePomLocation( location );
+    }
+
+    public ViewParams addActivePomLocations( final Collection<URI> locations )
+    {
+        return params.addActivePomLocations( locations );
+    }
+
+    public ViewParams addActivePomLocations( final URI... locations )
+    {
+        return params.addActivePomLocations( locations );
+    }
+
+    public ViewParams addActiveSources( final Collection<URI> sources )
+    {
+        return params.addActiveSources( sources );
+    }
+
+    public ViewParams addActiveSources( final URI... sources )
+    {
+        return params.addActiveSources( sources );
+    }
+
+    public ViewParams addActiveSource( final URI source )
+    {
+        return params.addActiveSource( source );
+    }
+
+    public long getLastAccess()
+    {
+        return params.getLastAccess();
+    }
+
+    public String setProperty( final String key, final String value )
+    {
+        return params.setProperty( key, value );
+    }
+
+    public String getProperty( final String key )
+    {
+        return params.getProperty( key );
+    }
+
+    public String getProperty( final String key, final String def )
+    {
+        return params.getProperty( key, def );
+    }
+
+    public final String getWorkspaceId()
+    {
+        return params.getWorkspaceId();
+    }
+
+    public final Set<URI> getActivePomLocations()
+    {
+        return params.getActivePomLocations();
+    }
+
+    public final Set<URI> getActiveSources()
+    {
+        return params.getActiveSources();
+    }
+
+    public final ProjectVersionRef getSelection( final ProjectRef ref )
+    {
+        return params.getSelection( ref );
     }
 
     // --- IMPORTED FROM EProjectWeb
@@ -365,6 +509,13 @@ public final class RelationshipGraph
                                                                   final RelationshipType... types )
     {
         return connection.getDirectRelationshipsTo( params, to, includeManagedInfo, true, types );
+    }
+
+    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
+                                                                    final boolean managed,
+                                                                    final RelationshipType... types )
+    {
+        return connection.getDirectRelationshipsFrom( params, source, managed, true, types );
     }
 
     public Set<ProjectVersionRef> getAllIncompleteSubgraphs()
@@ -442,13 +593,13 @@ public final class RelationshipGraph
     }
 
     public void setMetadata( final ProjectVersionRef project, final Map<String, String> metadata )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.setMetadata( project, metadata );
     }
 
     public void deleteRelationshipsDeclaredBy( final ProjectVersionRef ref )
-        throws RelationshipGraphConnectionException
+        throws RelationshipGraphException
     {
         connection.deleteRelationshipsDeclaredBy( ref );
     }
@@ -489,4 +640,11 @@ public final class RelationshipGraph
     }
 
     // --- IMPORTED FROM EGraphManager
+
+    @Override
+    public String toString()
+    {
+        return "RelationshipGraph [params=" + params + "]";
+    }
+
 }

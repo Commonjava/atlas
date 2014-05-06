@@ -267,11 +267,14 @@ public final class RelationshipUtils
         return results;
     }
 
-    public static ExtensionRelationship extension( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
+    public static ExtensionRelationship extension( final URI source, final URI pomLocation,
+                                                   final ProjectVersionRef owner, final String groupId,
+                                                   final String artifactId,
                                                    final String version, final int index )
         throws InvalidVersionSpecificationException
     {
-        return new ExtensionRelationship( source, owner, projectVersion( groupId, artifactId, version ), index );
+        return new ExtensionRelationship( source, pomLocation, owner, projectVersion( groupId, artifactId, version ),
+                                          index );
     }
 
     public static PluginRelationship plugin( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,

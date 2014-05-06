@@ -59,10 +59,19 @@ public interface RelationshipGraphConnection
     Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel )
         throws RelationshipGraphConnectionException;
 
+    void addProjectError( ProjectVersionRef ref, Throwable error )
+        throws RelationshipGraphConnectionException;
+
+    void clearProjectError( ProjectVersionRef ref )
+        throws RelationshipGraphConnectionException;
+
     void recomputeIncompleteSubgraphs()
         throws RelationshipGraphConnectionException;
 
     void reindex()
+        throws RelationshipGraphConnectionException;
+
+    void reindex( final ProjectVersionRef ref )
         throws RelationshipGraphConnectionException;
 
     /* 
@@ -72,6 +81,8 @@ public interface RelationshipGraphConnection
      * View param is first to support vararg methods
      * ################################################
      */
+
+    Throwable getProjectError( ProjectVersionRef ref );
 
     Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( ViewParams params, ProjectVersionRef root );
 
@@ -96,6 +107,8 @@ public interface RelationshipGraphConnection
     boolean isMissing( ViewParams params, ProjectVersionRef project );
 
     boolean hasMissingProjects( ViewParams params );
+
+    boolean hasProjectError( ProjectVersionRef ref );
 
     Set<ProjectVersionRef> getMissingProjects( ViewParams params );
 

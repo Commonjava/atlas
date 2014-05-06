@@ -16,6 +16,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -27,6 +28,7 @@ import org.commonjava.maven.atlas.graph.filter.AnyFilter;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.mutate.GraphMutator;
 import org.commonjava.maven.atlas.graph.mutate.ManagedDependencyMutator;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
@@ -173,9 +175,22 @@ public class ViewParams
             return this;
         }
 
+        public Builder withRoots( final Collection<ProjectVersionRef> roots )
+        {
+            this.roots.clear();
+            this.roots.addAll( roots );
+            return this;
+        }
+
     }
 
     private static final long serialVersionUID = 1L;
+
+    private static final Set<URI> DEFAULT_SOURCES =
+        Collections.unmodifiableSet( Collections.singleton( RelationshipUtils.UNKNOWN_SOURCE_URI ) );
+
+    private static final Set<URI> DEFAULT_POM_LOCATIONS =
+        Collections.unmodifiableSet( Collections.singleton( RelationshipUtils.POM_ROOT_URI ) );
 
     private final Set<ProjectVersionRef> roots = new HashSet<ProjectVersionRef>();
 
@@ -466,12 +481,12 @@ public class ViewParams
 
     public final Set<URI> getActivePomLocations()
     {
-        return activePomLocations;
+        return activePomLocations == null ? DEFAULT_POM_LOCATIONS : activePomLocations;
     }
 
     public final Set<URI> getActiveSources()
     {
-        return activeSources;
+        return activeSources == null ? DEFAULT_SOURCES : activeSources;
     }
 
     public final Iterable<URI> activePomLocations()

@@ -358,7 +358,7 @@ public class FileNeo4JGraphConnection
     private void updateView( final ViewParams params, final ConversionCache cache )
     {
         if ( params.getRoots() == null || params.getRoots()
-                                            .isEmpty() )
+                                                .isEmpty() )
         {
             logger.debug( "paramss without roots are never updated." );
             return;
@@ -832,8 +832,8 @@ public class FileNeo4JGraphConnection
     //    }
 
     @Override
-    public void traverse( final RelationshipGraphTraversal traversal,
-                          final ProjectVersionRef root, final RelationshipGraph graph, final TraversalType type )
+    public void traverse( final RelationshipGraphTraversal traversal, final ProjectVersionRef root,
+                          final RelationshipGraph graph, final TraversalType type )
         throws RelationshipGraphConnectionException
     {
         final Node rootNode = getNode( root );
@@ -843,68 +843,68 @@ public class FileNeo4JGraphConnection
             return;
         }
 
-            //            logger.debug( "PASS: {}", i );
+        //            logger.debug( "PASS: {}", i );
 
-            // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
-            //            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_PATH )
-            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
-                                                        .sort( PathComparator.INSTANCE );
+        // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+        //            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_PATH )
+        TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
+                                                    .sort( PathComparator.INSTANCE );
 
-            final ViewParams params = graph.getParams();
-            final GraphRelType[] relTypes = getGraphRelTypes( params.getFilter() );
-            for ( final GraphRelType grt : relTypes )
+        final ViewParams params = graph.getParams();
+        final GraphRelType[] relTypes = getGraphRelTypes( params.getFilter() );
+        for ( final GraphRelType grt : relTypes )
+        {
+            description.relationships( grt, Direction.OUTGOING );
+        }
+
+        if ( type == TraversalType.breadth_first )
+        {
+            description = description.breadthFirst();
+        }
+        else
+        {
+            description = description.depthFirst();
+        }
+
+        //            logger.debug( "starting traverse of: {}", net );
+        traversal.startTraverse( graph );
+
+        final ConversionCache cache = new ConversionCache();
+
+        final Node paramsNode = getViewNode( params );
+
+        @SuppressWarnings( { "rawtypes", "unchecked" } )
+        final MembershipWrappedTraversalEvaluator checker =
+            new MembershipWrappedTraversalEvaluator( Collections.singleton( rootNode.getId() ), traversal, this,
+                                                     params, paramsNode, adminAccess, relTypes );
+
+        checker.setConversionCache( cache );
+
+        description = description.expand( checker )
+                                 .evaluator( checker );
+
+        final Traverser traverser = description.traverse( rootNode );
+        for ( final Path path : traverser )
+        {
+            if ( path.lastRelationship() == null )
             {
-                description.relationships( grt, Direction.OUTGOING );
+                continue;
             }
 
-            if ( type == TraversalType.breadth_first )
+            final List<ProjectRelationship<?>> rels = convertToRelationships( path.relationships(), cache );
+            logger.debug( "traversing path: {}", rels );
+            for ( final ProjectRelationship<?> rel : rels )
             {
-                description = description.breadthFirst();
-            }
-            else
-            {
-                description = description.depthFirst();
-            }
-
-            //            logger.debug( "starting traverse of: {}", net );
-            traversal.startTraverse( graph );
-
-            final ConversionCache cache = new ConversionCache();
-
-            final Node paramsNode = getViewNode( params );
-
-            @SuppressWarnings( { "rawtypes", "unchecked" } )
-            final MembershipWrappedTraversalEvaluator checker =
-                new MembershipWrappedTraversalEvaluator( Collections.singleton( rootNode.getId() ), traversal, this,
-                                                         params, paramsNode, adminAccess, relTypes );
-
-            checker.setConversionCache( cache );
-
-            description = description.expand( checker )
-                                     .evaluator( checker );
-
-            final Traverser traverser = description.traverse( rootNode );
-            for ( final Path path : traverser )
-            {
-                if ( path.lastRelationship() == null )
+                logger.debug( "traverse: {}", rel );
+                if ( traversal.traverseEdge( rel, rels ) )
                 {
-                    continue;
-                }
-
-                final List<ProjectRelationship<?>> rels = convertToRelationships( path.relationships(), cache );
-                logger.debug( "traversing path: {}", rels );
-                for ( final ProjectRelationship<?> rel : rels )
-                {
-                    logger.debug( "traverse: {}", rel );
-                    if ( traversal.traverseEdge( rel, rels ) )
-                    {
-                        logger.debug( "traversed: {}", rel );
-                        traversal.edgeTraversed( rel, rels );
-                    }
+                    logger.debug( "traversed: {}", rel );
+                    traversal.edgeTraversed( rel, rels );
                 }
             }
+        }
 
-            traversal.endTraverse( graph );
+        traversal.endTraverse( graph );
     }
 
     @Override
@@ -954,8 +954,8 @@ public class FileNeo4JGraphConnection
         if ( registerView( params ) )
         {
             return new ViewIndexes( graph.index(), params ).getCachedRelationships()
-                                                         .get( RID, relationship.getId() )
-                                                         .hasNext();
+                                                           .get( RID, relationship.getId() )
+                                                           .hasNext();
         }
         else
         {
@@ -1595,24 +1595,7 @@ public class FileNeo4JGraphConnection
                                                .query( GAV, "*" );
             for ( final Node node : nodes )
             {
-                final String gav = getStringProperty( GAV, node );
-                if ( gav == null )
-                {
-                    continue;
-                }
-
-                final Map<String, String> md = getMetadataMap( node );
-                if ( md == null || md.isEmpty() )
-                {
-                    continue;
-                }
-
-                for ( final String key : md.keySet() )
-                {
-                    graph.index()
-                         .forNodes( METADATA_INDEX_PREFIX + key )
-                         .add( node, GAV, gav );
-                }
+                reindexNode( node );
             }
 
             tx.success();
@@ -1620,6 +1603,49 @@ public class FileNeo4JGraphConnection
         finally
         {
             tx.finish();
+        }
+    }
+
+    @Override
+    public void reindex( final ProjectVersionRef ref )
+    {
+        final Node node = getNode( ref );
+        if ( node == null )
+        {
+            return;
+        }
+
+        final Transaction tx = graph.beginTx();
+        try
+        {
+            reindexNode( node );
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
+    }
+
+    private void reindexNode( final Node node )
+    {
+        final String gav = getStringProperty( GAV, node );
+        if ( gav == null )
+        {
+            return;
+        }
+
+        final Map<String, String> md = getMetadataMap( node );
+        if ( md == null || md.isEmpty() )
+        {
+            return;
+        }
+
+        for ( final String key : md.keySet() )
+        {
+            graph.index()
+                 .forNodes( METADATA_INDEX_PREFIX + key )
+                 .add( node, GAV, gav );
         }
     }
 
@@ -1760,8 +1786,7 @@ public class FileNeo4JGraphConnection
                                                                  final RelationshipType... types )
     {
         logger.debug( "Finding relationships targeting: {} (filter: {}, managed: {}, types: {})", to,
-                      params.getFilter(),
-                      includeManagedInfo, Arrays.asList( types ) );
+                      params.getFilter(), includeManagedInfo, Arrays.asList( types ) );
         final Node node = getNode( to );
         if ( node == null )
         {
@@ -1773,12 +1798,20 @@ public class FileNeo4JGraphConnection
         {
             if ( includeConcreteInfo )
             {
-                grts.add( GraphRelType.map( relType, false ) );
+                final GraphRelType graphType = GraphRelType.map( relType, false );
+                if ( graphType != null )
+                {
+                    grts.add( graphType );
+                }
             }
 
             if ( includeManagedInfo )
             {
-                grts.add( GraphRelType.map( relType, true ) );
+                final GraphRelType graphType = GraphRelType.map( relType, true );
+                if ( graphType != null )
+                {
+                    grts.add( graphType );
+                }
             }
         }
 
@@ -2026,7 +2059,7 @@ public class FileNeo4JGraphConnection
         }
 
         if ( params.getRoots() == null || params.getRoots()
-                                            .isEmpty() )
+                                                .isEmpty() )
         {
             logger.info( "Cannot track membership in params! It has no root GAVs.\nView: {} (short id: {})",
                          params.getLongId(), params.getShortId() );
@@ -2333,6 +2366,56 @@ public class FileNeo4JGraphConnection
     public String getWorkspaceId()
     {
         return workspaceId;
+    }
+
+    @Override
+    public void addProjectError( final ProjectVersionRef ref, final Throwable error )
+        throws RelationshipGraphConnectionException
+    {
+        Node node = getNode( ref );
+        if ( node == null )
+        {
+            node = newProjectNode( ref );
+        }
+
+        Conversions.storeError( node, error );
+    }
+
+    @Override
+    public Throwable getProjectError( final ProjectVersionRef ref )
+    {
+        final Node node = getNode( ref );
+        if ( node == null )
+        {
+            return null;
+        }
+
+        return Conversions.getError( node );
+    }
+
+    @Override
+    public boolean hasProjectError( final ProjectVersionRef ref )
+    {
+        final Node node = getNode( ref );
+        if ( node == null )
+        {
+            return false;
+        }
+
+        return node.hasProperty( Conversions.PROJECT_ERROR );
+    }
+
+    @Override
+    public void clearProjectError( final ProjectVersionRef ref )
+        throws RelationshipGraphConnectionException
+    {
+        final Node node = getNode( ref );
+        if ( node == null || !node.hasProperty( Conversions.PROJECT_ERROR ) )
+        {
+            return;
+        }
+
+        node.removeProperty( Conversions.PROJECT_ERROR );
     }
 
 }

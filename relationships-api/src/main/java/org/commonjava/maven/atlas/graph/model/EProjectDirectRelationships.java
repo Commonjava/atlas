@@ -31,6 +31,7 @@ import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -482,7 +483,8 @@ public class EProjectDirectRelationships
 
         public Builder withExtension( final ProjectVersionRef ref )
         {
-            withExtensions( new ExtensionRelationship( source, ref, ref, getNextExtensionIndex() ) );
+            withExtensions( new ExtensionRelationship( source, RelationshipUtils.POM_ROOT_URI, ref, ref,
+                                                       getNextExtensionIndex() ) );
             return this;
         }
 
