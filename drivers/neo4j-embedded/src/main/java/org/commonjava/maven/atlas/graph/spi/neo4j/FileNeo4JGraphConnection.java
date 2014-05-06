@@ -629,7 +629,7 @@ public class FileNeo4JGraphConnection
                                                                            .getArtifactId() ) );
                         }
 
-                        logger.info( "+= {} ({})", relationship, rel );
+                        logger.debug( "+= {} ({})", relationship, rel );
                     }
                     else
                     {
