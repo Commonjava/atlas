@@ -16,6 +16,7 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -28,6 +29,8 @@ import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.traverse.AncestryTraversal;
+import org.commonjava.maven.atlas.graph.traverse.TraversalType;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.junit.Test;
@@ -65,8 +68,8 @@ public abstract class RelationshipGraphTCK
         final ProjectVersionRef d2 = new ProjectVersionRef( "g", "d2", "2" );
 
         final RelationshipGraph graph =
-            graphFactory().open( new ViewParams( newWorkspaceId(), new DependencyFilter(),
-                                                 new ManagedDependencyMutator(), gav ), true );
+            openGraph( new ViewParams( newWorkspaceId(), new DependencyFilter(), new ManagedDependencyMutator(), gav ),
+                       true );
 
         /* @formatter:off */
         graph.storeRelationships(
@@ -92,13 +95,11 @@ public abstract class RelationshipGraphTCK
 
         final String wsid = newWorkspaceId();
 
-        graphFactory().open( new ViewParams( wsid, r ), true )
-                      .storeRelationships( new ParentRelationship( source, r ) );
+        openGraph( new ViewParams( wsid, r ), true ).storeRelationships( new ParentRelationship( source, r ) );
 
-        graphFactory().open( new ViewParams( wsid, p ), true )
-                      .storeRelationships( new ParentRelationship( source, p, r ) );
-        
-        final RelationshipGraph child = graphFactory().open( new ViewParams( wsid, c ), true );
+        openGraph( new ViewParams( wsid, p ), true ).storeRelationships( new ParentRelationship( source, p, r ) );
+
+        final RelationshipGraph child = openGraph( new ViewParams( wsid, c ), true );
 
         child.storeRelationships( new ParentRelationship( source, c, p ) );
 
@@ -107,7 +108,7 @@ public abstract class RelationshipGraphTCK
         assertThat( child.isComplete(), equalTo( true ) );
 
         final AncestryTraversal ancestryTraversal = new AncestryTraversal();
-        child.traverse( ancestryTraversal );
+        child.traverse( ancestryTraversal, TraversalType.depth_first );
 
         final List<ProjectVersionRef> ancestry = ancestryTraversal.getAncestry();
         LoggerFactory.getLogger( getClass() )
@@ -134,20 +135,18 @@ public abstract class RelationshipGraphTCK
 
         final String wsid = newWorkspaceId();
 
-        final RelationshipGraph child = graphFactory().open( new ViewParams( wsid, c ), true );
+        final RelationshipGraph child = openGraph( new ViewParams( wsid, c ), true );
 
         child.storeRelationships( new ParentRelationship( source, c, p ) );
 
-        graphFactory().open( new ViewParams( wsid, p ), true )
-                      .storeRelationships( new ParentRelationship( source, p, r ) );
-        
-        graphFactory().open( new ViewParams( wsid, r ), true )
-                      .storeRelationships( new ParentRelationship( source, r ) );
-        
+        openGraph( new ViewParams( wsid, p ), true ).storeRelationships( new ParentRelationship( source, p, r ) );
+
+        openGraph( new ViewParams( wsid, r ), true ).storeRelationships( new ParentRelationship( source, r ) );
+
         assertThat( child.isComplete(), equalTo( true ) );
 
         final AncestryTraversal ancestryTraversal = new AncestryTraversal();
-        child.traverse( ancestryTraversal );
+        child.traverse( ancestryTraversal, TraversalType.depth_first );
 
         final List<ProjectVersionRef> ancestry = ancestryTraversal.getAncestry();
         LoggerFactory.getLogger( getClass() )
@@ -160,6 +159,15 @@ public abstract class RelationshipGraphTCK
         assertThat( iterator.next(), equalTo( c ) );
         assertThat( iterator.next(), equalTo( p ) );
         assertThat( iterator.next(), equalTo( r ) );
+    }
+
+    private RelationshipGraph openGraph( final ViewParams params, final boolean create )
+        throws Exception
+    {
+        final RelationshipGraph graph =
+            graphFactory().open( new ViewParams.Builder( params ).withActiveSources( Collections.singleton( RelationshipUtils.ANY_SOURCE_URI ) )
+                                                                 .build(), create );
+        return graph;
     }
 
 }

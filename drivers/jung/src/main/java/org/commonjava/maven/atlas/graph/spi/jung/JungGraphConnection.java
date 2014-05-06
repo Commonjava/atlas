@@ -70,7 +70,8 @@ public class JungGraphConnection
 
     private final Map<String, Set<ProjectVersionRef>> metadataOwners = new HashMap<String, Set<ProjectVersionRef>>();
 
-    private final Map<ProjectVersionRef, Map<String, String>> metadata = new HashMap<ProjectVersionRef, Map<String, String>>();
+    private final Map<ProjectVersionRef, Map<String, String>> metadata =
+        new HashMap<ProjectVersionRef, Map<String, String>>();
 
     private final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
@@ -125,27 +126,30 @@ public class JungGraphConnection
             final Set<URI> sources = params.getActiveSources();
             if ( sources != null && !sources.isEmpty() )
             {
-                Set<URI> s = edge.getSources();
-                if ( s == null )
+                if ( !sources.contains( RelationshipUtils.ANY_SOURCE_URI ) )
                 {
-                    s = Collections.singleton( UNKNOWN_SOURCE_URI );
-                }
-
-                boolean found = false;
-                for ( final URI uri : s )
-                {
-                    // TODO: What were the default sources??
-                    if ( /*sources == ViewParams.DEFAULT_SOURCES ||*/sources.contains( uri ) )
+                    Set<URI> s = edge.getSources();
+                    if ( s == null )
                     {
-                        found = true;
-                        break;
+                        s = Collections.singleton( UNKNOWN_SOURCE_URI );
                     }
-                }
 
-                if ( !found )
-                {
-                    //                    log( "Found relationship in path with de-selected source-repository URI: %s", edge );
-                    continue;
+                    boolean found = false;
+                    for ( final URI uri : s )
+                    {
+                        // TODO: What were the default sources??
+                        if ( /*sources == ViewParams.DEFAULT_SOURCES ||*/sources.contains( uri ) )
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if ( !found )
+                    {
+                        //                    log( "Found relationship in path with de-selected source-repository URI: %s", edge );
+                        continue;
+                    }
                 }
             }
 
@@ -212,7 +216,8 @@ public class JungGraphConnection
                 addGA( target );
             }
 
-            final List<ProjectRelationship<?>> edges = new ArrayList<ProjectRelationship<?>>( graph.findEdgeSet( rel.getDeclaring(), target ) );
+            final List<ProjectRelationship<?>> edges =
+                new ArrayList<ProjectRelationship<?>>( graph.findEdgeSet( rel.getDeclaring(), target ) );
             if ( !edges.contains( rel ) )
             {
                 // logger.info( "Adding edge: %s -> %s", rel.getDeclaring(), target );
@@ -243,8 +248,9 @@ public class JungGraphConnection
 
             final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
-            dfsTraverse( new ViewParams( workspaceId ), traversal, rel.getTarget()
-                                                                      .asProjectVersionRef() );
+            dfsTraverse( new ViewParams.Builder( workspaceId ).withActiveSources( Collections.singleton( RelationshipUtils.ANY_SOURCE_URI ) )
+                                                              .build(), traversal, rel.getTarget()
+                                                                                      .asProjectVersionRef() );
 
             final List<EProjectCycle> cycles = traversal.getCycles();
 
@@ -283,7 +289,8 @@ public class JungGraphConnection
         if ( roots == null )
         {
             LoggerFactory.getLogger( getClass() )
-                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!", new JoinString( ", ", refs ) );
+                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!",
+                                new JoinString( ", ", refs ) );
             return null;
         }
 
@@ -308,7 +315,7 @@ public class JungGraphConnection
         final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
         dfsTraverse( params, traversal, rel.getTarget()
-                                            .asProjectVersionRef() );
+                                           .asProjectVersionRef() );
 
         return !traversal.getCycles()
                          .isEmpty();
@@ -435,7 +442,8 @@ public class JungGraphConnection
                         final GraphPathInfo nextInfo = pathInfo.getChildPathInfo( realEdge );
 
                         // Don't account for terminal parent relationship.
-                        if ( !( realEdge instanceof ParentRelationship ) || !( (ParentRelationship) realEdge ).isTerminus() )
+                        if ( !( realEdge instanceof ParentRelationship )
+                            || !( (ParentRelationship) realEdge ).isTerminus() )
                         {
                             if ( next.hasCycle() )
                             {
@@ -501,7 +509,8 @@ public class JungGraphConnection
     @Override
     public boolean containsProject( final ViewParams params, final ProjectVersionRef ref )
     {
-        return graph.containsVertex( ref.asProjectVersionRef() ) && !incompleteSubgraphs.contains( ref.asProjectVersionRef() );
+        return graph.containsVertex( ref.asProjectVersionRef() )
+            && !incompleteSubgraphs.contains( ref.asProjectVersionRef() );
     }
 
     @Override
@@ -658,7 +667,10 @@ public class JungGraphConnection
     @Override
     public void recomputeIncompleteSubgraphs()
     {
-        final ViewParams params = new ViewParams( workspaceId );
+        final ViewParams params =
+            new ViewParams.Builder( workspaceId ).withActiveSources( Collections.singleton( RelationshipUtils.ANY_SOURCE_URI ) )
+                                                 .build();
+
         for ( final ProjectVersionRef vertex : getAllProjects( params ) )
         {
             final Collection<? extends ProjectRelationship<?>> outEdges = getRelationshipsDeclaredBy( params, vertex );
@@ -873,7 +885,8 @@ public class JungGraphConnection
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final ViewParams params,
                                                                    final ProjectVersionRef from,
-                                                                   final boolean includeManagedInfo, final RelationshipType... types )
+                                                                   final boolean includeManagedInfo,
+                                                                   final RelationshipType... types )
     {
         return getDirectRelationshipsFrom( params, from, includeManagedInfo, true, types );
     }
@@ -881,7 +894,8 @@ public class JungGraphConnection
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final ViewParams params,
                                                                    final ProjectVersionRef from,
-                                                                   final boolean includeManagedInfo, final boolean includeConcreteInfo,
+                                                                   final boolean includeManagedInfo,
+                                                                   final boolean includeConcreteInfo,
                                                                    final RelationshipType... types )
     {
         return getMatchingRelationships( graph.getOutEdges( from.asProjectVersionRef() ), params, includeManagedInfo,
@@ -890,7 +904,8 @@ public class JungGraphConnection
 
     private Set<ProjectRelationship<?>> getMatchingRelationships( final Collection<ProjectRelationship<?>> edges,
                                                                   final ViewParams params,
-                                                                  final boolean includeManagedInfo, final boolean includeConcreteInfo,
+                                                                  final boolean includeManagedInfo,
+                                                                  final boolean includeConcreteInfo,
                                                                   final RelationshipType... types )
     {
         if ( edges == null )
@@ -914,7 +929,7 @@ public class JungGraphConnection
             }
 
             if ( params.getFilter() != null && !params.getFilter()
-                                                  .accept( rel ) )
+                                                      .accept( rel ) )
             {
                 // logger.info( "-= %s (rejected by filter)", rel );
                 continue;
@@ -954,7 +969,8 @@ public class JungGraphConnection
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final ViewParams params, final ProjectVersionRef to,
                                                                  final boolean includeManagedInfo,
-                                                                 final boolean includeConcreteInfo, final RelationshipType... types )
+                                                                 final boolean includeConcreteInfo,
+                                                                 final RelationshipType... types )
     {
         // logger.info( "Getting relationships targeting: %s (types: %s)", to, join( types, ", " ) );
         return getMatchingRelationships( graph.getInEdges( to.asProjectVersionRef() ), params, includeManagedInfo,
@@ -964,7 +980,8 @@ public class JungGraphConnection
     @Override
     public Set<ProjectVersionRef> getProjectsMatching( final ViewParams params, final ProjectRef projectRef )
     {
-        return byGA.containsKey( projectRef.asProjectRef() ) ? byGA.get( projectRef.asProjectRef() ) : Collections.<ProjectVersionRef> emptySet();
+        return byGA.containsKey( projectRef.asProjectRef() ) ? byGA.get( projectRef.asProjectRef() )
+                        : Collections.<ProjectVersionRef> emptySet();
     }
 
     @Override
@@ -991,7 +1008,8 @@ public class JungGraphConnection
     }
 
     @Override
-    public ProjectVersionRef getManagedTargetFor( final ProjectVersionRef target, final GraphPath<?> path, final RelationshipType type )
+    public ProjectVersionRef getManagedTargetFor( final ProjectVersionRef target, final GraphPath<?> path,
+                                                  final RelationshipType type )
     {
         if ( path == null )
         {
@@ -1000,7 +1018,9 @@ public class JungGraphConnection
 
         if ( !( path instanceof JungGraphPath ) )
         {
-            throw new IllegalArgumentException( "Cannot process GraphPath's from other implementations. (Non-Jung GraphPath detected: " + path + ")" );
+            throw new IllegalArgumentException(
+                                                "Cannot process GraphPath's from other implementations. (Non-Jung GraphPath detected: "
+                                                    + path + ")" );
         }
 
         final ProjectRef targetGA = target.asProjectRef();
@@ -1056,7 +1076,8 @@ public class JungGraphConnection
 
         if ( parent != null && !( parent instanceof JungGraphPath ) )
         {
-            throw new IllegalArgumentException( "Cannot get child path for: " + parent + ". This is not a JungGraphPath instance!" );
+            throw new IllegalArgumentException( "Cannot get child path for: " + parent
+                + ". This is not a JungGraphPath instance!" );
         }
 
         return new JungGraphPath( (JungGraphPath) parent, child );
@@ -1086,7 +1107,8 @@ public class JungGraphConnection
         if ( roots == null )
         {
             LoggerFactory.getLogger( getClass() )
-                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!", new JoinString( ", ", refs ) );
+                         .warn( "Cannot retrieve paths targeting {}. No roots specified for this project network!",
+                                new JoinString( ", ", refs ) );
             return null;
         }
 
@@ -1112,7 +1134,8 @@ public class JungGraphConnection
     {
         if ( path != null && !( path instanceof JungGraphPath ) )
         {
-            throw new IllegalArgumentException( "Cannot get target GAV for: " + path + ". This is not a JungGraphPath instance!" );
+            throw new IllegalArgumentException( "Cannot get target GAV for: " + path
+                + ". This is not a JungGraphPath instance!" );
         }
 
         return ( (JungGraphPath) path ).getTargetGAV();
@@ -1123,7 +1146,8 @@ public class JungGraphConnection
     {
         if ( path != null && !( path instanceof JungGraphPath ) )
         {
-            throw new IllegalArgumentException( "Cannot get target GAV for: " + path + ". This is not a JungGraphPath instance!" );
+            throw new IllegalArgumentException( "Cannot get target GAV for: " + path
+                + ". This is not a JungGraphPath instance!" );
         }
 
         final JungGraphPath gp = (JungGraphPath) path;

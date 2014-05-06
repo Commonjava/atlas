@@ -28,6 +28,7 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.neo4j.graphdb.Relationship;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,15 +76,17 @@ public final class TraversalUtils
 
         debug( "Checking relationship for acceptance: {} ({})", r, rel );
 
-            final Set<URI> sources = view.getActiveSources();
-            if ( sources != null && !sources.isEmpty() )
+        final Set<URI> sources = view.getActiveSources();
+        if ( sources != null && !sources.isEmpty() )
+        {
+            if ( !sources.contains( RelationshipUtils.ANY_SOURCE_URI ) )
             {
                 final Set<URI> s = getURISetProperty( SOURCE_URI, r, UNKNOWN_SOURCE_URI );
                 boolean found = false;
                 for ( final URI uri : s )
                 {
                     // TODO: What are the default sources anyway?? any:any??
-                    if ( /*sources == GraphWorkspace.DEFAULT_SOURCES ||*/ sources.contains( uri ) )
+                    if ( /*sources == GraphWorkspace.DEFAULT_SOURCES ||*/sources.contains( uri ) )
                     {
                         found = true;
                         break;
@@ -92,22 +95,23 @@ public final class TraversalUtils
 
                 if ( !found )
                 {
-                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: {} (r={}, permissable sources: {})", s, r,
-                           sources );
+                    debug( "REJECTED: Found relationship in path with de-selected source-repository URI: {} (r={}, permissable sources: {})",
+                           s, r, sources );
                     return false;
                 }
             }
+        }
 
-            final Set<URI> pomLocations = view.getActivePomLocations();
-            if ( pomLocations != null && !pomLocations.isEmpty() )
+        final Set<URI> pomLocations = view.getActivePomLocations();
+        if ( pomLocations != null && !pomLocations.isEmpty() )
+        {
+            final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
+            if ( !pomLocations.contains( pomLocation ) )
             {
-                final URI pomLocation = getURIProperty( POM_LOCATION_URI, r, POM_ROOT_URI );
-                if ( !pomLocations.contains( pomLocation ) )
-                {
-                    debug( "REJECTED: Found relationship in path with de-selected pom-location URI: {}", r );
-                    return false;
-                }
+                debug( "REJECTED: Found relationship in path with de-selected pom-location URI: {}", r );
+                return false;
             }
+        }
 
         final ProjectRelationshipFilter filter = view.getFilter();
         if ( filter != null )
