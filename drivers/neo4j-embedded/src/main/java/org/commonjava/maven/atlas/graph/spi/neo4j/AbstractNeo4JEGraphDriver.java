@@ -636,7 +636,7 @@ public abstract class AbstractNeo4JEGraphDriver
                                                                                                                             .getArtifactId() ) );
                         }
 
-                        logger.info( "+= {} ({})", relationship, rel );
+                        logger.debug( "+= {} ({})", relationship, rel );
                     }
                     else
                     {
