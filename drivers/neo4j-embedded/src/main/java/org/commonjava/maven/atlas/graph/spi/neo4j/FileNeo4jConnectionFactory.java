@@ -87,23 +87,27 @@ public class FileNeo4jConnectionFactory
     }
 
     @Override
-    public void delete( final String workspaceId )
+    public boolean delete( final String workspaceId )
         throws RelationshipGraphConnectionException
     {
         final File db = new File( dbBaseDirectory, workspaceId );
         if ( !db.exists() || !db.isDirectory() )
         {
-            return;
+            return false;
         }
 
+        boolean result = false;
         try
         {
             FileUtils.forceDelete( db );
+            result = db.exists();
         }
         catch ( final IOException e )
         {
             throw new RelationshipGraphConnectionException( "Failed to delete: %s. Reason: %s", e, db, e.getMessage() );
         }
+
+        return result;
     }
 
     @Override
@@ -135,6 +139,13 @@ public class FileNeo4jConnectionFactory
     public synchronized void connectionClosed( final String workspaceId )
     {
         openConnections.remove( workspaceId );
+    }
+
+    @Override
+    public boolean exists( final String workspaceId )
+    {
+        final File db = new File( dbBaseDirectory, workspaceId );
+        return db.exists() && db.isDirectory();
     }
 
 }

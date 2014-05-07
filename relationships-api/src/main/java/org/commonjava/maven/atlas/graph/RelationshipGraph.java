@@ -647,4 +647,9 @@ public final class RelationshipGraph
         return "RelationshipGraph [params=" + params + "]";
     }
 
+    public void printStats()
+    {
+        connection.printStats();
+    }
+
 }

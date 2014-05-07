@@ -41,16 +41,22 @@ public class JungGraphConnectionFactory
     }
 
     @Override
-    public void delete( final String workspaceId )
+    public boolean delete( final String workspaceId )
         throws RelationshipGraphConnectionException
     {
-        connections.remove( workspaceId );
+        return connections.remove( workspaceId ) != null;
     }
 
     @Override
     public void close()
         throws RelationshipGraphConnectionException
     {
+    }
+
+    @Override
+    public boolean exists( final String workspaceId )
+    {
+        return connections.containsKey( workspaceId );
     }
 
 }

@@ -13,10 +13,12 @@ public interface RelationshipGraphConnectionFactory
     void flush( RelationshipGraphConnection connection )
         throws RelationshipGraphConnectionException;
 
-    void delete( String workspaceId )
+    boolean delete( String workspaceId )
         throws RelationshipGraphConnectionException;
 
     void close()
         throws RelationshipGraphConnectionException;
+
+    boolean exists( String workspaceId );
 
 }

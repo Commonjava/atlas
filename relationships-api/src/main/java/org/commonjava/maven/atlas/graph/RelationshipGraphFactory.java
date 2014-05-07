@@ -77,11 +77,11 @@ public final class RelationshipGraphFactory
         connectionManager.flush( graph.getConnection() );
     }
 
-    public void deleteWorkspace( final String workspaceId )
+    public boolean deleteWorkspace( final String workspaceId )
         throws RelationshipGraphException
     {
         checkClosed();
-        connectionManager.delete( workspaceId );
+        return connectionManager.delete( workspaceId );
     }
 
     private void checkClosed()
@@ -106,6 +106,11 @@ public final class RelationshipGraphFactory
         connectionCaches.clear();
 
         connectionManager.close();
+    }
+
+    public boolean workspaceExists( final String workspaceId )
+    {
+        return connectionManager.exists( workspaceId );
     }
 
     private static final class ConnectionCache
