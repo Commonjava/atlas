@@ -19,14 +19,6 @@ import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.RelationshipIndex;
 
-/**
- * Administrative access to the internal operations of the Neo4J driver without exposing it in public SPI or forcing a
- * type cast.
- * 
- * NOTE: Calling code should be managing a transaction somewhere up-stack already before anything here is called!
- *
- * @author jdcasey
- */
 public interface GraphAdmin
 {
 

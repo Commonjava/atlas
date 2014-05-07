@@ -465,20 +465,10 @@ public class FileNeo4JGraphConnection
         }
 
         final long rid = ( (Neo4jGraphPath) path ).getLastRelationshipId();
-        final Node target;
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            final Relationship rel = graph.getRelationshipById( rid );
-            target = rel.getEndNode();
+        final Relationship rel = graph.getRelationshipById( rid );
+        final Node target = rel.getEndNode();
 
-            return toProjectVersionRef( target, null );
-        }
-        finally
-        {
-            tx.close();
-        }
-
+        return toProjectVersionRef( target, null );
     }
 
     @Override
@@ -1983,18 +1973,7 @@ public class FileNeo4JGraphConnection
         }
 
         final Neo4jGraphPath gp = (Neo4jGraphPath) path;
-        final List<ProjectRelationship<?>> rels;
-
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            rels = convertToRelationships( gp, adminAccess, new ConversionCache() );
-        }
-        finally
-        {
-            tx.close();
-        }
-
+        final List<ProjectRelationship<?>> rels = convertToRelationships( gp, adminAccess, new ConversionCache() );
         final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>( rels.size() + 2 );
         for ( final ProjectRelationship<?> rel : rels )
         {
@@ -2393,80 +2372,50 @@ public class FileNeo4JGraphConnection
     public void addProjectError( final ProjectVersionRef ref, final Throwable error )
         throws RelationshipGraphConnectionException
     {
-        final Transaction tx = graph.beginTx();
-        try
+        Node node = getNode( ref );
+        if ( node == null )
         {
-            Node node = getNode( ref );
-            if ( node == null )
-            {
-                node = newProjectNode( ref );
-            }
-            Conversions.storeError( node, error );
-            tx.success();
+            node = newProjectNode( ref );
         }
-        finally
-        {
-            tx.close();
-        }
+
+        Conversions.storeError( node, error );
     }
 
     @Override
     public Throwable getProjectError( final ProjectVersionRef ref )
     {
-        final Transaction tx = graph.beginTx();
-        try
+        final Node node = getNode( ref );
+        if ( node == null )
         {
-            final Node node = getNode( ref );
-            if ( node == null )
-            {
-                return null;
-            }
-            return Conversions.getError( node );
+            return null;
         }
-        finally
-        {
-            tx.close();
-        }
+
+        return Conversions.getError( node );
     }
 
     @Override
     public boolean hasProjectError( final ProjectVersionRef ref )
     {
-        final Transaction tx = graph.beginTx();
-        try
+        final Node node = getNode( ref );
+        if ( node == null )
         {
-            final Node node = getNode( ref );
-            if ( node == null )
-            {
-                return false;
-            }
-            return node.hasProperty( Conversions.PROJECT_ERROR );
+            return false;
         }
-        finally
-        {
-            tx.close();
-        }
+
+        return node.hasProperty( Conversions.PROJECT_ERROR );
     }
 
     @Override
     public void clearProjectError( final ProjectVersionRef ref )
         throws RelationshipGraphConnectionException
     {
-        final Transaction tx = graph.beginTx();
-        try
+        final Node node = getNode( ref );
+        if ( node == null || !node.hasProperty( Conversions.PROJECT_ERROR ) )
         {
-            final Node node = getNode( ref );
-            if ( node == null || !node.hasProperty( Conversions.PROJECT_ERROR ) )
-            {
-                return;
-            }
-            node.removeProperty( Conversions.PROJECT_ERROR );
-            tx.success();
+            return;
         }
-        finally
-        {
-            tx.close();
-        }
+
+        node.removeProperty( Conversions.PROJECT_ERROR );
     }
 
 }
