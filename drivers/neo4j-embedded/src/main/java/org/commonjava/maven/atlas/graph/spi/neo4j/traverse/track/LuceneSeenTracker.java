@@ -17,6 +17,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.update.CycleCacheUpdater;
 import org.neo4j.graphdb.Node;
+import org.neo4j.graphdb.Transaction;
 import org.neo4j.graphdb.index.Index;
 import org.neo4j.graphdb.index.IndexHits;
 
@@ -58,33 +59,22 @@ public class LuceneSeenTracker
         }
 
         key += "#" + pathInfo.getKey();
-        IndexHits<Node> hits = null;
+        final IndexHits<Node> hits = seen.get( KEY, key );
+        if ( hits.hasNext() )
+        {
+            return true;
+        }
+
+        final Transaction tx = admin.beginTransaction();
         try
         {
-            hits = seen.get( KEY, key );
-            if ( hits.hasNext() )
-            {
-                return true;
-            }
+            seen.add( viewNode, KEY, key );
+            tx.success();
         }
         finally
         {
-            if ( hits != null )
-            {
-                hits.close();
-            }
+            tx.finish();
         }
-
-        //        final Transaction tx = admin.beginTransaction();
-        //        try
-        //        {
-        seen.add( viewNode, KEY, key );
-        //            tx.success();
-        //        }
-        //        finally
-        //        {
-        //            tx.finish();
-        //        }
 
         return false;
     }
@@ -92,16 +82,16 @@ public class LuceneSeenTracker
     @Override
     public void traverseComplete()
     {
-        //        final Transaction tx = admin.beginTransaction();
-        //        try
-        //        {
-        seen.delete();
-        //            tx.success();
-        //        }
-        //        finally
-        //        {
-        //            tx.finish();
-        //        }
+        final Transaction tx = admin.beginTransaction();
+        try
+        {
+            seen.delete();
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
 
     }
 

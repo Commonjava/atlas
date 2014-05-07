@@ -86,7 +86,8 @@ import org.neo4j.graphdb.index.IndexHits;
 import org.neo4j.graphdb.index.RelationshipIndex;
 import org.neo4j.graphdb.traversal.TraversalDescription;
 import org.neo4j.graphdb.traversal.Traverser;
-import org.neo4j.graphdb.traversal.Uniqueness;
+import org.neo4j.kernel.Traversal;
+import org.neo4j.kernel.Uniqueness;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -206,7 +207,7 @@ public class FileNeo4JGraphConnection
         }
         finally
         {
-            tx.close();
+            tx.finish();
         }
     }
 
@@ -223,25 +224,15 @@ public class FileNeo4JGraphConnection
     @Override
     public void printStats()
     {
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            logger.info( "Graph contains {} nodes.", graph.index()
-                                                          .forNodes( BY_GAV_IDX )
-                                                          .query( GAV, "*" )
-                                                          .size() );
+        logger.info( "Graph contains {} nodes.", graph.index()
+                                                      .forNodes( BY_GAV_IDX )
+                                                      .query( GAV, "*" )
+                                                      .size() );
 
-            logger.info( "Graph contains {} relationships.", graph.index()
-                                                                  .forRelationships( ALL_RELATIONSHIPS )
-                                                                  .query( RELATIONSHIP_ID, "*" )
-                                                                  .size() );
-
-            tx.success();
-        }
-        finally
-        {
-            tx.close();
-        }
+        logger.info( "Graph contains {} relationships.", graph.index()
+                                                              .forRelationships( ALL_RELATIONSHIPS )
+                                                              .query( RELATIONSHIP_ID, "*" )
+                                                              .size() );
     }
 
     @Override
@@ -255,25 +246,19 @@ public class FileNeo4JGraphConnection
             return null;
         }
 
-        final Transaction tx = graph.beginTx();
-        try
+        final Index<Node> index = graph.index()
+                                       .forNodes( BY_GAV_IDX );
+        final IndexHits<Node> hits = index.get( GAV, ref.asProjectVersionRef()
+                                                        .toString() );
+
+        if ( hits.hasNext() )
         {
-            final Index<Node> index = graph.index()
-                                           .forNodes( BY_GAV_IDX );
-            final IndexHits<Node> hits = index.get( GAV, ref.asProjectVersionRef()
-                                                            .toString() );
-            if ( hits.hasNext() )
-            {
-                final Node node = hits.next();
-                final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING );
-                return convertToRelationships( relationships, new ConversionCache() );
-            }
-            return null;
+            final Node node = hits.next();
+            final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING );
+            return convertToRelationships( relationships, new ConversionCache() );
         }
-        finally
-        {
-            tx.close();
-        }
+
+        return null;
     }
 
     private void checkClosed()
@@ -293,60 +278,46 @@ public class FileNeo4JGraphConnection
         final ConversionCache cache = new ConversionCache();
         if ( registerView( params ) )
         {
-            final Transaction tx = graph.beginTx();
-            try
-            {
-                final Node node = getNode( ref );
-                final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
-                final StringBuilder sb = new StringBuilder();
-                for ( final Relationship r : relationships )
-                {
-                    if ( sb.length() > 0 )
-                    {
-                        sb.append( ' ' );
-                    }
+            final Node node = getNode( ref );
 
-                    sb.append( r.getId() );
-                }
-                final RelationshipIndex cachedRels = new ViewIndexes( graph.index(), params ).getCachedRelationships();
-                final IndexHits<Relationship> hits = cachedRels.query( RID, sb.toString() );
-                final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
-                while ( hits.hasNext() )
+            final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
+            final StringBuilder sb = new StringBuilder();
+            for ( final Relationship r : relationships )
+            {
+                if ( sb.length() > 0 )
                 {
-                    final Relationship r = hits.next();
-                    final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
-                    result.add( rel );
+                    sb.append( ' ' );
                 }
 
-                tx.success();
-                return result;
+                sb.append( r.getId() );
             }
-            finally
+
+            final RelationshipIndex cachedRels = new ViewIndexes( graph.index(), params ).getCachedRelationships();
+            final IndexHits<Relationship> hits = cachedRels.query( RID, sb.toString() );
+
+            final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
+
+            while ( hits.hasNext() )
             {
-                tx.close();
+                final Relationship r = hits.next();
+                final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
+                result.add( rel );
             }
+
+            return result;
         }
 
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            final Index<Node> index = graph.index()
-                                           .forNodes( BY_GAV_IDX );
-            final IndexHits<Node> hits = index.get( GAV, ref.asProjectVersionRef()
-                                                            .toString() );
-            if ( hits.hasNext() )
-            {
-                final Node node = hits.next();
-                // FIXME: What if this params has a filter or mutator?? Without a root, that would be very strange...
-                final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
+        final Index<Node> index = graph.index()
+                                       .forNodes( BY_GAV_IDX );
+        final IndexHits<Node> hits = index.get( GAV, ref.asProjectVersionRef()
+                                                        .toString() );
 
-                tx.success();
-                return convertToRelationships( relationships, cache );
-            }
-        }
-        finally
+        if ( hits.hasNext() )
         {
-            tx.close();
+            final Node node = hits.next();
+            // FIXME: What if this params has a filter or mutator?? Without a root, that would be very strange...
+            final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
+            return convertToRelationships( relationships, cache );
         }
 
         return null;
@@ -361,31 +332,16 @@ public class FileNeo4JGraphConnection
         final ConversionCache cache = new ConversionCache();
         if ( registerView( params ) )
         {
-            IndexHits<Node> nodeHits = null;
-            final Transaction tx = graph.beginTx();
-            try
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
+
+            final IndexHits<Node> nodeHits = cachedNodes.query( NID, "*" );
+            final Set<ProjectVersionRef> nodes = new HashSet<ProjectVersionRef>();
+            while ( nodeHits.hasNext() )
             {
-                final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
-                nodeHits = cachedNodes.query( NID, "*" );
-                final Set<ProjectVersionRef> nodes = new HashSet<ProjectVersionRef>();
-                while ( nodeHits.hasNext() )
-                {
-                    nodes.add( toProjectVersionRef( nodeHits.next(), cache ) );
-                }
-
-                tx.success();
-
-                return nodes;
+                nodes.add( toProjectVersionRef( nodeHits.next(), cache ) );
             }
-            finally
-            {
-                if ( nodeHits != null )
-                {
-                    nodeHits.close();
-                }
 
-                tx.close();
-            }
+            return nodes;
         }
 
         // FIXME: What if this params has a filter or mutator?? Without a root, that would be very strange...
@@ -408,37 +364,22 @@ public class FileNeo4JGraphConnection
             return;
         }
 
-        final Node viewNode = getViewNode( params );
+        final Node paramsNode = getViewNode( params );
 
-        logger.debug( "Checking whether {} ({} / {}) is in need of update.", params.getShortId(), viewNode, params );
+        logger.debug( "Checking whether {} ({} / {}) is in need of update.", params.getShortId(), paramsNode, params );
         final ViewIndexes indexes = new ViewIndexes( graph.index(), params );
 
-        Set<Node> roots = null;
-        boolean isPending = false;
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            isPending = Conversions.isMembershipDetectionPending( viewNode );
-            roots = getRoots( params );
-
-            tx.success();
-        }
-        finally
-        {
-            tx.close();
-        }
-
-        if ( roots.isEmpty() )
-        {
-            logger.debug( "{}: No root nodes found.", params.getShortId() );
-            return;
-        }
-
-        if ( isPending )
+        if ( Conversions.isMembershipDetectionPending( paramsNode ) )
         {
             logger.debug( "Traversing graph to update params membership: {} ({})", params.getShortId(), params );
+            final Set<Node> roots = getRoots( params );
+            if ( roots.isEmpty() )
+            {
+                logger.debug( "{}: No root nodes found.", params.getShortId() );
+                return;
+            }
 
-            final ViewUpdater updater = new ViewUpdater( params, viewNode, indexes, cache, adminAccess );
+            final ViewUpdater updater = new ViewUpdater( params, paramsNode, indexes, cache, adminAccess );
             collectAtlasRelationships( params, updater, roots, false, Uniqueness.RELATIONSHIP_GLOBAL );
 
             logger.debug( "Traverse complete for update of params: {}", params.getShortId() );
@@ -454,48 +395,25 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final boolean registered = registerView( params );
-
         final ConversionCache cache = new ConversionCache();
-
-        IndexHits<Relationship> hits = null;
-        final Transaction tx = graph.beginTx();
-        try
+        if ( registerView( params ) )
         {
-            if ( registered )
+            final RelationshipIndex cachedRels = new ViewIndexes( graph.index(), params ).getCachedRelationships();
+
+            final IndexHits<Relationship> relHits = cachedRels.query( RID, "*" );
+            final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
+            while ( relHits.hasNext() )
             {
-                final RelationshipIndex cachedRels = new ViewIndexes( graph.index(), params ).getCachedRelationships();
-
-                final IndexHits<Relationship> relHits = cachedRels.query( RID, "*" );
-                final Set<ProjectRelationship<?>> rels = new HashSet<ProjectRelationship<?>>();
-                while ( relHits.hasNext() )
-                {
-                    rels.add( toProjectRelationship( relHits.next(), cache ) );
-                }
-
-                tx.success();
-
-                return rels;
+                rels.add( toProjectRelationship( relHits.next(), cache ) );
             }
 
-            hits = graph.index()
-                        .forRelationships( ALL_RELATIONSHIPS )
-                        .query( RELATIONSHIP_ID, "*" );
-
-            final List<ProjectRelationship<?>> result = convertToRelationships( hits, cache );
-
-            tx.success();
-
-            return result;
+            return rels;
         }
-        finally
-        {
-            if ( hits != null )
-            {
-                hits.close();
-            }
-            tx.close();
-        }
+
+        final IndexHits<Relationship> hits = graph.index()
+                                                  .forRelationships( ALL_RELATIONSHIPS )
+                                                  .query( RELATIONSHIP_ID, "*" );
+        return convertToRelationships( hits, cache );
     }
 
     @Override
@@ -509,31 +427,26 @@ public class FileNeo4JGraphConnection
                                                 "You must specify at least one root GAV in order to retrieve path-related info." );
         }
 
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            final Set<Node> endNodes = getNodes( refs );
-            final ConversionCache cache = new ConversionCache();
-            final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes, cache );
-            collectAtlasRelationships( params, visitor, getRoots( params ), false, Uniqueness.RELATIONSHIP_GLOBAL );
-            final Map<GraphPath<?>, GraphPathInfo> result = new HashMap<GraphPath<?>, GraphPathInfo>();
-            for ( final Neo4jGraphPath path : visitor )
-            {
-                GraphPathInfo info = new GraphPathInfo( this, params );
-                for ( final Long rid : path )
-                {
-                    final Relationship r = graph.getRelationshipById( rid );
-                    info = info.getChildPathInfo( toProjectRelationship( r, cache ) );
-                }
+        final Set<Node> endNodes = getNodes( refs );
 
-                result.put( path, info );
-            }
-            return result;
-        }
-        finally
+        final ConversionCache cache = new ConversionCache();
+        final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes, cache );
+        collectAtlasRelationships( params, visitor, getRoots( params ), false, Uniqueness.RELATIONSHIP_GLOBAL );
+
+        final Map<GraphPath<?>, GraphPathInfo> result = new HashMap<GraphPath<?>, GraphPathInfo>();
+        for ( final Neo4jGraphPath path : visitor )
         {
-            tx.close();
+            GraphPathInfo info = new GraphPathInfo( this, params );
+            for ( final Long rid : path )
+            {
+                final Relationship r = graph.getRelationshipById( rid );
+                info = info.getChildPathInfo( toProjectRelationship( r, cache ) );
+            }
+
+            result.put( path, info );
         }
+
+        return result;
     }
 
     @Override
@@ -578,24 +491,19 @@ public class FileNeo4JGraphConnection
                                                 "You must specify at least one root GAV in order to retrieve path-related info." );
         }
 
-        final Transaction tx = graph.beginTx();
-        try
+        final Set<Node> endNodes = getNodes( refs );
+
+        final ConversionCache cache = new ConversionCache();
+        final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes, cache );
+        collectAtlasRelationships( params, visitor, getRoots( params ), false, Uniqueness.RELATIONSHIP_GLOBAL );
+
+        final Set<List<ProjectRelationship<?>>> result = new HashSet<List<ProjectRelationship<?>>>();
+        for ( final Neo4jGraphPath path : visitor )
         {
-            final Set<Node> endNodes = getNodes( refs );
-            final ConversionCache cache = new ConversionCache();
-            final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes, cache );
-            collectAtlasRelationships( params, visitor, getRoots( params ), false, Uniqueness.RELATIONSHIP_GLOBAL );
-            final Set<List<ProjectRelationship<?>>> result = new HashSet<List<ProjectRelationship<?>>>();
-            for ( final Neo4jGraphPath path : visitor )
-            {
-                result.add( convertToRelationships( path, adminAccess, cache ) );
-            }
-            return result;
+            result.add( convertToRelationships( path, adminAccess, cache ) );
         }
-        finally
-        {
-            tx.close();
-        }
+
+        return result;
     }
 
     @Override
@@ -771,7 +679,7 @@ public class FileNeo4JGraphConnection
         }
         finally
         {
-            tx.close();
+            tx.finish();
         }
 
         return createdRelationshipsMap;
@@ -786,25 +694,20 @@ public class FileNeo4JGraphConnection
         final ProjectVersionRef from = rel.getTarget()
                                           .asProjectVersionRef();
 
-        final Transaction tx = graph.beginTx();
-        try
+        final Node toNode = getNode( to );
+        final Node fromNode = getNode( from );
+
+        if ( toNode == null || fromNode == null )
         {
-            final Node toNode = getNode( to );
-            final Node fromNode = getNode( from );
-            if ( toNode == null || fromNode == null )
-            {
-                return false;
-            }
-            logger.debug( "Checking for existence of path from: {} to: {} in global database", fromNode, toNode );
-            final PathExistenceVisitor collector = new PathExistenceVisitor( toNode );
-            collectAtlasRelationships( params, collector, Collections.singleton( fromNode ), false,
-                                       Uniqueness.RELATIONSHIP_GLOBAL );
-            return collector.isFound();
+            return false;
         }
-        finally
-        {
-            tx.close();
-        }
+
+        logger.debug( "Checking for existence of path from: {} to: {} in global database", fromNode, toNode );
+        final PathExistenceVisitor collector = new PathExistenceVisitor( toNode );
+        collectAtlasRelationships( params, collector, Collections.singleton( fromNode ), false,
+                                   Uniqueness.RELATIONSHIP_GLOBAL );
+
+        return collector.isFound();
     }
 
     private Node newProjectNode( final ProjectVersionRef ref )
@@ -911,7 +814,7 @@ public class FileNeo4JGraphConnection
             }
             finally
             {
-                tx.close();
+                tx.finish();
             }
         }
 
@@ -943,74 +846,75 @@ public class FileNeo4JGraphConnection
                           final RelationshipGraph graph, final TraversalType type )
         throws RelationshipGraphConnectionException
     {
+        final Node rootNode = getNode( root );
+        if ( rootNode == null )
+        {
+            //            logger.debug( "Root node not found! (root: {})", root );
+            return;
+        }
 
         //            logger.debug( "PASS: {}", i );
 
-        final Transaction tx = this.graph.beginTx();
-        try
-        {
-            final Node rootNode = getNode( root );
-            if ( rootNode == null )
-            {
-                //            logger.debug( "Root node not found! (root: {})", root );
-                return;
-            }
-            // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
-            //            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_PATH )
-            TraversalDescription description = this.graph.traversalDescription()
-                                                         .uniqueness( Uniqueness.RELATIONSHIP_GLOBAL )
-                                                         .sort( PathComparator.INSTANCE );
-            final ViewParams params = graph.getParams();
-            final GraphRelType[] relTypes = getGraphRelTypes( params.getFilter() );
-            for ( final GraphRelType grt : relTypes )
-            {
-                description.relationships( grt, Direction.OUTGOING );
-            }
-            if ( type == TraversalType.breadth_first )
-            {
-                description = description.breadthFirst();
-            }
-            else
-            {
-                description = description.depthFirst();
-            }
-            //            logger.debug( "starting traverse of: {}", net );
-            traversal.startTraverse( graph );
-            final ConversionCache cache = new ConversionCache();
-            final Node paramsNode = getViewNode( params );
-            @SuppressWarnings( { "rawtypes", "unchecked" } )
-            final MembershipWrappedTraversalEvaluator checker =
-                new MembershipWrappedTraversalEvaluator( Collections.singleton( rootNode.getId() ), traversal, this,
-                                                         params, paramsNode, adminAccess, relTypes );
-            checker.setConversionCache( cache );
-            description = description.expand( checker )
-                                     .evaluator( checker );
-            final Traverser traverser = description.traverse( rootNode );
-            for ( final Path path : traverser )
-            {
-                if ( path.lastRelationship() == null )
-                {
-                    continue;
-                }
+        // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
+        //            TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_PATH )
+        TraversalDescription description = Traversal.traversal( Uniqueness.RELATIONSHIP_GLOBAL )
+                                                    .sort( PathComparator.INSTANCE );
 
-                final List<ProjectRelationship<?>> rels = convertToRelationships( path.relationships(), cache );
-                logger.debug( "traversing path: {}", rels );
-                for ( final ProjectRelationship<?> rel : rels )
+        final ViewParams params = graph.getParams();
+        final GraphRelType[] relTypes = getGraphRelTypes( params.getFilter() );
+        for ( final GraphRelType grt : relTypes )
+        {
+            description.relationships( grt, Direction.OUTGOING );
+        }
+
+        if ( type == TraversalType.breadth_first )
+        {
+            description = description.breadthFirst();
+        }
+        else
+        {
+            description = description.depthFirst();
+        }
+
+        //            logger.debug( "starting traverse of: {}", net );
+        traversal.startTraverse( graph );
+
+        final ConversionCache cache = new ConversionCache();
+
+        final Node paramsNode = getViewNode( params );
+
+        @SuppressWarnings( { "rawtypes", "unchecked" } )
+        final MembershipWrappedTraversalEvaluator checker =
+            new MembershipWrappedTraversalEvaluator( Collections.singleton( rootNode.getId() ), traversal, this,
+                                                     params, paramsNode, adminAccess, relTypes );
+
+        checker.setConversionCache( cache );
+
+        description = description.expand( checker )
+                                 .evaluator( checker );
+
+        final Traverser traverser = description.traverse( rootNode );
+        for ( final Path path : traverser )
+        {
+            if ( path.lastRelationship() == null )
+            {
+                continue;
+            }
+
+            final List<ProjectRelationship<?>> rels = convertToRelationships( path.relationships(), cache );
+            logger.debug( "traversing path: {}", rels );
+            for ( final ProjectRelationship<?> rel : rels )
+            {
+                logger.debug( "traverse: {}", rel );
+                if ( traversal.traverseEdge( rel, rels ) )
                 {
-                    logger.debug( "traverse: {}", rel );
-                    if ( traversal.traverseEdge( rel, rels ) )
-                    {
-                        logger.debug( "traversed: {}", rel );
-                        traversal.edgeTraversed( rel, rels );
-                    }
+                    logger.debug( "traversed: {}", rel );
+                    traversal.edgeTraversed( rel, rels );
                 }
             }
-            traversal.endTraverse( graph );
         }
-        finally
-        {
-            tx.close();
-        }
+
+        traversal.endTraverse( graph );
     }
 
     @Override
@@ -1018,45 +922,31 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final boolean registered = registerView( params );
-
-        IndexHits<Node> missing = null;
-        final Transaction tx = graph.beginTx();
-        try
+        final IndexHits<Node> missing = graph.index()
+                                             .forNodes( MISSING_NODES_IDX )
+                                             .get( GAV, ref.asProjectVersionRef()
+                                                           .toString() );
+        if ( missing.size() > 0 )
         {
-            missing = graph.index()
-                           .forNodes( MISSING_NODES_IDX )
-                           .get( GAV, ref.asProjectVersionRef()
-                                         .toString() );
-            if ( missing.size() > 0 )
-            {
-                return false;
-            }
-            final Node node = getNode( ref );
-            if ( node == null )
-            {
-                return false;
-            }
-
-            if ( registered )
-            {
-                final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
-
-                final IndexHits<Node> nodeHits = cachedNodes.get( NID, node.getId() );
-                return nodeHits.hasNext();
-            }
-            else
-            {
-                return getNode( ref ) != null;
-            }
+            return false;
         }
-        finally
+
+        final Node node = getNode( ref );
+        if ( node == null )
         {
-            if ( missing != null )
-            {
-                missing.close();
-            }
-            tx.close();
+            return false;
+        }
+
+        if ( registerView( params ) )
+        {
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
+
+            final IndexHits<Node> nodeHits = cachedNodes.get( NID, node.getId() );
+            return nodeHits.hasNext();
+        }
+        else
+        {
+            return getNode( ref ) != null;
         }
     }
 
@@ -1065,30 +955,21 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final boolean registered = registerView( params );
-
-        final Transaction tx = graph.beginTx();
-        try
+        final Relationship relationship = getRelationship( rel );
+        if ( relationship == null )
         {
-            final Relationship relationship = getRelationship( rel );
-            if ( relationship == null )
-            {
-                return false;
-            }
-            if ( registered )
-            {
-                return new ViewIndexes( graph.index(), params ).getCachedRelationships()
-                                                               .get( RID, relationship.getId() )
-                                                               .hasNext();
-            }
-            else
-            {
-                return true;
-            }
+            return false;
         }
-        finally
+
+        if ( registerView( params ) )
         {
-            tx.close();
+            return new ViewIndexes( graph.index(), params ).getCachedRelationships()
+                                                           .get( RID, relationship.getId() )
+                                                           .hasNext();
+        }
+        else
+        {
+            return true;
         }
     }
 
@@ -1202,34 +1083,22 @@ public class FileNeo4JGraphConnection
     @Override
     public boolean isMissing( final ViewParams params, final ProjectVersionRef ref )
     {
-        IndexHits<Node> hits = null;
-        final Transaction tx = graph.beginTx();
-        try
-        {
-            hits = graph.index()
-                        .forNodes( MISSING_NODES_IDX )
-                        .get( GAV, ref.asProjectVersionRef()
-                                      .toString() );
-            return hits.size() > 0;
-            //        final IndexHits<Node> hits = graph.index()
-            //                                          .forNodes( BY_GAV_IDX )
-            //                                          .get( GAV, ref.asProjectVersionRef().toString() );
-            //
-            //        if ( hits.size() > 0 )
-            //        {
-            //            return !isConnected( hits.next() );
-            //        }
-            //
-            //        return false;
-        }
-        finally
-        {
-            if ( hits != null )
-            {
-                hits.close();
-            }
-            tx.close();
-        }
+        final IndexHits<Node> hits = graph.index()
+                                          .forNodes( MISSING_NODES_IDX )
+                                          .get( GAV, ref.asProjectVersionRef()
+                                                        .toString() );
+
+        return hits.size() > 0;
+        //        final IndexHits<Node> hits = graph.index()
+        //                                          .forNodes( BY_GAV_IDX )
+        //                                          .get( GAV, ref.asProjectVersionRef().toString() );
+        //
+        //        if ( hits.size() > 0 )
+        //        {
+        //            return !isConnected( hits.next() );
+        //        }
+        //
+        //        return false;
     }
 
     @Override
@@ -1249,101 +1118,70 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final boolean registered = registerView( params );
+        final IndexHits<Node> hits = graph.index()
+                                          .forNodes( indexName )
+                                          .query( GAV, "*" );
 
-        IndexHits<Node> hits = null;
-        final Transaction tx = graph.beginTx();
-        try
+        final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
+
+        final ConversionCache cache = new ConversionCache();
+        if ( registerView( params ) )
         {
-            hits = graph.index()
-                        .forNodes( indexName )
-                        .query( GAV, "*" );
-            final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
-            final ConversionCache cache = new ConversionCache();
-            if ( registered )
-            {
-                final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
 
-                for ( final Node node : hits )
-                {
-                    logger.debug( "Checking for membership: {} ({})", node, node.getProperty( GAV ) );
-                    final IndexHits<Node> cacheHits = cachedNodes.get( NID, node.getId() );
-                    if ( cacheHits.hasNext() )
-                    {
-                        logger.debug( "Including: {}", node );
-                        result.add( toProjectVersionRef( node, cache ) );
-                    }
-                }
-            }
-            else
+            for ( final Node node : hits )
             {
-                for ( final Node node : hits )
+                logger.debug( "Checking for membership: {} ({})", node, node.getProperty( GAV ) );
+                final IndexHits<Node> cacheHits = cachedNodes.get( NID, node.getId() );
+                if ( cacheHits.hasNext() )
                 {
                     logger.debug( "Including: {}", node );
                     result.add( toProjectVersionRef( node, cache ) );
                 }
             }
-
-            tx.success();
-
-            return result;
         }
-        finally
+        else
         {
-            if ( hits != null )
+            for ( final Node node : hits )
             {
-                hits.close();
+                logger.debug( "Including: {}", node );
+                result.add( toProjectVersionRef( node, cache ) );
             }
-            tx.close();
         }
+
+        return result;
     }
 
     private boolean hasIndexedProjects( final ViewParams params, final String indexName )
     {
         checkClosed();
 
-        final boolean registered = registerView( params );
+        final IndexHits<Node> hits = graph.index()
+                                          .forNodes( indexName )
+                                          .query( GAV, "*" );
 
-        IndexHits<Node> hits = null;
-        final Transaction tx = graph.beginTx();
-        try
+        if ( registerView( params ) )
         {
-            hits = graph.index()
-                        .forNodes( indexName )
-                        .query( GAV, "*" );
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
 
-            boolean result = false;
-            if ( registered )
+            for ( final Node node : hits )
             {
-                final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
-
-                for ( final Node node : hits )
+                final IndexHits<Node> cacheHits = cachedNodes.get( NID, node.getId() );
+                if ( cacheHits.hasNext() )
                 {
-                    final IndexHits<Node> cacheHits = cachedNodes.get( NID, node.getId() );
-                    if ( cacheHits.hasNext() )
-                    {
-                        result = true;
-                        break;
-                    }
+                    return true;
                 }
             }
-            else
-            {
-                if ( hits.hasNext() )
-                {
-                    result = true;
-                }
-            }
-            return result;
         }
-        finally
+        else
         {
-            if ( hits != null )
+            if ( hits.hasNext() )
             {
-                hits.close();
+                return true;
             }
-            tx.close();
         }
+
+        return false;
     }
 
     private Set<Node> getRoots( final ViewParams params )
@@ -1370,9 +1208,6 @@ public class FileNeo4JGraphConnection
             //            return connectedNodes;
         }
 
-        //        final Transaction tx = graph.beginTx();
-        //        try
-        //        {
         final Set<Node> nodes = new HashSet<Node>( rootRefs.size() );
         for ( final ProjectVersionRef ref : rootRefs )
         {
@@ -1382,15 +1217,10 @@ public class FileNeo4JGraphConnection
                 nodes.add( n );
             }
         }
+
         return nodes;
-        //        }
-        //        finally
-        //        {
-        //            tx.close();
-        //        }
     }
 
-    @SuppressWarnings( "unused" )
     private void collectAtlasRelationships( final ViewParams params, final TraverseVisitor visitor,
                                             final Set<Node> start, final boolean sorted, final Uniqueness uniqueness )
     {
@@ -1403,8 +1233,7 @@ public class FileNeo4JGraphConnection
         //        logger.info( "Traversing for aggregation using: {} from roots: {}", checker.getClass()
         //                                                                                   .getName(), from );
 
-        TraversalDescription description = graph.traversalDescription()
-                                                .uniqueness( uniqueness );
+        TraversalDescription description = Traversal.traversal( uniqueness );
         if ( sorted )
         {
             description = description.sort( PathComparator.INSTANCE );
@@ -1426,28 +1255,19 @@ public class FileNeo4JGraphConnection
         description = description.expand( checker )
                                  .evaluator( checker );
 
-        final Transaction tx = graph.beginTx();
         try
         {
             final Traverser traverser = description.traverse( start.toArray( new Node[] {} ) );
-            try
+            for ( @SuppressWarnings( "unused" )
+            final Path path : traverser )
             {
-                for ( final Path path : traverser )
-                {
-                    //            logger.info( "Aggregating path: {}", path );
-                    // Don't need this, but we need to iterate the traverser.
-                }
+                //            logger.info( "Aggregating path: {}", path );
+                // Don't need this, but we need to iterate the traverser.
             }
-            finally
-            {
-                visitor.traverseComplete( checker );
-            }
-
-            tx.success();
         }
         finally
         {
-            tx.close();
+            visitor.traverseComplete( checker );
         }
     }
 
@@ -1523,50 +1343,48 @@ public class FileNeo4JGraphConnection
                 return cycleUpdater.getCycles();
             }
 
-            final Set<CyclePath> cyclePaths = Conversions.getCachedCyclePaths( paramsNode );
-            logger.debug( "Retrieved the following cached cycle paths:\n  {}", new JoinString( "\n  ", cyclePaths ) );
-
-            //        final IndexHits<Relationship> hits = graph.index()
-            //                                                  .forRelationships( CYCLE_INJECTION_IDX )
-            //                                                  .query( RELATIONSHIP_ID, "*" );
-            //
-            //        final Map<Node, Relationship> targetNodes = new HashMap<Node, Relationship>();
-            //        for ( final Relationship hit : hits )
-            //        {
-            //            targetNodes.put( hit.getStartNode(), hit );
-            //        }
-            //
-            //        final Set<Path> paths = getPathsTo( params, targetNodes.keySet() );
-
-            final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
-            for ( final CyclePath cyclicPath : cyclePaths )
-            {
-                final List<ProjectRelationship<?>> cycle =
-                    new ArrayList<ProjectRelationship<?>>( cyclicPath.length() + 1 );
-                for ( final long id : cyclicPath.getRelationshipIds() )
-                {
-                    ProjectRelationship<?> rel = cache.getRelationship( id );
-                    if ( rel == null )
-                    {
-                        final Relationship r = graph.getRelationshipById( id );
-                        rel = toProjectRelationship( r, cache );
-                    }
-                    cycle.add( rel );
-                }
-
-                logger.debug( "[cache] CYCLES += {}", cycle );
-                cycles.add( new EProjectCycle( cycle ) );
-            }
-
             tx.success();
-
-            return cycles;
         }
         finally
         {
-            tx.close();
+            tx.finish();
         }
 
+        final Set<CyclePath> cyclePaths = Conversions.getCachedCyclePaths( paramsNode );
+        logger.debug( "Retrieved the following cached cycle paths:\n  {}", new JoinString( "\n  ", cyclePaths ) );
+
+        //        final IndexHits<Relationship> hits = graph.index()
+        //                                                  .forRelationships( CYCLE_INJECTION_IDX )
+        //                                                  .query( RELATIONSHIP_ID, "*" );
+        //
+        //        final Map<Node, Relationship> targetNodes = new HashMap<Node, Relationship>();
+        //        for ( final Relationship hit : hits )
+        //        {
+        //            targetNodes.put( hit.getStartNode(), hit );
+        //        }
+        //
+        //        final Set<Path> paths = getPathsTo( params, targetNodes.keySet() );
+
+        final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
+        for ( final CyclePath cyclicPath : cyclePaths )
+        {
+            final List<ProjectRelationship<?>> cycle = new ArrayList<ProjectRelationship<?>>( cyclicPath.length() + 1 );
+            for ( final long id : cyclicPath.getRelationshipIds() )
+            {
+                ProjectRelationship<?> rel = cache.getRelationship( id );
+                if ( rel == null )
+                {
+                    final Relationship r = graph.getRelationshipById( id );
+                    rel = toProjectRelationship( r, cache );
+                }
+                cycle.add( rel );
+            }
+
+            logger.debug( "[cache] CYCLES += {}", cycle );
+            cycles.add( new EProjectCycle( cycle ) );
+        }
+
+        return cycles;
     }
 
     @Override
@@ -1606,39 +1424,25 @@ public class FileNeo4JGraphConnection
     @Override
     public Map<String, String> getMetadata( final ProjectVersionRef ref )
     {
-        final Transaction tx = graph.beginTx();
-        try
+        final Node node = getNode( ref );
+        if ( node == null )
         {
-            final Node node = getNode( ref );
-            if ( node == null )
-            {
-                return null;
-            }
-            return getMetadataMap( node );
+            return null;
         }
-        finally
-        {
-            tx.close();
-        }
+
+        return getMetadataMap( node );
     }
 
     @Override
     public Map<String, String> getMetadata( final ProjectVersionRef ref, final Set<String> keys )
     {
-        final Transaction tx = graph.beginTx();
-        try
+        final Node node = getNode( ref );
+        if ( node == null )
         {
-            final Node node = getNode( ref );
-            if ( node == null )
-            {
-                return null;
-            }
-            return getMetadataMap( node, keys );
+            return null;
         }
-        finally
-        {
-            tx.close();
-        }
+
+        return getMetadataMap( node, keys );
     }
 
     @Override
@@ -1659,7 +1463,7 @@ public class FileNeo4JGraphConnection
         }
         finally
         {
-            tx.close();
+            tx.finish();
         }
     }
 
@@ -1681,7 +1485,7 @@ public class FileNeo4JGraphConnection
         }
         finally
         {
-            tx.close();
+            tx.finish();
         }
     }
 
@@ -1704,31 +1508,23 @@ public class FileNeo4JGraphConnection
                                                             cypher );
         }
 
-        final StringBuilder sb;
-        final Transaction tx = graph.beginTx();
-        try
+        final StringBuilder sb = new StringBuilder();
+        for ( final ProjectVersionRef root : roots )
         {
-            sb = new StringBuilder();
-            for ( final ProjectVersionRef root : roots )
+            final Node node = getNode( root );
+            if ( node != null )
             {
-                final Node node = getNode( root );
-                if ( node != null )
+                if ( sb.length() > 0 )
                 {
-                    if ( sb.length() > 0 )
-                    {
-                        sb.append( ", " );
-                    }
-                    sb.append( node.getId() );
+                    sb.append( ", " );
                 }
-            }
-            if ( sb.length() < 1 )
-            {
-                sb.append( "*" );
+                sb.append( node.getId() );
             }
         }
-        finally
+
+        if ( sb.length() < 1 )
         {
-            tx.close();
+            sb.append( "*" );
         }
 
         return execute( String.format( "START n=node(%s) %s", sb, cypher ), params );
@@ -1753,23 +1549,14 @@ public class FileNeo4JGraphConnection
                                                             cypher );
         }
 
-        String id;
-        final Transaction tx = graph.beginTx();
-        try
+        String id = "*";
+        if ( rootRel != null )
         {
-            id = "*";
-            if ( rootRel != null )
+            final Relationship r = getRelationship( rootRel );
+            if ( r != null )
             {
-                final Relationship r = getRelationship( rootRel );
-                if ( r != null )
-                {
-                    id = Long.toString( r.getId() );
-                }
+                id = Long.toString( r.getId() );
             }
-        }
-        finally
-        {
-            tx.close();
         }
 
         return execute( String.format( "START r=relationship(%s) %s", id, cypher ), params );
@@ -1811,12 +1598,11 @@ public class FileNeo4JGraphConnection
         throws RelationshipGraphConnectionException
     {
         final Transaction tx = graph.beginTx();
-        IndexHits<Node> nodes = null;
         try
         {
-            nodes = graph.index()
-                         .forNodes( BY_GAV_IDX )
-                         .query( GAV, "*" );
+            final IndexHits<Node> nodes = graph.index()
+                                               .forNodes( BY_GAV_IDX )
+                                               .query( GAV, "*" );
             for ( final Node node : nodes )
             {
                 reindexNode( node );
@@ -1826,36 +1612,31 @@ public class FileNeo4JGraphConnection
         }
         finally
         {
-            if ( nodes != null )
-            {
-                nodes.close();
-            }
-            tx.close();
+            tx.finish();
         }
     }
 
     @Override
     public void reindex( final ProjectVersionRef ref )
     {
+        final Node node = getNode( ref );
+        if ( node == null )
+        {
+            return;
+        }
+
         final Transaction tx = graph.beginTx();
         try
         {
-            final Node node = getNode( ref );
-            if ( node == null )
-            {
-                return;
-            }
-
             reindexNode( node );
             tx.success();
         }
         finally
         {
-            tx.close();
+            tx.finish();
         }
     }
 
-    // transaction managed externally by caller.
     private void reindexNode( final Node node )
     {
         final String gav = getStringProperty( GAV, node );
@@ -1883,44 +1664,30 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final boolean registered = registerView( params );
+        final IndexHits<Node> nodes = graph.index()
+                                           .forNodes( METADATA_INDEX_PREFIX + key )
+                                           .query( GAV, "*" );
 
-        final Transaction tx = graph.beginTx();
-        IndexHits<Node> nodes = null;
-        try
+        final ConversionCache cache = new ConversionCache();
+        if ( registerView( params ) )
         {
-            nodes = graph.index()
-                         .forNodes( METADATA_INDEX_PREFIX + key )
-                         .query( GAV, "*" );
-            final ConversionCache cache = new ConversionCache();
-            if ( registered )
-            {
-                final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
+            final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
 
-                final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
-                for ( final Node node : nodes )
+            final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
+            for ( final Node node : nodes )
+            {
+                if ( cachedNodes.get( NID, node.getId() )
+                                .hasNext() )
                 {
-                    if ( cachedNodes.get( NID, node.getId() )
-                                    .hasNext() )
-                    {
-                        result.add( toProjectVersionRef( node, cache ) );
-                    }
+                    result.add( toProjectVersionRef( node, cache ) );
                 }
+            }
 
-                return result;
-            }
-            else
-            {
-                return new HashSet<ProjectVersionRef>( convertToProjects( nodes, cache ) );
-            }
+            return result;
         }
-        finally
+        else
         {
-            if ( nodes != null )
-            {
-                nodes.close();
-            }
-            tx.close();
+            return new HashSet<ProjectVersionRef>( convertToProjects( nodes, cache ) );
         }
     }
 
@@ -1939,7 +1706,7 @@ public class FileNeo4JGraphConnection
             }
             finally
             {
-                tx.close();
+                tx.finish();
             }
         }
     }
@@ -1964,52 +1731,47 @@ public class FileNeo4JGraphConnection
                                                                    final boolean includeConcreteInfo,
                                                                    final RelationshipType... types )
     {
-        final Transaction tx = graph.beginTx();
-        try
+        final Node node = getNode( from );
+        if ( node == null )
         {
-            final Node node = getNode( from );
-            if ( node == null )
+            return null;
+        }
+
+        final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
+        for ( final RelationshipType relType : types )
+        {
+            if ( includeConcreteInfo )
             {
-                return null;
+                grts.add( GraphRelType.map( relType, false ) );
             }
-            final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
-            for ( final RelationshipType relType : types )
+
+            if ( includeManagedInfo )
             {
-                if ( includeConcreteInfo )
-                {
-                    grts.add( GraphRelType.map( relType, false ) );
-                }
-
-                if ( includeManagedInfo )
-                {
-                    grts.add( GraphRelType.map( relType, true ) );
-                }
-            }
-            final Iterable<Relationship> relationships =
-                node.getRelationships( Direction.OUTGOING, grts.toArray( new GraphRelType[grts.size()] ) );
-            if ( relationships != null )
-            {
-                final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
-
-                final ConversionCache cache = new ConversionCache();
-                for ( final Relationship r : relationships )
-                {
-                    if ( TraversalUtils.acceptedInView( r, params, cache ) )
-                    {
-                        final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
-                        if ( rel != null )
-                        {
-                            result.add( rel );
-                        }
-                    }
-                }
-
-                return result;
+                grts.add( GraphRelType.map( relType, true ) );
             }
         }
-        finally
+
+        final Iterable<Relationship> relationships =
+            node.getRelationships( Direction.OUTGOING, grts.toArray( new GraphRelType[grts.size()] ) );
+
+        if ( relationships != null )
         {
-            tx.close();
+            final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
+
+            final ConversionCache cache = new ConversionCache();
+            for ( final Relationship r : relationships )
+            {
+                if ( TraversalUtils.acceptedInView( r, params, cache ) )
+                {
+                    final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
+                    if ( rel != null )
+                    {
+                        result.add( rel );
+                    }
+                }
+            }
+
+            return result;
         }
 
         return null;
@@ -2035,61 +1797,57 @@ public class FileNeo4JGraphConnection
     {
         logger.debug( "Finding relationships targeting: {} (filter: {}, managed: {}, types: {})", to,
                       params.getFilter(), includeManagedInfo, Arrays.asList( types ) );
-        final Transaction tx = graph.beginTx();
-        try
+        final Node node = getNode( to );
+        if ( node == null )
         {
-            final Node node = getNode( to );
-            if ( node == null )
-            {
-                return null;
-            }
-            final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
-            for ( final RelationshipType relType : types )
-            {
-                if ( includeConcreteInfo )
-                {
-                    final GraphRelType graphType = GraphRelType.map( relType, false );
-                    if ( graphType != null )
-                    {
-                        grts.add( graphType );
-                    }
-                }
+            return null;
+        }
 
-                if ( includeManagedInfo )
+        final Set<GraphRelType> grts = new HashSet<GraphRelType>( types.length * 2 );
+        for ( final RelationshipType relType : types )
+        {
+            if ( includeConcreteInfo )
+            {
+                final GraphRelType graphType = GraphRelType.map( relType, false );
+                if ( graphType != null )
                 {
-                    final GraphRelType graphType = GraphRelType.map( relType, true );
-                    if ( graphType != null )
-                    {
-                        grts.add( graphType );
-                    }
+                    grts.add( graphType );
                 }
             }
-            logger.debug( "Using graph-relationship types: {}", grts );
-            final Iterable<Relationship> relationships =
-                node.getRelationships( Direction.INCOMING, grts.toArray( new GraphRelType[grts.size()] ) );
-            final ConversionCache cache = new ConversionCache();
-            if ( relationships != null )
-            {
-                final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
-                for ( final Relationship r : relationships )
-                {
-                    logger.debug( "Examining relationship: {}", r );
-                    if ( TraversalUtils.acceptedInView( r, params, cache ) )
-                    {
-                        final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
-                        if ( rel != null )
-                        {
-                            result.add( rel );
-                        }
-                    }
-                }
 
-                return result;
+            if ( includeManagedInfo )
+            {
+                final GraphRelType graphType = GraphRelType.map( relType, true );
+                if ( graphType != null )
+                {
+                    grts.add( graphType );
+                }
             }
         }
-        finally
+
+        logger.debug( "Using graph-relationship types: {}", grts );
+
+        final Iterable<Relationship> relationships =
+            node.getRelationships( Direction.INCOMING, grts.toArray( new GraphRelType[grts.size()] ) );
+
+        final ConversionCache cache = new ConversionCache();
+        if ( relationships != null )
         {
-            tx.close();
+            final Set<ProjectRelationship<?>> result = new HashSet<ProjectRelationship<?>>();
+            for ( final Relationship r : relationships )
+            {
+                logger.debug( "Examining relationship: {}", r );
+                if ( TraversalUtils.acceptedInView( r, params, cache ) )
+                {
+                    final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
+                    if ( rel != null )
+                    {
+                        result.add( rel );
+                    }
+                }
+            }
+
+            return result;
         }
 
         return null;
@@ -2098,22 +1856,11 @@ public class FileNeo4JGraphConnection
     @Override
     public Set<ProjectVersionRef> getProjectsMatching( final ViewParams params, final ProjectRef projectRef )
     {
-        IndexHits<Node> hits = null;
-        try
-        {
-            hits = graph.index()
-                        .forNodes( BY_GA_IDX )
-                        .query( GA, projectRef.asProjectRef()
-                                              .toString() );
-            return new HashSet<ProjectVersionRef>( convertToProjects( hits, new ConversionCache() ) );
-        }
-        finally
-        {
-            if ( hits != null )
-            {
-                hits.close();
-            }
-        }
+        final IndexHits<Node> hits = graph.index()
+                                          .forNodes( BY_GA_IDX )
+                                          .query( GA, projectRef.asProjectRef()
+                                                                .toString() );
+        return new HashSet<ProjectVersionRef>( convertToProjects( hits, new ConversionCache() ) );
     }
 
     @Override
@@ -2127,19 +1874,18 @@ public class FileNeo4JGraphConnection
             return;
         }
 
-        IndexHits<Node> hits = null;
-        final Transaction tx = graph.beginTx();
-        try
+        final Index<Node> index = graph.index()
+                                       .forNodes( BY_GAV_IDX );
+
+        final String gav = ref.asProjectVersionRef()
+                              .toString();
+
+        final IndexHits<Node> hits = index.get( GAV, gav );
+
+        if ( hits.hasNext() )
         {
-            final Index<Node> index = graph.index()
-                                           .forNodes( BY_GAV_IDX );
-
-            final String gav = ref.asProjectVersionRef()
-                                  .toString();
-
-            hits = index.get( GAV, gav );
-
-            if ( hits.hasNext() )
+            final Transaction tx = graph.beginTx();
+            try
             {
                 final Node node = hits.next();
                 final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING );
@@ -2157,14 +1903,10 @@ public class FileNeo4JGraphConnection
 
                 tx.success();
             }
-        }
-        finally
-        {
-            if ( hits != null )
+            finally
             {
-                hits.close();
+                tx.finish();
             }
-            tx.close();
         }
     }
 
@@ -2184,57 +1926,48 @@ public class FileNeo4JGraphConnection
                       .getName() );
         }
 
-        IndexHits<Relationship> hits = null;
-        try
+        final RelationshipIndex idx = graph.index()
+                                           .forRelationships( MANAGED_GA );
+
+        //        logger.info( "Searching for managed override of: {} in: {}", target, path );
+        final Neo4jGraphPath neopath = (Neo4jGraphPath) path;
+
+        final ConversionCache cache = new ConversionCache();
+        for ( final Long id : neopath )
         {
-            final RelationshipIndex idx = graph.index()
-                                               .forRelationships( MANAGED_GA );
-            //        logger.info( "Searching for managed override of: {} in: {}", target, path );
-            final Neo4jGraphPath neopath = (Neo4jGraphPath) path;
-            final ConversionCache cache = new ConversionCache();
-            for ( final Long id : neopath )
+            final Relationship r = graph.getRelationshipById( id );
+
+            final String mkey =
+                String.format( "%d/%s/%s:%s", r.getStartNode()
+                                               .getId(), type.name(), target.getGroupId(), target.getArtifactId() );
+
+            //            logger.info( "Searching for m-key: {}", mkey );
+
+            final IndexHits<Relationship> hits = idx.get( MANAGED_KEY, mkey );
+            if ( hits != null && hits.hasNext() )
             {
-                final Relationship r = graph.getRelationshipById( id );
+                final ProjectVersionRef ref = toProjectVersionRef( hits.next()
+                                                                       .getEndNode(), cache );
 
-                final String mkey =
-                    String.format( "%d/%s/%s:%s", r.getStartNode()
-                                                   .getId(), type.name(), target.getGroupId(), target.getArtifactId() );
-
-                //            logger.info( "Searching for m-key: {}", mkey );
-
-                hits = idx.get( MANAGED_KEY, mkey );
-                if ( hits != null && hits.hasNext() )
-                {
-                    final ProjectVersionRef ref = toProjectVersionRef( hits.next()
-                                                                           .getEndNode(), cache );
-
-                    //                logger.info( "Found it: {}", ref );
-                    return ref;
-                }
-
-                //            final Node node = graph.getNodeById( id );
-                //            final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING, GraphRelType.map( type, true ) );
-                //            if ( relationships != null )
-                //            {
-                //                for ( final Relationship r : relationships )
-                //                {
-                //                    if ( r.hasProperty( GROUP_ID ) && r.getProperty( GROUP_ID )
-                //                                                       .equals( target.getGroupId() ) && r.hasProperty( ARTIFACT_ID )
-                //                        && r.getProperty( ARTIFACT_ID )
-                //                            .equals( target.getArtifactId() ) )
-                //                    {
-                //                        return toProjectVersionRef( r.getEndNode() );
-                //                    }
-                //                }
-                //            }
+                //                logger.info( "Found it: {}", ref );
+                return ref;
             }
-        }
-        finally
-        {
-            if ( hits != null )
-            {
-                hits.close();
-            }
+
+            //            final Node node = graph.getNodeById( id );
+            //            final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING, GraphRelType.map( type, true ) );
+            //            if ( relationships != null )
+            //            {
+            //                for ( final Relationship r : relationships )
+            //                {
+            //                    if ( r.hasProperty( GROUP_ID ) && r.getProperty( GROUP_ID )
+            //                                                       .equals( target.getGroupId() ) && r.hasProperty( ARTIFACT_ID )
+            //                        && r.getProperty( ARTIFACT_ID )
+            //                            .equals( target.getArtifactId() ) )
+            //                    {
+            //                        return toProjectVersionRef( r.getEndNode() );
+            //                    }
+            //                }
+            //            }
         }
 
         return null;
@@ -2280,26 +2013,19 @@ public class FileNeo4JGraphConnection
     @Override
     public GraphPath<?> createPath( final ProjectRelationship<?>... rels )
     {
-        final Transaction tx = graph.beginTx();
-        try
+        final long[] relIds = new long[rels.length];
+        for ( int i = 0; i < rels.length; i++ )
         {
-            final long[] relIds = new long[rels.length];
-            for ( int i = 0; i < rels.length; i++ )
+            final Relationship r = getRelationship( rels[i] );
+            if ( r == null )
             {
-                final Relationship r = getRelationship( rels[i] );
-                if ( r == null )
-                {
-                    return null;
-                }
-
-                relIds[i] = r.getId();
+                return null;
             }
-            return new Neo4jGraphPath( relIds );
+
+            relIds[i] = r.getId();
         }
-        finally
-        {
-            tx.close();
-        }
+
+        return new Neo4jGraphPath( relIds );
     }
 
     @Override
@@ -2311,11 +2037,11 @@ public class FileNeo4JGraphConnection
                 + ". This is not a Neo4jGraphPathKey instance!" );
         }
 
-        final Transaction tx = graph.beginTx();
-        try
+        Relationship r = getRelationship( rel );
+        if ( r == null )
         {
-            Relationship r = getRelationship( rel );
-            if ( r == null )
+            final Transaction tx = graph.beginTx();
+            try
             {
                 logger.debug( "Creating new node to account for missing project referenced in path: {}", r );
 
@@ -2336,14 +2062,13 @@ public class FileNeo4JGraphConnection
                     return null;
                 }
             }
-
-            return new Neo4jGraphPath( (Neo4jGraphPath) parent, r.getId() );
-        }
-        finally
-        {
-            tx.close();
+            finally
+            {
+                tx.finish();
+            }
         }
 
+        return new Neo4jGraphPath( (Neo4jGraphPath) parent, r.getId() );
     }
 
     @Override
@@ -2374,34 +2099,32 @@ public class FileNeo4JGraphConnection
         //            return configNode;
         //        }
 
-        final Transaction tx = graph.beginTx();
-        IndexHits<Node> hits = null;
-        try
+        final Index<Node> confIdx = graph.index()
+                                         .forNodes( CONFIG_NODES_IDX );
+
+        final IndexHits<Node> hits = confIdx.get( VIEW_ID, params.getShortId() );
+        if ( hits.hasNext() )
         {
-            final Index<Node> confIdx = graph.index()
-                                             .forNodes( CONFIG_NODES_IDX );
+            logger.debug( "View already registered: {} (short id: {})", params.getLongId(), params.getShortId() );
+            return hits.next();
+        }
+        else
+        {
+            logger.debug( "Registering new params: {} (short id: {})", params.getLongId(), params.getShortId() );
 
-            hits = confIdx.get( VIEW_ID, params.getShortId() );
-            if ( hits.hasNext() )
+            final Transaction tx = graph.beginTx();
+            try
             {
-                logger.debug( "View already registered: {} (short id: {})", params.getLongId(), params.getShortId() );
-                tx.success();
-                return hits.next();
-            }
-            else
-            {
-                logger.debug( "Registering new params: {} (short id: {})", params.getLongId(), params.getShortId() );
+                final Node paramsNode;
+                paramsNode = graph.createNode();
+                Conversions.storeView( params, paramsNode );
 
-                final Node viewNode;
-                viewNode = graph.createNode();
-                Conversions.storeView( params, viewNode );
+                confIdx.add( paramsNode, VIEW_ID, params.getShortId() );
 
-                confIdx.add( viewNode, VIEW_ID, params.getShortId() );
-
-                logger.debug( "Setting cycle-detection PENDING for new paramsNode: {} of: {}", viewNode,
+                logger.debug( "Setting cycle-detection PENDING for new paramsNode: {} of: {}", paramsNode,
                               params.getShortId() );
-                Conversions.setCycleDetectionPending( viewNode, true );
-                Conversions.setMembershipDetectionPending( viewNode, true );
+                Conversions.setCycleDetectionPending( paramsNode, true );
+                Conversions.setMembershipDetectionPending( paramsNode, true );
 
                 final ViewIndexes indexes = new ViewIndexes( graph.index(), params );
                 final Index<Node> cachedNodes = indexes.getCachedNodes();
@@ -2420,16 +2143,12 @@ public class FileNeo4JGraphConnection
 
                 tx.success();
 
-                return viewNode;
+                return paramsNode;
             }
-        }
-        finally
-        {
-            if ( hits != null )
+            finally
             {
-                hits.close();
+                tx.finish();
             }
-            tx.close();
         }
     }
 
@@ -2443,36 +2162,36 @@ public class FileNeo4JGraphConnection
             return;
         }
 
-        IndexHits<Node> nodeHits = null;
+        IndexHits<Node> nodeHits;
+        if ( ref instanceof ProjectVersionRef )
+        {
+            nodeHits = graph.index()
+                            .forNodes( BY_GAV_IDX )
+                            .get( GAV, ( (ProjectVersionRef) ref ).asProjectVersionRef()
+                                                                  .toString() );
+        }
+        else
+        {
+            nodeHits = graph.index()
+                            .forNodes( BY_GA_IDX )
+                            .get( GA, ref.asProjectRef() );
+        }
+
+        final Set<Long> viaNodes = new HashSet<Long>();
+        for ( final Node node : nodeHits )
+        {
+            viaNodes.add( node.getId() );
+        }
+
+        logger.debug( "Searching for sub-paths to de-select (via): {}", viaNodes );
+
+        final Set<Node> toUncacheNode = new HashSet<Node>();
+        final Set<Relationship> toUncache = new HashSet<Relationship>();
+        final Set<Relationship> toUnselect = new HashSet<Relationship>();
+
         final Transaction tx = graph.beginTx();
         try
         {
-            if ( ref instanceof ProjectVersionRef )
-            {
-                nodeHits = graph.index()
-                                .forNodes( BY_GAV_IDX )
-                                .get( GAV, ( (ProjectVersionRef) ref ).asProjectVersionRef()
-                                                                      .toString() );
-            }
-            else
-            {
-                nodeHits = graph.index()
-                                .forNodes( BY_GA_IDX )
-                                .get( GA, ref.asProjectRef() );
-            }
-
-            final Set<Long> viaNodes = new HashSet<Long>();
-            for ( final Node node : nodeHits )
-            {
-                viaNodes.add( node.getId() );
-            }
-
-            logger.debug( "Searching for sub-paths to de-select (via): {}", viaNodes );
-
-            final Set<Node> toUncacheNode = new HashSet<Node>();
-            final Set<Relationship> toUncache = new HashSet<Relationship>();
-            final Set<Relationship> toUnselect = new HashSet<Relationship>();
-
             final SubPathsCollectingVisitor visitor = new SubPathsCollectingVisitor( viaNodes, adminAccess );
             collectAtlasRelationships( params, visitor, getRoots( params ), false, Uniqueness.RELATIONSHIP_GLOBAL );
 
@@ -2531,11 +2250,7 @@ public class FileNeo4JGraphConnection
         }
         finally
         {
-            if ( nodeHits != null )
-            {
-                nodeHits.close();
-            }
-            tx.close();
+            tx.finish();
         }
     }
 
@@ -2546,72 +2261,67 @@ public class FileNeo4JGraphConnection
             return;
         }
 
+        final Index<Node> confIdx = graph.index()
+                                         .forNodes( CONFIG_NODES_IDX );
+
+        final IndexHits<Node> hits = confIdx.query( VIEW_ID, "*" );
+
         final ConversionCache cache = new ConversionCache();
 
-        final Transaction tx = graph.beginTx();
-        IndexHits<Node> hits = null;
+        Transaction tx = graph.beginTx();
         try
         {
-            final Index<Node> confIdx = graph.index()
-                                             .forNodes( CONFIG_NODES_IDX );
-
-            hits = confIdx.query( VIEW_ID, "*" );
-
             logger.debug( "Setting global cycle-detection as PENDING" );
             Conversions.setCycleDetectionPending( configNode, true );
 
-            for ( final Node paramsNode : hits )
-            {
-                final ViewParams params = Conversions.retrieveView( paramsNode, cache, adminAccess );
-                logger.debug( "Updating params: {} ({})", params.getShortId(), paramsNode );
-
-                //            if ( params == null || params.getShortId()
-                //                                         .equals( globalView.getShortId() ) || params.getRoots() == null
-                //                || params.getRoots()
-                //                                                                                                          .isEmpty() )
-                //            {
-                //                logger.debug( "nevermind; it's the global params." );
-                //                continue;
-                //            }
-
-                if ( getRoots( params, false ).isEmpty() )
-                {
-                    //                tx = graph.beginTx();
-                    //                try
-                    //                {
-                    Conversions.setCycleDetectionPending( paramsNode, true );
-                    //                    Conversions.setMembershipDetectionPending( paramsNode, true );
-                    //                    tx.success();
-                    continue;
-                    //                }
-                    //                finally
-                    //                {
-                    //                    tx.close();
-                    //                }
-                }
-
-                final ViewIndexes vi = new ViewIndexes( graph.index(), params );
-                final ViewUpdater vu = new ViewUpdater( params, paramsNode, vi, cache, adminAccess );
-                vu.cacheRoots( getRoots( params, false ) );
-                if ( vu.processAddedRelationships( newRelationships ) )
-                {
-                    logger.debug( "{} ({}) marked for update.", params.getShortId(), paramsNode );
-                }
-                else
-                {
-                    logger.debug( "{} ({}) NOT marked for update.", params.getShortId(), paramsNode );
-                }
-            }
             tx.success();
         }
         finally
         {
-            if ( hits != null )
+            tx.finish();
+        }
+
+        for ( final Node paramsNode : hits )
+        {
+            final ViewParams params = Conversions.retrieveView( paramsNode, cache, adminAccess );
+            logger.debug( "Updating params: {} ({})", params.getShortId(), paramsNode );
+
+            //            if ( params == null || params.getShortId()
+            //                                         .equals( globalView.getShortId() ) || params.getRoots() == null
+            //                || params.getRoots()
+            //                                                                                                          .isEmpty() )
+            //            {
+            //                logger.debug( "nevermind; it's the global params." );
+            //                continue;
+            //            }
+
+            if ( getRoots( params, false ).isEmpty() )
             {
-                hits.close();
+                tx = graph.beginTx();
+                try
+                {
+                    Conversions.setCycleDetectionPending( paramsNode, true );
+                    //                    Conversions.setMembershipDetectionPending( paramsNode, true );
+                    tx.success();
+                    continue;
+                }
+                finally
+                {
+                    tx.finish();
+                }
             }
 
-            tx.close();
+            final ViewIndexes vi = new ViewIndexes( graph.index(), params );
+            final ViewUpdater vu = new ViewUpdater( params, paramsNode, vi, cache, adminAccess );
+            vu.cacheRoots( getRoots( params, false ) );
+            if ( vu.processAddedRelationships( newRelationships ) )
+            {
+                logger.debug( "{} ({}) marked for update.", params.getShortId(), paramsNode );
+            }
+            else
+            {
+                logger.debug( "{} ({}) NOT marked for update.", params.getShortId(), paramsNode );
+            }
         }
     }
 

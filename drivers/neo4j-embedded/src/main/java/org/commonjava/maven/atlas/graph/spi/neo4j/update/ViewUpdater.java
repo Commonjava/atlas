@@ -68,7 +68,8 @@ public class ViewUpdater
     }
 
     public ViewUpdater( final Node stopNode, final ViewParams view, final Node viewNode, final ViewIndexes indexes,
-                        final ConversionCache cache, final GraphAdmin admin )
+                        final ConversionCache cache,
+                        final GraphAdmin admin )
     {
         this.stopNode = stopNode;
         this.viewNode = viewNode;
@@ -80,20 +81,20 @@ public class ViewUpdater
 
     public void cacheRoots( final Set<Node> roots )
     {
-        //        final Transaction tx = admin.beginTransaction();
-        //        try
-        //        {
-        final Index<Node> cachedNodes = indexes.getCachedNodes();
-        for ( final Node node : roots )
+        final Transaction tx = admin.beginTransaction();
+        try
         {
-            cachedNodes.add( node, NID, node.getId() );
+            final Index<Node> cachedNodes = indexes.getCachedNodes();
+            for ( final Node node : roots )
+            {
+                cachedNodes.add( node, NID, node.getId() );
+            }
+            tx.success();
         }
-        //            tx.success();
-        //        }
-        //        finally
-        //        {
-        //            tx.close();
-        //        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
     public boolean processAddedRelationships( final Map<Long, ProjectRelationship<?>> createdRelationshipsMap )
@@ -108,34 +109,33 @@ public class ViewUpdater
             //                   .remove( add );
             //
 
-            //            final Transaction tx = admin.beginTransaction();
-            //            try
-            //            {
-            logger.debug( "Checking node cache for: {}", add.getStartNode() );
-            final IndexHits<Node> hits = indexes.getCachedNodes()
-                                                .get( NID, add.getStartNode()
-                                                              .getId() );
-            if ( hits.hasNext() )
+            final Transaction tx = admin.beginTransaction();
+            try
             {
-                Conversions.setMembershipDetectionPending( viewNode, true );
-                Conversions.setCycleDetectionPending( viewNode, true );
+                logger.debug( "Checking node cache for: {}", add.getStartNode() );
+                final IndexHits<Node> hits = indexes.getCachedNodes()
+                                                    .get( NID, add.getStartNode()
+                                                                  .getId() );
+                if ( hits.hasNext() )
+                {
+                    Conversions.setMembershipDetectionPending( viewNode, true );
+                    Conversions.setCycleDetectionPending( viewNode, true );
 
-                //                    tx.success();
-                return true;
+                    tx.success();
+                    return true;
+                }
             }
-            //            }
-            //            finally
-            //            {
-            //                tx.close();
-            //            }
+            finally
+            {
+                tx.finish();
+            }
         }
 
         return false;
     }
 
     @Override
-    public void includingChild( final Relationship child, final Neo4jGraphPath childPath,
-                                final GraphPathInfo childPathInfo, final Path parentPath )
+    public void includingChild( final Relationship child, final Neo4jGraphPath childPath, final GraphPathInfo childPathInfo, final Path parentPath )
     {
         cachePath( childPath, childPathInfo );
     }
@@ -160,44 +160,44 @@ public class ViewUpdater
             return;
         }
 
-        //        final Transaction tx = admin.beginTransaction();
-        //        try
-        //        {
-        logger.debug( "Caching path: {}", path );
-
-        final RelationshipIndex cachedRels = indexes.getCachedRelationships();
-        final Index<Node> cachedNodes = indexes.getCachedNodes();
-
-        final Set<Long> nodes = new HashSet<Long>();
-        for ( final Long relId : path )
+        final Transaction tx = admin.beginTransaction();
+        try
         {
-            final Relationship r = admin.getRelationship( relId );
+            logger.debug( "Caching path: {}", path );
 
-            logger.debug( "rel-membership += " + relId );
-            cachedRels.add( r, RID, relId );
+            final RelationshipIndex cachedRels = indexes.getCachedRelationships();
+            final Index<Node> cachedNodes = indexes.getCachedNodes();
 
-            final long startId = r.getStartNode()
-                                  .getId();
-            if ( nodes.add( startId ) )
+            final Set<Long> nodes = new HashSet<Long>();
+            for ( final Long relId : path )
             {
-                logger.debug( "node-membership += " + startId );
-                cachedNodes.add( r.getStartNode(), NID, startId );
-            }
+                final Relationship r = admin.getRelationship( relId );
 
-            final long endId = r.getEndNode()
-                                .getId();
-            if ( nodes.add( endId ) )
-            {
-                logger.debug( "node-membership += " + endId );
-                cachedNodes.add( r.getEndNode(), NID, endId );
+                logger.debug( "rel-membership += " + relId );
+                cachedRels.add( r, RID, relId );
+
+                final long startId = r.getStartNode()
+                                      .getId();
+                if ( nodes.add( startId ) )
+                {
+                    logger.debug( "node-membership += " + startId );
+                    cachedNodes.add( r.getStartNode(), NID, startId );
+                }
+
+                final long endId = r.getEndNode()
+                                    .getId();
+                if ( nodes.add( endId ) )
+                {
+                    logger.debug( "node-membership += " + endId );
+                    cachedNodes.add( r.getEndNode(), NID, endId );
+                }
             }
+            tx.success();
         }
-        //            tx.success();
-        //        }
-        //        finally
-        //        {
-        //            tx.close();
-        //        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
     @Override
@@ -232,7 +232,7 @@ public class ViewUpdater
             }
             finally
             {
-                tx.close();
+                tx.finish();
             }
 
             cycleUpdater.traverseComplete( collector );

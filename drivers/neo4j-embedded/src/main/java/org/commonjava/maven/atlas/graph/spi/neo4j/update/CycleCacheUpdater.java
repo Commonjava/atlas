@@ -31,6 +31,7 @@ import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
+import org.neo4j.graphdb.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -84,22 +85,22 @@ public class CycleCacheUpdater
 
     private void addCycleInternal( final CyclePath cyclicPath, final Relationship injector )
     {
-        //        final Transaction tx = admin.beginTransaction();
-        //        try
-        //        {
-        logger.debug( "Adding cycle: {} (via: {})", cyclicPath, injector );
-        Conversions.storeCachedCyclePath( cyclicPath, viewNode );
+        final Transaction tx = admin.beginTransaction();
+        try
+        {
+            logger.debug( "Adding cycle: {} (via: {})", cyclicPath, injector );
+            Conversions.storeCachedCyclePath( cyclicPath, viewNode );
 
-        final List<ProjectRelationship<?>> cycle = Conversions.convertToRelationships( cyclicPath, admin, cache );
-        logger.info( "CYCLES += {\n  {}\n}", new JoinString( "\n  ", cycle ) );
-        cycles.add( new EProjectCycle( cycle ) );
-        //
-        //            tx.success();
-        //        }
-        //        finally
-        //        {
-        //            tx.finish();
-        //        }
+            final List<ProjectRelationship<?>> cycle = Conversions.convertToRelationships( cyclicPath, admin, cache );
+            logger.info( "CYCLES += {\n  {}\n}", new JoinString( "\n  ", cycle ) );
+            cycles.add( new EProjectCycle( cycle ) );
+
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
     public static CyclePath getTerminatingCycle( final Path path )
@@ -204,17 +205,17 @@ public class CycleCacheUpdater
     @Override
     public void traverseComplete( final AtlasCollector<?> collector )
     {
-        //        final Transaction tx = admin.beginTransaction();
-        //        try
-        //        {
-        logger.info( "Clearing PENDING cycle-detection for: {} of view: {}", viewNode, view.getShortId() );
-        Conversions.setCycleDetectionPending( viewNode, false );
-        //            tx.success();
-        //        }
-        //        finally
-        //        {
-        //            tx.finish();
-        //        }
+        final Transaction tx = admin.beginTransaction();
+        try
+        {
+            logger.info( "Clearing PENDING cycle-detection for: {} of view: {}", viewNode, view.getShortId() );
+            Conversions.setCycleDetectionPending( viewNode, false );
+            tx.success();
+        }
+        finally
+        {
+            tx.finish();
+        }
     }
 
 }
