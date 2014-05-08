@@ -39,7 +39,7 @@ public final class RelationshipGraph
 
     private final ViewParams params;
 
-    private final RelationshipGraphConnection connection;
+    private RelationshipGraphConnection connection;
 
     RelationshipGraph( final ViewParams params, final RelationshipGraphConnection driver )
     {
@@ -147,20 +147,30 @@ public final class RelationshipGraph
             }
         }
 
-        try
+        connection = null;
+
+        if ( listeners != null )
         {
-            connection.close();
-        }
-        finally
-        {
-            if ( listeners != null )
+            for ( final RelationshipGraphListener listener : listeners )
             {
-                for ( final RelationshipGraphListener listener : listeners )
-                {
-                    listener.closed( this );
-                }
+                listener.closed( this );
             }
         }
+
+        //        try
+        //        {
+        //            connection.close();
+        //        }
+        //        finally
+        //        {
+        //            if ( listeners != null )
+        //            {
+        //                for ( final RelationshipGraphListener listener : listeners )
+        //                {
+        //                    listener.closed( this );
+        //                }
+        //            }
+        //        }
     }
 
     // +++ IMPORTED FROM EProjectWeb...
@@ -650,6 +660,22 @@ public final class RelationshipGraph
     public void printStats()
     {
         connection.printStats();
+    }
+
+    public Map<ProjectVersionRef, Throwable> getAllProjectErrors()
+    {
+        final Map<ProjectVersionRef, Throwable> errors = new HashMap<ProjectVersionRef, Throwable>();
+        final Set<ProjectVersionRef> projects = connection.getAllProjects( params );
+        for ( final ProjectVersionRef ref : projects )
+        {
+            final Throwable error = connection.getProjectError( ref );
+            if ( error != null )
+            {
+                errors.put( ref, error );
+            }
+        }
+
+        return errors;
     }
 
 }

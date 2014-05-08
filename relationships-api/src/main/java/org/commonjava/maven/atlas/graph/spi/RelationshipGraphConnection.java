@@ -133,24 +133,22 @@ public interface RelationshipGraphConnection
      */
     @Deprecated
     Set<ProjectRelationship<?>> getDirectRelationshipsFrom( ViewParams params, ProjectVersionRef from,
-                                                            boolean includeManagedInfo,
-                                                            RelationshipType... types );
+                                                            boolean includeManagedInfo, RelationshipType... types );
 
     /**
      * @deprecated Use {@link #getDirectRelationshipsTo(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
      */
     @Deprecated
     Set<ProjectRelationship<?>> getDirectRelationshipsTo( ViewParams params, ProjectVersionRef to,
-                                                          boolean includeManagedInfo,
-                                                          RelationshipType... types );
+                                                          boolean includeManagedInfo, RelationshipType... types );
 
     Set<ProjectRelationship<?>> getDirectRelationshipsFrom( ViewParams params, ProjectVersionRef from,
-                                                            boolean includeManagedInfo,
-                                                            boolean includeConcreteInfo, RelationshipType... types );
+                                                            boolean includeManagedInfo, boolean includeConcreteInfo,
+                                                            RelationshipType... types );
 
     Set<ProjectRelationship<?>> getDirectRelationshipsTo( ViewParams params, ProjectVersionRef to,
-                                                          boolean includeManagedInfo,
-                                                          boolean includeConcreteInfo, RelationshipType... types );
+                                                          boolean includeManagedInfo, boolean includeConcreteInfo,
+                                                          RelationshipType... types );
 
     Set<ProjectVersionRef> getProjectsMatching( ViewParams params, ProjectRef projectRef );
 

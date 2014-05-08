@@ -55,135 +55,6 @@ public class ViewParams
     implements Serializable
 {
 
-    public static final class Builder
-    {
-        private final Set<ProjectVersionRef> roots;
-
-        private ProjectRelationshipFilter filter;
-
-        private GraphMutator mutator;
-
-        private final Set<URI> activePomLocations;
-
-        private final Set<URI> activeSources;
-
-        private final Map<String, String> properties;
-
-        private final Map<ProjectRef, ProjectVersionRef> selections;
-
-        private final String workspaceId;
-
-        public Builder( final String workspaceId, final ProjectVersionRef... roots )
-        {
-            this.workspaceId = workspaceId;
-            this.roots = new HashSet<ProjectVersionRef>( Arrays.asList( roots ) );
-            this.activePomLocations = new HashSet<URI>();
-            this.activeSources = new HashSet<URI>();
-            this.properties = new HashMap<String, String>();
-            this.selections = new HashMap<ProjectRef, ProjectVersionRef>();
-            this.filter = AnyFilter.INSTANCE;
-            this.mutator = new ManagedDependencyMutator();
-        }
-
-        public Builder( final String workspaceId, final Collection<ProjectVersionRef> roots )
-        {
-            this.workspaceId = workspaceId;
-            this.roots = new HashSet<ProjectVersionRef>( roots );
-            this.activePomLocations = new HashSet<URI>();
-            this.activeSources = new HashSet<URI>();
-            this.properties = new HashMap<String, String>();
-            this.selections = new HashMap<ProjectRef, ProjectVersionRef>();
-            this.filter = AnyFilter.INSTANCE;
-            this.mutator = new ManagedDependencyMutator();
-        }
-
-        public Builder( final ViewParams params )
-        {
-            this.workspaceId = params.getWorkspaceId();
-            this.roots =
-                params.roots == null ? new HashSet<ProjectVersionRef>() : new HashSet<ProjectVersionRef>( params.roots );
-            this.filter = params.filter;
-            this.mutator = params.mutator;
-            this.activePomLocations =
-                params.activePomLocations == null ? new HashSet<URI>() : new HashSet<URI>( params.activePomLocations );
-            this.activeSources =
-                params.activeSources == null ? new HashSet<URI>() : new HashSet<URI>( params.activeSources );
-            this.properties =
-                params.properties == null ? new HashMap<String, String>()
-                                : new HashMap<String, String>( params.properties );
-            this.selections =
-                params.selections == null ? new HashMap<ProjectRef, ProjectVersionRef>()
-                                : new HashMap<ProjectRef, ProjectVersionRef>( params.selections );
-        }
-
-        public Builder withRoots( final ProjectVersionRef... roots )
-        {
-            this.roots.clear();
-            this.roots.addAll( Arrays.asList( roots ) );
-            return this;
-        }
-
-        public Builder withFilter( final ProjectRelationshipFilter filter )
-        {
-            this.filter = filter;
-            return this;
-        }
-
-        public Builder withMutator( final GraphMutator mutator )
-        {
-            this.mutator = mutator;
-            return this;
-        }
-
-        public Builder withSelections( final Map<ProjectRef, ProjectVersionRef> selections )
-        {
-            this.selections.clear();
-            this.selections.putAll( selections );
-            return this;
-        }
-
-        public Builder withProperties( final Map<String, String> properties )
-        {
-            this.properties.clear();
-            this.properties.putAll( properties );
-            return this;
-        }
-
-        public Builder withActivePomLocations( final Set<URI> activePomLocations )
-        {
-            this.activePomLocations.clear();
-            this.activePomLocations.addAll( activePomLocations );
-            return this;
-        }
-
-        public Builder withActiveSources( final Set<URI> activeSources )
-        {
-            this.activeSources.clear();
-            this.activeSources.addAll( activeSources );
-            return this;
-        }
-
-        public ViewParams build()
-        {
-            return new ViewParams( workspaceId, filter, mutator, activePomLocations, activeSources, selections,
-                                   properties, roots );
-        }
-
-        public Builder withSelection( final ProjectRef target, final ProjectVersionRef selection )
-        {
-            selections.put( target, selection );
-            return this;
-        }
-
-        public Builder withRoots( final Collection<ProjectVersionRef> roots )
-        {
-            this.roots.clear();
-            this.roots.addAll( roots );
-            return this;
-        }
-
-    }
-
     private static final long serialVersionUID = 1L;
 
     private static final Set<URI> DEFAULT_SOURCES =
@@ -215,13 +86,13 @@ public class ViewParams
     private final String workspaceId;
 
     public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final Collection<ProjectVersionRef> roots )
+                       final Collection<ProjectVersionRef> roots )
     {
         this( workspaceId, filter, mutator, null, roots );
     }
 
     public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final ProjectVersionRef... roots )
+                       final ProjectVersionRef... roots )
     {
         this( workspaceId, filter, mutator, null, roots );
     }
@@ -237,7 +108,7 @@ public class ViewParams
     }
 
     public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
+                       final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
     {
         this.workspaceId = workspaceId;
         this.filter = filter;
@@ -247,7 +118,7 @@ public class ViewParams
     }
 
     public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
+                       final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
     {
         this.workspaceId = workspaceId;
         this.filter = filter;
@@ -454,7 +325,7 @@ public class ViewParams
         {
             properties = new HashMap<String, String>();
         }
-        
+
         return properties.put( key, value );
     }
 
@@ -517,7 +388,8 @@ public class ViewParams
 
     public boolean hasSelection( final ProjectVersionRef ref )
     {
-        return selections == null ? false : selections.containsKey( ref ) || selections.containsKey( ref.asProjectRef() );
+        return selections == null ? false : selections.containsKey( ref )
+            || selections.containsKey( ref.asProjectRef() );
     }
 
     public String renderSelections()
@@ -545,6 +417,135 @@ public class ViewParams
     public boolean hasSelections()
     {
         return selections != null && !selections.isEmpty();
+    }
+
+    public static final class Builder
+    {
+        private final Set<ProjectVersionRef> roots;
+
+        private ProjectRelationshipFilter filter;
+
+        private GraphMutator mutator;
+
+        private final Set<URI> activePomLocations;
+
+        private final Set<URI> activeSources;
+
+        private final Map<String, String> properties;
+
+        private final Map<ProjectRef, ProjectVersionRef> selections;
+
+        private final String workspaceId;
+
+        public Builder( final String workspaceId, final ProjectVersionRef... roots )
+        {
+            this.workspaceId = workspaceId;
+            this.roots = new HashSet<ProjectVersionRef>( Arrays.asList( roots ) );
+            this.activePomLocations = new HashSet<URI>();
+            this.activeSources = new HashSet<URI>();
+            this.properties = new HashMap<String, String>();
+            this.selections = new HashMap<ProjectRef, ProjectVersionRef>();
+            this.filter = AnyFilter.INSTANCE;
+            this.mutator = new ManagedDependencyMutator();
+        }
+
+        public Builder( final String workspaceId, final Collection<ProjectVersionRef> roots )
+        {
+            this.workspaceId = workspaceId;
+            this.roots = new HashSet<ProjectVersionRef>( roots );
+            this.activePomLocations = new HashSet<URI>();
+            this.activeSources = new HashSet<URI>();
+            this.properties = new HashMap<String, String>();
+            this.selections = new HashMap<ProjectRef, ProjectVersionRef>();
+            this.filter = AnyFilter.INSTANCE;
+            this.mutator = new ManagedDependencyMutator();
+        }
+
+        public Builder( final ViewParams params )
+        {
+            this.workspaceId = params.getWorkspaceId();
+            this.roots =
+                params.roots == null ? new HashSet<ProjectVersionRef>() : new HashSet<ProjectVersionRef>( params.roots );
+            this.filter = params.filter;
+            this.mutator = params.mutator;
+            this.activePomLocations =
+                params.activePomLocations == null ? new HashSet<URI>() : new HashSet<URI>( params.activePomLocations );
+            this.activeSources =
+                params.activeSources == null ? new HashSet<URI>() : new HashSet<URI>( params.activeSources );
+            this.properties =
+                params.properties == null ? new HashMap<String, String>()
+                                : new HashMap<String, String>( params.properties );
+            this.selections =
+                params.selections == null ? new HashMap<ProjectRef, ProjectVersionRef>()
+                                : new HashMap<ProjectRef, ProjectVersionRef>( params.selections );
+        }
+
+        public Builder withRoots( final ProjectVersionRef... roots )
+        {
+            this.roots.clear();
+            this.roots.addAll( Arrays.asList( roots ) );
+            return this;
+        }
+
+        public Builder withFilter( final ProjectRelationshipFilter filter )
+        {
+            this.filter = filter;
+            return this;
+        }
+
+        public Builder withMutator( final GraphMutator mutator )
+        {
+            this.mutator = mutator;
+            return this;
+        }
+
+        public Builder withSelections( final Map<ProjectRef, ProjectVersionRef> selections )
+        {
+            this.selections.clear();
+            this.selections.putAll( selections );
+            return this;
+        }
+
+        public Builder withProperties( final Map<String, String> properties )
+        {
+            this.properties.clear();
+            this.properties.putAll( properties );
+            return this;
+        }
+
+        public Builder withActivePomLocations( final Set<URI> activePomLocations )
+        {
+            this.activePomLocations.clear();
+            this.activePomLocations.addAll( activePomLocations );
+            return this;
+        }
+
+        public Builder withActiveSources( final Set<URI> activeSources )
+        {
+            this.activeSources.clear();
+            this.activeSources.addAll( activeSources );
+            return this;
+        }
+
+        public ViewParams build()
+        {
+            return new ViewParams( workspaceId, filter, mutator, activePomLocations, activeSources, selections,
+                                   properties, roots );
+        }
+
+        public Builder withSelection( final ProjectRef target, final ProjectVersionRef selection )
+        {
+            selections.put( target, selection );
+            return this;
+        }
+
+        public Builder withRoots( final Collection<ProjectVersionRef> roots )
+        {
+            this.roots.clear();
+            this.roots.addAll( roots );
+            return this;
+        }
+
     }
 
 }
