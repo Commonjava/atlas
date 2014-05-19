@@ -94,4 +94,10 @@ public class BomRelationship
 
         return new BomRelationship( getSources(), d, ref, getIndex() );
     }
+
+    @Override
+    public String toString()
+    {
+        return String.format( "BomRelationship [%s => %s]", getDeclaring(), getTarget() );
+    }
 }
