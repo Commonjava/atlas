@@ -27,7 +27,8 @@ public class BomRelationship
 
     private static final long serialVersionUID = 1L;
 
-    public BomRelationship( final Set<URI> sources, final ProjectVersionRef d, final ProjectVersionRef t, final int index )
+    public BomRelationship( final Set<URI> sources, final ProjectVersionRef d, final ProjectVersionRef t,
+                            final int index )
     {
         // BOMs are actually marked as concrete...somewhat counter-intuitive, 
         // but they're structural, so managed isn't quite correct (despite 

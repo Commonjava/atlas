@@ -48,14 +48,15 @@ public class DependencyFilter
         this( scope, ScopeTransitivity.maven, false, true, true, null );
     }
 
-    public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity, final boolean includeManaged,
-                             final boolean includeConcrete, final Set<ProjectRef> excludes )
+    public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity,
+                             final boolean includeManaged, final boolean includeConcrete, final Set<ProjectRef> excludes )
     {
         this( scope, scopeTransitivity, includeManaged, includeConcrete, true, excludes );
     }
 
-    public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity, final boolean includeManaged,
-                             final boolean includeConcrete, final boolean useImpliedScopes, final Set<ProjectRef> excludes )
+    public DependencyFilter( final DependencyScope scope, final ScopeTransitivity scopeTransitivity,
+                             final boolean includeManaged, final boolean includeConcrete,
+                             final boolean useImpliedScopes, final Set<ProjectRef> excludes )
     {
         super( RelationshipType.DEPENDENCY, true, includeManaged, includeConcrete );
         this.useImpliedScopes = useImpliedScopes;
@@ -128,8 +129,8 @@ public class DependencyFilter
                 newExcludes = ex;
             }
 
-            return new DependencyFilter( nextScope, scopeTransitivity, includeManagedRelationships(), includeConcreteRelationships(),
-                                         useImpliedScopes, newExcludes );
+            return new DependencyFilter( nextScope, scopeTransitivity, includeManagedRelationships(),
+                                         includeConcreteRelationships(), useImpliedScopes, newExcludes );
         }
 
         return this;

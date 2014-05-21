@@ -28,7 +28,8 @@ public class VersionManagerMutator
     private transient String shortId;
 
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
+                                             final GraphView view )
     {
         final ProjectRef target = rel.getTarget()
                                      .asProjectRef();

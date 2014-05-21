@@ -35,7 +35,8 @@ public class TransitiveDependencyTraversal
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    private final Map<VersionlessArtifactRef, ArtifactRef> artifacts = new HashMap<VersionlessArtifactRef, ArtifactRef>();
+    private final Map<VersionlessArtifactRef, ArtifactRef> artifacts =
+        new HashMap<VersionlessArtifactRef, ArtifactRef>();
 
     private final Map<VersionlessArtifactRef, Integer> seenArtifacts = new HashMap<VersionlessArtifactRef, Integer>();
 
@@ -66,7 +67,8 @@ public class TransitiveDependencyTraversal
     }
 
     @Override
-    public boolean shouldTraverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
+                                       final List<ProjectRelationship<?>> path, final int pass )
     {
         boolean result = false;
         if ( relationship instanceof DependencyRelationship )

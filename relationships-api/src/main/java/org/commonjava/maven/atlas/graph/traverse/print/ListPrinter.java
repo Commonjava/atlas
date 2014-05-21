@@ -87,7 +87,8 @@ public class ListPrinter
         }
     }
 
-    private void printLinks( final ProjectVersionRef from, final Set<String> lines, final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
+    private void printLinks( final ProjectVersionRef from, final Set<String> lines,
+                             final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
                              final Map<String, Set<ProjectVersionRef>> labels, final Set<ProjectRef> excluded,
                              final Stack<ProjectVersionRef> inPath )
     {
@@ -118,7 +119,6 @@ public class ListPrinter
                 //                {
                 //                    return;
                 //                }
-
 
                 relationshipPrinter.print( out, null, new PrintWriter( sw ), labels, 0, "" );
                 lines.add( sw.toString() );

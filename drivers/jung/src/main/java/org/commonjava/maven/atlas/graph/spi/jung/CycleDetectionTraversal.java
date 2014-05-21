@@ -38,7 +38,8 @@ final class CycleDetectionTraversal
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                             final int pass )
     {
         if ( rel.getDeclaring()
                 .equals( rel.getTarget()

@@ -21,7 +21,8 @@ public class InvalidVersionSpecificationException
 
     private String version;
 
-    public InvalidVersionSpecificationException( final String version, final String message, final Throwable cause, final Object... params )
+    public InvalidVersionSpecificationException( final String version, final String message, final Throwable cause,
+                                                 final Object... params )
     {
         super( "'" + version + "': " + message, cause );
         this.params = params;

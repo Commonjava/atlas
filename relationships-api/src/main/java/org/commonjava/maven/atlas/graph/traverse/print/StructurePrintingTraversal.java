@@ -41,7 +41,8 @@ public class StructurePrintingTraversal
 
     private final StructureRelationshipPrinter relationshipPrinter;
 
-    private final Map<ProjectVersionRef, List<ProjectRelationship<?>>> outboundLinks = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
+    private final Map<ProjectVersionRef, List<ProjectRelationship<?>>> outboundLinks =
+        new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
 
     public StructurePrintingTraversal()
     {
@@ -61,14 +62,16 @@ public class StructurePrintingTraversal
         this.relationshipPrinter = relationshipPrinter;
     }
 
-    public StructurePrintingTraversal( final ProjectNetTraversal traversal, final StructureRelationshipPrinter relationshipPrinter )
+    public StructurePrintingTraversal( final ProjectNetTraversal traversal,
+                                       final StructureRelationshipPrinter relationshipPrinter )
     {
         this.traversal = traversal;
         this.relationshipPrinter = relationshipPrinter;
     }
 
     @Override
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                                 final int pass )
     {
         if ( traversal == null || traversal.traverseEdge( relationship, path, pass ) )
         {
@@ -134,7 +137,7 @@ public class StructurePrintingTraversal
             for ( final ProjectRelationship<?> out : outbound )
             {
                 final ProjectVersionRef outRef = out.getTarget()
-                                              .asProjectVersionRef();
+                                                    .asProjectVersionRef();
                 if ( inPath.contains( outRef ) )
                 {
                     continue;
@@ -184,7 +187,8 @@ public class StructurePrintingTraversal
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                             final int pass )
     {
         return traversal == null || traversal.preCheck( relationship, path, pass );
     }
@@ -210,7 +214,8 @@ public class StructurePrintingTraversal
     }
 
     @Override
-    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                               final int pass )
     {
         if ( traversal != null )
         {

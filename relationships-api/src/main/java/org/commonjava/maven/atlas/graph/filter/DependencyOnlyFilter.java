@@ -43,8 +43,8 @@ public class DependencyOnlyFilter
         this( false, true, true, scopes );
     }
 
-    public DependencyOnlyFilter( final boolean includeManaged, final boolean includeConcrete, final boolean useImpliedScope,
-                                 final DependencyScope... scopes )
+    public DependencyOnlyFilter( final boolean includeManaged, final boolean includeConcrete,
+                                 final boolean useImpliedScope, final DependencyScope... scopes )
     {
         super( RelationshipType.DEPENDENCY, false, includeManaged, includeConcrete );
 
@@ -66,7 +66,8 @@ public class DependencyOnlyFilter
         {
             if ( scope == s || ( useImpliedScope && s.implies( scope ) ) )
             {
-                if ( ( dr.isManaged() && includeManagedRelationships() ) || ( !dr.isManaged() && includeConcreteRelationships() ) )
+                if ( ( dr.isManaged() && includeManagedRelationships() )
+                    || ( !dr.isManaged() && includeConcreteRelationships() ) )
                 {
                     return true;
                 }

@@ -35,7 +35,8 @@ public class VersionlessArtifactRef
         this.tc = ref.getTypeAndClassifier();
     }
 
-    public VersionlessArtifactRef( final ProjectRef ref, final String type, final String classifier, final boolean optional )
+    public VersionlessArtifactRef( final ProjectRef ref, final String type, final String classifier,
+                                   final boolean optional )
     {
         super( ref.getGroupId(), ref.getArtifactId() );
         this.optional = optional;
@@ -49,7 +50,8 @@ public class VersionlessArtifactRef
         this.optional = optional;
     }
 
-    public VersionlessArtifactRef( final String groupId, final String artifactId, final String type, final String classifier, final boolean optional )
+    public VersionlessArtifactRef( final String groupId, final String artifactId, final String type,
+                                   final String classifier, final boolean optional )
         throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId );
@@ -146,7 +148,8 @@ public class VersionlessArtifactRef
     }
 
     @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier, final boolean optional )
+    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier,
+                                                            final boolean optional )
     {
         final TypeAndClassifier tc = new TypeAndClassifier( type, classifier );
         if ( VersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) && this.optional == optional )

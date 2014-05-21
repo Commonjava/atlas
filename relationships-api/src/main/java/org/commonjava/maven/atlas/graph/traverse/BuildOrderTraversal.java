@@ -51,7 +51,8 @@ public class BuildOrderTraversal
     }
 
     @Override
-    protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
+                                          final List<ProjectRelationship<?>> path, final int pass )
     {
         final ProjectVersionRef decl = relationship.getDeclaring();
 

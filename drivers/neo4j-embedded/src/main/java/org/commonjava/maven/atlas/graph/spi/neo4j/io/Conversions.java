@@ -209,7 +209,8 @@ public final class Conversions
         return refs;
     }
 
-    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Relationship> relationships, final ConversionCache cache )
+    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Relationship> relationships,
+                                                                       final ConversionCache cache )
     {
         final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
         for ( final Relationship relationship : relationships )
@@ -224,7 +225,8 @@ public final class Conversions
         return rels;
     }
 
-    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Long> relationships, final GraphAdmin admin,
+    public static List<ProjectRelationship<?>> convertToRelationships( final Iterable<Long> relationships,
+                                                                       final GraphAdmin admin,
                                                                        final ConversionCache cache )
     {
         final List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
@@ -482,7 +484,8 @@ public final class Conversions
                 }
 
                 result =
-                    new DependencyRelationship( source, pomLocation, from, artifact, scope, index, managed, excludes.toArray( new ProjectRef[] {} ) );
+                    new DependencyRelationship( source, pomLocation, from, artifact, scope, index, managed,
+                                                excludes.toArray( new ProjectRef[] {} ) );
                 break;
             }
             case PLUGIN_DEP:
@@ -492,7 +495,9 @@ public final class Conversions
                 final String pg = getStringProperty( PLUGIN_GROUP_ID, rel );
                 final boolean managed = getBooleanProperty( IS_MANAGED, rel );
 
-                result = new PluginDependencyRelationship( source, pomLocation, from, new ProjectRef( pg, pa ), artifact, index, managed );
+                result =
+                    new PluginDependencyRelationship( source, pomLocation, from, new ProjectRef( pg, pa ), artifact,
+                                                      index, managed );
                 break;
             }
             case PLUGIN:
@@ -572,7 +577,8 @@ public final class Conversions
         return null;
     }
 
-    public static Set<URI> getURISetProperty( final String prop, final PropertyContainer container, final URI defaultValue )
+    public static Set<URI> getURISetProperty( final String prop, final PropertyContainer container,
+                                              final URI defaultValue )
     {
         final Set<URI> result = new HashSet<URI>();
 
@@ -603,7 +609,8 @@ public final class Conversions
         return result;
     }
 
-    public static void addToURISetProperty( final Collection<URI> uris, final String prop, final PropertyContainer container )
+    public static void addToURISetProperty( final Collection<URI> uris, final String prop,
+                                            final PropertyContainer container )
     {
         if ( uris == null || uris.isEmpty() )
         {
@@ -619,7 +626,8 @@ public final class Conversions
         container.setProperty( prop, toStringArray( existing ) );
     }
 
-    public static void removeFromURISetProperty( final Collection<URI> uris, final String prop, final PropertyContainer container )
+    public static void removeFromURISetProperty( final Collection<URI> uris, final String prop,
+                                                 final PropertyContainer container )
     {
         if ( uris == null || uris.isEmpty() || !container.hasProperty( prop ) )
         {
@@ -669,7 +677,8 @@ public final class Conversions
         return null;
     }
 
-    public static Boolean getBooleanProperty( final String prop, final PropertyContainer container, final Boolean defaultValue )
+    public static Boolean getBooleanProperty( final String prop, final PropertyContainer container,
+                                              final Boolean defaultValue )
     {
         if ( container.hasProperty( prop ) )
         {
@@ -733,7 +742,8 @@ public final class Conversions
         return old;
     }
 
-    public static String getConfigProperty( final String key, final PropertyContainer container, final String defaultValue )
+    public static String getConfigProperty( final String key, final PropertyContainer container,
+                                            final String defaultValue )
     {
         final String result = getStringProperty( CONFIG_PROPERTY_PREFIX + key, container );
 
@@ -798,7 +808,8 @@ public final class Conversions
         return getStringProperty( METADATA_PREFIX + key, container );
     }
 
-    public static void toNodeProperties( final String cycleId, final String rawCycleId, final Set<ProjectVersionRef> refs, final Node node )
+    public static void toNodeProperties( final String cycleId, final String rawCycleId,
+                                         final Set<ProjectVersionRef> refs, final Node node )
     {
         node.setProperty( NODE_TYPE, NodeType.CYCLE.name() );
         node.setProperty( CYCLE_ID, cycleId );
@@ -1043,8 +1054,9 @@ public final class Conversions
         }
         catch ( final IOException e )
         {
-            throw new IllegalStateException( "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing " + data.length + " bytes!",
-                                             e );
+            throw new IllegalStateException(
+                                             "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing "
+                                                 + data.length + " bytes!", e );
         }
         catch ( final ClassNotFoundException e )
         {

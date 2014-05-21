@@ -27,7 +27,8 @@ public class NoOpGraphMutator
     }
 
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
+                                             final GraphView view )
     {
         return rel;
     }

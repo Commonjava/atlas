@@ -61,7 +61,8 @@ public class CypherQueriesTest
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
+        final GraphWorkspace workspace =
+            getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
         GraphView view = new GraphView( workspace, project );
 
         /* @formatter:off */
@@ -108,7 +109,8 @@ public class CypherQueriesTest
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace workspace = getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
+        final GraphWorkspace workspace =
+            getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( source ) );
         GraphView view = new GraphView( workspace, project );
 
         /* @formatter:off */

@@ -66,7 +66,8 @@ public class VersionPhrase
             {
                 silenced = true;
             }
-            else if ( ( part instanceof StringPart ) && ( (StringPart) part ).getZeroCompareIndex() == StringPart.ADJ_ZERO_EQUIV_INDEX )
+            else if ( ( part instanceof StringPart )
+                && ( (StringPart) part ).getZeroCompareIndex() == StringPart.ADJ_ZERO_EQUIV_INDEX )
             {
                 silenced = true;
             }
@@ -167,7 +168,8 @@ public class VersionPhrase
         {
             if ( part != parts.get( parts.size() - 1 ) && part instanceof SnapshotPart )
             {
-                throw new InvalidVersionSpecificationException( renderStandard( parts ), "Snapshot marker MUST appear at the end of the version" );
+                throw new InvalidVersionSpecificationException( renderStandard( parts ),
+                                                                "Snapshot marker MUST appear at the end of the version" );
             }
         }
     }
@@ -186,8 +188,10 @@ public class VersionPhrase
         }
         catch ( final InvalidVersionSpecificationException e )
         {
-            throw new InvalidVersionSpecificationException( e.getVersion(), "Cannot create base version for non-release: %s. Reason: %s", e,
-                                                            e.getVersion(), e.getMessage() );
+            throw new InvalidVersionSpecificationException(
+                                                            e.getVersion(),
+                                                            "Cannot create base version for non-release: %s. Reason: %s",
+                                                            e, e.getVersion(), e.getMessage() );
         }
     }
 

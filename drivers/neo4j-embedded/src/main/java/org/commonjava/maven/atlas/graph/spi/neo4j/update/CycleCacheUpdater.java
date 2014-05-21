@@ -51,7 +51,8 @@ public class CycleCacheUpdater
 
     private final GraphAdmin admin;
 
-    public CycleCacheUpdater( final GraphView view, final Node viewNode, final GraphAdmin admin, final ConversionCache cache )
+    public CycleCacheUpdater( final GraphView view, final Node viewNode, final GraphAdmin admin,
+                              final ConversionCache cache )
     {
         this.view = view;
         this.viewNode = viewNode;

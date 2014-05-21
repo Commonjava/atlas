@@ -41,7 +41,8 @@ public class PathExistenceVisitor
     }
 
     @Override
-    public void includingChild( final Relationship child, final Neo4jGraphPath childPath, final GraphPathInfo childPathInfo, final Path parentPath )
+    public void includingChild( final Relationship child, final Neo4jGraphPath childPath,
+                                final GraphPathInfo childPathInfo, final Path parentPath )
     {
         final Node end = child.getEndNode();
         if ( this.end.getId() == end.getId() )

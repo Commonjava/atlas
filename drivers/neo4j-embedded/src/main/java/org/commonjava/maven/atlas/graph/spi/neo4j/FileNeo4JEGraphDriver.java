@@ -26,7 +26,8 @@ public class FileNeo4JEGraphDriver
         this( config, dbPath, true );
     }
 
-    public FileNeo4JEGraphDriver( final GraphWorkspaceConfiguration config, final File dbPath, final boolean useShutdownHook )
+    public FileNeo4JEGraphDriver( final GraphWorkspaceConfiguration config, final File dbPath,
+                                  final boolean useShutdownHook )
     {
         super( config, new GraphDatabaseFactory().newEmbeddedDatabase( dbPath.getAbsolutePath() ), useShutdownHook );
     }

@@ -183,7 +183,8 @@ public final class GraphWorkspaceConfiguration
     @Override
     public String toString()
     {
-        return String.format( "GraphWorkspaceConfiguration [activePomLocations=%s, activeSources=%s]", activePomLocations, activeSources );
+        return String.format( "GraphWorkspaceConfiguration [activePomLocations=%s, activeSources=%s]",
+                              activePomLocations, activeSources );
     }
 
     public void setLastAccess( final long lastAccess )

@@ -18,8 +18,9 @@ import java.util.Set;
 public enum RelationshipType
 {
 
-    PARENT( "parent" ), BOM( "bom" ), DEPENDENCY( "dependency", "dep" ), PLUGIN( "plugin" ), PLUGIN_DEP( "plugin-dependency", "plugin-dep",
-        "plugin-level-dependency", "plugin-level-dep" ), EXTENSION( "extension", "ext" );
+    PARENT( "parent" ), BOM( "bom" ), DEPENDENCY( "dependency", "dep" ), PLUGIN( "plugin" ), PLUGIN_DEP(
+        "plugin-dependency", "plugin-dep", "plugin-level-dependency", "plugin-level-dep" ), EXTENSION( "extension",
+        "ext" );
 
     private final Set<String> names;
 

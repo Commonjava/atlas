@@ -62,8 +62,9 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private final GraphRelType[] types;
 
-    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal, final GraphView view,
-                                                final Node viewNode, final GraphAdmin admin, final int pass, final GraphRelType... types )
+    public MembershipWrappedTraversalEvaluator( final Set<Long> rootIds, final ProjectNetTraversal traversal,
+                                                final GraphView view, final Node viewNode, final GraphAdmin admin,
+                                                final int pass, final GraphRelType... types )
     {
         this.rootIds = rootIds;
         this.traversal = traversal;
@@ -74,7 +75,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.types = types;
     }
 
-    private MembershipWrappedTraversalEvaluator( final MembershipWrappedTraversalEvaluator<STATE> ev, final boolean reversedExpander )
+    private MembershipWrappedTraversalEvaluator( final MembershipWrappedTraversalEvaluator<STATE> ev,
+                                                 final boolean reversedExpander )
     {
         this.rootIds = ev.rootIds;
         this.traversal = ev.traversal;
@@ -107,7 +109,8 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         {
             final ProjectRelationship<?> lastRel = Conversions.toProjectRelationship( rel, cache );
 
-            final List<ProjectRelationship<?>> relPath = Conversions.convertToRelationships( path.relationships(), cache );
+            final List<ProjectRelationship<?>> relPath =
+                Conversions.convertToRelationships( path.relationships(), cache );
             if ( relPath.indexOf( lastRel ) == relPath.size() - 1 )
             {
                 //                logger.warn( "\n\n\n\n\nREMOVING last-relationship: {} from path!\n\n\n\n\n" );

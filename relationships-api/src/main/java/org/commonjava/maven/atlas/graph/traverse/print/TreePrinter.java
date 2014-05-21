@@ -58,23 +58,22 @@ public class TreePrinter
     //    }
 
     public void printStructure( final ProjectVersionRef from,
-                                  final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
+                                final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
                                 final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
     {
         printStructure( from, links, null, null, "  ", labels, writer );
     }
 
     public void printStructure( final ProjectVersionRef from,
-                                  final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
- final String indent,
+                                final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links, final String indent,
                                 final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
     {
         printStructure( from, links, null, null, indent, labels, writer );
     }
 
     public void printStructure( final ProjectVersionRef from,
-                                  final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links,
-                                  final String header, final String footer, final String indent,
+                                final Map<ProjectVersionRef, List<ProjectRelationship<?>>> links, final String header,
+                                final String footer, final String indent,
                                 final Map<String, Set<ProjectVersionRef>> labels, PrintWriter writer )
     {
         if ( header != null )

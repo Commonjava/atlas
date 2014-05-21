@@ -55,17 +55,21 @@ public abstract class SubGraphSelectionTCK
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
-        System.out.println( "Before selection in view: " + view.getShortId() + ", here are the variable nodes: " + variables );
+        System.out.println( "Before selection in view: " + view.getShortId() + ", here are the variable nodes: "
+            + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        view = new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
+        view =
+            new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(),
+                                                                                                selected ), project );
         graph = getManager().getGraph( view );
 
         //        final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
         //        assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
         variables = graph.getVariableSubgraphs();
-        System.out.println( "After selection in view: " + view.getShortId() + ", here are the variable nodes: " + variables );
+        System.out.println( "After selection in view: " + view.getShortId() + ", here are the variable nodes: "
+            + variables );
         assertThat( variables.isEmpty(), equalTo( true ) );
 
         final Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
@@ -98,7 +102,9 @@ public abstract class SubGraphSelectionTCK
         System.out.println( "Variable before selecting:\n  " + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        view = new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
+        view =
+            new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(),
+                                                                                                selected ), project );
         graph = getManager().getGraph( view );
 
         //        final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
@@ -159,7 +165,9 @@ public abstract class SubGraphSelectionTCK
 
         // Select a concrete version for the session associated with the FIRST graph.
         // Second graph session should remain unchanged.
-        view = new GraphView( session, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(), selected ), project );
+        view =
+            new GraphView( session, AnyFilter.INSTANCE, view.getMutator(),
+                           Collections.singletonMap( varDep.asProjectRef(), selected ), project );
         graph = getManager().getGraph( view );
 
         assertThat( view.getSelection( varDep ), equalTo( selected ) );

@@ -45,7 +45,8 @@ public class JungWorkspaceFactory
     public GraphWorkspace createWorkspace( final GraphWorkspaceConfiguration config )
         throws GraphDriverException
     {
-        final GraphWorkspace ws = new GraphWorkspace( Long.toString( System.currentTimeMillis() ), new JungEGraphDriver( config ) );
+        final GraphWorkspace ws =
+            new GraphWorkspace( Long.toString( System.currentTimeMillis() ), new JungEGraphDriver( config ) );
         workspaces.put( ws.getId(), ws );
         return ws;
     }

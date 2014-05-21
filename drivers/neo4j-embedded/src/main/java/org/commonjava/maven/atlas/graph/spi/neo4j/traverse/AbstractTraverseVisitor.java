@@ -56,7 +56,8 @@ public abstract class AbstractTraverseVisitor
     }
 
     @Override
-    public void includingChild( final Relationship child, final Neo4jGraphPath childPath, final GraphPathInfo childPathInfo, final Path parentPath )
+    public void includingChild( final Relationship child, final Neo4jGraphPath childPath,
+                                final GraphPathInfo childPathInfo, final Path parentPath )
     {
     }
 

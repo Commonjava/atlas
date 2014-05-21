@@ -65,7 +65,8 @@ public enum GraphRelType
         return atlasType;
     }
 
-    public static GraphRelType map( final org.commonjava.maven.atlas.graph.rel.RelationshipType type, final boolean managed )
+    public static GraphRelType map( final org.commonjava.maven.atlas.graph.rel.RelationshipType type,
+                                    final boolean managed )
     {
         for ( final GraphRelType mapper : values() )
         {

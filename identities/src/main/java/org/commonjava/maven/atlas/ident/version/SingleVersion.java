@@ -84,7 +84,8 @@ public class SingleVersion
             final VersionPart part = parts.get( i );
             final VersionPart next = i >= parts.size() - 1 ? null : parts.get( i + 1 );
 
-            if ( ( part instanceof SeparatorPart ) && ( VersionPartSeparator.DASH == ( (SeparatorPart) part ).getValue() ) )
+            if ( ( part instanceof SeparatorPart )
+                && ( VersionPartSeparator.DASH == ( (SeparatorPart) part ).getValue() ) )
             {
                 if ( prev != null && !( prev instanceof StringPart ) )
                 {
@@ -112,7 +113,8 @@ public class SingleVersion
                     i++;
                 }
             }
-            else if ( ( ( part instanceof SnapshotPart ) || ( part instanceof StringPart ) ) && prev != null
+            else if ( ( ( part instanceof SnapshotPart ) || ( part instanceof StringPart ) )
+                && prev != null
                 && ( !( prev instanceof SeparatorPart ) || ( ( (SeparatorPart) prev ).getValue() != VersionPartSeparator.DASH ) ) )
             {
                 VersionPartSeparator sep = null;
@@ -235,7 +237,8 @@ public class SingleVersion
         {
             if ( part != parts.get( parts.size() - 1 ) && part instanceof SnapshotPart )
             {
-                throw new InvalidVersionSpecificationException( rawExpression, "Snapshot marker MUST appear at the end of the version" );
+                throw new InvalidVersionSpecificationException( rawExpression,
+                                                                "Snapshot marker MUST appear at the end of the version" );
             }
         }
     }

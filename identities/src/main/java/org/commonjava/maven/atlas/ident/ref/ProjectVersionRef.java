@@ -50,12 +50,14 @@ public class ProjectVersionRef
         this( ref.getGroupId(), ref.getArtifactId(), versionSpec );
     }
 
-    ProjectVersionRef( final String groupId, final String artifactId, final VersionSpec versionSpec, final String versionString )
+    ProjectVersionRef( final String groupId, final String artifactId, final VersionSpec versionSpec,
+                       final String versionString )
     {
         super( groupId, artifactId );
         if ( versionSpec == null && versionString == null )
         {
-            throw new InvalidRefException( "Version spec AND string cannot both be null for '" + groupId + ":" + artifactId + "'" );
+            throw new InvalidRefException( "Version spec AND string cannot both be null for '" + groupId + ":"
+                + artifactId + "'" );
         }
 
         this.versionString = versionString;
@@ -78,7 +80,9 @@ public class ProjectVersionRef
         final String[] parts = gav.split( ":" );
         if ( parts.length < 3 || isEmpty( parts[0] ) || isEmpty( parts[1] ) || isEmpty( parts[2] ) )
         {
-            throw new InvalidRefException( "ProjectVersionRef must contain non-empty groupId, artifactId, AND version. (Given: '" + gav + "')" );
+            throw new InvalidRefException(
+                                           "ProjectVersionRef must contain non-empty groupId, artifactId, AND version. (Given: '"
+                                               + gav + "')" );
         }
 
         return new ProjectVersionRef( parts[0], parts[1], parts[2] );
@@ -86,7 +90,9 @@ public class ProjectVersionRef
 
     public ProjectVersionRef asProjectVersionRef()
     {
-        return ProjectVersionRef.class.equals( getClass() ) ? this : new ProjectVersionRef( getGroupId(), getArtifactId(), getVersionSpecRaw(),
+        return ProjectVersionRef.class.equals( getClass() ) ? this : new ProjectVersionRef( getGroupId(),
+                                                                                            getArtifactId(),
+                                                                                            getVersionSpecRaw(),
                                                                                             getVersionStringRaw() );
     }
 
@@ -179,8 +185,8 @@ public class ProjectVersionRef
 
         if ( !force && !versionSpec.contains( version ) )
         {
-            throw new IllegalArgumentException( "Specified version: " + version.renderStandard() + " is not contained in spec: "
-                + versionSpec.renderStandard() );
+            throw new IllegalArgumentException( "Specified version: " + version.renderStandard()
+                + " is not contained in spec: " + versionSpec.renderStandard() );
         }
 
         return newRef( getGroupId(), getArtifactId(), version );

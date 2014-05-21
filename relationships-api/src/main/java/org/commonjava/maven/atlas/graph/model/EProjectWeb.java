@@ -36,8 +36,8 @@ public class EProjectWeb
 
     private final GraphView view;
 
-    public EProjectWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                        final ProjectVersionRef... refs )
+    public EProjectWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                        final GraphMutator mutator, final ProjectVersionRef... refs )
     {
         this.view = new GraphView( workspace, filter, mutator, refs );
     }
@@ -135,8 +135,9 @@ public class EProjectWeb
 
         final Set<T> result = new HashSet<T>( rels );
 
-        final Set<ProjectRelationship<?>> rejected = view.getDatabase()
-                                                         .addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+        final Set<ProjectRelationship<?>> rejected =
+            view.getDatabase()
+                .addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
         result.removeAll( rejected );
 
         if ( !result.isEmpty() )
@@ -261,8 +262,9 @@ public class EProjectWeb
     @Override
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
-        final Collection<? extends ProjectRelationship<?>> rels = view.getDatabase()
-                                                                      .getRelationshipsTargeting( view, ref.asProjectVersionRef() );
+        final Collection<? extends ProjectRelationship<?>> rels =
+            view.getDatabase()
+                .getRelationshipsTargeting( view, ref.asProjectVersionRef() );
         if ( rels == null )
         {
             return Collections.emptySet();
@@ -360,7 +362,8 @@ public class EProjectWeb
     public EProjectNet filteredInstance( final ProjectRelationshipFilter filter )
         throws GraphDriverException
     {
-        return new EProjectWeb( view.getWorkspace(), filter, view.getMutator(), getRoots().toArray( new ProjectVersionRef[] {} ) );
+        return new EProjectWeb( view.getWorkspace(), filter, view.getMutator(),
+                                getRoots().toArray( new ProjectVersionRef[] {} ) );
     }
 
     @Override

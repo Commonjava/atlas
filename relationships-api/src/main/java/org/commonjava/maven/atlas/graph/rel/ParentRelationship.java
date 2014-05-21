@@ -38,7 +38,8 @@ public final class ParentRelationship
         super( source, RelationshipType.PARENT, declaring, target, 0 );
     }
 
-    public ParentRelationship( final Collection<URI> sources, final ProjectVersionRef declaring, final ProjectVersionRef target )
+    public ParentRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
+                               final ProjectVersionRef target )
     {
         super( sources, RelationshipType.PARENT, declaring, target, 0 );
     }

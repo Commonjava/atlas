@@ -32,7 +32,8 @@ public class PluginDependencyOnlyFilter
         this( plugin, false, true );
     }
 
-    public PluginDependencyOnlyFilter( final PluginRelationship plugin, final boolean includeManaged, final boolean includeConcrete )
+    public PluginDependencyOnlyFilter( final PluginRelationship plugin, final boolean includeManaged,
+                                       final boolean includeConcrete )
     {
         super( RelationshipType.PLUGIN_DEP, false, includeManaged, includeConcrete );
 

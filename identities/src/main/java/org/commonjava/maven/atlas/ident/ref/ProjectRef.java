@@ -35,7 +35,8 @@ public class ProjectRef
     {
         if ( isEmpty( groupId ) || isEmpty( artifactId ) )
         {
-            throw new InvalidRefException( "ProjectId must contain non-empty groupId AND artifactId. (Given: '" + groupId + "':'" + artifactId + "')" );
+            throw new InvalidRefException( "ProjectId must contain non-empty groupId AND artifactId. (Given: '"
+                + groupId + "':'" + artifactId + "')" );
         }
 
         this.groupId = groupId;
@@ -47,7 +48,8 @@ public class ProjectRef
         final String[] parts = ga.split( ":" );
         if ( parts.length < 2 || isEmpty( parts[0] ) || isEmpty( parts[1] ) )
         {
-            throw new InvalidRefException( "ProjectRef must contain non-empty groupId AND artifactId. (Given: '" + ga + "')" );
+            throw new InvalidRefException( "ProjectRef must contain non-empty groupId AND artifactId. (Given: '" + ga
+                + "')" );
         }
 
         return new ProjectRef( parts[0], parts[1] );
@@ -83,7 +85,8 @@ public class ProjectRef
         return asVersionlessArtifactRef( type, classifier, false );
     }
 
-    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier, final boolean optional )
+    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier,
+                                                            final boolean optional )
     {
         return new VersionlessArtifactRef( this, type, classifier, optional );
     }

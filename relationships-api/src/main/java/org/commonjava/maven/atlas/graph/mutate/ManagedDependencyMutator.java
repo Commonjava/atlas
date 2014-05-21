@@ -24,7 +24,8 @@ public class ManagedDependencyMutator
     private static final long serialVersionUID = 1L;
 
     @Override
-    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path, final GraphView view )
+    public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
+                                             final GraphView view )
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY )
         {
@@ -35,8 +36,9 @@ public class ManagedDependencyMutator
         ProjectRelationship<?> mutated = super.selectFor( rel, path, view );
         if ( mutated == null || mutated == rel )
         {
-            final ProjectVersionRef managed = view.getDatabase()
-                                                  .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
+            final ProjectVersionRef managed =
+                view.getDatabase()
+                    .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
             if ( managed != null )
             {
                 mutated = rel.selectTarget( managed );

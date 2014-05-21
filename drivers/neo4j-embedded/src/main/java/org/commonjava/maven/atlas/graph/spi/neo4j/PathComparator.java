@@ -36,8 +36,10 @@ public final class PathComparator
     @Override
     public int compare( final Path first, final Path second )
     {
-        final List<ProjectRelationship<?>> firstRels = Conversions.convertToRelationships( first.relationships(), cache );
-        final List<ProjectRelationship<?>> secondRels = Conversions.convertToRelationships( second.relationships(), cache );
+        final List<ProjectRelationship<?>> firstRels =
+            Conversions.convertToRelationships( first.relationships(), cache );
+        final List<ProjectRelationship<?>> secondRels =
+            Conversions.convertToRelationships( second.relationships(), cache );
 
         return pathComparator.compare( firstRels, secondRels );
     }

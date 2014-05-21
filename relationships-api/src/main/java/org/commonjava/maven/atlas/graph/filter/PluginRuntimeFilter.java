@@ -47,8 +47,8 @@ public class PluginRuntimeFilter
             final PluginRelationship plugin = (PluginRelationship) parent;
 
             child =
-                new OrFilter( new DependencyFilter( DependencyScope.runtime ), new PluginDependencyFilter( plugin, true, true ),
-                              ParentFilter.EXCLUDE_TERMINAL_PARENTS );
+                new OrFilter( new DependencyFilter( DependencyScope.runtime ),
+                              new PluginDependencyFilter( plugin, true, true ), ParentFilter.EXCLUDE_TERMINAL_PARENTS );
         }
         else
         {

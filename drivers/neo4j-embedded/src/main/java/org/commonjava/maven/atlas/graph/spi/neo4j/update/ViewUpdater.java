@@ -57,7 +57,8 @@ public class ViewUpdater
 
     private Node stopNode;
 
-    public ViewUpdater( final GraphView view, final Node viewNode, final ViewIndexes indexes, final ConversionCache cache, final GraphAdmin admin )
+    public ViewUpdater( final GraphView view, final Node viewNode, final ViewIndexes indexes,
+                        final ConversionCache cache, final GraphAdmin admin )
     {
         this.viewNode = viewNode;
         this.indexes = indexes;
@@ -66,8 +67,8 @@ public class ViewUpdater
         this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin, cache );
     }
 
-    public ViewUpdater( final Node stopNode, final GraphView view, final Node viewNode, final ViewIndexes indexes, final ConversionCache cache,
-                        final GraphAdmin admin )
+    public ViewUpdater( final Node stopNode, final GraphView view, final Node viewNode, final ViewIndexes indexes,
+                        final ConversionCache cache, final GraphAdmin admin )
     {
         this.stopNode = stopNode;
         this.viewNode = viewNode;
@@ -133,7 +134,8 @@ public class ViewUpdater
     }
 
     @Override
-    public void includingChild( final Relationship child, final Neo4jGraphPath childPath, final GraphPathInfo childPathInfo, final Path parentPath )
+    public void includingChild( final Relationship child, final Neo4jGraphPath childPath,
+                                final GraphPathInfo childPathInfo, final Path parentPath )
     {
         cachePath( childPath, childPathInfo );
     }

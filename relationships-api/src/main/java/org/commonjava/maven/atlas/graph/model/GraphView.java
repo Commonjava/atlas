@@ -69,14 +69,14 @@ public class GraphView
 
     private transient String shortId;
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final Collection<ProjectVersionRef> roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                      final GraphMutator mutator, final Collection<ProjectVersionRef> roots )
     {
         this( workspace, filter, mutator, null, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final ProjectVersionRef... roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                      final GraphMutator mutator, final ProjectVersionRef... roots )
     {
         this( workspace, filter, mutator, null, roots );
     }
@@ -91,8 +91,9 @@ public class GraphView
         this( workspace, null, null, null, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                      final GraphMutator mutator, final Map<ProjectRef, ProjectVersionRef> selections,
+                      final Collection<ProjectVersionRef> roots )
     {
         this.filter = filter;
         this.selections = selections;
@@ -102,8 +103,9 @@ public class GraphView
         workspace.registerView( this );
     }
 
-    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                      final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
+    public GraphView( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                      final GraphMutator mutator, final Map<ProjectRef, ProjectVersionRef> selections,
+                      final ProjectVersionRef... roots )
     {
         this.filter = filter;
         this.selections = selections;
@@ -113,12 +115,14 @@ public class GraphView
         workspace.registerView( this );
     }
 
-    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections, final Collection<ProjectVersionRef> roots )
+    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections,
+                      final Collection<ProjectVersionRef> roots )
     {
         this( workspace, null, null, selections, roots );
     }
 
-    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections, final ProjectVersionRef... roots )
+    public GraphView( final GraphWorkspace workspace, final Map<ProjectRef, ProjectVersionRef> selections,
+                      final ProjectVersionRef... roots )
     {
         this( workspace, null, null, selections, roots );
     }
@@ -389,7 +393,8 @@ public class GraphView
 
     public boolean hasSelection( final ProjectVersionRef ref )
     {
-        return selections == null ? false : selections.containsKey( ref ) || selections.containsKey( ref.asProjectRef() );
+        return selections == null ? false : selections.containsKey( ref )
+            || selections.containsKey( ref.asProjectRef() );
     }
 
     public String renderSelections()

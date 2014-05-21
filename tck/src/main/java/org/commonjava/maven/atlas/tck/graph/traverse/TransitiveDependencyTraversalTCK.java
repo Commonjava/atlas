@@ -101,7 +101,9 @@ public abstract class TransitiveDependencyTraversalTCK
         ));
         /* @formatter:on */
 
-        view = new GraphView( view.getWorkspace(), AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( d2.asProjectRef(), d3 ), root );
+        view =
+            new GraphView( view.getWorkspace(), AnyFilter.INSTANCE, view.getMutator(),
+                           Collections.singletonMap( d2.asProjectRef(), d3 ), root );
         graph = getManager().getGraph( view );
 
         //        graph.getView()

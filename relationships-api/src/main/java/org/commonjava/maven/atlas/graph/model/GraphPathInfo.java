@@ -133,7 +133,8 @@ public class GraphPathInfo
 
     public String getKey()
     {
-        return ( filter == null ? "none" : filter.getCondensedId() ) + "/" + ( mutator == null ? "none" : mutator.getCondensedId() );
+        return ( filter == null ? "none" : filter.getCondensedId() ) + "/"
+            + ( mutator == null ? "none" : mutator.getCondensedId() );
     }
 
     public void reattach( final GraphView view )

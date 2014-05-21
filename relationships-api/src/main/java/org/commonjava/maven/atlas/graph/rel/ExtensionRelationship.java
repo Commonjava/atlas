@@ -25,12 +25,14 @@ public final class ExtensionRelationship
 
     private static final long serialVersionUID = 1L;
 
-    public ExtensionRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target, final int index )
+    public ExtensionRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target,
+                                  final int index )
     {
         super( source, RelationshipType.EXTENSION, declaring, target, index );
     }
 
-    public ExtensionRelationship( final Collection<URI> sources, final ProjectVersionRef declaring, final ProjectVersionRef target, final int index )
+    public ExtensionRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
+                                  final ProjectVersionRef target, final int index )
     {
         super( sources, RelationshipType.EXTENSION, declaring, target, index );
     }

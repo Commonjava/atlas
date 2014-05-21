@@ -50,7 +50,8 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
@@ -89,7 +90,8 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
         final ProjectVersionRef p = new ProjectVersionRef( "group.id", "b-parent", "1001" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
         relativeOrder.put( b, p );
@@ -139,7 +141,8 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
@@ -186,7 +189,8 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
@@ -235,7 +239,8 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef b = new ProjectVersionRef( "group.id", "b", "2" );
         final ProjectVersionRef a = new ProjectVersionRef( "group.id", "a", "1" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
 
@@ -283,7 +288,8 @@ public abstract class BuildOrderTraversalTCK
         final ProjectVersionRef pa = new ProjectVersionRef( "plugin.dep.id", "p-a", "1" );
         final ProjectVersionRef pb = new ProjectVersionRef( "plugin.id", "p-b", "2" );
 
-        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder = new HashMap<ProjectVersionRef, ProjectVersionRef>();
+        final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder =
+            new HashMap<ProjectVersionRef, ProjectVersionRef>();
         relativeOrder.put( c, b );
         relativeOrder.put( b, a );
         relativeOrder.put( c, pb );
@@ -322,7 +328,8 @@ public abstract class BuildOrderTraversalTCK
         assertRelativeOrder( relativeOrder, buildOrder );
     }
 
-    private void assertRelativeOrder( final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder, final List<ProjectRef> buildOrder )
+    private void assertRelativeOrder( final Map<ProjectVersionRef, ProjectVersionRef> relativeOrder,
+                                      final List<ProjectRef> buildOrder )
     {
         for ( final Map.Entry<ProjectVersionRef, ProjectVersionRef> entry : relativeOrder.entrySet() )
         {
@@ -346,7 +353,8 @@ public abstract class BuildOrderTraversalTCK
 
             if ( vidx >= kidx )
             {
-                fail( "prerequisite project: " + v + " of: " + k + " appears AFTER it in the build order: " + buildOrder );
+                fail( "prerequisite project: " + v + " of: " + k + " appears AFTER it in the build order: "
+                    + buildOrder );
             }
         }
     }

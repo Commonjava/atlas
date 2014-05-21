@@ -120,21 +120,23 @@ public interface GraphDatabaseDriver
      * @deprecated Use {@link #getDirectRelationshipsFrom(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
      */
     @Deprecated
-    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,
-                                                            RelationshipType... types );
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from,
+                                                            boolean includeManagedInfo, RelationshipType... types );
 
     /**
      * @deprecated Use {@link #getDirectRelationshipsTo(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
      */
     @Deprecated
-    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to,
+                                                          boolean includeManagedInfo, RelationshipType... types );
+
+    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from,
+                                                            boolean includeManagedInfo, boolean includeConcreteInfo,
+                                                            RelationshipType... types );
+
+    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to,
+                                                          boolean includeManagedInfo, boolean includeConcreteInfo,
                                                           RelationshipType... types );
-
-    Set<ProjectRelationship<?>> getDirectRelationshipsFrom( GraphView eProjectNetView, ProjectVersionRef from, boolean includeManagedInfo,
-                                                            boolean includeConcreteInfo, RelationshipType... types );
-
-    Set<ProjectRelationship<?>> getDirectRelationshipsTo( GraphView eProjectNetView, ProjectVersionRef to, boolean includeManagedInfo,
-                                                          boolean includeConcreteInfo, RelationshipType... types );
 
     Set<ProjectVersionRef> getProjectsMatching( GraphView eProjectNetView, ProjectRef projectRef );
 

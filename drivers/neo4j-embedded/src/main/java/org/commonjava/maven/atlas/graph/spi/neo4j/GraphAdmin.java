@@ -26,7 +26,8 @@ public interface GraphAdmin
 
     Relationship getRelationship( long rid );
 
-    Relationship select( Relationship r, GraphView view, Node viewNode, GraphPathInfo viewPathInfo, Neo4jGraphPath viewPath );
+    Relationship select( Relationship r, GraphView view, Node viewNode, GraphPathInfo viewPathInfo,
+                         Neo4jGraphPath viewPath );
 
     RelationshipIndex getRelationshipIndex( String name );
 

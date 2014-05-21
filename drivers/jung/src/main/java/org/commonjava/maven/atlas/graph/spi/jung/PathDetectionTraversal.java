@@ -60,7 +60,8 @@ final class PathDetectionTraversal
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path, final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
+                             final int pass )
     {
         JungGraphPath jpath;
         GraphPathInfo pathInfo;

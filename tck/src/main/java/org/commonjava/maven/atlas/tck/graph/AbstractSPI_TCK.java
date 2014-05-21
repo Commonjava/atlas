@@ -53,14 +53,15 @@ public abstract class AbstractSPI_TCK
     public void printStart()
     {
         start = System.currentTimeMillis();
-        System.out.printf( "***START [%s#%s] (%s)\n\n", naming.getClass(), naming.getMethodName(), new Date().toString() );
+        System.out.printf( "***START [%s#%s] (%s)\n\n", naming.getClass(), naming.getMethodName(),
+                           new Date().toString() );
     }
 
     @After
     public void printEnd()
     {
-        System.out.printf( "\n\n***END [%s#%s] - %sms (%s)\n", naming.getClass(), naming.getMethodName(), ( System.currentTimeMillis() - start ),
-                           new Date().toString() );
+        System.out.printf( "\n\n***END [%s#%s] - %sms (%s)\n", naming.getClass(), naming.getMethodName(),
+                           ( System.currentTimeMillis() - start ), new Date().toString() );
     }
 
 }

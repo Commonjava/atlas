@@ -34,7 +34,8 @@ public class PluginDependencyFilter
         this( plugin, false, true );
     }
 
-    public PluginDependencyFilter( final PluginRelationship plugin, final boolean includeManaged, final boolean includeConcrete )
+    public PluginDependencyFilter( final PluginRelationship plugin, final boolean includeManaged,
+                                   final boolean includeConcrete )
     {
         super( RelationshipType.PLUGIN_DEP, RelationshipType.DEPENDENCY, includeManaged, includeConcrete );
 

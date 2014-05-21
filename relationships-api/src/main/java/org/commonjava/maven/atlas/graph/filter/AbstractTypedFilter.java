@@ -45,8 +45,8 @@ public abstract class AbstractTypedFilter
 
     private transient String shortId;
 
-    protected AbstractTypedFilter( final RelationshipType type, final RelationshipType descendantType, final boolean includeManagedInfo,
-                                   final boolean includeConcreteInfo )
+    protected AbstractTypedFilter( final RelationshipType type, final RelationshipType descendantType,
+                                   final boolean includeManagedInfo, final boolean includeConcreteInfo )
     {
         this.types = Collections.unmodifiableSet( Collections.singleton( type ) );
         this.descendantTypes = Collections.unmodifiableSet( Collections.singleton( descendantType ) );
@@ -54,12 +54,13 @@ public abstract class AbstractTypedFilter
         this.includeConcreteInfo = includeConcreteInfo;
     }
 
-    protected AbstractTypedFilter( final RelationshipType type, final Collection<RelationshipType> descendantTypes, final boolean includeManagedInfo,
-                                   final boolean includeConcreteInfo )
+    protected AbstractTypedFilter( final RelationshipType type, final Collection<RelationshipType> descendantTypes,
+                                   final boolean includeManagedInfo, final boolean includeConcreteInfo )
     {
         if ( type == null )
         {
-            this.types = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.types =
+                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -68,7 +69,8 @@ public abstract class AbstractTypedFilter
 
         if ( descendantTypes == null || descendantTypes.isEmpty() )
         {
-            this.descendantTypes = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.descendantTypes =
+                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -79,12 +81,14 @@ public abstract class AbstractTypedFilter
         this.includeConcreteInfo = includeConcreteInfo;
     }
 
-    protected AbstractTypedFilter( final Collection<RelationshipType> types, final Collection<RelationshipType> descendantTypes,
+    protected AbstractTypedFilter( final Collection<RelationshipType> types,
+                                   final Collection<RelationshipType> descendantTypes,
                                    final boolean includeManagedInfo, final boolean includeConcreteInfo )
     {
         if ( types == null || types.isEmpty() )
         {
-            this.types = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.types =
+                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -93,7 +97,8 @@ public abstract class AbstractTypedFilter
 
         if ( descendantTypes == null || descendantTypes.isEmpty() )
         {
-            this.descendantTypes = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.descendantTypes =
+                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {
@@ -104,12 +109,13 @@ public abstract class AbstractTypedFilter
         this.includeConcreteInfo = includeConcreteInfo;
     }
 
-    protected AbstractTypedFilter( final RelationshipType type, final boolean hasDescendants, final boolean includeManagedInfo,
-                                   final boolean includeConcreteInfo )
+    protected AbstractTypedFilter( final RelationshipType type, final boolean hasDescendants,
+                                   final boolean includeManagedInfo, final boolean includeConcreteInfo )
     {
         if ( type == null )
         {
-            this.types = Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
+            this.types =
+                Collections.unmodifiableSet( new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) ) );
         }
         else
         {

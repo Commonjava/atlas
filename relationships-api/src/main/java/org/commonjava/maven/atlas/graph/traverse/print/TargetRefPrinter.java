@@ -24,8 +24,8 @@ public final class TargetRefPrinter
 
     @Override
     public void print( final ProjectRelationship<?> relationship, final ProjectVersionRef selectedTarget,
-                       final PrintWriter writer,
-                       final Map<String, Set<ProjectVersionRef>> labels, final int depth, final String indent )
+                       final PrintWriter writer, final Map<String, Set<ProjectVersionRef>> labels, final int depth,
+                       final String indent )
     {
         for ( int i = 0; i < depth; i++ )
         {
@@ -48,8 +48,8 @@ public final class TargetRefPrinter
 
     @Override
     public void printProjectVersionRef( final ProjectVersionRef target, final PrintWriter writer,
-                                        final String targetSuffix,
-                                        final Map<String, Set<ProjectVersionRef>> labels, final Set<String> localLabels )
+                                        final String targetSuffix, final Map<String, Set<ProjectVersionRef>> labels,
+                                        final Set<String> localLabels )
     {
         writer.print( target );
         if ( targetSuffix != null )

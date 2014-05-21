@@ -46,8 +46,8 @@ public class EProjectGraph
         this.project = ref;
     }
 
-    public EProjectGraph( final GraphWorkspace session, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                          final ProjectVersionRef ref )
+    public EProjectGraph( final GraphWorkspace session, final ProjectRelationshipFilter filter,
+                          final GraphMutator mutator, final ProjectVersionRef ref )
     {
         this.view = new GraphView( session, filter, mutator, ref );
         this.project = ref;
@@ -142,8 +142,9 @@ public class EProjectGraph
 
         final Set<T> result = new HashSet<T>( rels );
 
-        final Set<ProjectRelationship<?>> rejected = view.getDatabase()
-                                                         .addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+        final Set<ProjectRelationship<?>> rejected =
+            view.getDatabase()
+                .addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
         result.removeAll( rejected );
 
         if ( !result.isEmpty() )
