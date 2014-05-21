@@ -69,8 +69,7 @@ public final class AtlasCollector<STATE>
 
     public AtlasCollector( final TraverseVisitor visitor, final Node start,
                            final RelationshipGraphConnection connection, final ViewParams view, final Node viewNode,
-                           final GraphAdmin admin,
-                           final GraphRelType... types )
+                           final GraphAdmin admin, final GraphRelType... types )
     {
         this( visitor, Collections.singleton( start ), connection, view, viewNode, admin );
         this.types = types;
@@ -146,7 +145,8 @@ public final class AtlasCollector<STATE>
         if ( cyclePath != null )
         {
             final Relationship injector = path.lastRelationship();
-            logger.debug( "Detected cycle in progress for path: {} at relationship: {}\n  Cycle path is: {}", path, injector, cyclePath );
+            logger.debug( "Detected cycle in progress for path: {} at relationship: {}\n  Cycle path is: {}", path,
+                          injector, cyclePath );
 
             visitor.cycleDetected( cyclePath, injector );
         }
@@ -183,8 +183,7 @@ public final class AtlasCollector<STATE>
 
             logger.debug( "Getting relationships from node: {} ({}) with type in [{}] and direction: {} (path: {})",
                           path.endNode(), path.endNode()
-                                              .getProperty( GAV ), new JoinString( ", ", childTypes ), direction,
-                          path );
+                                              .getProperty( GAV ), new JoinString( ", ", childTypes ), direction, path );
 
             final Iterable<Relationship> relationships = path.endNode()
                                                              .getRelationships( direction, childTypes );
@@ -204,20 +203,23 @@ public final class AtlasCollector<STATE>
                     final Relationship selected = admin.select( r, view, viewNode, pathInfo, graphPath );
                     if ( selected == null )
                     {
-                        logger.debug( "selection failed for: {} at {}. Likely, this is filter rejection from: {}", r, graphPath, pathInfo );
+                        logger.debug( "selection failed for: {} at {}. Likely, this is filter rejection from: {}", r,
+                                      graphPath, pathInfo );
                         continue;
                     }
 
                     // if no selection happened and r is a selection-only relationship, skip it.
                     if ( selected == r && admin.isSelection( r, viewNode ) )
                     {
-                        logger.debug( "{} is NOT the result of selection, yet it is marked as a selection relationship. Path: {}", r, path );
+                        logger.debug( "{} is NOT the result of selection, yet it is marked as a selection relationship. Path: {}",
+                                      r, path );
                         continue;
                     }
 
                     if ( !accepted( selected, view, cache ) )
                     {
-                        logger.debug( "{} NOT accepted, likely due to incompatible POM location or source URI. Path: {}", r, path );
+                        logger.debug( "{} NOT accepted, likely due to incompatible POM location or source URI. Path: {}",
+                                      r, path );
                         continue;
                     }
 
@@ -231,10 +233,11 @@ public final class AtlasCollector<STATE>
 
                 final ProjectRelationship<?> rel = toProjectRelationship( r, cache );
 
-                final Neo4jGraphPath nextPath = new Neo4jGraphPath( graphPath, r.getId() );
+                final Neo4jGraphPath nextPath = new Neo4jGraphPath( graphPath, r );
                 final GraphPathInfo nextPathInfo = pathInfo.getChildPathInfo( rel );
 
-                logger.debug( "Including child: {} with next-path: {} and childPathInfo: {} from parent path: {}", r, nextPath, nextPathInfo, path );
+                logger.debug( "Including child: {} with next-path: {} and childPathInfo: {} from parent path: {}", r,
+                              nextPath, nextPathInfo, path );
                 visitor.includingChild( r, nextPath, nextPathInfo, path );
 
                 logger.debug( "+= {}", wrap( r ) );
@@ -283,5 +286,4 @@ public final class AtlasCollector<STATE>
 
         return collector;
     }
-
 }

@@ -14,6 +14,11 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 
 import java.io.Serializable;
 
+/**
+ * Reference to a whole project (or module, in terms of Maven builds). This reference is not specific to a release of the project (see {@link ProjectVersionRef}).
+ * 
+ * @author jdcasey
+ */
 public class ProjectRef
     implements Serializable, Comparable<ProjectRef>
 {

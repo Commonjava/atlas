@@ -119,6 +119,8 @@ public class FileNeo4JGraphConnection
 
     private static final String BASE_CONFIG_NODE = "_base";
 
+    private static final String MKEY_FORMAT = "%d/%s/%s:%s";
+
     //    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
 
     /* @formatter:off */
@@ -350,11 +352,6 @@ public class FileNeo4JGraphConnection
                                                                        .query( GAV, "*" ), cache ) );
     }
 
-    private void updateView( final ViewParams params )
-    {
-        updateView( params, new ConversionCache() );
-    }
-
     private void updateView( final ViewParams params, final ConversionCache cache )
     {
         if ( params.getRoots() == null || params.getRoots()
@@ -465,6 +462,11 @@ public class FileNeo4JGraphConnection
         }
 
         final long rid = ( (Neo4jGraphPath) path ).getLastRelationshipId();
+        if ( rid < 0 )
+        {
+            return null;
+        }
+
         final Relationship rel = graph.getRelationshipById( rid );
         final Node target = rel.getEndNode();
 
@@ -621,12 +623,12 @@ public class FileNeo4JGraphConnection
                                  .forRelationships( MANAGED_GA )
                                  .add( relationship,
                                        MANAGED_KEY,
-                                       String.format( "%d/%s/%s:%s", relationship.getStartNode()
-                                                                                 .getId(), rel.getType()
-                                                                                              .name(),
+                                       String.format( MKEY_FORMAT, relationship.getStartNode()
+                                                                               .getId(), rel.getType()
+                                                                                            .name(), rel.getTarget()
+                                                                                                        .getGroupId(),
                                                       rel.getTarget()
-                                                         .getGroupId(), rel.getTarget()
-                                                                           .getArtifactId() ) );
+                                                         .getArtifactId() ) );
                         }
 
                         logger.debug( "+= {} ({})", relationship, rel );
@@ -1767,18 +1769,6 @@ public class FileNeo4JGraphConnection
         return null;
     }
 
-    /**
-     * @deprecated Use {@link #getDirectRelationshipsTo(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
-     */
-    @Deprecated
-    @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final ViewParams params, final ProjectVersionRef to,
-                                                                 final boolean includeManagedInfo,
-                                                                 final RelationshipType... types )
-    {
-        return getDirectRelationshipsTo( params, to, includeManagedInfo, true, types );
-    }
-
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final ViewParams params, final ProjectVersionRef to,
                                                                  final boolean includeManagedInfo,
@@ -1928,18 +1918,20 @@ public class FileNeo4JGraphConnection
             final Relationship r = graph.getRelationshipById( id );
 
             final String mkey =
-                String.format( "%d/%s/%s:%s", r.getStartNode()
-                                               .getId(), type.name(), target.getGroupId(), target.getArtifactId() );
+                String.format( MKEY_FORMAT, r.getStartNode()
+                                             .getId(), type.name(), target.getGroupId(), target.getArtifactId() );
 
             //            logger.info( "Searching for m-key: {}", mkey );
 
             final IndexHits<Relationship> hits = idx.get( MANAGED_KEY, mkey );
             if ( hits != null && hits.hasNext() )
             {
-                final ProjectVersionRef ref = toProjectVersionRef( hits.next()
-                                                                       .getEndNode(), cache );
+                final Relationship hit = hits.next();
+                final ProjectVersionRef ref = toProjectVersionRef( hit.getEndNode(), cache );
 
-                //                logger.info( "Found it: {}", ref );
+                final ProjectRelationship<?> rel = Conversions.toProjectRelationship( hit, cache );
+                logger.info( "[MUTATION] {} => {} (via: {})", target, ref, rel );
+
                 return ref;
             }
 
@@ -1972,8 +1964,10 @@ public class FileNeo4JGraphConnection
                 + ". This is not a Neo4jGraphPathKey instance!" );
         }
 
+        final ConversionCache cache = new ConversionCache();
+
         final Neo4jGraphPath gp = (Neo4jGraphPath) path;
-        final List<ProjectRelationship<?>> rels = convertToRelationships( gp, adminAccess, new ConversionCache() );
+        final List<ProjectRelationship<?>> rels = convertToRelationships( gp, adminAccess, cache );
         final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>( rels.size() + 2 );
         for ( final ProjectRelationship<?> rel : rels )
         {
@@ -1986,13 +1980,28 @@ public class FileNeo4JGraphConnection
                          .asProjectVersionRef() );
         }
 
+        if ( refs.isEmpty() )
+        {
+            final Node node = graph.getNodeById( gp.getStartNodeId() );
+            final ProjectVersionRef ref = toProjectVersionRef( node, cache );
+            if ( ref != null )
+            {
+                refs.add( ref );
+            }
+        }
+
         return refs;
     }
 
     @Override
     public GraphPath<?> createPath( final ProjectRelationship<?>... rels )
     {
-        final long[] relIds = new long[rels.length];
+        if ( rels.length < 1 )
+        {
+            return null;
+        }
+
+        final Relationship[] rs = new Relationship[rels.length];
         for ( int i = 0; i < rels.length; i++ )
         {
             final Relationship r = getRelationship( rels[i] );
@@ -2001,10 +2010,10 @@ public class FileNeo4JGraphConnection
                 return null;
             }
 
-            relIds[i] = r.getId();
+            rs[i] = r;
         }
 
-        return new Neo4jGraphPath( relIds );
+        return new Neo4jGraphPath( rs );
     }
 
     @Override
@@ -2047,7 +2056,7 @@ public class FileNeo4JGraphConnection
             }
         }
 
-        return new Neo4jGraphPath( (Neo4jGraphPath) parent, r.getId() );
+        return new Neo4jGraphPath( (Neo4jGraphPath) parent, r );
     }
 
     @Override
@@ -2066,7 +2075,7 @@ public class FileNeo4JGraphConnection
             return false;
         }
 
-        updateView( params );
+        updateView( params, new ConversionCache() );
 
         return true;
     }
@@ -2416,6 +2425,14 @@ public class FileNeo4JGraphConnection
         }
 
         node.removeProperty( Conversions.PROJECT_ERROR );
+    }
+
+    @Override
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final ViewParams params, final ProjectVersionRef to,
+                                                                 final boolean includeManagedInfo,
+                                                                 final RelationshipType... types )
+    {
+        return getDirectRelationshipsFrom( params, to, includeManagedInfo, true, types );
     }
 
 }

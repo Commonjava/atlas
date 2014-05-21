@@ -10,14 +10,16 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import org.neo4j.graphdb.Path;
+import org.neo4j.graphdb.Relationship;
 
 public class CyclePath
-    extends Neo4jGraphPath
+    implements Iterable<Long>
 {
 
     public static final class CycleIterator
@@ -76,7 +78,8 @@ public class CyclePath
                 throw new IndexOutOfBoundsException( next + " is the starting point for this iteration!" );
             }
 
-            throw new IndexOutOfBoundsException( next + " is the next index, but the array has only " + ids.length + " items!" );
+            throw new IndexOutOfBoundsException( next + " is the next index, but the array has only " + ids.length
+                + " items!" );
         }
 
         @Override
@@ -89,24 +92,39 @@ public class CyclePath
 
     private int entryPoint = 0;
 
+    private final long[] ids;
+
     public CyclePath( final long[] ids )
     {
-        super( ids );
+        this.ids = ids;
     }
 
     public CyclePath( final List<Long> ids )
     {
-        super( ids );
+        this.ids = new long[ids.size()];
+        for ( int i = 0; i < ids.size(); i++ )
+        {
+            this.ids[i] = ids.get( i );
+        }
     }
 
     public CyclePath( final Path path )
     {
-        super( path );
+        final List<Long> ids = new ArrayList<Long>();
+        for ( final Relationship r : path.relationships() )
+        {
+            ids.add( r.getId() );
+        }
+
+        this.ids = new long[ids.size()];
+        for ( int i = 0; i < ids.size(); i++ )
+        {
+            this.ids[i] = ids.get( i );
+        }
     }
 
     public void setEntryPoint( final long entryPoint )
     {
-        final long[] ids = super.getRelationshipIds();
         for ( int i = 0; i < ids.length; i++ )
         {
             if ( ids[i] == entryPoint )
@@ -125,26 +143,21 @@ public class CyclePath
     @Override
     public Iterator<Long> iterator()
     {
-        return new CycleIterator( super.getRelationshipIds(), entryPoint );
+        return new CycleIterator( ids, entryPoint );
     }
 
-    @Override
     public long getLastRelationshipId()
     {
-        final long[] ids = super.getRelationshipIds();
-
         final int last = entryPoint > 0 ? entryPoint - 1 : ids.length - 1;
 
         return ids[last];
     }
 
-    @Override
     public long getFirstRelationshipId()
     {
-        return super.getRelationshipIds()[entryPoint];
+        return ids[entryPoint];
     }
 
-    @Override
     public long[] getRelationshipIds()
     {
         //        if ( entryPoint == 0 )
@@ -152,7 +165,7 @@ public class CyclePath
         //            return getRawRelationshipIds();
         //        }
 
-        final long[] ids = new long[getRawRelationshipIds().length];
+        final long[] ids = new long[this.ids.length];
         final Iterator<Long> iterator = iterator();
 
         int i = 0;
@@ -169,7 +182,6 @@ public class CyclePath
     {
         final int prime = 37;
 
-        final long[] ids = super.getRelationshipIds();
         if ( ids.length == 0 )
         {
             return prime;
@@ -216,9 +228,7 @@ public class CyclePath
         }
         final CyclePath other = (CyclePath) obj;
 
-        final long[] ids = getRawRelationshipIds();
-        final long[] oids = other.getRawRelationshipIds();
-        if ( ids.length != oids.length )
+        if ( ids.length != other.ids.length )
         {
             return false;
         }
@@ -243,7 +253,6 @@ public class CyclePath
 
     public CycleIterator identityIterator()
     {
-        final long[] ids = super.getRelationshipIds();
         final long[] sorted = new long[ids.length];
 
         System.arraycopy( ids, 0, sorted, 0, ids.length );
@@ -264,7 +273,7 @@ public class CyclePath
 
     private long[] getRawRelationshipIds()
     {
-        return super.getRelationshipIds();
+        return ids;
     }
 
     public CyclePath reorientToEntryPoint()
@@ -287,7 +296,6 @@ public class CyclePath
         return new CyclePath( reoriented );
     }
 
-    @Override
     public String getKey()
     {
         final StringBuilder sb = new StringBuilder();
@@ -310,6 +318,11 @@ public class CyclePath
     public String toString()
     {
         return "CyclePath [" + getKey() + "]";
+    }
+
+    public int length()
+    {
+        return ids.length;
     }
 
 }

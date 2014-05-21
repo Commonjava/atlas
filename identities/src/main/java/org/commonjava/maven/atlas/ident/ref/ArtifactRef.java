@@ -16,6 +16,17 @@ import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationExcep
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.maven.atlas.ident.version.VersionSpec;
 
+/**
+ * Represents an artifact, in Maven parlance. A tangible result of a build, which is typically made available in a Maven repository for others
+ * to consume. NOTE: a POM file is both a piece of metadata AND an artifact in the Maven world!
+ * 
+ * Artifacts are based on the GAV coordinate for the project release, but also contain a type and optionally, a classifier. Type defaults to 'jar'.
+ * 
+ * @see {@link ProjectRef}
+ * @see {@link ProjectVersionRef}
+ * 
+ * @author jdcasey
+ */
 public class ArtifactRef
     extends ProjectVersionRef
     implements Serializable

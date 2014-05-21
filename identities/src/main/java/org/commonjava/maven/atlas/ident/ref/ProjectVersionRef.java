@@ -19,6 +19,14 @@ import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.maven.atlas.ident.version.VersionSpec;
 import org.commonjava.maven.atlas.ident.version.VersionUtils;
 
+/**
+ * Reference to a particular release of a project (or module, in terms of Maven builds). A release may contain many artifacts (see {@link ArtifactRef}).
+ * 
+ * @see {@link ProjectRef}
+ * @see {@link ArtifactRef}
+ * 
+ * @author jdcasey
+ */
 public class ProjectVersionRef
     extends ProjectRef
     implements VersionedRef<ProjectVersionRef>, Serializable
