@@ -46,8 +46,13 @@ public abstract class AncestryTraversalTCK
         final URI source = sourceURI();
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
-        graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ), new ParentRelationship( source, grandRef ) ) );
+        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), 
+                                                              new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
+        
+        graph.addAll( Arrays.asList( 
+                         new ParentRelationship( source, myRef, parentRef ), 
+                         new ParentRelationship( source, parentRef, grandRef ), 
+                         new ParentRelationship( source, grandRef ) ) );
         /* @formatter:on */
 
         final Set<ProjectVersionRef> projects = graph.getAllProjects();

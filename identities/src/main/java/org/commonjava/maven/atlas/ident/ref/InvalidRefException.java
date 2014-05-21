@@ -12,6 +12,12 @@ package org.commonjava.maven.atlas.ident.ref;
 
 import java.util.IllegalFormatException;
 
+/**
+ * Thrown to signal an invalid reference to another project. This happens most commonly when a groupId, artifactId, or version string is left blank
+ * or null.
+ * 
+ * @author jdcasey
+ */
 public class InvalidRefException
     extends RuntimeException
 {

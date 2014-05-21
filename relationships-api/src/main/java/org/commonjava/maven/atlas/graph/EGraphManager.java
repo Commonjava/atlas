@@ -72,7 +72,8 @@ public class EGraphManager
         this.workspaceFactory = workspaceFactory;
     }
 
-    public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final ProjectRelationship<?>... rels )
+    public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace,
+                                                           final ProjectRelationship<?>... rels )
         throws GraphDriverException
     {
         logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
@@ -80,7 +81,8 @@ public class EGraphManager
                         .addRelationships( rels );
     }
 
-    public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace, final Collection<ProjectRelationship<?>> rels )
+    public Set<ProjectRelationship<?>> storeRelationships( final GraphWorkspace workspace,
+                                                           final Collection<ProjectRelationship<?>> rels )
         throws GraphDriverException
     {
         logger.debug( "Storing relationships for: {}\n\n  {}", workspace.getId(), new JoinString( "\n  ", rels ) );
@@ -116,13 +118,14 @@ public class EGraphManager
         return getGraph( workspace, null, null, project );
     }
 
-    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef project )
+    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                                   final ProjectVersionRef project )
     {
         return getGraph( workspace, filter, null, project );
     }
 
-    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                                   final ProjectVersionRef project )
+    public EProjectGraph getGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                                   final GraphMutator mutator, final ProjectVersionRef project )
     {
         return getGraph( new GraphView( workspace, filter, mutator, project ) );
     }
@@ -134,12 +137,15 @@ public class EGraphManager
 
     public EProjectNet getWeb( final GraphWorkspace workspace, final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( workspace, null, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
+        return getWeb( workspace, null, null,
+                       refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
-    public EProjectNet getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final Collection<ProjectVersionRef> refs )
+    public EProjectNet getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                               final Collection<ProjectVersionRef> refs )
     {
-        return getWeb( workspace, null, null, refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
+        return getWeb( workspace, null, null,
+                       refs == null ? new ProjectVersionRef[0] : refs.toArray( new ProjectVersionRef[refs.size()] ) );
     }
 
     public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectVersionRef... refs )
@@ -147,28 +153,29 @@ public class EGraphManager
         return getWeb( workspace, null, null, refs );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef... refs )
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                               final ProjectVersionRef... refs )
     {
         return getWeb( workspace, filter, null, refs );
     }
 
-    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                               final ProjectVersionRef... refs )
+    public EProjectWeb getWeb( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                               final GraphMutator mutator, final ProjectVersionRef... refs )
     {
         return getWeb( new GraphView( workspace, filter, mutator, refs ) );
     }
 
     public EProjectWeb getWeb( final GraphView view )
     {
-        final GraphDatabaseDriver dbDriver = view.getWorkspace()
-                                                 .getDatabase();
-        for ( final ProjectVersionRef ref : view.getRoots() )
-        {
-            if ( !dbDriver.containsProject( view, ref ) || dbDriver.isMissing( view, ref ) )
-            {
-                return null;
-            }
-        }
+        //        final GraphDatabaseDriver dbDriver = view.getWorkspace()
+        //                                                 .getDatabase();
+        //        for ( final ProjectVersionRef ref : view.getRoots() )
+        //        {
+        //            if ( !dbDriver.containsProject( view, ref ) || dbDriver.isMissing( view, ref ) )
+        //            {
+        //                return null;
+        //            }
+        //        }
 
         return new EProjectWeb( view );
     }
@@ -260,39 +267,46 @@ public class EGraphManager
                         .containsProject( null, ref );
     }
 
-    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final ProjectVersionRef ref )
+    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                                  final ProjectVersionRef ref )
     {
         return containsGraph( workspace, filter, null, ref );
     }
 
-    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter, final GraphMutator mutator,
-                                  final ProjectVersionRef ref )
+    public boolean containsGraph( final GraphWorkspace workspace, final ProjectRelationshipFilter filter,
+                                  final GraphMutator mutator, final ProjectVersionRef ref )
     {
         return containsGraph( new GraphView( workspace, filter, mutator, ref ), ref );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
-                                                                    final boolean includeManagedInfo, final RelationshipType... types )
+                                                                    final boolean includeManagedInfo,
+                                                                    final RelationshipType... types )
     {
         return view.getDatabase()
                    .getDirectRelationshipsFrom( view, from, includeManagedInfo, true, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
+    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
+                                                                  final boolean includeManagedInfo,
                                                                   final RelationshipType... types )
     {
         return view.getDatabase()
                    .getDirectRelationshipsTo( view, to, includeManagedInfo, true, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphWorkspace workspace, final ProjectVersionRef from,
-                                                                    final boolean includeManagedInfo, final RelationshipType... types )
+    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final GraphWorkspace workspace,
+                                                                    final ProjectVersionRef from,
+                                                                    final boolean includeManagedInfo,
+                                                                    final RelationshipType... types )
     {
         return findDirectRelationshipsFrom( new GraphView( workspace ), from, includeManagedInfo, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphWorkspace workspace, final ProjectVersionRef to,
-                                                                  final boolean includeManagedInfo, final RelationshipType... types )
+    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final GraphWorkspace workspace,
+                                                                  final ProjectVersionRef to,
+                                                                  final boolean includeManagedInfo,
+                                                                  final RelationshipType... types )
     {
         return findDirectRelationshipsTo( new GraphView( workspace ), to, includeManagedInfo, types );
     }
@@ -347,7 +361,8 @@ public class EGraphManager
         return result;
     }
 
-    public Map<String, String> getMetadata( final GraphWorkspace workspace, final ProjectVersionRef ref, final Set<String> keys )
+    public Map<String, String> getMetadata( final GraphWorkspace workspace, final ProjectVersionRef ref,
+                                            final Set<String> keys )
     {
         final Map<String, String> result = new HashMap<String, String>();
         final Map<String, String> metadata = workspace.getDatabase()
@@ -375,10 +390,12 @@ public class EGraphManager
         return result;
     }
 
-    public Map<Map<String, String>, Set<ProjectVersionRef>> collateByMetadata( final GraphWorkspace workspace, final Set<ProjectVersionRef> refs,
+    public Map<Map<String, String>, Set<ProjectVersionRef>> collateByMetadata( final GraphWorkspace workspace,
+                                                                               final Set<ProjectVersionRef> refs,
                                                                                final Set<String> keys )
     {
-        final Map<Map<String, String>, Set<ProjectVersionRef>> result = new HashMap<Map<String, String>, Set<ProjectVersionRef>>();
+        final Map<Map<String, String>, Set<ProjectVersionRef>> result =
+            new HashMap<Map<String, String>, Set<ProjectVersionRef>>();
         for ( final ProjectVersionRef ref : refs )
         {
             final Map<String, String> metadata = getMetadata( workspace, ref, keys );
@@ -395,7 +412,8 @@ public class EGraphManager
         return result;
     }
 
-    public void addMetadata( final GraphWorkspace workspace, final EProjectKey key, final String name, final String value )
+    public void addMetadata( final GraphWorkspace workspace, final EProjectKey key, final String name,
+                             final String value )
         throws GraphDriverException
     {
         workspace.getDatabase()
@@ -409,14 +427,16 @@ public class EGraphManager
                  .setMetadata( key.getProject(), metadata );
     }
 
-    public void addMetadata( final GraphWorkspace workspace, final ProjectVersionRef project, final String name, final String value )
+    public void addMetadata( final GraphWorkspace workspace, final ProjectVersionRef project, final String name,
+                             final String value )
         throws GraphDriverException
     {
         workspace.getDatabase()
                  .addMetadata( project, name, value );
     }
 
-    public void setMetadata( final GraphWorkspace workspace, final ProjectVersionRef project, final Map<String, String> metadata )
+    public void setMetadata( final GraphWorkspace workspace, final ProjectVersionRef project,
+                             final Map<String, String> metadata )
         throws GraphDriverException
     {
         workspace.getDatabase()
@@ -484,7 +504,8 @@ public class EGraphManager
             }
             catch ( final IOException e )
             {
-                new GraphDriverException( "Failed to close workspace: {}.", e, wsid ).printStackTrace( new PrintWriter( sw ) );
+                new GraphDriverException( "Failed to close workspace: {}.", e, wsid ).printStackTrace( new PrintWriter(
+                                                                                                                        sw ) );
                 if ( sb.length() > 0 )
                 {
                     sb.append( "\n\n" );
@@ -511,7 +532,8 @@ public class EGraphManager
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( String.format( "Failed to store workspace %s on detach. Reason: %s", ws.getId(), e.getMessage() ), e );
+                logger.error( String.format( "Failed to store workspace %s on detach. Reason: %s", ws.getId(),
+                                             e.getMessage() ), e );
             }
         }
     }
@@ -529,7 +551,8 @@ public class EGraphManager
             }
             catch ( final IOException e )
             {
-                logger.error( String.format( "Failed to delete temporary workspace: %s. Reason: %s", workspace.getId(), e.getMessage() ), e );
+                logger.error( String.format( "Failed to delete temporary workspace: %s. Reason: %s", workspace.getId(),
+                                             e.getMessage() ), e );
             }
         }
         else
@@ -540,7 +563,8 @@ public class EGraphManager
             }
             catch ( final GraphDriverException e )
             {
-                logger.error( String.format( "Failed to store updates for workspace: %s. Reason: %s", workspace, e.getMessage() ), e );
+                logger.error( String.format( "Failed to store updates for workspace: %s. Reason: %s", workspace,
+                                             e.getMessage() ), e );
             }
         }
     }
@@ -584,7 +608,8 @@ public class EGraphManager
                    .getPathTargetRef( path );
     }
 
-    public GraphPath<?> createPath( final GraphView view, final GraphPath<?> parentPath, final ProjectRelationship<?> relationship )
+    public GraphPath<?> createPath( final GraphView view, final GraphPath<?> parentPath,
+                                    final ProjectRelationship<?> relationship )
     {
         return view.getDatabase()
                    .createPath( parentPath, relationship );

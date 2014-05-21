@@ -121,6 +121,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private static final String BASE_CONFIG_NODE = "_base";
 
+    private static final String MKEY_FORMAT = "%d/%s/%s:%s";
+
     private final GraphView globalView;
 
     //    private static final String GRAPH_ATLAS_TYPES_CLAUSE = join( GraphRelType.atlasRelationshipTypes(), "|" );
@@ -161,7 +163,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
     private final GraphAdminImpl adminAccess;
 
-    protected AbstractNeo4JEGraphDriver( GraphWorkspaceConfiguration config, final GraphDatabaseService graph, final boolean useShutdownHook )
+    protected AbstractNeo4JEGraphDriver( GraphWorkspaceConfiguration config, final GraphDatabaseService graph,
+                                         final boolean useShutdownHook )
     {
         this.adminAccess = new GraphAdminImpl( this );
 
@@ -253,7 +256,8 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final GraphView view, final ProjectVersionRef ref )
+    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final GraphView view,
+                                                                                    final ProjectVersionRef ref )
     {
         checkClosed();
 
@@ -286,7 +290,8 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final GraphView view, final ProjectVersionRef ref )
+    public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final GraphView view,
+                                                                                   final ProjectVersionRef ref )
     {
         checkClosed();
 
@@ -365,11 +370,6 @@ public abstract class AbstractNeo4JEGraphDriver
                                                                        .query( GAV, "*" ), cache ) );
     }
 
-    private void updateView( final GraphView view )
-    {
-        updateView( view, new ConversionCache() );
-    }
-
     private void updateView( final GraphView view, final ConversionCache cache )
     {
         if ( view.getRoots() == null || view.getRoots()
@@ -437,7 +437,8 @@ public abstract class AbstractNeo4JEGraphDriver
         checkClosed();
         if ( !registerView( view ) )
         {
-            throw new IllegalArgumentException( "You must specify at least one root GAV in order to retrieve path-related info." );
+            throw new IllegalArgumentException(
+                                                "You must specify at least one root GAV in order to retrieve path-related info." );
         }
 
         final Set<Node> endNodes = getNodes( refs );
@@ -472,11 +473,17 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( !( path instanceof Neo4jGraphPath ) )
         {
-            throw new IllegalArgumentException( "GraphPath instances must be of type Neo4jGraphPath. Was: " + path.getClass()
-                                                                                                                  .getName() );
+            throw new IllegalArgumentException( "GraphPath instances must be of type Neo4jGraphPath. Was: "
+                + path.getClass()
+                      .getName() );
         }
 
         final long rid = ( (Neo4jGraphPath) path ).getLastRelationshipId();
+        if ( rid < 0 )
+        {
+            return null;
+        }
+
         final Relationship rel = graph.getRelationshipById( rid );
         final Node target = rel.getEndNode();
 
@@ -489,7 +496,8 @@ public abstract class AbstractNeo4JEGraphDriver
         checkClosed();
         if ( !registerView( view ) )
         {
-            throw new IllegalArgumentException( "You must specify at least one root GAV in order to retrieve path-related info." );
+            throw new IllegalArgumentException(
+                                                "You must specify at least one root GAV in order to retrieve path-related info." );
         }
 
         final Set<Node> endNodes = getNodes( refs );
@@ -569,7 +577,8 @@ public abstract class AbstractNeo4JEGraphDriver
                         {
                             // FIXME: This means we're discarding a rejected relationship without passing it back...NOT GOOD
                             // However, some code assumes rejects are cycles...also not good.
-                            logger.error( String.format( "Failed to create node for project ref: %s. Reason: %s", ref, e.getMessage() ), e );
+                            logger.error( String.format( "Failed to create node for project ref: %s. Reason: %s", ref,
+                                                         e.getMessage() ), e );
                             continue nextRel;
                         }
                     }
@@ -605,7 +614,8 @@ public abstract class AbstractNeo4JEGraphDriver
                     {
                         final Node to = nodes[1];
 
-                        logger.debug( "Creating graph relationship for: {} between node: {} and node: {}", rel, from, to );
+                        logger.debug( "Creating graph relationship for: {} between node: {} and node: {}", rel, from,
+                                      to );
 
                         final GraphRelType grt = GraphRelType.map( rel.getType(), rel.isManaged() );
 
@@ -628,12 +638,14 @@ public abstract class AbstractNeo4JEGraphDriver
                         {
                             graph.index()
                                  .forRelationships( MANAGED_GA )
-                                 .add( relationship, MANAGED_KEY,
-                                       String.format( "%d/%s/%s:%s", relationship.getStartNode()
-                                                                                 .getId(), rel.getType()
-                                                                                              .name(), rel.getTarget()
-                                                                                                          .getGroupId(), rel.getTarget()
-                                                                                                                            .getArtifactId() ) );
+                                 .add( relationship,
+                                       MANAGED_KEY,
+                                       String.format( MKEY_FORMAT, relationship.getStartNode()
+                                                                               .getId(), rel.getType()
+                                                                                            .name(), rel.getTarget()
+                                                                                                        .getGroupId(),
+                                                      rel.getTarget()
+                                                         .getArtifactId() ) );
                         }
 
                         logger.debug( "+= {} ({})", relationship, rel );
@@ -701,7 +713,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
         logger.debug( "Checking for existence of path from: {} to: {} in global database", fromNode, toNode );
         final PathExistenceVisitor collector = new PathExistenceVisitor( toNode );
-        collectAtlasRelationships( view, collector, Collections.singleton( fromNode ), false, Uniqueness.RELATIONSHIP_GLOBAL );
+        collectAtlasRelationships( view, collector, Collections.singleton( fromNode ), false,
+                                   Uniqueness.RELATIONSHIP_GLOBAL );
 
         return collector.isFound();
     }
@@ -740,8 +753,8 @@ public abstract class AbstractNeo4JEGraphDriver
         return node;
     }
 
-    private Relationship select( final Relationship old, final GraphView view, final Node viewNode, final GraphPathInfo pathInfo,
-                                 final Neo4jGraphPath path )
+    private Relationship select( final Relationship old, final GraphView view, final Node viewNode,
+                                 final GraphPathInfo pathInfo, final Neo4jGraphPath path )
     {
         final ViewIndexes indexes = new ViewIndexes( graph.index(), view );
 
@@ -838,7 +851,8 @@ public abstract class AbstractNeo4JEGraphDriver
     //    }
 
     @Override
-    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net, final ProjectVersionRef root )
+    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net,
+                          final ProjectVersionRef root )
         throws GraphDriverException
     {
         final Node rootNode = getNode( root );
@@ -881,8 +895,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
             @SuppressWarnings( { "rawtypes", "unchecked" } )
             final MembershipWrappedTraversalEvaluator checker =
-                new MembershipWrappedTraversalEvaluator( Collections.singleton( rootNode.getId() ), traversal, view, viewNode, adminAccess, i,
-                                                         relTypes );
+                new MembershipWrappedTraversalEvaluator( Collections.singleton( rootNode.getId() ), traversal, view,
+                                                         viewNode, adminAccess, i, relTypes );
 
             checker.setConversionCache( cache );
 
@@ -1215,12 +1229,13 @@ public abstract class AbstractNeo4JEGraphDriver
         return nodes;
     }
 
-    private void collectAtlasRelationships( final GraphView view, final TraverseVisitor visitor, final Set<Node> start, final boolean sorted,
-                                            final Uniqueness uniqueness )
+    private void collectAtlasRelationships( final GraphView view, final TraverseVisitor visitor, final Set<Node> start,
+                                            final boolean sorted, final Uniqueness uniqueness )
     {
         if ( start == null || start.isEmpty() )
         {
-            throw new UnsupportedOperationException( "Cannot collect atlas nodes/relationships via traversal without at least one 'from' node!" );
+            throw new UnsupportedOperationException(
+                                                     "Cannot collect atlas nodes/relationships via traversal without at least one 'from' node!" );
         }
 
         //        logger.info( "Traversing for aggregation using: {} from roots: {}", checker.getClass()
@@ -1242,7 +1257,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final Node viewNode = getViewNode( view );
 
-        final AtlasCollector<Object> checker = new AtlasCollector<Object>( visitor, start, view, viewNode, adminAccess, relTypes );
+        final AtlasCollector<Object> checker =
+            new AtlasCollector<Object>( visitor, start, view, viewNode, adminAccess, relTypes );
         description = description.expand( checker )
                                  .evaluator( checker );
 
@@ -1488,12 +1504,15 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params, final ProjectVersionRef... roots )
+    public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params,
+                                        final ProjectVersionRef... roots )
         throws GraphDriverException
     {
         if ( cypher.startsWith( "START" ) )
         {
-            throw new GraphDriverException( "Leave off the START clause when supplying ProjectVersionRef instances as query roots:\n'{}'", cypher );
+            throw new GraphDriverException(
+                                            "Leave off the START clause when supplying ProjectVersionRef instances as query roots:\n'{}'",
+                                            cypher );
         }
 
         final StringBuilder sb = new StringBuilder();
@@ -1526,12 +1545,15 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params, final ProjectRelationship<?> rootRel )
+    public ExecutionResult executeFrom( final String cypher, final Map<String, Object> params,
+                                        final ProjectRelationship<?> rootRel )
         throws GraphDriverException
     {
         if ( cypher.startsWith( "START" ) )
         {
-            throw new GraphDriverException( "Leave off the START clause when supplying ProjectRelationship instances as query roots:\n'{}'", cypher );
+            throw new GraphDriverException(
+                                            "Leave off the START clause when supplying ProjectRelationship instances as query roots:\n'{}'",
+                                            cypher );
         }
 
         String id = "*";
@@ -1562,7 +1584,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
         final String query = cypher.replaceAll( "(\\s)\\s+", "$1" );
 
-        final ExecutionResult result = params == null ? queryEngine.execute( query ) : queryEngine.execute( query, params );
+        final ExecutionResult result =
+            params == null ? queryEngine.execute( query ) : queryEngine.execute( query, params );
 
         //        logger.info( "Execution plan:\n{}", result.executionPlanDescription() );
 
@@ -1675,14 +1698,16 @@ public abstract class AbstractNeo4JEGraphDriver
     @Deprecated
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
-                                                                   final boolean includeManagedInfo, final RelationshipType... types )
+                                                                   final boolean includeManagedInfo,
+                                                                   final RelationshipType... types )
     {
         return getDirectRelationshipsFrom( view, from, includeManagedInfo, true, types );
     }
 
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
-                                                                   final boolean includeManagedInfo, final boolean includeConcreteInfo,
+                                                                   final boolean includeManagedInfo,
+                                                                   final boolean includeConcreteInfo,
                                                                    final RelationshipType... types )
     {
         final Node node = getNode( from );
@@ -1705,7 +1730,8 @@ public abstract class AbstractNeo4JEGraphDriver
             }
         }
 
-        final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING, grts.toArray( new GraphRelType[grts.size()] ) );
+        final Iterable<Relationship> relationships =
+            node.getRelationships( Direction.OUTGOING, grts.toArray( new GraphRelType[grts.size()] ) );
 
         if ( relationships != null )
         {
@@ -1735,18 +1761,21 @@ public abstract class AbstractNeo4JEGraphDriver
      */
     @Deprecated
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
+                                                                 final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
     {
         return getDirectRelationshipsTo( view, to, includeManagedInfo, true, types );
     }
 
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to, final boolean includeManagedInfo,
-                                                                 final boolean includeConcreteInfo, final RelationshipType... types )
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
+                                                                 final boolean includeManagedInfo,
+                                                                 final boolean includeConcreteInfo,
+                                                                 final RelationshipType... types )
     {
-        logger.debug( "Finding relationships targeting: {} (filter: {}, managed: {}, types: {})", to, view.getFilter(), includeManagedInfo,
-                      Arrays.asList( types ) );
+        logger.debug( "Finding relationships targeting: {} (filter: {}, managed: {}, types: {})", to, view.getFilter(),
+                      includeManagedInfo, Arrays.asList( types ) );
         final Node node = getNode( to );
         if ( node == null )
         {
@@ -1769,7 +1798,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
         logger.debug( "Using graph-relationship types: {}", grts );
 
-        final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING, grts.toArray( new GraphRelType[grts.size()] ) );
+        final Iterable<Relationship> relationships =
+            node.getRelationships( Direction.INCOMING, grts.toArray( new GraphRelType[grts.size()] ) );
 
         final ConversionCache cache = new ConversionCache();
         if ( relationships != null )
@@ -1852,7 +1882,8 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public ProjectVersionRef getManagedTargetFor( final ProjectVersionRef target, final GraphPath<?> path, final RelationshipType type )
+    public ProjectVersionRef getManagedTargetFor( final ProjectVersionRef target, final GraphPath<?> path,
+                                                  final RelationshipType type )
     {
         if ( path == null )
         {
@@ -1861,8 +1892,9 @@ public abstract class AbstractNeo4JEGraphDriver
 
         if ( !( path instanceof Neo4jGraphPath ) )
         {
-            throw new IllegalArgumentException( "GraphPath instances must be of type Neo4jGraphPath. Was: " + path.getClass()
-                                                                                                                  .getName() );
+            throw new IllegalArgumentException( "GraphPath instances must be of type Neo4jGraphPath. Was: "
+                + path.getClass()
+                      .getName() );
         }
 
         final RelationshipIndex idx = graph.index()
@@ -1876,18 +1908,21 @@ public abstract class AbstractNeo4JEGraphDriver
         {
             final Relationship r = graph.getRelationshipById( id );
 
-            final String mkey = String.format( "%d/%s/%s:%s", r.getStartNode()
-                                                               .getId(), type.name(), target.getGroupId(), target.getArtifactId() );
+            final String mkey =
+                String.format( MKEY_FORMAT, r.getStartNode()
+                                             .getId(), type.name(), target.getGroupId(), target.getArtifactId() );
 
             //            logger.info( "Searching for m-key: {}", mkey );
 
             final IndexHits<Relationship> hits = idx.get( MANAGED_KEY, mkey );
             if ( hits != null && hits.hasNext() )
             {
-                final ProjectVersionRef ref = toProjectVersionRef( hits.next()
-                                                                       .getEndNode(), cache );
+                final Relationship hit = hits.next();
+                final ProjectVersionRef ref = toProjectVersionRef( hit.getEndNode(), cache );
 
-                //                logger.info( "Found it: {}", ref );
+                final ProjectRelationship<?> rel = Conversions.toProjectRelationship( hit, cache );
+                logger.info( "[MUTATION] {} => {} (via: {})", target, ref, rel );
+
                 return ref;
             }
 
@@ -1916,11 +1951,14 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( path != null && !( path instanceof Neo4jGraphPath ) )
         {
-            throw new IllegalArgumentException( "Cannot get refs for: " + path + ". This is not a Neo4jGraphPathKey instance!" );
+            throw new IllegalArgumentException( "Cannot get refs for: " + path
+                + ". This is not a Neo4jGraphPathKey instance!" );
         }
 
+        final ConversionCache cache = new ConversionCache();
+
         final Neo4jGraphPath gp = (Neo4jGraphPath) path;
-        final List<ProjectRelationship<?>> rels = convertToRelationships( gp, adminAccess, new ConversionCache() );
+        final List<ProjectRelationship<?>> rels = convertToRelationships( gp, adminAccess, cache );
         final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>( rels.size() + 2 );
         for ( final ProjectRelationship<?> rel : rels )
         {
@@ -1933,13 +1971,28 @@ public abstract class AbstractNeo4JEGraphDriver
                          .asProjectVersionRef() );
         }
 
+        if ( refs.isEmpty() )
+        {
+            final Node node = graph.getNodeById( gp.getStartNodeId() );
+            final ProjectVersionRef ref = toProjectVersionRef( node, cache );
+            if ( ref != null )
+            {
+                refs.add( ref );
+            }
+        }
+
         return refs;
     }
 
     @Override
     public GraphPath<?> createPath( final ProjectRelationship<?>... rels )
     {
-        final long[] relIds = new long[rels.length];
+        if ( rels.length < 1 )
+        {
+            return null;
+        }
+
+        final Relationship[] rs = new Relationship[rels.length];
         for ( int i = 0; i < rels.length; i++ )
         {
             final Relationship r = getRelationship( rels[i] );
@@ -1948,10 +2001,10 @@ public abstract class AbstractNeo4JEGraphDriver
                 return null;
             }
 
-            relIds[i] = r.getId();
+            rs[i] = r;
         }
 
-        return new Neo4jGraphPath( relIds );
+        return new Neo4jGraphPath( rs );
     }
 
     @Override
@@ -1959,7 +2012,8 @@ public abstract class AbstractNeo4JEGraphDriver
     {
         if ( parent != null && !( parent instanceof Neo4jGraphPath ) )
         {
-            throw new IllegalArgumentException( "Cannot get child path-key for: " + parent + ". This is not a Neo4jGraphPathKey instance!" );
+            throw new IllegalArgumentException( "Cannot get child path-key for: " + parent
+                + ". This is not a Neo4jGraphPathKey instance!" );
         }
 
         Relationship r = getRelationship( rel );
@@ -1993,7 +2047,7 @@ public abstract class AbstractNeo4JEGraphDriver
             }
         }
 
-        return new Neo4jGraphPath( (Neo4jGraphPath) parent, r.getId() );
+        return new Neo4jGraphPath( (Neo4jGraphPath) parent, r );
     }
 
     @Override
@@ -2255,11 +2309,12 @@ public abstract class AbstractNeo4JEGraphDriver
         if ( view.getRoots() == null || view.getRoots()
                                             .isEmpty() )
         {
-            logger.info( "Cannot track membership in view! It has no root GAVs.\nView: {} (short id: {})", view.getLongId(), view.getShortId() );
+            logger.info( "Cannot track membership in view! It has no root GAVs.\nView: {} (short id: {})",
+                         view.getLongId(), view.getShortId() );
             return false;
         }
 
-        updateView( view );
+        updateView( view, new ConversionCache() );
 
         return true;
     }
@@ -2293,7 +2348,8 @@ public abstract class AbstractNeo4JEGraphDriver
 
                 confIdx.add( viewNode, VIEW_ID, view.getShortId() );
 
-                logger.debug( "Setting cycle-detection PENDING for new viewNode: {} of: {}", viewNode, view.getShortId() );
+                logger.debug( "Setting cycle-detection PENDING for new viewNode: {} of: {}", viewNode,
+                              view.getShortId() );
                 Conversions.setCycleDetectionPending( viewNode, true );
                 Conversions.setMembershipDetectionPending( viewNode, true );
 
@@ -2324,7 +2380,8 @@ public abstract class AbstractNeo4JEGraphDriver
     }
 
     @Override
-    public void registerViewSelection( final GraphView view, final ProjectRef ref, final ProjectVersionRef projectVersionRef )
+    public void registerViewSelection( final GraphView view, final ProjectRef ref,
+                                       final ProjectVersionRef projectVersionRef )
     {
         checkClosed();
         if ( !registerView( view ) )
@@ -2518,8 +2575,8 @@ public abstract class AbstractNeo4JEGraphDriver
         }
 
         @Override
-        public Relationship select( final Relationship r, final GraphView view, final Node viewNode, final GraphPathInfo viewPathInfo,
-                                    final Neo4jGraphPath viewPath )
+        public Relationship select( final Relationship r, final GraphView view, final Node viewNode,
+                                    final GraphPathInfo viewPathInfo, final Neo4jGraphPath viewPath )
         {
             return driver.select( r, view, viewNode, viewPathInfo, viewPath );
         }

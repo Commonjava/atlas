@@ -60,22 +60,25 @@ public class SubPathsCollectingVisitor
             final Neo4jGraphPath gp = new Neo4jGraphPath( path );
             final long[] allRids = gp.getRelationshipIds();
             int i = 0;
+            Relationship start = null;
             for ( ; i < allRids.length; i++ )
             {
-                final Relationship r = admin.getRelationship( allRids[i] );
-                if ( viaNodes.contains( r.getEndNode()
-                                         .getId() ) )
+                start = admin.getRelationship( allRids[i] );
+                if ( viaNodes.contains( start.getEndNode()
+                                             .getId() ) )
                 {
-                    logger.debug( "found via-node ending: {}", r );
+                    logger.debug( "found via-node ending: {}", start );
                     break;
                 }
             }
 
-            if ( i < allRids.length - 1 )
+            if ( start != null && i < allRids.length - 1 )
             {
                 final long[] rids = new long[allRids.length - i];
                 System.arraycopy( allRids, i, rids, 0, rids.length );
-                paths.add( new Neo4jGraphPath( rids ) );
+
+                final Relationship last = admin.getRelationship( allRids[allRids.length - 1] );
+                paths.add( new Neo4jGraphPath( start.getStartNode(), last.getEndNode(), rids ) );
             }
         }
 

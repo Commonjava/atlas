@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
+import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
 
@@ -26,27 +27,53 @@ public class Neo4jGraphPath
 
     private final long[] relationships;
 
-    public Neo4jGraphPath( final long... relationshipIds )
-    {
-        this.relationships = relationshipIds;
-    }
+    private final long startNode;
 
-    public Neo4jGraphPath( final Neo4jGraphPath parent, final long... relationshipIds )
+    private final long endNode;
+
+    public Neo4jGraphPath( final Neo4jGraphPath parent, final Relationship... relationships )
     {
         if ( parent == null )
         {
-            relationships = relationshipIds;
+            throw new NullPointerException( "Parent path cannot be null" );
+        }
+
+        this.startNode = parent.startNode;
+        if ( relationships.length > 0 )
+        {
+            this.endNode = relationships[relationships.length - 1].getEndNode()
+                                                                  .getId();
         }
         else
         {
-            relationships = new long[parent.relationships.length + relationshipIds.length];
-            System.arraycopy( parent.relationships, 0, relationships, 0, parent.relationships.length );
-            System.arraycopy( relationshipIds, 0, relationships, parent.relationships.length, relationshipIds.length );
+            this.endNode = parent.endNode;
+        }
+
+        final int parentLen = parent.relationships.length;
+
+        this.relationships = new long[parentLen + relationships.length];
+
+        if ( parentLen > 0 )
+        {
+            System.arraycopy( parent.relationships, 0, this.relationships, 0, parent.relationships.length );
+        }
+
+        if ( this.relationships.length > 0 )
+        {
+            for ( int i = parentLen; i < this.relationships.length; i++ )
+            {
+                this.relationships[i] = relationships[i - parentLen].getId();
+            }
         }
     }
 
     public Neo4jGraphPath( final Path path )
     {
+        this.startNode = path.startNode()
+                             .getId();
+        this.endNode = path.endNode()
+                           .getId();
+
         final List<Long> ids = new ArrayList<Long>();
         for ( final Relationship r : path.relationships() )
         {
@@ -60,20 +87,57 @@ public class Neo4jGraphPath
         }
     }
 
-    public Neo4jGraphPath( final List<Long> ids )
+    public Neo4jGraphPath( final Node start, final Node end, final long[] rids )
     {
-        this.relationships = new long[ids.size()];
-        for ( int i = 0; i < ids.size(); i++ )
+        this.startNode = start.getId();
+        this.endNode = end.getId();
+        this.relationships = rids;
+    }
+
+    public Neo4jGraphPath( final Relationship[] relationships )
+    {
+        if ( relationships.length > 0 )
         {
-            this.relationships[i] = ids.get( i );
+            this.startNode = relationships[0].getStartNode()
+                                             .getId();
+
+            this.endNode = relationships[relationships.length - 1].getEndNode()
+                                                                  .getId();
         }
+        else
+        {
+            throw new IllegalArgumentException(
+                                                "Cannot initialize path with zero relationships and no explicit start node!" );
+        }
+
+        this.relationships = new long[relationships.length];
+
+        final int i = 0;
+        for ( final Relationship relationship : relationships )
+        {
+            this.relationships[i] = relationship.getId();
+        }
+    }
+
+    private Neo4jGraphPath( final Neo4jGraphPath parent, final long endNode, final long[] newRelationships )
+    {
+        this.startNode = parent.startNode;
+        this.endNode = endNode;
+
+        final int parentLen = parent.relationships.length;
+
+        this.relationships = new long[parentLen + newRelationships.length];
+
+        System.arraycopy( parent.relationships, 0, this.relationships, 0, parentLen );
+        System.arraycopy( newRelationships, 0, this.relationships, parentLen, newRelationships.length );
     }
 
     public Neo4jGraphPath append( final Neo4jGraphPath childPath )
     {
         if ( length() > 0 && getLastRelationshipId() != childPath.getFirstRelationshipId() )
         {
-            throw new IllegalArgumentException( "Cannot splice " + childPath + " onto " + this + ". They don't overlap on last/first relationshipId!" );
+            throw new IllegalArgumentException( "Cannot splice " + childPath + " onto " + this
+                + ". They don't overlap on last/first relationshipId!" );
         }
 
         if ( childPath.length() < 2 )
@@ -84,7 +148,17 @@ public class Neo4jGraphPath
         final long[] ids = new long[childPath.length() - 1];
         System.arraycopy( childPath.getRelationshipIds(), 1, ids, 0, ids.length );
 
-        return new Neo4jGraphPath( this, ids );
+        return new Neo4jGraphPath( this, childPath.endNode, ids );
+    }
+
+    public long getStartNodeId()
+    {
+        return startNode;
+    }
+
+    public long getEndNodeId()
+    {
+        return endNode;
     }
 
     @Override
@@ -149,7 +223,8 @@ public class Neo4jGraphPath
     @Override
     public String toString()
     {
-        return String.format( "%s [relationships=%s]", getClass().getSimpleName(), Arrays.toString( relationships ) );
+        return String.format( "%s [relationships=%s, from=%s, to=%s]", getClass().getSimpleName(),
+                              Arrays.toString( relationships ), startNode, endNode );
     }
 
     @Override
