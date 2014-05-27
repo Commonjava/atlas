@@ -10,7 +10,6 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
-import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.CONFIG_ID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
@@ -1061,8 +1060,7 @@ public class FileNeo4JGraphConnection
         {
             try
             {
-                logger.info( "Shutting down graph via:\n  {}\n\n", join( Thread.currentThread()
-                                                                               .getStackTrace(), "\n  " ) );
+                logger.info( "Shutting down graph..." );
                 printStats();
 
                 graph.shutdown();

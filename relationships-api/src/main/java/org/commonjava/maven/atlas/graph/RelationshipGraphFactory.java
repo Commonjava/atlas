@@ -1,7 +1,5 @@
 package org.commonjava.maven.atlas.graph;
 
-import static org.apache.commons.lang.StringUtils.join;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -301,8 +299,6 @@ public final class RelationshipGraphFactory
 
             // factory.flush( cache.getConnection() );
 
-            logger.info( "Closing graph via:\n  {}", join( Thread.currentThread()
-                                                                 .getStackTrace(), "\n  " ) );
             deregisterGraph( graph.getParams() );
         }
 
