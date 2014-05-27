@@ -64,7 +64,7 @@ public class FileNeo4jConnectionFactory
         }
 
         FileNeo4JGraphConnection conn = openConnections.get( workspaceId );
-        if ( conn == null )
+        if ( conn == null || !conn.isOpen() )
         {
             conn = new FileNeo4JGraphConnection( workspaceId, db, useShutdownHook, this );
             openConnections.put( workspaceId, conn );
@@ -111,7 +111,7 @@ public class FileNeo4jConnectionFactory
     }
 
     @Override
-    public void close()
+    public synchronized void close()
         throws RelationshipGraphConnectionException
     {
         final Logger logger = LoggerFactory.getLogger( getClass() );
@@ -130,15 +130,12 @@ public class FileNeo4jConnectionFactory
             }
         }
 
+        openConnections.clear();
+
         if ( !failedClose.isEmpty() )
         {
             throw new RelationshipGraphConnectionException( "Failed to close: {}", new JoinString( ", ", failedClose ) );
         }
-    }
-
-    public synchronized void connectionClosed( final String workspaceId )
-    {
-        openConnections.remove( workspaceId );
     }
 
     @Override
@@ -146,6 +143,11 @@ public class FileNeo4jConnectionFactory
     {
         final File db = new File( dbBaseDirectory, workspaceId );
         return db.exists() && db.isDirectory();
+    }
+
+    public synchronized void connectionClosing( final String workspaceId )
+    {
+        openConnections.remove( workspaceId );
     }
 
 }

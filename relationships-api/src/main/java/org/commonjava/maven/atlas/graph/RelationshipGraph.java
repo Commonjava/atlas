@@ -45,6 +45,8 @@ public final class RelationshipGraph
     {
         this.params = params;
         this.connection = driver;
+
+        connection.registerView( params );
     }
 
     public ViewParams getParams()
@@ -511,7 +513,7 @@ public final class RelationshipGraph
     // +++ IMPORTED FROM EGraphManager
     public boolean containsGraph( final ProjectVersionRef ref )
     {
-        return connection.containsProject( params, ref ) && !connection.isMissing( params, ref );
+        return connection.containsProject( params, ref );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final ProjectVersionRef to,

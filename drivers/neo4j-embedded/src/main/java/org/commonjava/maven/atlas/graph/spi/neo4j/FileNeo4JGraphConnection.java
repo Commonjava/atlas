@@ -10,6 +10,7 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
+import static org.apache.commons.lang.StringUtils.join;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.CONFIG_ID;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GA;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
@@ -147,6 +148,8 @@ public class FileNeo4JGraphConnection
     
     /* @formatter:on */
 
+    private boolean closed = false;
+
     private GraphDatabaseService graph;
 
     private final boolean useShutdownHook;
@@ -161,10 +164,13 @@ public class FileNeo4JGraphConnection
 
     private final FileNeo4jConnectionFactory factory;
 
+    private final File dbDir;
+
     FileNeo4JGraphConnection( final String workspaceId, final File dbDir, final boolean useShutdownHook,
                               final FileNeo4jConnectionFactory factory )
     {
         this.workspaceId = workspaceId;
+        this.dbDir = dbDir;
         this.factory = factory;
         this.adminAccess = new GraphAdminImpl( this );
 
@@ -226,15 +232,24 @@ public class FileNeo4JGraphConnection
     @Override
     public void printStats()
     {
-        logger.info( "Graph contains {} nodes.", graph.index()
-                                                      .forNodes( BY_GAV_IDX )
-                                                      .query( GAV, "*" )
-                                                      .size() );
+        final StringBuilder stats = new StringBuilder();
+        stats.append( "Graph in: " )
+             .append( dbDir );
+        stats.append( "\ncontains " )
+             .append( graph.index()
+                           .forNodes( BY_GAV_IDX )
+                           .query( GAV, "*" )
+                           .size() )
+             .append( " nodes." );
 
-        logger.info( "Graph contains {} relationships.", graph.index()
-                                                              .forRelationships( ALL_RELATIONSHIPS )
-                                                              .query( RELATIONSHIP_ID, "*" )
-                                                              .size() );
+        stats.append( "\ncontains " )
+             .append( graph.index()
+                           .forRelationships( ALL_RELATIONSHIPS )
+                           .query( RELATIONSHIP_ID, "*" )
+                           .size() )
+             .append( " relationships." );
+
+        logger.info( stats.toString() );
     }
 
     @Override
@@ -263,9 +278,9 @@ public class FileNeo4JGraphConnection
         return null;
     }
 
-    private void checkClosed()
+    private synchronized void checkClosed()
     {
-        if ( graph == null )
+        if ( closed || graph == null )
         {
             throw new IllegalStateException( "Graph database has been closed!" );
         }
@@ -1032,18 +1047,35 @@ public class FileNeo4JGraphConnection
         return hits.hasNext() ? hits.next() : null;
     }
 
+    private static final int SHUTDOWN_WAIT = 5;
+
     @Override
     public synchronized void close()
         throws RelationshipGraphConnectionException
     {
+        closed = true;
+
+        factory.connectionClosing( workspaceId );
+
         if ( graph != null )
         {
             try
             {
+                logger.info( "Shutting down graph via:\n  {}\n\n", join( Thread.currentThread()
+                                                                               .getStackTrace(), "\n  " ) );
+                printStats();
+
                 graph.shutdown();
-                factory.connectionClosed( workspaceId );
+
+                logger.info( "Waiting for shutdown..." );
+                if ( graph.isAvailable( 1000 * SHUTDOWN_WAIT ) )
+                {
+                    throw new RelationshipGraphConnectionException( "Failed to shutdown graph: %s.", dbDir );
+                }
 
                 graph = null;
+
+                logger.info( "...graph shutdown complete." );
             }
             catch ( final Exception e )
             {
@@ -2062,6 +2094,8 @@ public class FileNeo4JGraphConnection
     @Override
     public boolean registerView( final ViewParams params )
     {
+        checkClosed();
+
         if ( params == null )
         {
             return false;
@@ -2433,6 +2467,11 @@ public class FileNeo4JGraphConnection
                                                                  final RelationshipType... types )
     {
         return getDirectRelationshipsFrom( params, to, includeManagedInfo, true, types );
+    }
+
+    public synchronized boolean isOpen()
+    {
+        return !closed;
     }
 
 }
