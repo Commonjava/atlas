@@ -15,18 +15,13 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.filter.AnyFilter;
-import org.commonjava.maven.atlas.graph.model.EProjectGraph;
-import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.mutate.ManagedDependencyMutator;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public abstract class SubGraphSelectionTCK
@@ -44,89 +39,32 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
-        GraphView view = new GraphView( ws, AnyFilter.INSTANCE, new ManagedDependencyMutator(), project );
+        final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                        new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
-        
-        EProjectGraph graph = getManager().getGraph( view );
+        graph.storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                  new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
-        System.out.println( "Before selection in view: " + view.getShortId() + ", here are the variable nodes: "
-            + variables );
+        System.out.println( "Before selection here are the variable nodes: " + variables );
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        view =
-            new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(),
-                                                                                                selected ), project );
-        graph = getManager().getGraph( view );
+        final RelationshipGraph graph2 =
+            graphFactory().open( new ViewParams.Builder( graph.getParams() ).withSelection( varDep.asProjectRef(),
+                                                                                            selected )
+                                                                            .build(), false );
 
         //        final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
         //        assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
-        variables = graph.getVariableSubgraphs();
-        System.out.println( "After selection in view: " + view.getShortId() + ", here are the variable nodes: "
-            + variables );
+        variables = graph2.getVariableSubgraphs();
+        System.out.println( "After selection here are the variable nodes: " + variables );
         assertThat( variables.isEmpty(), equalTo( true ) );
 
-        final Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
+        final Set<ProjectVersionRef> incomplete = graph2.getIncompleteSubgraphs();
         System.out.println( "Checking missing subgraphs for: " + selected );
         assertThat( incomplete.contains( selected ), equalTo( true ) );
-    }
-
-    @Test
-    @Ignore( value = "Selection clearing is not currently supported" )
-    public void selectThenClearVersionForVariableSubgraph()
-        throws Exception
-    {
-        final ProjectVersionRef project = new ProjectVersionRef( "org.my", "project", "1.0" );
-        final ProjectVersionRef varDep = new ProjectVersionRef( "org.other", "dep", "1.0-SNAPSHOT" );
-        final ProjectVersionRef varD2 = new ProjectVersionRef( "org.other", "dep2", "1.0-SNAPSHOT" );
-        final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
-
-        final URI source = sourceURI();
-        final GraphWorkspace ws = simpleWorkspace();
-        GraphView view = new GraphView( ws, AnyFilter.INSTANCE, new ManagedDependencyMutator(), project );
-
-        /* @formatter:off */
-        getManager().storeRelationships( ws, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                        new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
-        
-        EProjectGraph graph = getManager().getGraph( view );
-        /* @formatter:on */
-
-        Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
-        System.out.println( "Variable before selecting:\n  " + variables );
-        assertThat( variables.contains( varDep ), equalTo( true ) );
-
-        view =
-            new GraphView( ws, AnyFilter.INSTANCE, view.getMutator(), Collections.singletonMap( varDep.asProjectRef(),
-                                                                                                selected ), project );
-        graph = getManager().getGraph( view );
-
-        //        final ProjectVersionRef selDep = view.selectVersion( varDep.asProjectRef(), selected );
-        //        assertThat( selDep.asProjectRef(), equalTo( varDep.asProjectRef() ) );
-
-        variables = graph.getVariableSubgraphs();
-        System.out.println( "Variable after selecting:\n  " + variables );
-        assertThat( variables.isEmpty(), equalTo( true ) );
-
-        Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
-        System.out.println( "Incomplete after selecting:\n  " + incomplete );
-        assertThat( incomplete.contains( selected ), equalTo( true ) );
-
-        variables = graph.getVariableSubgraphs();
-        System.out.println( "Variable after clearing:\n  " + variables );
-        assertThat( variables.contains( varDep ), equalTo( true ) );
-
-        incomplete = graph.getIncompleteSubgraphs();
-
-        System.out.println( "Incomplete after clearing:\n  " + incomplete );
-        assertThat( incomplete.contains( selected ), equalTo( false ) );
-        assertThat( incomplete.contains( varDep ), equalTo( false ) );
     }
 
     @Test
@@ -140,38 +78,27 @@ public abstract class SubGraphSelectionTCK
         final ProjectVersionRef selected = new ProjectVersionRef( varDep, "1.0-20130314.161200-1" );
 
         final URI source = sourceURI();
-        final GraphWorkspace session = simpleWorkspace();
-        GraphView view = new GraphView( session, AnyFilter.INSTANCE, new ManagedDependencyMutator(), project );
-
-        final GraphWorkspace session2 = simpleWorkspace();
-        final GraphView view2 = new GraphView( session2, project );
+        final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        getManager().storeRelationships( session, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                        new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
-        
-        getManager().storeRelationships( session2, new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                         new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
-         
-        EProjectGraph graph = getManager().getGraph( view );
-        final EProjectGraph graph2 = getManager().getGraph( view2 );
+        graph.storeRelationships( new DependencyRelationship( source, project, new ArtifactRef( varDep, null, null, false ), null, 0, false ),
+                                  new DependencyRelationship( source, varDep,  new ArtifactRef( varD2,  null, null, false ), null, 0, false ) );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
-        variables = graph2.getVariableSubgraphs();
-        assertThat( variables.contains( varDep ), equalTo( true ) );
-
         // Select a concrete version for the session associated with the FIRST graph.
         // Second graph session should remain unchanged.
-        view =
-            new GraphView( session, AnyFilter.INSTANCE, view.getMutator(),
-                           Collections.singletonMap( varDep.asProjectRef(), selected ), project );
-        graph = getManager().getGraph( view );
+        final RelationshipGraph graph2 =
+            graphFactory().open( new ViewParams.Builder( graph.getParams() ).withSelection( varDep.asProjectRef(),
+                                                                                            selected )
+                                                                            .build(), false );
 
-        assertThat( view.getSelection( varDep ), equalTo( selected ) );
-        assertThat( view2.getSelection( varDep ), nullValue() );
+        assertThat( graph.getParams()
+                         .getSelection( varDep ), nullValue() );
+        assertThat( graph2.getParams()
+                          .getSelection( varDep ), equalTo( selected ) );
 
         assertThat( selected.asProjectRef(), equalTo( varDep.asProjectRef() ) );
 
@@ -179,16 +106,17 @@ public abstract class SubGraphSelectionTCK
                             .equals( varDep.asProjectVersionRef() ), equalTo( false ) );
 
         variables = graph.getVariableSubgraphs();
-        assertThat( variables.contains( varDep ), equalTo( false ) );
-
-        variables = graph2.getVariableSubgraphs();
         assertThat( variables.contains( varDep ), equalTo( true ) );
 
+        variables = graph2.getVariableSubgraphs();
+        assertThat( variables.contains( varDep ), equalTo( false ) );
+
         Set<ProjectVersionRef> incomplete = graph.getIncompleteSubgraphs();
-        assertThat( incomplete.contains( selected ), equalTo( true ) );
+        assertThat( incomplete.contains( selected ), equalTo( false ) );
 
         incomplete = graph2.getIncompleteSubgraphs();
-        assertThat( incomplete.contains( selected ), equalTo( false ) );
+        assertThat( incomplete.contains( selected ), equalTo( true ) );
+
     }
 
 }

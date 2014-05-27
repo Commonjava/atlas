@@ -19,12 +19,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
-import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
-import org.commonjava.maven.atlas.graph.traverse.TraversalType;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
+import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -32,17 +31,16 @@ import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 // TODO: Replace with getAllRelationships(), map to declaring GAV, and then printStructure based on that.
 // Letting the filter in the graph view shape what's in getAllRelationships()...
 public class StructurePrintingTraversal
-    implements ProjectNetTraversal
+    implements RelationshipGraphTraversal
 {
 
     //    private final Logger logger = new Logger( getClass() );
 
-    private final ProjectNetTraversal traversal;
+    private final RelationshipGraphTraversal traversal;
 
     private final StructureRelationshipPrinter relationshipPrinter;
 
-    private final Map<ProjectVersionRef, List<ProjectRelationship<?>>> outboundLinks =
-        new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
+    private final Map<ProjectVersionRef, List<ProjectRelationship<?>>> outboundLinks = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
 
     public StructurePrintingTraversal()
     {
@@ -50,7 +48,7 @@ public class StructurePrintingTraversal
         this.relationshipPrinter = new TargetRefPrinter();
     }
 
-    public StructurePrintingTraversal( final ProjectNetTraversal traversal )
+    public StructurePrintingTraversal( final RelationshipGraphTraversal traversal )
     {
         this.traversal = traversal;
         this.relationshipPrinter = new TargetRefPrinter();
@@ -62,18 +60,16 @@ public class StructurePrintingTraversal
         this.relationshipPrinter = relationshipPrinter;
     }
 
-    public StructurePrintingTraversal( final ProjectNetTraversal traversal,
-                                       final StructureRelationshipPrinter relationshipPrinter )
+    public StructurePrintingTraversal( final RelationshipGraphTraversal traversal, final StructureRelationshipPrinter relationshipPrinter )
     {
         this.traversal = traversal;
         this.relationshipPrinter = relationshipPrinter;
     }
 
     @Override
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                                 final int pass )
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
-        if ( traversal == null || traversal.traverseEdge( relationship, path, pass ) )
+        if ( traversal == null || traversal.traverseEdge( relationship, path ) )
         {
             List<ProjectRelationship<?>> outbound = outboundLinks.get( relationship.getDeclaring() );
             if ( outbound == null )
@@ -137,7 +133,7 @@ public class StructurePrintingTraversal
             for ( final ProjectRelationship<?> out : outbound )
             {
                 final ProjectVersionRef outRef = out.getTarget()
-                                                    .asProjectVersionRef();
+                                              .asProjectVersionRef();
                 if ( inPath.contains( outRef ) )
                 {
                     continue;
@@ -187,58 +183,38 @@ public class StructurePrintingTraversal
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                             final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
-        return traversal == null || traversal.preCheck( relationship, path, pass );
+        return traversal == null || traversal.preCheck( relationship, path );
     }
 
     @Override
-    public void startTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+    public void startTraverse( final RelationshipGraph graph )
+        throws RelationshipGraphConnectionException
     {
         if ( traversal != null )
         {
-            traversal.startTraverse( pass, network );
+            traversal.startTraverse( graph );
         }
     }
 
     @Override
-    public void endTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+    public void endTraverse( final RelationshipGraph graph )
+        throws RelationshipGraphConnectionException
     {
         if ( traversal != null )
         {
-            traversal.endTraverse( pass, network );
+            traversal.endTraverse( graph );
         }
     }
 
     @Override
-    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                               final int pass )
+    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
         if ( traversal != null )
         {
-            traversal.edgeTraversed( relationship, path, pass );
+            traversal.edgeTraversed( relationship, path );
         }
-    }
-
-    @Override
-    public TraversalType getType( final int pass )
-    {
-        return traversal == null ? TraversalType.depth_first : traversal.getType( pass );
-    }
-
-    @Override
-    public int getRequiredPasses()
-    {
-        return traversal == null ? 1 : traversal.getRequiredPasses();
-    }
-
-    @Override
-    public TraversalType[] getTraversalTypes()
-    {
-        return traversal == null ? new TraversalType[] { TraversalType.depth_first } : traversal.getTraversalTypes();
     }
 
 }

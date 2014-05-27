@@ -44,6 +44,24 @@ public class BomRelationship
         super( source, RelationshipType.BOM, d, t, index, false );
     }
 
+    public BomRelationship( final Set<URI> sources, final URI pomLocation, final ProjectVersionRef d,
+                            final ProjectVersionRef t, final int index )
+    {
+        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
+        // but they're structural, so managed isn't quite correct (despite 
+        // Maven's unfortunate choice for location).
+        super( sources, pomLocation, RelationshipType.BOM, d, t, index, false );
+    }
+
+    public BomRelationship( final URI source, final URI pomLocation, final ProjectVersionRef d,
+                            final ProjectVersionRef t, final int index )
+    {
+        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
+        // but they're structural, so managed isn't quite correct (despite 
+        // Maven's unfortunate choice for location).
+        super( source, pomLocation, RelationshipType.BOM, d, t, index, false );
+    }
+
     @Override
     public ArtifactRef getTargetArtifact()
     {
@@ -94,6 +112,12 @@ public class BomRelationship
         final ProjectVersionRef d = getDeclaring();
 
         return new BomRelationship( getSources(), d, ref, getIndex() );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef declaring )
+    {
+        return new BomRelationship( getSources(), getPomLocation(), declaring, getTarget(), getIndex() );
     }
 
     @Override

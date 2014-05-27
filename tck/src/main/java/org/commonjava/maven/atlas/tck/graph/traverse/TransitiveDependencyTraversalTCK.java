@@ -10,28 +10,22 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.tck.graph.traverse;
 
-import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.dependency;
+import static org.commonjava.maven.atlas.ident.DependencyScope.compile;
 import static org.commonjava.maven.atlas.ident.util.IdentityUtils.projectVersion;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 
-import org.commonjava.maven.atlas.graph.filter.AnyFilter;
-import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
-import org.commonjava.maven.atlas.graph.model.EProjectGraph;
-import org.commonjava.maven.atlas.graph.model.EProjectKey;
-import org.commonjava.maven.atlas.graph.model.GraphView;
-import org.commonjava.maven.atlas.graph.mutate.ManagedDependencyMutator;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.ViewParams;
+import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.traverse.TransitiveDependencyTraversal;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.tck.graph.AbstractSPI_TCK;
-import org.junit.Ignore;
 import org.junit.Test;
 
 public abstract class TransitiveDependencyTraversalTCK
@@ -47,17 +41,13 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
         final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
 
-        /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
-                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
-                    .withDependencies( dependency( source, root, d1, 0 ) )
-                    .build() 
-        );
+        final RelationshipGraph graph = simpleGraph( root );
         
-        graph.addAll( Arrays.asList(
-                dependency( source, d1, d2, 0 )
-        ));
+        /* @formatter:off */
+        graph.storeRelationships( new ParentRelationship( source, root ),
+                                  new DependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false ),
+                                  new DependencyRelationship( source, d1, d2.asJarArtifact(), compile, 0, false )
+        );
         /* @formatter:on */
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
@@ -86,25 +76,17 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
         final ProjectVersionRef d3 = projectVersion( "foo", "dep-L2", "1.1.2" );
 
-        GraphView view = new GraphView( simpleWorkspace(), AnyFilter.INSTANCE, new ManagedDependencyMutator(), root );
+        RelationshipGraph graph = simpleGraph( root );
 
         /* @formatter:off */
-        EProjectGraph graph = getManager().createGraph( 
-                view, 
-                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
-                    .withDependencies( dependency( source, root, d1, 0 ) )
-                    .build() 
+        graph.storeRelationships( new ParentRelationship( source, root ),
+                                  new DependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false ),
+                                  new DependencyRelationship( source, d1, d2.asJarArtifact(), compile, 0, false )
         );
-        
-        graph.addAll( Arrays.asList(
-                dependency( source, d1, d2, 0 )
-        ));
         /* @formatter:on */
 
-        view =
-            new GraphView( view.getWorkspace(), AnyFilter.INSTANCE, view.getMutator(),
-                           Collections.singletonMap( d2.asProjectRef(), d3 ), root );
-        graph = getManager().getGraph( view );
+        graph = graphFactory().open( new ViewParams.Builder( graph.getParams() ).withSelection( d2.asProjectRef(), d3 )
+                                                                                .build(), false );
 
         //        graph.getView()
         //             .selectVersion( d2.asProjectRef(), d3 );
@@ -136,69 +118,15 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
         final ProjectVersionRef d2a = projectVersion( "foo", "dep-L2", "1.1.1" );
         final ProjectVersionRef d2b = projectVersion( "foo", "dep-L2", "1.0" );
+        
+        final RelationshipGraph graph = simpleGraph( root );
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
-                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
-                    .withDependencies( 
-                        dependency( source, root, d1, 0 ),
-                        dependency( source, root, d2a, 1 )
-                    )
-                    .build() 
+        graph.storeRelationships( new ParentRelationship( source, root ),
+                                  new DependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false ),
+                                  new DependencyRelationship( source, root, d2a.asJarArtifact(), compile, 1, false ),
+                                  new DependencyRelationship( source, d1, d2b.asJarArtifact(), compile, 0, false )
         );
-        
-        graph.addAll( Arrays.asList(
-                dependency( source, d1, d2b, 0 )
-        ));
-        /* @formatter:on */
-
-        final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
-        graph.traverse( depTraversal );
-
-        final List<ArtifactRef> artifacts = depTraversal.getArtifacts();
-
-        assertThat( artifacts.size(), equalTo( 2 ) );
-
-        int idx = 0;
-
-        ArtifactRef ref = artifacts.get( idx++ );
-        assertThat( ref.getArtifactId(), equalTo( "dep-L1" ) );
-
-        ref = artifacts.get( idx++ );
-        assertThat( ref.getArtifactId(), equalTo( "dep-L2" ) );
-        assertThat( ref.getVersionSpec()
-                       .renderStandard(), equalTo( "1.1.1" ) );
-    }
-
-    @Test
-    @Ignore( "This is wonky, needs revisiting." )
-    public void preferDirectDependencyInParent()
-        throws Exception
-    {
-        final URI source = sourceURI();
-
-        final ProjectVersionRef root = projectVersion( "group.id", "my-project", "1.0" );
-        final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
-        final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
-        final ProjectVersionRef d2a = projectVersion( "foo", "dep-L2", "1.1.1" );
-        final ProjectVersionRef d2b = projectVersion( "foo", "dep-L2", "1.0" );
-
-        /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
-                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
-                    .withDependencies( 
-                        dependency( source, root, d1, 0 )
-                    )
-                    .withParent( new ParentRelationship( source, root, parent ) )
-                    .build() 
-        );
-        
-        graph.addAll( Arrays.asList(
-                dependency( source, parent, d2a, 0 ),
-                dependency( source, d1, d2b, 0 )
-        ));
         /* @formatter:on */
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();
@@ -230,20 +158,13 @@ public abstract class TransitiveDependencyTraversalTCK
         final ProjectVersionRef d1a = projectVersion( "other.group", "dep-L1", "1.1.1" );
         final ProjectVersionRef d1b = projectVersion( "other.group", "dep-L1", "1.0" );
 
+        final RelationshipGraph graph = simpleGraph( root );
+
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( 
-                simpleWorkspace(), 
-                new EProjectDirectRelationships.Builder( new EProjectKey( source, root ) )
-                    .withDependencies( 
-                        dependency( source, root, d1a, 0 )
-                    )
-                    .withParent( new ParentRelationship( source, root, parent ) )
-                    .build() 
+        graph.storeRelationships( new ParentRelationship( source, root, parent ),
+                                  new DependencyRelationship( source, root, d1a.asJarArtifact(), compile, 0, false ),
+                                  new DependencyRelationship( source, parent, d1b.asJarArtifact(), compile, 0, false )
         );
-        
-        graph.addAll( Arrays.asList(
-                dependency( source, parent, d1b, 0 )
-        ));
         /* @formatter:on */
 
         final TransitiveDependencyTraversal depTraversal = new TransitiveDependencyTraversal();

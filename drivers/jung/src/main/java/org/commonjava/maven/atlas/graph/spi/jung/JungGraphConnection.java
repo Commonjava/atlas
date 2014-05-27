@@ -13,7 +13,6 @@ package org.commonjava.maven.atlas.graph.spi.jung;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
 
-import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,23 +27,23 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 import org.apache.commons.lang.StringUtils;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.ViewParams;
+import org.commonjava.maven.atlas.graph.filter.AnyFilter;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.graph.spi.GraphDatabaseDriver;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.jung.model.JungGraphPath;
-import org.commonjava.maven.atlas.graph.traverse.ProjectNetTraversal;
+import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
+import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.util.JoinString;
@@ -55,8 +54,8 @@ import org.slf4j.LoggerFactory;
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.DirectedSparseMultigraph;
 
-public class JungEGraphDriver
-    implements GraphDatabaseDriver
+public class JungGraphConnection
+    implements RelationshipGraphConnection
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
@@ -76,36 +75,36 @@ public class JungEGraphDriver
 
     private final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
-    private final GraphWorkspaceConfiguration config;
+    private final Map<ProjectVersionRef, Throwable> errors = new HashMap<ProjectVersionRef, Throwable>();
 
-    private final GraphWorkspace globalView = new GraphWorkspace( "GLOBAL", this );
+    private final String workspaceId;
 
-    public JungEGraphDriver( final GraphWorkspaceConfiguration config )
+    public JungGraphConnection( final String workspaceId )
     {
-        this.config = config;
+        this.workspaceId = workspaceId;
     }
 
     @Override
-    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final GraphView view,
+    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( final ViewParams params,
                                                                                     final ProjectVersionRef ref )
     {
-        return imposeSelections( view, graph.getOutEdges( ref.asProjectVersionRef() ) );
+        return imposeSelections( params, graph.getOutEdges( ref.asProjectVersionRef() ) );
     }
 
     @Override
-    public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final GraphView view,
+    public Collection<? extends ProjectRelationship<?>> getRelationshipsTargeting( final ViewParams params,
                                                                                    final ProjectVersionRef ref )
     {
-        return imposeSelections( view, graph.getInEdges( ref.asProjectVersionRef() ) );
+        return imposeSelections( params, graph.getInEdges( ref.asProjectVersionRef() ) );
     }
 
     @Override
-    public Collection<ProjectRelationship<?>> getAllRelationships( final GraphView view )
+    public Collection<ProjectRelationship<?>> getAllRelationships( final ViewParams params )
     {
-        return imposeSelections( view, graph.getEdges() );
+        return imposeSelections( params, graph.getEdges() );
     }
 
-    private Collection<ProjectRelationship<?>> imposeSelections( final GraphView view,
+    private Collection<ProjectRelationship<?>> imposeSelections( final ViewParams params,
                                                                  final Collection<ProjectRelationship<?>> edges )
     {
         if ( edges == null || edges.isEmpty() )
@@ -113,45 +112,48 @@ public class JungEGraphDriver
             return edges;
         }
 
-        final GraphWorkspace workspace = view.getWorkspace();
-        if ( workspace == null )
-        {
-            // no selections here...
-            return edges;
-        }
-
         final List<ProjectRelationship<?>> result = new ArrayList<ProjectRelationship<?>>( edges.size() );
         for ( final ProjectRelationship<?> edge : edges )
         {
+            if ( ( edge instanceof ParentRelationship ) && ( (ParentRelationship) edge ).isTerminus() )
+            {
+                continue;
+            }
+
             final ProjectVersionRef target = edge.getTarget()
                                                  .asProjectVersionRef();
-            final Set<URI> sources = workspace.getActiveSources();
+
+            final Set<URI> sources = params.getActiveSources();
             if ( sources != null && !sources.isEmpty() )
             {
-                Set<URI> s = edge.getSources();
-                if ( s == null )
+                if ( !sources.contains( RelationshipUtils.ANY_SOURCE_URI ) )
                 {
-                    s = Collections.singleton( UNKNOWN_SOURCE_URI );
-                }
-
-                boolean found = false;
-                for ( final URI uri : s )
-                {
-                    if ( sources == GraphWorkspace.DEFAULT_SOURCES || sources.contains( uri ) )
+                    Set<URI> s = edge.getSources();
+                    if ( s == null )
                     {
-                        found = true;
-                        break;
+                        s = Collections.singleton( UNKNOWN_SOURCE_URI );
                     }
-                }
 
-                if ( !found )
-                {
-                    //                    log( "Found relationship in path with de-selected source-repository URI: %s", edge );
-                    continue;
+                    boolean found = false;
+                    for ( final URI uri : s )
+                    {
+                        // TODO: What were the default sources??
+                        if ( /*sources == ViewParams.DEFAULT_SOURCES ||*/sources.contains( uri ) )
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+
+                    if ( !found )
+                    {
+                        //                    log( "Found relationship in path with de-selected source-repository URI: %s", edge );
+                        continue;
+                    }
                 }
             }
 
-            final Set<URI> pomLocations = workspace.getActivePomLocations();
+            final Set<URI> pomLocations = params.getActivePomLocations();
             if ( pomLocations != null && !pomLocations.isEmpty() )
             {
                 URI pomLocation = edge.getPomLocation();
@@ -166,7 +168,7 @@ public class JungEGraphDriver
                 }
             }
 
-            final ProjectVersionRef selected = view == null ? null : view.getSelection( target );
+            final ProjectVersionRef selected = params == null ? null : params.getSelection( target );
             if ( selected != null )
             {
                 result.add( edge.selectTarget( selected ) );
@@ -246,8 +248,9 @@ public class JungEGraphDriver
 
             final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
-            dfsTraverse( new GraphView( globalView ), traversal, 0, rel.getTarget()
-                                                                       .asProjectVersionRef() );
+            dfsTraverse( new ViewParams.Builder( workspaceId ).withActiveSources( Collections.singleton( RelationshipUtils.ANY_SOURCE_URI ) )
+                                                              .build(), traversal, rel.getTarget()
+                                                                                      .asProjectVersionRef() );
 
             final List<EProjectCycle> cycles = traversal.getCycles();
 
@@ -278,11 +281,11 @@ public class JungEGraphDriver
     }
 
     @Override
-    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final GraphView view, final ProjectVersionRef... refs )
+    public Set<List<ProjectRelationship<?>>> getAllPathsTo( final ViewParams params, final ProjectVersionRef... refs )
     {
-        final PathDetectionTraversal traversal = new PathDetectionTraversal( view, refs );
+        final PathDetectionTraversal traversal = new PathDetectionTraversal( this, params, refs );
 
-        final Set<ProjectVersionRef> roots = view.getRoots();
+        final Set<ProjectVersionRef> roots = params.getRoots();
         if ( roots == null )
         {
             LoggerFactory.getLogger( getClass() )
@@ -293,7 +296,7 @@ public class JungEGraphDriver
 
         for ( final ProjectVersionRef root : roots )
         {
-            dfsTraverse( view, traversal, 0, root );
+            dfsTraverse( params, traversal, root );
         }
 
         final Set<JungGraphPath> paths = traversal.getPaths();
@@ -307,62 +310,59 @@ public class JungEGraphDriver
     }
 
     @Override
-    public boolean introducesCycle( final GraphView view, final ProjectRelationship<?> rel )
+    public boolean introducesCycle( final ViewParams params, final ProjectRelationship<?> rel )
     {
         final CycleDetectionTraversal traversal = new CycleDetectionTraversal( rel );
 
-        dfsTraverse( view, traversal, 0, rel.getTarget()
-                                            .asProjectVersionRef() );
+        dfsTraverse( params, traversal, rel.getTarget()
+                                           .asProjectVersionRef() );
 
         return !traversal.getCycles()
                          .isEmpty();
     }
 
     @Override
-    public Set<ProjectVersionRef> getAllProjects( final GraphView view )
+    public Set<ProjectVersionRef> getAllProjects( final ViewParams params )
     {
         return new HashSet<ProjectVersionRef>( graph.getVertices() );
     }
 
     @Override
-    public void traverse( final GraphView view, final ProjectNetTraversal traversal, final EProjectNet net,
-                          final ProjectVersionRef root )
-        throws GraphDriverException
+    public void traverse( final RelationshipGraphTraversal traversal, final ProjectVersionRef root,
+                          final RelationshipGraph graph, final TraversalType type )
+        throws RelationshipGraphConnectionException
     {
-        final int passes = traversal.getRequiredPasses();
-        for ( int i = 0; i < passes; i++ )
+        traversal.startTraverse( graph );
+
+        switch ( type )
         {
-            traversal.startTraverse( i, net );
-
-            switch ( traversal.getType( i ) )
+            case breadth_first:
             {
-                case breadth_first:
-                {
-                    bfsTraverse( view, traversal, i, root );
-                    break;
-                }
-                case depth_first:
-                {
-                    dfsTraverse( view, traversal, i, root );
-                    break;
-                }
+                bfsTraverse( graph.getParams(), traversal, root );
+                break;
             }
-
-            traversal.endTraverse( i, net );
+            case depth_first:
+            {
+                dfsTraverse( graph.getParams(), traversal, root );
+                break;
+            }
         }
+
+        traversal.endTraverse( graph );
     }
 
     // TODO: Implement without recursion.
-    private void dfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass,
+    private void dfsTraverse( final ViewParams params, final RelationshipGraphTraversal traversal,
                               final ProjectVersionRef root )
     {
-        dfsIterate( view, root, traversal, new JungGraphPath( root ), new GraphPathInfo( view ), pass );
+        dfsIterate( params, root, traversal, new JungGraphPath( root ), new GraphPathInfo( this, params ) );
     }
 
-    private void dfsIterate( final GraphView view, final ProjectVersionRef node, final ProjectNetTraversal traversal,
-                             final JungGraphPath path, final GraphPathInfo pathInfo, final int pass )
+    private void dfsIterate( final ViewParams params, final ProjectVersionRef node,
+                             final RelationshipGraphTraversal traversal, final JungGraphPath path,
+                             final GraphPathInfo pathInfo )
     {
-        final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
+        final List<ProjectRelationship<?>> edges = getSortedOutEdges( params, node );
         if ( edges != null )
         {
             for ( final ProjectRelationship<?> edge : edges )
@@ -376,7 +376,7 @@ public class JungEGraphDriver
                 final JungGraphPath next = new JungGraphPath( path, realEdge );
                 final List<ProjectRelationship<?>> pathElements = next.getPathElements();
 
-                if ( traversal.traverseEdge( realEdge, pathElements, pass ) )
+                if ( traversal.traverseEdge( realEdge, pathElements ) )
                 {
                     final GraphPathInfo nextInfo = pathInfo.getChildPathInfo( realEdge );
                     if ( !( edge instanceof ParentRelationship ) || !( (ParentRelationship) edge ).isTerminus() )
@@ -389,26 +389,26 @@ public class JungEGraphDriver
                         final ProjectVersionRef target = edge.getTarget()
                                                              .asProjectVersionRef();
 
-                        dfsIterate( view, target, traversal, next, nextInfo, pass );
+                        dfsIterate( params, target, traversal, next, nextInfo );
                     }
 
-                    traversal.edgeTraversed( realEdge, pathElements, pass );
+                    traversal.edgeTraversed( realEdge, pathElements );
                 }
             }
         }
     }
 
     // TODO: Implement without recursion.
-    private void bfsTraverse( final GraphView view, final ProjectNetTraversal traversal, final int pass,
+    private void bfsTraverse( final ViewParams params, final RelationshipGraphTraversal traversal,
                               final ProjectVersionRef root )
     {
-        final GraphPathInfo pathInfo = new GraphPathInfo( view );
+        final GraphPathInfo pathInfo = new GraphPathInfo( this, params );
 
-        bfsIterate( view, Collections.singletonMap( new JungGraphPath( root ), pathInfo ), traversal, pass );
+        bfsIterate( params, Collections.singletonMap( new JungGraphPath( root ), pathInfo ), traversal );
     }
 
-    private void bfsIterate( final GraphView view, final Map<JungGraphPath, GraphPathInfo> thisLayer,
-                             final ProjectNetTraversal traversal, final int pass )
+    private void bfsIterate( final ViewParams params, final Map<JungGraphPath, GraphPathInfo> thisLayer,
+                             final RelationshipGraphTraversal traversal )
     {
         final Map<JungGraphPath, GraphPathInfo> nextLayer = new LinkedHashMap<JungGraphPath, GraphPathInfo>();
 
@@ -423,7 +423,7 @@ public class JungEGraphDriver
                 continue;
             }
 
-            final List<ProjectRelationship<?>> edges = getSortedOutEdges( view, node );
+            final List<ProjectRelationship<?>> edges = getSortedOutEdges( params, node );
             if ( edges != null )
             {
                 for ( final ProjectRelationship<?> edge : edges )
@@ -436,7 +436,7 @@ public class JungEGraphDriver
 
                     final List<ProjectRelationship<?>> pathElements = path.getPathElements();
                     // call traverseEdge no matter what, to allow traversal to "see" all relationships.
-                    if ( traversal.traverseEdge( realEdge, pathElements, pass ) )
+                    if ( traversal.traverseEdge( realEdge, pathElements ) )
                     {
                         final JungGraphPath next = new JungGraphPath( path, realEdge );
                         final GraphPathInfo nextInfo = pathInfo.getChildPathInfo( realEdge );
@@ -453,7 +453,7 @@ public class JungEGraphDriver
                             nextLayer.put( next, nextInfo );
                         }
 
-                        traversal.edgeTraversed( realEdge, pathElements, pass );
+                        traversal.edgeTraversed( realEdge, pathElements );
                     }
                 }
             }
@@ -461,11 +461,11 @@ public class JungEGraphDriver
 
         if ( !nextLayer.isEmpty() )
         {
-            bfsIterate( view, nextLayer, traversal, pass );
+            bfsIterate( params, nextLayer, traversal );
         }
     }
 
-    private List<ProjectRelationship<?>> getSortedOutEdges( final GraphView view, final ProjectVersionRef node )
+    private List<ProjectRelationship<?>> getSortedOutEdges( final ViewParams params, final ProjectVersionRef node )
     {
         Collection<ProjectRelationship<?>> unsorted = graph.getOutEdges( node.asProjectVersionRef() );
         if ( unsorted == null )
@@ -478,7 +478,7 @@ public class JungEGraphDriver
         RelationshipUtils.filterTerminalParents( unsorted );
 
         final List<ProjectRelationship<?>> sorted =
-            new ArrayList<ProjectRelationship<?>>( imposeSelections( view, unsorted ) );
+            new ArrayList<ProjectRelationship<?>>( imposeSelections( params, unsorted ) );
         Collections.sort( sorted, RelationshipComparator.INSTANCE );
 
         return sorted;
@@ -507,14 +507,14 @@ public class JungEGraphDriver
     //    }
 
     @Override
-    public boolean containsProject( final GraphView view, final ProjectVersionRef ref )
+    public boolean containsProject( final ViewParams params, final ProjectVersionRef ref )
     {
         return graph.containsVertex( ref.asProjectVersionRef() )
             && !incompleteSubgraphs.contains( ref.asProjectVersionRef() );
     }
 
     @Override
-    public boolean containsRelationship( final GraphView view, final ProjectRelationship<?> rel )
+    public boolean containsRelationship( final ViewParams params, final ProjectRelationship<?> rel )
     {
         return graph.containsEdge( rel );
     }
@@ -547,7 +547,6 @@ public class JungEGraphDriver
 
     @Override
     public void close()
-        throws IOException
     {
         // NOP; stored in memory.
     }
@@ -559,19 +558,19 @@ public class JungEGraphDriver
     //    }
 
     @Override
-    public boolean isMissing( final GraphView view, final ProjectVersionRef project )
+    public boolean isMissing( final ViewParams params, final ProjectVersionRef project )
     {
         return !graph.containsVertex( project.asProjectVersionRef() );
     }
 
     @Override
-    public boolean hasMissingProjects( final GraphView view )
+    public boolean hasMissingProjects( final ViewParams params )
     {
         return !incompleteSubgraphs.isEmpty();
     }
 
     @Override
-    public Set<ProjectVersionRef> getMissingProjects( final GraphView view )
+    public Set<ProjectVersionRef> getMissingProjects( final ViewParams params )
     {
         final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>( incompleteSubgraphs );
         // logger.info( "Got %d missing projects: %s", result.size(), result );
@@ -579,13 +578,13 @@ public class JungEGraphDriver
     }
 
     @Override
-    public boolean hasVariableProjects( final GraphView view )
+    public boolean hasVariableProjects( final ViewParams params )
     {
         return !variableSubgraphs.isEmpty();
     }
 
     @Override
-    public Set<ProjectVersionRef> getVariableProjects( final GraphView view )
+    public Set<ProjectVersionRef> getVariableProjects( final ViewParams params )
     {
         return new HashSet<ProjectVersionRef>( variableSubgraphs );
     }
@@ -609,16 +608,17 @@ public class JungEGraphDriver
 
     // TODO: May not work with paths to the entries in the cycle...since filters are often path-sensitive
     @Override
-    public Set<EProjectCycle> getCycles( final GraphView view )
+    public Set<EProjectCycle> getCycles( final ViewParams params )
     {
         final Set<EProjectCycle> result = new HashSet<EProjectCycle>();
-        if ( view.getFilter() == null )
+        if ( params.getFilter() == null || params.getFilter()
+                                                 .equals( AnyFilter.INSTANCE ) )
         {
             result.addAll( cycles );
         }
         else
         {
-            final ProjectRelationshipFilter filter = view.getFilter();
+            final ProjectRelationshipFilter filter = params.getFilter();
             nextCycle: for ( final EProjectCycle cycle : cycles )
             {
                 for ( final ProjectRelationship<?> r : cycle )
@@ -628,6 +628,8 @@ public class JungEGraphDriver
                         continue nextCycle;
                     }
                 }
+
+                result.add( cycle );
             }
         }
 
@@ -635,7 +637,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public boolean isCycleParticipant( final GraphView view, final ProjectRelationship<?> rel )
+    public boolean isCycleParticipant( final ViewParams params, final ProjectRelationship<?> rel )
     {
         for ( final EProjectCycle cycle : cycles )
         {
@@ -649,7 +651,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public boolean isCycleParticipant( final GraphView view, final ProjectVersionRef ref )
+    public boolean isCycleParticipant( final ViewParams params, final ProjectVersionRef ref )
     {
         for ( final EProjectCycle cycle : cycles )
         {
@@ -665,10 +667,13 @@ public class JungEGraphDriver
     @Override
     public void recomputeIncompleteSubgraphs()
     {
-        final GraphView view = new GraphView( globalView );
-        for ( final ProjectVersionRef vertex : getAllProjects( view ) )
+        final ViewParams params =
+            new ViewParams.Builder( workspaceId ).withActiveSources( Collections.singleton( RelationshipUtils.ANY_SOURCE_URI ) )
+                                                 .build();
+
+        for ( final ProjectVersionRef vertex : getAllProjects( params ) )
         {
-            final Collection<? extends ProjectRelationship<?>> outEdges = getRelationshipsDeclaredBy( view, vertex );
+            final Collection<? extends ProjectRelationship<?>> outEdges = getRelationshipsDeclaredBy( params, vertex );
             if ( outEdges != null && !outEdges.isEmpty() )
             {
                 incompleteSubgraphs.remove( vertex );
@@ -751,7 +756,7 @@ public class JungEGraphDriver
 
     @Override
     public synchronized void reindex()
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         for ( final Map.Entry<ProjectVersionRef, Map<String, String>> refEntry : metadata.entrySet() )
         {
@@ -765,7 +770,25 @@ public class JungEGraphDriver
     }
 
     @Override
-    public Set<ProjectVersionRef> getProjectsWithMetadata( final GraphView view, final String key )
+    public synchronized void reindex( final ProjectVersionRef ref )
+    {
+        if ( ref == null )
+        {
+            return;
+        }
+
+        final Map<String, String> map = metadata.get( ref );
+        if ( map != null )
+        {
+            for ( final Map.Entry<String, String> mdEntry : map.entrySet() )
+            {
+                addMetadataOwner( mdEntry.getKey(), ref );
+            }
+        }
+    }
+
+    @Override
+    public Set<ProjectVersionRef> getProjectsWithMetadata( final ViewParams params, final String key )
     {
         return metadataOwners.get( key );
     }
@@ -860,25 +883,27 @@ public class JungEGraphDriver
      */
     @Deprecated
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final ViewParams params,
+                                                                   final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo,
                                                                    final RelationshipType... types )
     {
-        return getDirectRelationshipsFrom( view, from, includeManagedInfo, true, types );
+        return getDirectRelationshipsFrom( params, from, includeManagedInfo, true, types );
     }
 
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final GraphView view, final ProjectVersionRef from,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final ViewParams params,
+                                                                   final ProjectVersionRef from,
                                                                    final boolean includeManagedInfo,
                                                                    final boolean includeConcreteInfo,
                                                                    final RelationshipType... types )
     {
-        return getMatchingRelationships( graph.getOutEdges( from.asProjectVersionRef() ), view, includeManagedInfo,
+        return getMatchingRelationships( graph.getOutEdges( from.asProjectVersionRef() ), params, includeManagedInfo,
                                          includeConcreteInfo, types );
     }
 
     private Set<ProjectRelationship<?>> getMatchingRelationships( final Collection<ProjectRelationship<?>> edges,
-                                                                  final GraphView view,
+                                                                  final ViewParams params,
                                                                   final boolean includeManagedInfo,
                                                                   final boolean includeConcreteInfo,
                                                                   final RelationshipType... types )
@@ -903,8 +928,8 @@ public class JungEGraphDriver
                 continue;
             }
 
-            if ( view.getFilter() != null && !view.getFilter()
-                                                  .accept( rel ) )
+            if ( params.getFilter() != null && !params.getFilter()
+                                                      .accept( rel ) )
             {
                 // logger.info( "-= %s (rejected by filter)", rel );
                 continue;
@@ -934,26 +959,26 @@ public class JungEGraphDriver
      */
     @Deprecated
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final ViewParams params, final ProjectVersionRef to,
                                                                  final boolean includeManagedInfo,
                                                                  final RelationshipType... types )
     {
-        return getDirectRelationshipsTo( view, to, includeManagedInfo, true, types );
+        return getDirectRelationshipsTo( params, to, includeManagedInfo, true, types );
     }
 
     @Override
-    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final GraphView view, final ProjectVersionRef to,
+    public Set<ProjectRelationship<?>> getDirectRelationshipsTo( final ViewParams params, final ProjectVersionRef to,
                                                                  final boolean includeManagedInfo,
                                                                  final boolean includeConcreteInfo,
                                                                  final RelationshipType... types )
     {
         // logger.info( "Getting relationships targeting: %s (types: %s)", to, join( types, ", " ) );
-        return getMatchingRelationships( graph.getInEdges( to.asProjectVersionRef() ), view, includeManagedInfo,
+        return getMatchingRelationships( graph.getInEdges( to.asProjectVersionRef() ), params, includeManagedInfo,
                                          includeConcreteInfo, types );
     }
 
     @Override
-    public Set<ProjectVersionRef> getProjectsMatching( final GraphView eProjectNetView, final ProjectRef projectRef )
+    public Set<ProjectVersionRef> getProjectsMatching( final ViewParams params, final ProjectRef projectRef )
     {
         return byGA.containsKey( projectRef.asProjectRef() ) ? byGA.get( projectRef.asProjectRef() )
                         : Collections.<ProjectVersionRef> emptySet();
@@ -961,7 +986,7 @@ public class JungEGraphDriver
 
     @Override
     public void deleteRelationshipsDeclaredBy( final ProjectVersionRef ref )
-        throws GraphDriverException
+        throws RelationshipGraphConnectionException
     {
         final Collection<ProjectRelationship<?>> edges = graph.getOutEdges( ref.asProjectVersionRef() );
         if ( edges != null )
@@ -1059,133 +1084,26 @@ public class JungEGraphDriver
     }
 
     @Override
-    public Set<URI> getActivePomLocations()
+    public boolean registerView( final ViewParams params )
     {
-        return config.getActivePomLocations();
-    }
-
-    @Override
-    public Set<URI> getActiveSources()
-    {
-        return config.getActiveSources();
-    }
-
-    @Override
-    public int getActivePomLocationCount()
-    {
-        return config.getActivePomLocationCount();
-    }
-
-    @Override
-    public int getActiveSourceCount()
-    {
-        return config.getActiveSourceCount();
-    }
-
-    @Override
-    public void setLastAccess( final long lastAccess )
-    {
-        config.setLastAccess( lastAccess );
-    }
-
-    @Override
-    public long getLastAccess()
-    {
-        return config.getLastAccess();
-    }
-
-    @Override
-    public void addActivePomLocations( final URI... locations )
-    {
-        config.withPomLocations( locations );
-    }
-
-    @Override
-    public void addActivePomLocations( final Collection<URI> locations )
-    {
-        config.withPomLocations( locations );
-    }
-
-    @Override
-    public void removeActivePomLocations( final URI... locations )
-    {
-        config.withoutPomLocations( locations );
-    }
-
-    @Override
-    public void removeActivePomLocations( final Collection<URI> locations )
-    {
-        config.withoutPomLocations( locations );
-    }
-
-    @Override
-    public void addActiveSources( final Collection<URI> sources )
-    {
-        config.withSources( sources );
-    }
-
-    @Override
-    public void addActiveSources( final URI... sources )
-    {
-        config.withSources( sources );
-    }
-
-    @Override
-    public void removeActiveSources( final URI... sources )
-    {
-        config.withoutSources( sources );
-    }
-
-    @Override
-    public void removeActiveSources( final Collection<URI> sources )
-    {
-        config.withoutSources( sources );
-    }
-
-    @Override
-    public String setProperty( final String key, final String value )
-    {
-        return config.setProperty( key, value );
-    }
-
-    @Override
-    public String removeProperty( final String key )
-    {
-        return config.removeProperty( key );
-    }
-
-    @Override
-    public String getProperty( final String key )
-    {
-        return config.getProperty( key );
-    }
-
-    @Override
-    public String getProperty( final String key, final String defaultVal )
-    {
-        return config.getProperty( key, defaultVal );
-    }
-
-    @Override
-    public boolean registerView( final GraphView view )
-    {
-        // TODO Tracking for the new view...
+        // TODO Tracking for the new params...
         return false;
     }
 
     @Override
-    public void registerViewSelection( final GraphView view, final ProjectRef ref,
+    public void registerViewSelection( final ViewParams params, final ProjectRef ref,
                                        final ProjectVersionRef projectVersionRef )
     {
         // NOP
     }
 
     @Override
-    public Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( final GraphView view, final Set<ProjectVersionRef> refs )
+    public Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( final ViewParams params,
+                                                                 final Set<ProjectVersionRef> refs )
     {
-        final PathDetectionTraversal traversal = new PathDetectionTraversal( view, refs );
+        final PathDetectionTraversal traversal = new PathDetectionTraversal( this, params, refs );
 
-        final Set<ProjectVersionRef> roots = view.getRoots();
+        final Set<ProjectVersionRef> roots = params.getRoots();
         if ( roots == null )
         {
             LoggerFactory.getLogger( getClass() )
@@ -1196,7 +1114,7 @@ public class JungEGraphDriver
 
         for ( final ProjectVersionRef root : roots )
         {
-            dfsTraverse( view, traversal, 0, root );
+            dfsTraverse( params, traversal, root );
         }
 
         final Map<JungGraphPath, GraphPathInfo> allPathsMap = traversal.getPathMap();
@@ -1224,7 +1142,7 @@ public class JungEGraphDriver
     }
 
     @Override
-    public List<ProjectVersionRef> getPathRefs( final GraphView view, final GraphPath<?> path )
+    public List<ProjectVersionRef> getPathRefs( final ViewParams params, final GraphPath<?> path )
     {
         if ( path != null && !( path instanceof JungGraphPath ) )
         {
@@ -1246,6 +1164,38 @@ public class JungEGraphDriver
         }
 
         return refs;
+    }
+
+    @Override
+    public String getWorkspaceId()
+    {
+        return workspaceId;
+    }
+
+    @Override
+    public void addProjectError( final ProjectVersionRef ref, final Throwable error )
+        throws RelationshipGraphConnectionException
+    {
+        errors.put( ref, error );
+    }
+
+    @Override
+    public Throwable getProjectError( final ProjectVersionRef ref )
+    {
+        return errors.get( ref );
+    }
+
+    @Override
+    public boolean hasProjectError( final ProjectVersionRef ref )
+    {
+        return errors.containsKey( ref );
+    }
+
+    @Override
+    public void clearProjectError( final ProjectVersionRef ref )
+        throws RelationshipGraphConnectionException
+    {
+        errors.remove( ref );
     }
 
 }

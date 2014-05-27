@@ -12,10 +12,11 @@ package org.commonjava.maven.atlas.graph.mutate;
 
 import java.io.Serializable;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 
 /**
  * Mechanism for selecting alternative relationships (especially by changing the
@@ -39,25 +40,28 @@ public interface GraphMutator
      * 
      * @param rel The relationship to process.
      * @param path The path leading to this selection, which may contain management information, etc. 
-     * @param view The view (context) in which this mutation is being made
+     * @param connection The db connection for this graph
+     * @param params The parameters for the context "view" of this operation
      * @return The alternative relationship, or the given one if no mutation 
      * takes place.
      */
-    ProjectRelationship<?> selectFor( ProjectRelationship<?> rel, GraphPath<?> path, GraphView view );
+    ProjectRelationship<?> selectFor( ProjectRelationship<?> rel, GraphPath<?> path,
+                                      RelationshipGraphConnection connection, ViewParams params );
 
     /**
      * If necessary, create a new mutator instance to handle the next wave of 
      * relationships resulting from traversal of the given relationship.
      * 
      * @param rel The relationship that will be traversed next, for which mutator logic is needed.
-     * @param view The view (context) in which this mutation is being made
+     * @param connection The db connection for this graph
+     * @param params The parameters for the context "view" of this operation
      * 
      * @return  This instance WHEREVER POSSIBLE, or a new mutator instance to 
      * encapsulate changing logic or metadata. NEVER Null. Decisions about 
      * whether to proceed should be handled via {@link ProjectRelationshipFilter}, 
      * not here.
      */
-    GraphMutator getMutatorFor( ProjectRelationship<?> rel, GraphView view );
+    GraphMutator getMutatorFor( ProjectRelationship<?> rel, RelationshipGraphConnection connection, ViewParams params );
 
     /**
      * Retrieve a human-readable string that uniquely identifies the logic in this mutator, 

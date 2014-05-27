@@ -14,9 +14,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspace;
-import org.commonjava.maven.atlas.graph.workspace.GraphWorkspaceConfiguration;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
+import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
+import org.commonjava.maven.atlas.graph.ViewParams;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,16 +38,37 @@ public abstract class AbstractSPI_TCK
         return new URI( "test:repo:" + naming.getMethodName() );
     }
 
-    protected GraphWorkspace simpleWorkspace()
+    protected RelationshipGraph simpleGraph( final ProjectVersionRef... roots )
         throws Exception
     {
-        return getManager().createWorkspace( new GraphWorkspaceConfiguration().withSource( sourceURI() ) );
+        final ViewParams params = new ViewParams( newWorkspaceId(), roots );
+        params.addActiveSource( sourceURI() );
+
+        return graphFactory().open( params, true );
+    }
+
+    protected String newWorkspaceId()
+    {
+        return "Test-" + System.currentTimeMillis();
     }
 
     protected final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    protected abstract EGraphManager getManager()
+    protected abstract RelationshipGraphConnectionFactory connectionFactory()
         throws Exception;
+
+    private RelationshipGraphFactory graphFactory;
+
+    protected final RelationshipGraphFactory graphFactory()
+        throws Exception
+    {
+        if ( graphFactory == null )
+        {
+            graphFactory = new RelationshipGraphFactory( connectionFactory() );
+        }
+
+        return graphFactory;
+    }
 
     private long start;
 
@@ -53,15 +76,22 @@ public abstract class AbstractSPI_TCK
     public void printStart()
     {
         start = System.currentTimeMillis();
-        System.out.printf( "***START [%s#%s] (%s)\n\n", naming.getClass(), naming.getMethodName(),
-                           new Date().toString() );
+        System.out.printf( "***START [%s#%s] (%s)\n\n", naming.getClass(), naming.getMethodName(), new Date().toString() );
     }
 
     @After
     public void printEnd()
+        throws Exception
     {
-        System.out.printf( "\n\n***END [%s#%s] - %sms (%s)\n", naming.getClass(), naming.getMethodName(),
-                           ( System.currentTimeMillis() - start ), new Date().toString() );
+        System.out.printf( "\n\n***END [%s#%s] - %sms (%s)\n", naming.getClass(), naming.getMethodName(), ( System.currentTimeMillis() - start ),
+                           new Date().toString() );
+
+        if ( graphFactory != null )
+        {
+            graphFactory.close();
+        }
+
+        connectionFactory().close();
     }
 
 }

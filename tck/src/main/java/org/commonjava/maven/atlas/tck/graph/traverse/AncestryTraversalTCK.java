@@ -14,13 +14,10 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
-import org.commonjava.maven.atlas.graph.model.EProjectGraph;
-import org.commonjava.maven.atlas.graph.model.EProjectKey;
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
@@ -44,16 +41,11 @@ public abstract class AncestryTraversalTCK
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
 
         final URI source = sourceURI();
+        final RelationshipGraph graph = simpleGraph( myRef );
 
-        /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), 
-                                                              new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
-        
-        graph.addAll( Arrays.asList( 
-                         new ParentRelationship( source, myRef, parentRef ), 
-                         new ParentRelationship( source, parentRef, grandRef ), 
-                         new ParentRelationship( source, grandRef ) ) );
-        /* @formatter:on */
+        graph.storeRelationships( new ParentRelationship( source, myRef, parentRef ),
+                                  new ParentRelationship( source, parentRef, grandRef ),
+                                  new ParentRelationship( source, grandRef ) );
 
         final Set<ProjectVersionRef> projects = graph.getAllProjects();
         assertThat( projects.size(), equalTo( 3 ) );
@@ -97,11 +89,10 @@ public abstract class AncestryTraversalTCK
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
 
         final URI source = sourceURI();
+        final RelationshipGraph graph = simpleGraph( myRef );
 
-        /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) ).build() );
-        graph.addAll( Arrays.asList( new ParentRelationship( source, myRef, parentRef ), new ParentRelationship( source, parentRef, grandRef ) ) );
-        /* @formatter:on */
+        graph.storeRelationships( new ParentRelationship( source, myRef, parentRef ),
+                                  new ParentRelationship( source, parentRef, grandRef ) );
 
         final AncestryTraversal ancestry = new AncestryTraversal();
         graph.traverse( ancestry );
@@ -128,7 +119,6 @@ public abstract class AncestryTraversalTCK
 
     }
 
-    @SuppressWarnings( "unchecked" )
     @Test
     public void traverseTwoAncestors_IgnoreNonParentRelationships()
         throws Exception
@@ -138,34 +128,18 @@ public abstract class AncestryTraversalTCK
         final ProjectVersionRef grandRef = new ProjectVersionRef( "other.group", "grandpa", "20120821" );
 
         final URI source = sourceURI();
+        final RelationshipGraph graph = simpleGraph( myRef );
 
         /* @formatter:off */
-        final EProjectGraph graph = getManager().createGraph( simpleWorkspace(), new EProjectDirectRelationships.Builder( new EProjectKey( source, myRef ) )
-            .withParent( new ParentRelationship( source, myRef, parentRef ) )
-            .withDependencies(
-                  new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),
-                  new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "bar", "1.2.1" ), null, null, false ), null, 1, false )
-            )
-            .withPlugins(
-                 new PluginRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0, false ),
-                 new PluginRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins","maven-jar-plugin", "2.2" ), 1, false )
-            )
-            .withExtensions(
-                new ExtensionRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0 )
-            ).build()
+        graph.storeRelationships( new ParentRelationship( source, myRef, parentRef ), 
+              new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false ),
+              new DependencyRelationship( source, myRef, new ArtifactRef( new ProjectVersionRef( "some.group", "bar", "1.2.1" ), null, null, false ), null, 1, false ),
+              new PluginRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0, false ),
+              new PluginRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins","maven-jar-plugin", "2.2" ), 1, false ),
+              new ExtensionRelationship( source, myRef, new ProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0 ),
+              new ParentRelationship( source, parentRef, grandRef ), 
+              new DependencyRelationship( source, parentRef, new ProjectVersionRef( "other.group", "utils", "3-1" ).asJarArtifact(), null, 0, false ) 
         );
-        
-        graph.addAll( Arrays.asList( 
-                new ParentRelationship( source, parentRef, grandRef ), 
-                new DependencyRelationship( 
-                        source, 
-                        parentRef, 
-                        new ArtifactRef( new ProjectVersionRef( "other.group", "utils", "3-1" ), null, null, false ), 
-                        null, 
-                        0, 
-                        false 
-                ) 
-        ) );
         /* @formatter:on */
 
         final AncestryTraversal ancestry = new AncestryTraversal();

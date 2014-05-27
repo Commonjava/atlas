@@ -11,16 +11,15 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.fixture;
 
 import java.io.File;
-import java.io.IOException;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.spi.neo4j.FileNeo4jWorkspaceFactory;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
+import org.commonjava.maven.atlas.graph.spi.neo4j.FileNeo4jConnectionFactory;
 import org.junit.rules.ExternalResource;
 import org.junit.rules.TemporaryFolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class FileDriverFixture
+public class FileConnectionFixture
     extends ExternalResource
 {
 
@@ -28,9 +27,7 @@ public class FileDriverFixture
 
     private final TemporaryFolder folder = new TemporaryFolder();
 
-    private FileNeo4jWorkspaceFactory factory;
-
-    private EGraphManager manager;
+    private FileNeo4jConnectionFactory factory;
 
     @Override
     protected void after()
@@ -38,9 +35,9 @@ public class FileDriverFixture
         super.after();
         try
         {
-            manager.close();
+            factory.close();
         }
-        catch ( final IOException e )
+        catch ( final RelationshipGraphConnectionException e )
         {
             e.printStackTrace();
         }
@@ -59,12 +56,11 @@ public class FileDriverFixture
         dbDir.mkdirs();
 
         logger.info( "Initializing db in: {}", dbDir );
-        factory = new FileNeo4jWorkspaceFactory( dbDir, false );
-        manager = new EGraphManager( factory );
+        factory = new FileNeo4jConnectionFactory( dbDir, false );
     }
 
-    public EGraphManager manager()
+    public FileNeo4jConnectionFactory connectionFactory()
     {
-        return manager;
+        return factory;
     }
 }

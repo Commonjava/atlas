@@ -17,8 +17,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
@@ -47,11 +47,11 @@ public class CycleCacheUpdater
 
     final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
-    private final GraphView view;
+    private final ViewParams view;
 
     private final GraphAdmin admin;
 
-    public CycleCacheUpdater( final GraphView view, final Node viewNode, final GraphAdmin admin,
+    public CycleCacheUpdater( final ViewParams view, final Node viewNode, final GraphAdmin admin,
                               final ConversionCache cache )
     {
         this.view = view;

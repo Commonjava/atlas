@@ -16,31 +16,18 @@ import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 
-public abstract class AbstractTraversal
-    implements RelationshipGraphTraversal
+public interface RelationshipGraphTraversal
 {
 
+    void startTraverse( RelationshipGraph graph )
+        throws RelationshipGraphConnectionException;
 
-    @Override
-    public void startTraverse( final RelationshipGraph graph )
-        throws RelationshipGraphConnectionException
-    {
-    }
+    void endTraverse( RelationshipGraph graph )
+        throws RelationshipGraphConnectionException;
 
-    @Override
-    public void endTraverse( final RelationshipGraph graph )
-        throws RelationshipGraphConnectionException
-    {
-    }
+    boolean traverseEdge( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path );
 
-    @Override
-    public void edgeTraversed( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
-    {
-    }
+    void edgeTraversed( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path );
 
-    @Override
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
-    {
-        return preCheck( relationship, path );
-    }
+    boolean preCheck( ProjectRelationship<?> relationship, List<ProjectRelationship<?>> path );
 }

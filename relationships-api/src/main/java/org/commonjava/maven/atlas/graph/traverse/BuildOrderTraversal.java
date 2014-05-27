@@ -16,13 +16,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.filter.OrFilter;
 import org.commonjava.maven.atlas.graph.filter.ParentFilter;
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
-import org.commonjava.maven.atlas.graph.model.EProjectNet;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.GraphDriverException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.traverse.model.BuildOrder;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -52,7 +52,7 @@ public class BuildOrderTraversal
 
     @Override
     protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
-                                          final List<ProjectRelationship<?>> path, final int pass )
+                                          final List<ProjectRelationship<?>> path )
     {
         final ProjectVersionRef decl = relationship.getDeclaring();
 
@@ -82,12 +82,12 @@ public class BuildOrderTraversal
     }
 
     @Override
-    public void endTraverse( final int pass, final EProjectNet network )
-        throws GraphDriverException
+    public void endTraverse( final RelationshipGraph graph )
+        throws RelationshipGraphConnectionException
     {
-        super.endTraverse( pass, network );
+        super.endTraverse( graph );
 
-        Set<EProjectCycle> cycles = network.getCycles();
+        Set<EProjectCycle> cycles = graph.getCycles();
         if ( cycles != null )
         {
             cycles = new HashSet<EProjectCycle>( cycles );

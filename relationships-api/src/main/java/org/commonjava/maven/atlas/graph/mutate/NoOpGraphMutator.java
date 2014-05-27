@@ -10,9 +10,10 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.mutate;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 
 public class NoOpGraphMutator
     implements GraphMutator
@@ -28,13 +29,14 @@ public class NoOpGraphMutator
 
     @Override
     public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
-                                             final GraphView view )
+                                             final RelationshipGraphConnection connection, final ViewParams params )
     {
         return rel;
     }
 
     @Override
-    public GraphMutator getMutatorFor( final ProjectRelationship<?> rel, final GraphView view )
+    public GraphMutator getMutatorFor( final ProjectRelationship<?> rel, final RelationshipGraphConnection connection,
+                                       final ViewParams params )
     {
         return this;
     }

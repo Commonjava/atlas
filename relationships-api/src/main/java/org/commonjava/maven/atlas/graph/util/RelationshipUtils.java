@@ -113,10 +113,8 @@ public final class RelationshipUtils
     public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<ProjectRelationship<?>> relationships )
     {
         final Logger logger = LoggerFactory.getLogger( RelationshipUtils.class );
-        logger.debug( "Mapping {} relationships by declaring GAV:\n\n  {}\n\n", relationships.size(),
-                      new JoinString( "\n  ", relationships ) );
-        final Map<ProjectVersionRef, List<ProjectRelationship<?>>> result =
-            new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
+        logger.debug( "Mapping {} relationships by declaring GAV:\n\n  {}\n\n", relationships.size(), new JoinString( "\n  ", relationships ) );
+        final Map<ProjectVersionRef, List<ProjectRelationship<?>>> result = new HashMap<ProjectVersionRef, List<ProjectRelationship<?>>>();
         for ( final ProjectRelationship<?> rel : relationships )
         {
             final ProjectVersionRef declaring = rel.getDeclaring();
@@ -269,256 +267,211 @@ public final class RelationshipUtils
         return results;
     }
 
-    public static ExtensionRelationship extension( final URI source, final ProjectVersionRef owner,
-                                                   final String groupId, final String artifactId, final String version,
-                                                   final int index )
+    public static ExtensionRelationship extension( final URI source, final URI pomLocation,
+                                                   final ProjectVersionRef owner, final String groupId,
+                                                   final String artifactId,
+                                                   final String version, final int index )
         throws InvalidVersionSpecificationException
     {
-        return new ExtensionRelationship( source, owner, projectVersion( groupId, artifactId, version ), index );
+        return new ExtensionRelationship( source, pomLocation, owner, projectVersion( groupId, artifactId, version ),
+                                          index );
     }
 
-    public static PluginRelationship plugin( final URI source, final URI pomLocation, final ProjectVersionRef owner,
-                                             final String groupId, final String artifactId, final String version,
-                                             final int index )
+    public static PluginRelationship plugin( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
+                                             final String artifactId, final String version, final int index )
         throws InvalidVersionSpecificationException
     {
         return plugin( source, pomLocation, owner, groupId, artifactId, version, index, false );
     }
 
-    public static PluginRelationship plugin( final URI source, final URI pomLocation, final ProjectVersionRef owner,
-                                             final String groupId, final String artifactId, final String version,
-                                             final int index, final boolean managed )
+    public static PluginRelationship plugin( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
+                                             final String artifactId, final String version, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
-        return new PluginRelationship( source, pomLocation, owner, projectVersion( groupId, artifactId, version ),
-                                       index, managed );
+        return new PluginRelationship( source, pomLocation, owner, projectVersion( groupId, artifactId, version ), index, managed );
     }
 
-    public static PluginRelationship plugin( final URI source, final URI pomLocation, final ProjectVersionRef owner,
-                                             final ProjectVersionRef plugin, final int index, final boolean managed )
+    public static PluginRelationship plugin( final URI source, final URI pomLocation, final ProjectVersionRef owner, final ProjectVersionRef plugin,
+                                             final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
         return new PluginRelationship( source, pomLocation, owner, plugin, index, managed );
     }
 
-    public static PluginRelationship plugin( final URI source, final ProjectVersionRef owner, final String groupId,
-                                             final String artifactId, final String version, final int index )
+    public static PluginRelationship plugin( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
+                                             final String version, final int index )
         throws InvalidVersionSpecificationException
     {
         return plugin( source, owner, groupId, artifactId, version, index, false );
     }
 
-    public static PluginRelationship plugin( final URI source, final ProjectVersionRef owner, final String groupId,
-                                             final String artifactId, final String version, final int index,
-                                             final boolean managed )
+    public static PluginRelationship plugin( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
+                                             final String version, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
         return new PluginRelationship( source, owner, projectVersion( groupId, artifactId, version ), index, managed );
     }
 
-    public static PluginRelationship plugin( final URI source, final ProjectVersionRef owner,
-                                             final ProjectVersionRef plugin, final int index, final boolean managed )
+    public static PluginRelationship plugin( final URI source, final ProjectVersionRef owner, final ProjectVersionRef plugin, final int index,
+                                             final boolean managed )
         throws InvalidVersionSpecificationException
     {
         return new PluginRelationship( source, owner, plugin, index, managed );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final String groupId,
-                                                                 final String artifactId, final String version,
-                                                                 final int index )
+    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner, final ProjectRef plugin,
+                                                                 final String groupId, final String artifactId, final String version, final int index )
         throws InvalidVersionSpecificationException
     {
         return pluginDependency( source, owner, plugin, groupId, artifactId, version, null, null, index, false );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final String groupId,
-                                                                 final String artifactId, final String version,
+    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner, final ProjectRef plugin,
+                                                                 final String groupId, final String artifactId, final String version,
                                                                  final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
         return pluginDependency( source, owner, plugin, groupId, artifactId, version, null, null, index, managed );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final String groupId,
-                                                                 final String artifactId, final String version,
-                                                                 final String type, final String classifier,
+    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner, final ProjectRef plugin,
+                                                                 final String groupId, final String artifactId, final String version,
+                                                                 final String type, final String classifier, final int index, final boolean managed )
+        throws InvalidVersionSpecificationException
+    {
+        return new PluginDependencyRelationship( source, owner, plugin, artifact( groupId, artifactId, version, type, classifier, false ), index,
+                                                 managed );
+    }
+
+    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner, final ProjectRef plugin,
+                                                                 final ProjectVersionRef dep, final String type, final String classifier,
                                                                  final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
-        return new PluginDependencyRelationship( source, owner, plugin, artifact( groupId, artifactId, version, type,
-                                                                                  classifier, false ), index, managed );
+        return new PluginDependencyRelationship( source, owner, plugin, artifact( dep, type, classifier, false ), index, managed );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final ProjectVersionRef dep,
-                                                                 final String type, final String classifier,
-                                                                 final int index, final boolean managed )
+    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
+                                                                 final ProjectRef plugin, final String groupId, final String artifactId,
+                                                                 final String version, final int index )
         throws InvalidVersionSpecificationException
     {
-        return new PluginDependencyRelationship( source, owner, plugin, artifact( dep, type, classifier, false ),
-                                                 index, managed );
+        return pluginDependency( source, pomLocation, owner, plugin, groupId, artifactId, version, null, null, index, false );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation,
-                                                                 final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final String groupId,
-                                                                 final String artifactId, final String version,
-                                                                 final int index )
+    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
+                                                                 final ProjectRef plugin, final String groupId, final String artifactId,
+                                                                 final String version, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
-        return pluginDependency( source, pomLocation, owner, plugin, groupId, artifactId, version, null, null, index,
-                                 false );
+        return pluginDependency( source, pomLocation, owner, plugin, groupId, artifactId, version, null, null, index, managed );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation,
-                                                                 final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final String groupId,
-                                                                 final String artifactId, final String version,
-                                                                 final int index, final boolean managed )
+    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
+                                                                 final ProjectRef plugin, final String groupId, final String artifactId,
+                                                                 final String version, final String type, final String classifier, final int index,
+                                                                 final boolean managed )
         throws InvalidVersionSpecificationException
     {
-        return pluginDependency( source, pomLocation, owner, plugin, groupId, artifactId, version, null, null, index,
-                                 managed );
+        return new PluginDependencyRelationship( source, pomLocation, owner, plugin,
+                                                 artifact( groupId, artifactId, version, type, classifier, false ), index, managed );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation,
-                                                                 final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final String groupId,
-                                                                 final String artifactId, final String version,
-                                                                 final String type, final String classifier,
-                                                                 final int index, final boolean managed )
+    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
+                                                                 final ProjectRef plugin, final ProjectVersionRef dep, final String type,
+                                                                 final String classifier, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
-        return new PluginDependencyRelationship( source, pomLocation, owner, plugin, artifact( groupId, artifactId,
-                                                                                               version, type,
-                                                                                               classifier, false ),
-                                                 index, managed );
+        return new PluginDependencyRelationship( source, pomLocation, owner, plugin, artifact( dep, type, classifier, false ), index, managed );
     }
 
-    public static PluginDependencyRelationship pluginDependency( final URI source, final URI pomLocation,
-                                                                 final ProjectVersionRef owner,
-                                                                 final ProjectRef plugin, final ProjectVersionRef dep,
-                                                                 final String type, final String classifier,
-                                                                 final int index, final boolean managed )
-        throws InvalidVersionSpecificationException
-    {
-        return new PluginDependencyRelationship( source, pomLocation, owner, plugin, artifact( dep, type, classifier,
-                                                                                               false ), index, managed );
-    }
-
-    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner,
-                                                     final String groupId, final String artifactId,
+    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
                                                      final String version, final int index )
         throws InvalidVersionSpecificationException
     {
         return dependency( source, owner, groupId, artifactId, version, null, null, false, null, index, false );
     }
 
-    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner,
-                                                     final ProjectVersionRef dep, final int index )
+    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final ProjectVersionRef dep, final int index )
         throws InvalidVersionSpecificationException
     {
         return dependency( source, owner, dep, null, null, false, null, index, false );
     }
 
-    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner,
-                                                     final String groupId, final String artifactId,
-                                                     final String version, final DependencyScope scope,
-                                                     final int index, final boolean managed )
+    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
+                                                     final String version, final DependencyScope scope, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
         return dependency( source, owner, groupId, artifactId, version, null, null, false, scope, index, managed );
     }
 
-    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner,
-                                                     final ProjectVersionRef dep, final DependencyScope scope,
-                                                     final int index, final boolean managed )
+    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final ProjectVersionRef dep,
+                                                     final DependencyScope scope, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
         return new DependencyRelationship( source, owner, artifact( dep, null, null, false ), scope, index, managed );
     }
 
-    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner,
-                                                     final String groupId, final String artifactId,
-                                                     final String version, final String type, final String classifier,
-                                                     final boolean optional, final DependencyScope scope,
-                                                     final int index, final boolean managed )
-        throws InvalidVersionSpecificationException
-    {
-        return new DependencyRelationship( source, owner, artifact( groupId, artifactId, version, type, classifier,
-                                                                    optional ), null, index, false );
-    }
-
-    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner,
-                                                     final ProjectVersionRef dep, final String type,
-                                                     final String classifier, final boolean optional,
+    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
+                                                     final String version, final String type, final String classifier, final boolean optional,
                                                      final DependencyScope scope, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
-        return new DependencyRelationship( source, owner, artifact( dep, type, classifier, optional ), null, index,
-                                           false );
+        return new DependencyRelationship( source, owner, artifact( groupId, artifactId, version, type, classifier, optional ), null, index, false );
     }
 
-    public static DependencyRelationship dependency( final URI source, final URI pomLocation,
-                                                     final ProjectVersionRef owner, final String groupId,
+    public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final ProjectVersionRef dep, final String type,
+                                                     final String classifier, final boolean optional, final DependencyScope scope, final int index,
+                                                     final boolean managed )
+        throws InvalidVersionSpecificationException
+    {
+        return new DependencyRelationship( source, owner, artifact( dep, type, classifier, optional ), null, index, false );
+    }
+
+    public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
                                                      final String artifactId, final String version, final int index )
         throws InvalidVersionSpecificationException
     {
-        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, false, null, index,
-                           false );
+        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, false, null, index, false );
     }
 
-    public static DependencyRelationship dependency( final URI source, final URI pomLocation,
-                                                     final ProjectVersionRef owner, final ProjectVersionRef dep,
-                                                     final int index )
+    public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
+                                                     final ProjectVersionRef dep, final int index )
         throws InvalidVersionSpecificationException
     {
         return dependency( source, pomLocation, owner, dep, null, null, false, null, index, false );
     }
 
-    public static DependencyRelationship dependency( final URI source, final URI pomLocation,
-                                                     final ProjectVersionRef owner, final String groupId,
-                                                     final String artifactId, final String version,
+    public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
+                                                     final String artifactId, final String version, final DependencyScope scope, final int index,
+                                                     final boolean managed )
+        throws InvalidVersionSpecificationException
+    {
+        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, false, scope, index, managed );
+    }
+
+    public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
+                                                     final ProjectVersionRef dep, final DependencyScope scope, final int index, final boolean managed )
+        throws InvalidVersionSpecificationException
+    {
+        return new DependencyRelationship( source, pomLocation, owner, artifact( dep, null, null, false ), scope, index, managed );
+    }
+
+    public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
+                                                     final String artifactId, final String version, final String type, final String classifier,
+                                                     final boolean optional, final DependencyScope scope, final int index, final boolean managed )
+        throws InvalidVersionSpecificationException
+    {
+        return new DependencyRelationship( source, pomLocation, owner, artifact( groupId, artifactId, version, type, classifier, optional ), null,
+                                           index, false );
+    }
+
+    public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
+                                                     final ProjectVersionRef dep, final String type, final String classifier, final boolean optional,
                                                      final DependencyScope scope, final int index, final boolean managed )
         throws InvalidVersionSpecificationException
     {
-        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, false, scope, index,
-                           managed );
-    }
-
-    public static DependencyRelationship dependency( final URI source, final URI pomLocation,
-                                                     final ProjectVersionRef owner, final ProjectVersionRef dep,
-                                                     final DependencyScope scope, final int index, final boolean managed )
-        throws InvalidVersionSpecificationException
-    {
-        return new DependencyRelationship( source, pomLocation, owner, artifact( dep, null, null, false ), scope,
-                                           index, managed );
-    }
-
-    public static DependencyRelationship dependency( final URI source, final URI pomLocation,
-                                                     final ProjectVersionRef owner, final String groupId,
-                                                     final String artifactId, final String version, final String type,
-                                                     final String classifier, final boolean optional,
-                                                     final DependencyScope scope, final int index, final boolean managed )
-        throws InvalidVersionSpecificationException
-    {
-        return new DependencyRelationship( source, pomLocation, owner, artifact( groupId, artifactId, version, type,
-                                                                                 classifier, optional ), null, index,
-                                           false );
-    }
-
-    public static DependencyRelationship dependency( final URI source, final URI pomLocation,
-                                                     final ProjectVersionRef owner, final ProjectVersionRef dep,
-                                                     final String type, final String classifier,
-                                                     final boolean optional, final DependencyScope scope,
-                                                     final int index, final boolean managed )
-        throws InvalidVersionSpecificationException
-    {
-        return new DependencyRelationship( source, pomLocation, owner, artifact( dep, type, classifier, optional ),
-                                           null, index, false );
+        return new DependencyRelationship( source, pomLocation, owner, artifact( dep, type, classifier, optional ), null, index, false );
     }
 
     public static Set<RelationshipType> getRelationshipTypes( final ProjectRelationshipFilter filter )
@@ -538,8 +491,7 @@ public final class RelationshipUtils
         }
         else if ( filter instanceof AbstractAggregatingFilter )
         {
-            final List<? extends ProjectRelationshipFilter> filters =
-                ( (AbstractAggregatingFilter) filter ).getFilters();
+            final List<? extends ProjectRelationshipFilter> filters = ( (AbstractAggregatingFilter) filter ).getFilters();
 
             for ( final ProjectRelationshipFilter f : filters )
             {

@@ -10,25 +10,20 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.jung.traverse;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.spi.jung.JungWorkspaceFactory;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.graph.spi.jung.JungGraphConnectionFactory;
 import org.commonjava.maven.atlas.tck.graph.traverse.TransitiveDependencyTraversalTCK;
 
 public class TransitiveDependencyTraversalTest
     extends TransitiveDependencyTraversalTCK
 {
-    private EGraphManager manager;
+    private final JungGraphConnectionFactory connFac = new JungGraphConnectionFactory();
 
     @Override
-    protected EGraphManager getManager()
+    protected RelationshipGraphConnectionFactory connectionFactory()
         throws Exception
     {
-        if ( manager == null )
-        {
-            manager = new EGraphManager( new JungWorkspaceFactory() );
-        }
-
-        return manager;
+        return connFac;
     }
 
 }

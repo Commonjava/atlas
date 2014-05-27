@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileDriverFixture;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileConnectionFixture;
 import org.commonjava.maven.atlas.tck.graph.traverse.TransitiveDependencyTraversalTCK;
 import org.junit.Rule;
 
@@ -19,12 +19,12 @@ public class FileTransitiveDependencyTraversalTest
     extends TransitiveDependencyTraversalTCK
 {
     @Rule
-    public FileDriverFixture fixture = new FileDriverFixture();
+    public FileConnectionFixture fixture = new FileConnectionFixture();
 
     @Override
-    protected synchronized EGraphManager getManager()
+    protected synchronized RelationshipGraphConnectionFactory connectionFactory()
         throws Exception
     {
-        return fixture.manager();
+        return fixture.connectionFactory();
     }
 }

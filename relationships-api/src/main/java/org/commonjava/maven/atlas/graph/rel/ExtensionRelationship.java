@@ -14,6 +14,7 @@ import java.io.Serializable;
 import java.net.URI;
 import java.util.Collection;
 
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
@@ -25,16 +26,28 @@ public final class ExtensionRelationship
 
     private static final long serialVersionUID = 1L;
 
+    public ExtensionRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
+                                  final ProjectVersionRef target, final int index )
+    {
+        super( source, pomLocation, RelationshipType.EXTENSION, declaring, target, index );
+    }
+
+    public ExtensionRelationship( final Collection<URI> sources, final URI pomLocation,
+                                  final ProjectVersionRef declaring, final ProjectVersionRef target, final int index )
+    {
+        super( sources, pomLocation, RelationshipType.EXTENSION, declaring, target, index );
+    }
+
     public ExtensionRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target,
                                   final int index )
     {
-        super( source, RelationshipType.EXTENSION, declaring, target, index );
+        super( source, RelationshipUtils.POM_ROOT_URI, RelationshipType.EXTENSION, declaring, target, index );
     }
 
     public ExtensionRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
                                   final ProjectVersionRef target, final int index )
     {
-        super( sources, RelationshipType.EXTENSION, declaring, target, index );
+        super( sources, RelationshipUtils.POM_ROOT_URI, RelationshipType.EXTENSION, declaring, target, index );
     }
 
     @Override
@@ -61,7 +74,7 @@ public final class ExtensionRelationship
         final ProjectVersionRef d = getDeclaring().selectVersion( version, force );
         final ProjectVersionRef t = getTarget();
 
-        return new ExtensionRelationship( getSources(), d, t, getIndex() );
+        return new ExtensionRelationship( getSources(), getPomLocation(), d, t, getIndex() );
     }
 
     @Override
@@ -76,7 +89,7 @@ public final class ExtensionRelationship
         final ProjectVersionRef d = getDeclaring();
         final ProjectVersionRef t = getTarget().selectVersion( version, force );
 
-        return new ExtensionRelationship( getSources(), d, t, getIndex() );
+        return new ExtensionRelationship( getSources(), getPomLocation(), d, t, getIndex() );
     }
 
     @Override
@@ -84,7 +97,7 @@ public final class ExtensionRelationship
     {
         final ProjectVersionRef t = getTarget();
 
-        return new ExtensionRelationship( getSources(), ref, t, getIndex() );
+        return new ExtensionRelationship( getSources(), getPomLocation(), ref, t, getIndex() );
     }
 
     @Override
@@ -92,7 +105,13 @@ public final class ExtensionRelationship
     {
         final ProjectVersionRef d = getDeclaring();
 
-        return new ExtensionRelationship( getSources(), d, ref, getIndex() );
+        return new ExtensionRelationship( getSources(), getPomLocation(), d, ref, getIndex() );
+    }
+
+    @Override
+    public ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef declaring )
+    {
+        return new ExtensionRelationship( getSources(), getPomLocation(), declaring, getTarget(), getIndex() );
     }
 
 }

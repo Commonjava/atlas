@@ -10,22 +10,22 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileDriverFixture;
-import org.commonjava.maven.atlas.tck.graph.GraphWorkspaceSPI_TCK;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.graph.spi.neo4j.fixture.FileConnectionFixture;
+import org.commonjava.maven.atlas.tck.graph.RelationshipGraphConnection_TCK;
 import org.junit.Rule;
 
 public class FileGraphWorkspaceTest
-    extends GraphWorkspaceSPI_TCK
+    extends RelationshipGraphConnection_TCK
 {
 
     @Rule
-    public FileDriverFixture fixture = new FileDriverFixture();
+    public FileConnectionFixture fixture = new FileConnectionFixture();
 
     @Override
-    protected synchronized EGraphManager getManager()
+    protected synchronized RelationshipGraphConnectionFactory connectionFactory()
         throws Exception
     {
-        return fixture.manager();
+        return fixture.connectionFactory();
     }
 }

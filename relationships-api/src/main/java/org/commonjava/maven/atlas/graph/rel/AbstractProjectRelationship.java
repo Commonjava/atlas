@@ -14,7 +14,6 @@ import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_U
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -49,7 +48,7 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
 
     private URI pomLocation;
 
-    private boolean cloneUsesLocation = true;
+    private final boolean cloneUsesLocation = true;
 
     protected AbstractProjectRelationship( final URI source, final RelationshipType type,
                                            final ProjectVersionRef declaring, final T target, final int index )
@@ -159,58 +158,7 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
     public abstract ArtifactRef getTargetArtifact();
 
     @Override
-    @SuppressWarnings( "unchecked" )
-    public synchronized ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef )
-    {
-        if ( cloneCtor == null )
-        {
-            try
-            {
-                cloneCtor =
-                    getClass().getConstructor( URI.class, URI.class, ProjectVersionRef.class, target.getClass() );
-            }
-            catch ( final NoSuchMethodException e )
-            {
-                try
-                {
-                    cloneCtor = getClass().getConstructor( URI.class, ProjectVersionRef.class, target.getClass() );
-                    cloneUsesLocation = false;
-                }
-                catch ( final NoSuchMethodException e2 )
-                {
-                    throw new IllegalArgumentException( "Missing constructor: " + getClass().getName()
-                        + "(VersionedProjectRef declaring, " + target.getClass()
-                                                                     .getName() + " target)", e2 );
-                }
-            }
-        }
-
-        try
-        {
-            final ProjectRelationship<T> result =
-                cloneUsesLocation ? cloneCtor.newInstance( sources.get( 0 ), pomLocation, projectRef, target )
-                                : cloneCtor.newInstance( sources.get( 0 ), projectRef, target );
-
-            result.addSources( sources );
-            return result;
-        }
-        catch ( final InstantiationException e )
-        {
-            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: "
-                + projectRef + ": " + e.getMessage(), e );
-        }
-        catch ( final IllegalAccessException e )
-        {
-            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: "
-                + projectRef + ": " + e.getMessage(), e );
-        }
-        catch ( final InvocationTargetException e )
-        {
-            throw new IllegalArgumentException( "Failed to create clone of: " + getClass().getName() + " for project: "
-                + projectRef + ": " + e.getTargetException()
-                                       .getMessage(), e.getTargetException() );
-        }
-    }
+    public abstract ProjectRelationship<T> cloneFor( final ProjectVersionRef declaring );
 
     @Override
     public int hashCode()

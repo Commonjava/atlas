@@ -17,9 +17,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.jung.model.JungGraphPath;
 import org.commonjava.maven.atlas.graph.traverse.AbstractTraversal;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -35,17 +36,23 @@ final class PathDetectionTraversal
 
     private final Set<JungGraphPath> paths = new HashSet<JungGraphPath>();
 
-    private final GraphView view;
+    private final ViewParams params;
 
-    PathDetectionTraversal( final GraphView view, final ProjectVersionRef[] refs )
+    private final RelationshipGraphConnection connection;
+
+    PathDetectionTraversal( final RelationshipGraphConnection connection, final ViewParams params,
+                            final ProjectVersionRef[] refs )
     {
-        this.view = view;
+        this.connection = connection;
+        this.params = params;
         this.to = new HashSet<ProjectVersionRef>( Arrays.asList( refs ) );
     }
 
-    public PathDetectionTraversal( final GraphView view, final Set<ProjectVersionRef> refs )
+    public PathDetectionTraversal( final RelationshipGraphConnection connection, final ViewParams params,
+                                   final Set<ProjectVersionRef> refs )
     {
-        this.view = view;
+        this.connection = connection;
+        this.params = params;
         this.to = refs;
     }
 
@@ -60,15 +67,14 @@ final class PathDetectionTraversal
     }
 
     @Override
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                             final int pass )
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
         JungGraphPath jpath;
         GraphPathInfo pathInfo;
         if ( path.isEmpty() )
         {
             jpath = new JungGraphPath( relationship.getDeclaring() );
-            pathInfo = new GraphPathInfo( view );
+            pathInfo = new GraphPathInfo( connection, params );
         }
         else
         {

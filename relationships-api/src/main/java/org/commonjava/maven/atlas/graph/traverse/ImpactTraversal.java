@@ -65,10 +65,9 @@ public class ImpactTraversal
     }
 
     @Override
-    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                                 final int pass )
+    public boolean traverseEdge( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
-        if ( !preCheck( relationship, path, pass ) )
+        if ( !preCheck( relationship, path ) )
         {
             return false;
         }
@@ -85,8 +84,8 @@ public class ImpactTraversal
         return true;
     }
 
-    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path,
-                             final int pass )
+    @Override
+    public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
         if ( !includeManagedInfo )
         {

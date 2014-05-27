@@ -10,24 +10,19 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.jung;
 
-import org.commonjava.maven.atlas.graph.EGraphManager;
-import org.commonjava.maven.atlas.tck.graph.EProjectGraphTCK;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.tck.graph.RelationshipGraphConnection_TCK;
 
-public class EProjectGraphTest
-    extends EProjectGraphTCK
+public class RelationshipGraphConnectionTest
+    extends RelationshipGraphConnection_TCK
 {
-    private EGraphManager manager;
+    private final JungGraphConnectionFactory connFac = new JungGraphConnectionFactory();
 
     @Override
-    protected EGraphManager getManager()
+    protected RelationshipGraphConnectionFactory connectionFactory()
         throws Exception
     {
-        if ( manager == null )
-        {
-            manager = new EGraphManager( new JungWorkspaceFactory() );
-        }
-
-        return manager;
+        return connFac;
     }
 
 }

@@ -31,6 +31,7 @@ import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -42,7 +43,9 @@ public class EProjectDirectRelationships
 
     private static final long serialVersionUID = 1L;
 
-    private final EProjectKey key;
+    private final URI source;
+
+    private final ProjectVersionRef ref;
 
     private final List<BomRelationship> boms;
 
@@ -60,17 +63,17 @@ public class EProjectDirectRelationships
 
     private final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies;
 
-    public EProjectDirectRelationships( final EProjectKey key,
+    public EProjectDirectRelationships( final URI source,
+                                        final ProjectVersionRef ref,
                                         final ParentRelationship parent,
                                         final List<BomRelationship> boms,
-                                        final List<DependencyRelationship> dependencies,
-                                        final List<PluginRelationship> plugins,
-                                        final List<DependencyRelationship> managedDependencies,
-                                        final List<PluginRelationship> managedPlugins,
+                                        final List<DependencyRelationship> dependencies, final List<PluginRelationship> plugins,
+                                        final List<DependencyRelationship> managedDependencies, final List<PluginRelationship> managedPlugins,
                                         final List<ExtensionRelationship> extensions,
                                         final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies )
     {
-        this.key = key;
+        this.source = source;
+        this.ref = ref;
         this.parent = parent;
         this.boms = Collections.unmodifiableList( boms );
         this.dependencies = Collections.unmodifiableList( dependencies );
@@ -90,14 +93,9 @@ public class EProjectDirectRelationships
         this.pluginDependencies = Collections.unmodifiableMap( pdrels );
     }
 
-    public EProjectKey getKey()
-    {
-        return key;
-    }
-
     public final ProjectVersionRef getProjectRef()
     {
-        return key.getProject();
+        return ref;
     }
 
     public final List<DependencyRelationship> getDependencies()
@@ -135,10 +133,9 @@ public class EProjectDirectRelationships
         return pluginDependencies;
     }
 
-    public final List<PluginDependencyRelationship> getPluginDependencies( final ProjectVersionRef plugin,
-                                                                           final boolean managed )
+    public final List<PluginDependencyRelationship> getPluginDependencies( final ProjectVersionRef plugin, final boolean managed )
     {
-        final PluginRelationship pr = new PluginRelationship( key.getSource(), getProjectRef(), plugin, 0, managed );
+        final PluginRelationship pr = new PluginRelationship( source, getProjectRef(), plugin, 0, managed );
         return pluginDependencies.get( pr );
     }
 
@@ -182,7 +179,9 @@ public class EProjectDirectRelationships
 
     public static final class Builder
     {
-        private final EProjectKey key;
+        private final URI source;
+
+        private final ProjectVersionRef ref;
 
         private final List<BomRelationship> boms = new ArrayList<BomRelationship>();
 
@@ -203,28 +202,25 @@ public class EProjectDirectRelationships
 
         public Builder( final URI source, final ProjectVersionRef projectRef, final String... activeProfiles )
         {
-            this.key = new EProjectKey( source, projectRef );
-        }
-
-        public Builder( final EProjectKey key )
-        {
-            this.key = key;
+            this.source = source;
+            this.ref = projectRef;
         }
 
         public EProjectDirectRelationships build()
         {
             if ( parent == null )
             {
-                parent = new ParentRelationship( key.getSource(), key.getProject() );
+                parent = new ParentRelationship( source, ref );
             }
 
-            return new EProjectDirectRelationships( key, parent, boms, dependencies, plugins, managedDependencies,
-                                                    managedPlugins, extensions, pluginDependencies );
+            return new EProjectDirectRelationships( source, ref, parent, boms, dependencies, plugins,
+                                                    managedDependencies, managedPlugins, extensions,
+                                                    pluginDependencies );
         }
 
         public Builder withParent( final ProjectVersionRef parent )
         {
-            this.parent = new ParentRelationship( key.getSource(), key.getProject(), parent );
+            this.parent = new ParentRelationship( source, ref, parent );
             return this;
         }
 
@@ -238,10 +234,10 @@ public class EProjectDirectRelationships
         @SuppressWarnings( "unchecked" )
         private <C extends ProjectRelationship<?>> C adjustDeclaring( final C rel )
         {
-            if ( !key.getProject()
+            if ( !ref
                      .equals( rel.getDeclaring() ) )
             {
-                return (C) rel.cloneFor( key.getProject() );
+                return (C) rel.cloneFor( ref );
             }
 
             return rel;
@@ -359,10 +355,8 @@ public class EProjectDirectRelationships
 
                 if ( pr == null )
                 {
-                    throw new IllegalArgumentException(
-                                                        "Orphaned plugin-level dependency found: "
-                                                            + rel
-                                                            + ". Make sure you load plugin relationships BEFORE attempting to load plugin-dependency-relationships." );
+                    throw new IllegalArgumentException( "Orphaned plugin-level dependency found: " + rel
+                        + ". Make sure you load plugin relationships BEFORE attempting to load plugin-dependency-relationships." );
                 }
 
                 List<PluginDependencyRelationship> pdrs = pluginDependencies.get( pr );
@@ -456,7 +450,7 @@ public class EProjectDirectRelationships
         public int getNextPluginDependencyIndex( final ProjectVersionRef plugin, final boolean managed )
         {
             final List<PluginDependencyRelationship> list =
-                pluginDependencies.get( new PluginRelationship( key.getSource(), key.getProject(), plugin, 0, managed ) );
+                pluginDependencies.get( new PluginRelationship( source, ref, plugin, 0, managed ) );
             return list == null ? 0 : list.size();
         }
 
@@ -470,11 +464,11 @@ public class EProjectDirectRelationships
             return extensions.size();
         }
 
-        public Builder withDependency( final ProjectVersionRef ref, final String type, final String classifier,
-                                       final DependencyScope scope, final boolean managed )
+        public Builder withDependency( final ProjectVersionRef ref, final String type, final String classifier, final DependencyScope scope,
+                                       final boolean managed )
         {
-            withDependencies( new DependencyRelationship( key.getSource(), key.getProject(),
-                                                          new ArtifactRef( ref, type, classifier, false ), scope,
+            withDependencies( new DependencyRelationship( source, ref, new ArtifactRef( ref, type, classifier, false ),
+                                                          scope,
                                                           getNextDependencyIndex( managed ), managed ) );
 
             return this;
@@ -482,21 +476,21 @@ public class EProjectDirectRelationships
 
         public Builder withPlugin( final ProjectVersionRef ref, final boolean managed )
         {
-            withPlugins( new PluginRelationship( key.getSource(), key.getProject(), ref, getNextPluginIndex( managed ),
-                                                 managed ) );
+            withPlugins( new PluginRelationship( source, ref, ref, getNextPluginIndex( managed ), managed ) );
 
             return this;
         }
 
         public Builder withExtension( final ProjectVersionRef ref )
         {
-            withExtensions( new ExtensionRelationship( key.getSource(), key.getProject(), ref, getNextExtensionIndex() ) );
+            withExtensions( new ExtensionRelationship( source, RelationshipUtils.POM_ROOT_URI, ref, ref,
+                                                       getNextExtensionIndex() ) );
             return this;
         }
 
         public ProjectVersionRef getProjectRef()
         {
-            return key.getProject();
+            return ref;
         }
 
     }

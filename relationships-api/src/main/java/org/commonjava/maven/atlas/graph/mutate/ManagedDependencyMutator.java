@@ -10,10 +10,11 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.mutate;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.GraphPath;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class ManagedDependencyMutator
@@ -25,20 +26,20 @@ public class ManagedDependencyMutator
 
     @Override
     public ProjectRelationship<?> selectFor( final ProjectRelationship<?> rel, final GraphPath<?> path,
-                                             final GraphView view )
+                                             final RelationshipGraphConnection connection, final ViewParams params )
     {
-        if ( rel.getType() != RelationshipType.DEPENDENCY )
+        if ( rel.getType() != RelationshipType.DEPENDENCY ) // TODO: BOM types??
         {
             //            logger.debug( "No selections for relationships of type: {}", rel.getType() );
             return rel;
         }
 
-        ProjectRelationship<?> mutated = super.selectFor( rel, path, view );
+        ProjectRelationship<?> mutated = super.selectFor( rel, path, connection, params );
         if ( mutated == null || mutated == rel )
         {
             final ProjectVersionRef managed =
-                view.getDatabase()
-                    .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
+                connection
+                                                  .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
             if ( managed != null )
             {
                 mutated = rel.selectTarget( managed );

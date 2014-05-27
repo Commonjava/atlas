@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse.track;
 
+import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.model.GraphView;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -35,7 +35,7 @@ public class LuceneSeenTracker
 
     private final Node viewNode;
 
-    public LuceneSeenTracker( final GraphView view, final Node viewNode, final GraphAdmin admin )
+    public LuceneSeenTracker( final ViewParams view, final Node viewNode, final GraphAdmin admin )
     {
         this.viewNode = viewNode;
         this.seen = admin.getNodeIndex( view.getShortId() + SEEN_RELS_PREFIX + System.currentTimeMillis() );
