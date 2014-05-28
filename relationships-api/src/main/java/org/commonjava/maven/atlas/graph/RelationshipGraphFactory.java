@@ -78,7 +78,7 @@ public final class RelationshipGraphFactory
         }
         else
         {
-            cache.addGraphOwner( params );
+            graph.incrementGraphOwnership();
         }
 
         return graph;
@@ -145,8 +145,6 @@ public final class RelationshipGraphFactory
 
         private final Map<ViewParams, RelationshipGraph> graphs = new HashMap<ViewParams, RelationshipGraph>();
 
-        private final Map<ViewParams, Integer> graphCounter = new HashMap<ViewParams, Integer>();
-
         private final Timer timer;
 
         private TimerTask closeTimer;
@@ -206,21 +204,6 @@ public final class RelationshipGraphFactory
             return connection != null;
         }
 
-        synchronized void addGraphOwner( final ViewParams params )
-        {
-            Integer i = graphCounter.remove( params );
-            if ( i == null )
-            {
-                i = Integer.valueOf( 1 );
-            }
-            else
-            {
-                i = Integer.valueOf( i.intValue() + 1 );
-            }
-
-            graphCounter.put( params, i );
-        }
-
         RelationshipGraph getGraph( final ViewParams params )
         {
             final RelationshipGraph graph = graphs.get( params );
@@ -255,7 +238,6 @@ public final class RelationshipGraphFactory
 
         synchronized void registerGraph( final ViewParams params, final RelationshipGraph graph )
         {
-            addGraphOwner( params );
             logger.info( "Registering new connection to: {}", params.getWorkspaceId() );
             graphs.put( params, graph );
             cancelCloseTimer();
@@ -263,19 +245,10 @@ public final class RelationshipGraphFactory
 
         synchronized void deregisterGraph( final ViewParams params )
         {
-            Integer i = graphCounter.remove( params );
-            if ( i == null || i.intValue() < 2 )
+            graphs.remove( params );
+            if ( isEmpty() )
             {
-                graphs.remove( params );
-                if ( isEmpty() )
-                {
-                    startCloseTimer();
-                }
-            }
-            else
-            {
-                i = Integer.valueOf( i.intValue() - 1 );
-                graphCounter.put( params, i );
+                startCloseTimer();
             }
         }
 

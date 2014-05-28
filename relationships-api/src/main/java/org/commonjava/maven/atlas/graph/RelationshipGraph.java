@@ -25,9 +25,13 @@ import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public final class RelationshipGraph
 {
+
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private static final String GROUP_ID = "groupId";
 
@@ -41,12 +45,15 @@ public final class RelationshipGraph
 
     private RelationshipGraphConnection connection;
 
+    // if we didn't have a user, we wouldn't have constructed this thing!
+    private int userCounter = 1;
+
     RelationshipGraph( final ViewParams params, final RelationshipGraphConnection driver )
     {
         this.params = params;
         this.connection = driver;
 
-        connection.registerView( params );
+        getConnectionInternal().registerView( params );
     }
 
     public ViewParams getParams()
@@ -57,7 +64,7 @@ public final class RelationshipGraph
     public void storeProjectError( final ProjectVersionRef ref, final Throwable error )
         throws RelationshipGraphException
     {
-        connection.addProjectError( ref, error );
+        getConnectionInternal().addProjectError( ref, error );
 
         for ( final RelationshipGraphListener listener : listeners )
         {
@@ -67,18 +74,18 @@ public final class RelationshipGraph
 
     public Throwable getProjectError( final ProjectVersionRef ref )
     {
-        return connection.getProjectError( ref );
+        return getConnectionInternal().getProjectError( ref );
     }
 
     public boolean hasProjectError( final ProjectVersionRef ref )
     {
-        return connection.hasProjectError( ref );
+        return getConnectionInternal().hasProjectError( ref );
     }
 
     public void clearProjectError( final ProjectVersionRef ref )
         throws RelationshipGraphException
     {
-        connection.clearProjectError( ref );
+        getConnectionInternal().clearProjectError( ref );
     }
 
     public Set<ProjectRelationship<?>> storeRelationships( final ProjectRelationship<?>... relationships )
@@ -91,7 +98,7 @@ public final class RelationshipGraph
             listener.storing( this, rels );
         }
 
-        final Set<ProjectRelationship<?>> rejected = connection.addRelationships( relationships );
+        final Set<ProjectRelationship<?>> rejected = getConnectionInternal().addRelationships( relationships );
 
         for ( final RelationshipGraphListener listener : listeners )
         {
@@ -110,7 +117,7 @@ public final class RelationshipGraph
         }
 
         final Set<ProjectRelationship<?>> rejected =
-            connection.addRelationships( relationships.toArray( new ProjectRelationship<?>[relationships.size()] ) );
+            getConnectionInternal().addRelationships( relationships.toArray( new ProjectRelationship<?>[relationships.size()] ) );
 
         for ( final RelationshipGraphListener listener : listeners )
         {
@@ -138,7 +145,12 @@ public final class RelationshipGraph
         }
     }
 
-    public void close()
+    synchronized void incrementGraphOwnership()
+    {
+        userCounter++;
+    }
+
+    public synchronized void forceClose()
         throws RelationshipGraphException
     {
         if ( listeners != null )
@@ -158,48 +170,47 @@ public final class RelationshipGraph
                 listener.closed( this );
             }
         }
+    }
 
-        //        try
-        //        {
-        //            connection.close();
-        //        }
-        //        finally
-        //        {
-        //            if ( listeners != null )
-        //            {
-        //                for ( final RelationshipGraphListener listener : listeners )
-        //                {
-        //                    listener.closed( this );
-        //                }
-        //            }
-        //        }
+    public synchronized void close()
+        throws RelationshipGraphException
+    {
+        userCounter--;
+
+        if ( userCounter < 1 )
+        {
+            forceClose();
+        }
+
+        logger.info( "NOT closing; there are other users registered!" );
+        return;
     }
 
     // +++ IMPORTED FROM EProjectWeb...
 
     public Set<ProjectRelationship<?>> getAllRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( connection.getAllRelationships( params ) );
+        return new HashSet<ProjectRelationship<?>>( getConnectionInternal().getAllRelationships( params ) );
     }
 
     public boolean isComplete()
     {
-        return !connection.hasMissingProjects( params );
+        return !getConnectionInternal().hasMissingProjects( params );
     }
 
     public boolean isConcrete()
     {
-        return !connection.hasVariableProjects( params );
+        return !getConnectionInternal().hasVariableProjects( params );
     }
 
     public Set<ProjectVersionRef> getIncompleteSubgraphs()
     {
-        return Collections.unmodifiableSet( connection.getMissingProjects( params ) );
+        return Collections.unmodifiableSet( getConnectionInternal().getMissingProjects( params ) );
     }
 
     public Set<ProjectVersionRef> getVariableSubgraphs()
     {
-        return Collections.unmodifiableSet( connection.getVariableProjects( params ) );
+        return Collections.unmodifiableSet( getConnectionInternal().getVariableProjects( params ) );
     }
 
     public Set<ProjectRelationship<?>> add( final EProjectDirectRelationships rels )
@@ -216,8 +227,8 @@ public final class RelationshipGraph
             return false;
         }
 
-        return connection.addRelationships( rel )
-                         .isEmpty();
+        return getConnectionInternal().addRelationships( rel )
+                                      .isEmpty();
     }
 
     public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
@@ -231,12 +242,12 @@ public final class RelationshipGraph
         final Set<T> result = new HashSet<T>( rels );
 
         final Set<ProjectRelationship<?>> rejected =
-            connection.addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+            getConnectionInternal().addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
         result.removeAll( rejected );
 
         if ( !result.isEmpty() )
         {
-            connection.recomputeIncompleteSubgraphs();
+            getConnectionInternal().recomputeIncompleteSubgraphs();
         }
 
         return result;
@@ -259,7 +270,7 @@ public final class RelationshipGraph
             }
         }
 
-        connection.recomputeIncompleteSubgraphs();
+        getConnectionInternal().recomputeIncompleteSubgraphs();
 
         return result;
     }
@@ -268,7 +279,7 @@ public final class RelationshipGraph
                           final TraversalType type )
         throws RelationshipGraphException
     {
-        connection.traverse( traversal, start, this, type );
+        getConnectionInternal().traverse( traversal, start, this, type );
     }
 
     public void traverse( final ProjectVersionRef start, final RelationshipGraphTraversal traversal )
@@ -282,7 +293,7 @@ public final class RelationshipGraph
     {
         for ( final ProjectVersionRef root : params.getRoots() )
         {
-            connection.traverse( traversal, root, this, type );
+            getConnectionInternal().traverse( traversal, root, this, type );
         }
     }
 
@@ -294,22 +305,22 @@ public final class RelationshipGraph
 
     public Set<ProjectRelationship<?>> getUserRelationships( final ProjectVersionRef ref )
     {
-        if ( !connection.containsProject( params, ref ) )
+        if ( !getConnectionInternal().containsProject( params, ref ) )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( connection.getRelationshipsTargeting( params, ref ) );
+        return new HashSet<ProjectRelationship<?>>( getConnectionInternal().getRelationshipsTargeting( params, ref ) );
     }
 
     public Set<ProjectRelationship<?>> getDirectRelationships( final ProjectVersionRef ref )
     {
-        if ( !connection.containsProject( params, ref ) )
+        if ( !getConnectionInternal().containsProject( params, ref ) )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( connection.getRelationshipsDeclaredBy( params, ref ) );
+        return new HashSet<ProjectRelationship<?>>( getConnectionInternal().getRelationshipsDeclaredBy( params, ref ) );
     }
 
     public Set<ProjectVersionRef> getRoots()
@@ -324,29 +335,29 @@ public final class RelationshipGraph
 
     public boolean isCycleParticipant( final ProjectVersionRef ref )
     {
-        return connection.isCycleParticipant( params, ref );
+        return getConnectionInternal().isCycleParticipant( params, ref );
     }
 
     public boolean isCycleParticipant( final ProjectRelationship<?> rel )
     {
-        return connection.isCycleParticipant( params, rel );
+        return getConnectionInternal().isCycleParticipant( params, rel );
     }
 
     public void addCycle( final EProjectCycle cycle )
         throws RelationshipGraphException
     {
-        connection.addCycle( cycle );
+        getConnectionInternal().addCycle( cycle );
     }
 
     public Set<EProjectCycle> getCycles()
     {
-        return connection.getCycles( params );
+        return getConnectionInternal().getCycles( params );
     }
 
     public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
         final Collection<? extends ProjectRelationship<?>> rels =
-            connection.getRelationshipsTargeting( params, ref.asProjectVersionRef() );
+            getConnectionInternal().getRelationshipsTargeting( params, ref.asProjectVersionRef() );
         if ( rels == null )
         {
             return Collections.emptySet();
@@ -362,57 +373,57 @@ public final class RelationshipGraph
 
     public Set<ProjectVersionRef> getAllProjects()
     {
-        return connection.getAllProjects( params );
+        return getConnectionInternal().getAllProjects( params );
     }
 
     public void addMetadata( final ProjectVersionRef ref, final String name, final String value )
         throws RelationshipGraphException
     {
-        connection.addMetadata( ref, name, value );
+        getConnectionInternal().addMetadata( ref, name, value );
     }
 
     public void addMetadata( final ProjectVersionRef ref, final Map<String, String> metadata )
         throws RelationshipGraphException
     {
-        connection.setMetadata( ref, metadata );
+        getConnectionInternal().setMetadata( ref, metadata );
     }
 
     public Set<ProjectVersionRef> getProjectsWithMetadata( final String key )
     {
-        return connection.getProjectsWithMetadata( params, key );
+        return getConnectionInternal().getProjectsWithMetadata( params, key );
     }
 
     public void reindex()
         throws RelationshipGraphException
     {
-        connection.reindex();
+        getConnectionInternal().reindex();
     }
 
     public void reindex( final ProjectVersionRef ref )
         throws RelationshipGraphConnectionException
     {
-        connection.reindex( ref );
+        getConnectionInternal().reindex( ref );
     }
 
     public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... projectVersionRefs )
     {
-        return connection.getAllPathsTo( params, projectVersionRefs );
+        return getConnectionInternal().getAllPathsTo( params, projectVersionRefs );
     }
 
     public boolean introducesCycle( final ProjectRelationship<?> rel )
     {
-        return connection.introducesCycle( params, rel );
+        return getConnectionInternal().introducesCycle( params, rel );
     }
 
     public void addDisconnectedProject( final ProjectVersionRef ref )
         throws RelationshipGraphException
     {
-        connection.addDisconnectedProject( ref );
+        getConnectionInternal().addDisconnectedProject( ref );
     }
 
     public boolean isMissing( final ProjectVersionRef ref )
     {
-        return connection.isMissing( params, ref );
+        return getConnectionInternal().isMissing( params, ref );
     }
 
     public Set<URI> getSources()
@@ -513,37 +524,37 @@ public final class RelationshipGraph
     // +++ IMPORTED FROM EGraphManager
     public boolean containsGraph( final ProjectVersionRef ref )
     {
-        return connection.containsProject( params, ref );
+        return getConnectionInternal().containsProject( params, ref );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final ProjectVersionRef to,
                                                                   final boolean includeManagedInfo,
                                                                   final RelationshipType... types )
     {
-        return connection.getDirectRelationshipsTo( params, to, includeManagedInfo, true, types );
+        return getConnectionInternal().getDirectRelationshipsTo( params, to, includeManagedInfo, true, types );
     }
 
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
                                                                     final boolean managed,
                                                                     final RelationshipType... types )
     {
-        return connection.getDirectRelationshipsFrom( params, source, managed, true, types );
+        return getConnectionInternal().getDirectRelationshipsFrom( params, source, managed, true, types );
     }
 
     public Set<ProjectVersionRef> getAllIncompleteSubgraphs()
     {
-        return connection.getMissingProjects( params );
+        return getConnectionInternal().getMissingProjects( params );
     }
 
     public Set<ProjectVersionRef> getAllVariableSubgraphs()
     {
-        return connection.getVariableProjects( params );
+        return getConnectionInternal().getVariableProjects( params );
     }
 
     public Map<String, String> getMetadata( final ProjectVersionRef ref )
     {
         final Map<String, String> result = new HashMap<String, String>();
-        final Map<String, String> metadata = connection.getMetadata( ref );
+        final Map<String, String> metadata = getConnectionInternal().getMetadata( ref );
         if ( metadata != null )
         {
             result.putAll( metadata );
@@ -559,7 +570,7 @@ public final class RelationshipGraph
     public Map<String, String> getMetadata( final ProjectVersionRef ref, final Set<String> keys )
     {
         final Map<String, String> result = new HashMap<String, String>();
-        final Map<String, String> metadata = connection.getMetadata( ref, keys );
+        final Map<String, String> metadata = getConnectionInternal().getMetadata( ref, keys );
         if ( metadata != null )
         {
             result.putAll( metadata );
@@ -607,43 +618,43 @@ public final class RelationshipGraph
     public void setMetadata( final ProjectVersionRef project, final Map<String, String> metadata )
         throws RelationshipGraphException
     {
-        connection.setMetadata( project, metadata );
+        getConnectionInternal().setMetadata( project, metadata );
     }
 
     public void deleteRelationshipsDeclaredBy( final ProjectVersionRef ref )
         throws RelationshipGraphException
     {
-        connection.deleteRelationshipsDeclaredBy( ref );
+        getConnectionInternal().deleteRelationshipsDeclaredBy( ref );
     }
 
     public Set<ProjectVersionRef> getProjectsMatching( final ProjectRef projectRef )
     {
-        return connection.getProjectsMatching( params, projectRef );
+        return getConnectionInternal().getProjectsMatching( params, projectRef );
     }
 
     public Map<GraphPath<?>, GraphPathInfo> getPathMapTargeting( final Set<ProjectVersionRef> refs )
     {
-        return connection.getPathMapTargeting( params, refs );
+        return getConnectionInternal().getPathMapTargeting( params, refs );
     }
 
     public ProjectVersionRef getPathTargetRef( final GraphPath<?> path )
     {
-        return connection.getPathTargetRef( path );
+        return getConnectionInternal().getPathTargetRef( path );
     }
 
     public GraphPath<?> createPath( final GraphPath<?> parentPath, final ProjectRelationship<?> relationship )
     {
-        return connection.createPath( parentPath, relationship );
+        return getConnectionInternal().createPath( parentPath, relationship );
     }
 
     public GraphPath<?> createPath( final ProjectRelationship<?>... relationships )
     {
-        return connection.createPath( relationships );
+        return getConnectionInternal().createPath( relationships );
     }
 
     public List<ProjectVersionRef> getPathRefs( final GraphPath<?> path )
     {
-        return connection.getPathRefs( params, path );
+        return getConnectionInternal().getPathRefs( params, path );
     }
 
     RelationshipGraphConnection getConnection()
@@ -661,16 +672,16 @@ public final class RelationshipGraph
 
     public void printStats()
     {
-        connection.printStats();
+        getConnectionInternal().printStats();
     }
 
     public Map<ProjectVersionRef, Throwable> getAllProjectErrors()
     {
         final Map<ProjectVersionRef, Throwable> errors = new HashMap<ProjectVersionRef, Throwable>();
-        final Set<ProjectVersionRef> projects = connection.getAllProjects( params );
+        final Set<ProjectVersionRef> projects = getConnectionInternal().getAllProjects( params );
         for ( final ProjectVersionRef ref : projects )
         {
-            final Throwable error = connection.getProjectError( ref );
+            final Throwable error = getConnectionInternal().getProjectError( ref );
             if ( error != null )
             {
                 errors.put( ref, error );
@@ -678,6 +689,21 @@ public final class RelationshipGraph
         }
 
         return errors;
+    }
+
+    public synchronized boolean isOpen()
+    {
+        return connection != null;
+    }
+
+    private synchronized RelationshipGraphConnection getConnectionInternal()
+    {
+        if ( connection == null )
+        {
+            throw new IllegalStateException( "Relationship graph has been closed!" );
+        }
+
+        return connection;
     }
 
 }
