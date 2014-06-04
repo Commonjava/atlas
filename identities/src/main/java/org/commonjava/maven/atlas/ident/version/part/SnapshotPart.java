@@ -13,6 +13,8 @@ package org.commonjava.maven.atlas.ident.version.part;
 import java.io.Serializable;
 import java.util.Date;
 
+import org.commonjava.maven.atlas.ident.version.transform.SnapshotSupport;
+
 public class SnapshotPart
     extends VersionPart
     implements Serializable
@@ -26,7 +28,6 @@ public class SnapshotPart
 
     private final String literal;
 
-    // TODO: Parse into date and buildnumber for comparison
     public SnapshotPart( final Date timestamp, final int buildNumber, final String literal )
     {
         this.timestamp = timestamp;
@@ -36,8 +37,18 @@ public class SnapshotPart
 
     public SnapshotPart( final String literal )
     {
-        timestamp = null;
-        buildNumber = null;
+        if ( SnapshotSupport.isRemoteSnapshotVersionPart( literal ) )
+        {
+            final SnapshotPart sp = SnapshotSupport.parseRemoteSnapshotVersionPart( literal );
+            timestamp = sp.timestamp;
+            buildNumber = sp.buildNumber;
+        }
+        else
+        {
+            timestamp = null;
+            buildNumber = null;
+        }
+
         this.literal = literal;
     }
 
@@ -78,6 +89,7 @@ public class SnapshotPart
         return renderStandard();
     }
 
+    @Override
     public int compareTo( final VersionPart o )
     {
         if ( o instanceof SnapshotPart )
@@ -90,6 +102,8 @@ public class SnapshotPart
                 {
                     return getBuildNumber() - oSnap.getBuildNumber();
                 }
+
+                return comp;
             }
             else if ( isLocalSnapshot() && !oSnap.isLocalSnapshot() )
             {

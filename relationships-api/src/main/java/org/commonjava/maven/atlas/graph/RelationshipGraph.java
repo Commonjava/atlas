@@ -46,7 +46,7 @@ public final class RelationshipGraph
     private RelationshipGraphConnection connection;
 
     // if we didn't have a user, we wouldn't have constructed this thing!
-    private int userCounter = 1;
+    private int userCount = 1;
 
     RelationshipGraph( final ViewParams params, final RelationshipGraphConnection driver )
     {
@@ -147,12 +147,15 @@ public final class RelationshipGraph
 
     synchronized void incrementGraphOwnership()
     {
-        userCounter++;
+        userCount++;
+        logger.info( "User count incremented to: {} for: {}", userCount, params );
     }
 
     public synchronized void forceClose()
         throws RelationshipGraphException
     {
+        logger.info( "Closing: {}", params );
+
         if ( listeners != null )
         {
             for ( final RelationshipGraphListener listener : listeners )
@@ -175,9 +178,10 @@ public final class RelationshipGraph
     public synchronized void close()
         throws RelationshipGraphException
     {
-        userCounter--;
+        userCount--;
+        logger.info( "User count decremented to: {} for: {}", userCount, params );
 
-        if ( userCounter < 1 )
+        if ( userCount < 1 )
         {
             forceClose();
         }

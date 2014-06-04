@@ -1,5 +1,7 @@
 package org.commonjava.maven.atlas.graph;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -61,11 +63,15 @@ public final class RelationshipGraphFactory
             cache = new ConnectionCache( timer, connectionCaches, connection );
             connectionCaches.put( wsid, cache );
 
-            logger.info( "Created new connection to graph db: {}", params.getWorkspaceId() );
+            logger.info( "Created new connection to graph db: {}\nVia:\n  {}", params.getWorkspaceId(),
+                         join( Thread.currentThread()
+                                     .getStackTrace(), "\n  " ) );
         }
         else
         {
-            logger.info( "Reusing connection to graph db: {}", params.getWorkspaceId() );
+            logger.info( "Reusing connection to graph db: {}\nVia:\n  {}", params.getWorkspaceId(),
+                         join( Thread.currentThread()
+                                     .getStackTrace(), "\n  " ) );
         }
 
         RelationshipGraph graph = cache.getGraph( params );
