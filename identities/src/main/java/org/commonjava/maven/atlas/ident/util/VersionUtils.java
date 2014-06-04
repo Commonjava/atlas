@@ -8,8 +8,12 @@
  * Contributors:
  *     Red Hat, Inc. - initial API and implementation
  ******************************************************************************/
-package org.commonjava.maven.atlas.ident.version;
+package org.commonjava.maven.atlas.ident.util;
 
+import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
+import org.commonjava.maven.atlas.ident.version.RangeVersionSpec;
+import org.commonjava.maven.atlas.ident.version.SingleVersion;
+import org.commonjava.maven.atlas.ident.version.VersionSpec;
 import org.commonjava.maven.atlas.ident.version.parse.ParseException;
 import org.commonjava.maven.atlas.ident.version.parse.TokenMgrError;
 import org.commonjava.maven.atlas.ident.version.parse.VersionParser;

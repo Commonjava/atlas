@@ -8,7 +8,7 @@
  * Contributors:
  *     Red Hat, Inc. - initial API and implementation
  ******************************************************************************/
-package org.commonjava.maven.atlas.ident.version.transform;
+package org.commonjava.maven.atlas.ident.util;
 
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -20,12 +20,16 @@ import java.util.regex.Pattern;
 
 import org.commonjava.maven.atlas.ident.version.part.SnapshotPart;
 
-public class SnapshotSupport
+public class SnapshotUtils
 {
 
     public static final String SNAPSHOT_TSTAMP_FORMAT = "yyyyMMdd.hhmmss";
 
-    public static final String REMOTE_SNAPSHOT_PART_PATTERN = "^((.+)-)?([0-9]{8}.[0-9]{6})-([0-9]+)$";
+    public static final String RAW_REMOTE_SNAPSHOT_PART_PATTERN = "([0-9]{8}.[0-9]{6})-([0-9]+)";
+
+    public static final String REMOTE_SNAPSHOT_PART_PATTERN = "^((.+)-)?" + RAW_REMOTE_SNAPSHOT_PART_PATTERN + "$";
+
+    public static final String LOCAL_SNAPSHOT_VERSION_PART = "-SNAPSHOT";
 
     public static String generateSnapshotSuffix( final Date d, final int buildNumber )
     {
@@ -35,6 +39,16 @@ public class SnapshotSupport
     public static String generateSnapshotTimestamp( final Date d )
     {
         return getFormat().format( d );
+    }
+
+    public static boolean isSnapshotVersion( final String literal )
+    {
+        return literal.endsWith( LOCAL_SNAPSHOT_VERSION_PART ) || isRemoteSnapshotVersion( literal );
+    }
+
+    public static boolean isRemoteSnapshotVersion( final String literal )
+    {
+        return literal.matches( REMOTE_SNAPSHOT_PART_PATTERN );
     }
 
     public static boolean isRemoteSnapshotVersionPart( final String literal )
@@ -85,6 +99,21 @@ public class SnapshotSupport
         fmt.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
 
         return fmt;
+    }
+
+    public static SnapshotPart extractSnapshotVersionPart( final String version )
+    {
+        SnapshotPart part = null;
+        if ( SnapshotUtils.isRemoteSnapshotVersion( version ) )
+        {
+            part = SnapshotUtils.parseRemoteSnapshotVersionPart( version );
+        }
+        else if ( version.endsWith( LOCAL_SNAPSHOT_VERSION_PART ) )
+        {
+            part = new SnapshotPart( LOCAL_SNAPSHOT_VERSION_PART );
+        }
+
+        return part;
     }
 
 }

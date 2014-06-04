@@ -17,8 +17,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.util.VersionUtils;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
-import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;

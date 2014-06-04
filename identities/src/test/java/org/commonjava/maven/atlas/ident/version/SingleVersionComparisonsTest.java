@@ -37,9 +37,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import org.commonjava.maven.atlas.ident.util.VersionUtils;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
-import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;

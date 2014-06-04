@@ -10,9 +10,9 @@ options {
 PARSER_BEGIN(VersionParser)
 package org.commonjava.maven.atlas.ident.version.parse;
 
+import org.commonjava.maven.atlas.ident.util.*;
 import org.commonjava.maven.atlas.ident.version.*;
 import org.commonjava.maven.atlas.ident.version.part.*;
-import org.commonjava.maven.atlas.ident.version.transform.*;
 import java.util.*;
 import java.text.*;
 import java.io.*;
@@ -63,7 +63,7 @@ public class VersionParser
     {
       try
       {
-        return new SnapshotPart( SnapshotSupport.parseSnapshotTimestamp( date ), Integer.parseInt( buildnum ), date + "-" + buildnum );
+        return new SnapshotPart( SnapshotUtils.parseSnapshotTimestamp( date ), Integer.parseInt( buildnum ), date + "-" + buildnum );
       }
       catch ( java.text.ParseException e )
       {

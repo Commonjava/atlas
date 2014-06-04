@@ -14,10 +14,10 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 
 import java.io.Serializable;
 
+import org.commonjava.maven.atlas.ident.util.VersionUtils;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.maven.atlas.ident.version.VersionSpec;
-import org.commonjava.maven.atlas.ident.version.VersionUtils;
 
 /**
  * Reference to a particular release of a project (or module, in terms of Maven builds). A release may contain many artifacts (see {@link ArtifactRef}).

@@ -13,7 +13,7 @@ package org.commonjava.maven.atlas.ident.version.part;
 import java.io.Serializable;
 import java.util.Date;
 
-import org.commonjava.maven.atlas.ident.version.transform.SnapshotSupport;
+import org.commonjava.maven.atlas.ident.util.SnapshotUtils;
 
 public class SnapshotPart
     extends VersionPart
@@ -37,9 +37,9 @@ public class SnapshotPart
 
     public SnapshotPart( final String literal )
     {
-        if ( SnapshotSupport.isRemoteSnapshotVersionPart( literal ) )
+        if ( SnapshotUtils.isRemoteSnapshotVersionPart( literal ) )
         {
-            final SnapshotPart sp = SnapshotSupport.parseRemoteSnapshotVersionPart( literal );
+            final SnapshotPart sp = SnapshotUtils.parseRemoteSnapshotVersionPart( literal );
             timestamp = sp.timestamp;
             buildNumber = sp.buildNumber;
         }
@@ -70,6 +70,11 @@ public class SnapshotPart
     public boolean isLocalSnapshot()
     {
         return timestamp == null;
+    }
+
+    public boolean isRemoteSnapshot()
+    {
+        return timestamp != null;
     }
 
     @Override

@@ -10,8 +10,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident.version;
 
+import org.commonjava.maven.atlas.ident.util.VersionUtils;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
-import org.commonjava.maven.atlas.ident.version.VersionUtils;
 import org.junit.Test;
 
 public class VersionUtilsTest
