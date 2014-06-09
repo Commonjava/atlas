@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident.ref;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 import java.io.Serializable;
 
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
@@ -67,6 +69,49 @@ public class ArtifactRef
         super( groupId, artifactId, versionSpec );
         this.tc = new TypeAndClassifier( type, classifier );
         this.optional = optional;
+    }
+
+    @Override
+    public String toString()
+    {
+        return String.format( "%s:%s:%s:%s%s", getGroupId(), getArtifactId(), getType(), getVersionString(),
+                              ( getClassifier() == null ? "" : ":" + getClassifier() ) );
+    }
+
+    public static ArtifactRef parse( final String spec )
+    {
+        final String[] parts = spec.split( ":" );
+
+        if ( parts.length < 3 || isEmpty( parts[0] ) || isEmpty( parts[1] ) || isEmpty( parts[2] ) )
+        {
+            throw new InvalidRefException(
+                                           "ArtifactRef must contain AT LEAST non-empty groupId, artifactId, AND version. (Given: '"
+                                               + spec + "')" );
+        }
+
+        final String g = parts[0];
+        final String a = parts[1];
+
+        // assume we're actually parsing a GAV into a POM artifact...
+        String v = parts[2];
+        String t = "pom";
+        String c = null;
+
+        if ( parts.length > 3 )
+        {
+            // oops, it's a type, not a version...see toString() for the specification.
+            t = v;
+            v = parts[3];
+
+            if ( parts.length > 4 )
+            {
+                c = parts[4];
+            }
+        }
+
+        // assume non-optional, because it might not matter if you're parsing a string like this...you'd be more careful if you were reading something
+        // that had an optional field, because it's not in the normal GATV[C] spec.
+        return new ArtifactRef( g, a, v, t, c, false );
     }
 
     @Override
@@ -150,13 +195,6 @@ public class ArtifactRef
             return false;
         }
         return true;
-    }
-
-    @Override
-    public String toString()
-    {
-        return String.format( "%s:%s:%s:%s%s", getGroupId(), getArtifactId(), getType(), getVersionString(),
-                              ( getClassifier() == null ? "" : ":" + getClassifier() ) );
     }
 
     @Override

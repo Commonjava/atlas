@@ -10,6 +10,8 @@
  ******************************************************************************/
 package org.commonjava.maven.atlas.ident.ref;
 
+import static org.apache.commons.lang.StringUtils.isEmpty;
+
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 
 /**
@@ -63,6 +65,47 @@ public class VersionlessArtifactRef
     public String toString()
     {
         return String.format( "%s:%s:%s", getGroupId(), getArtifactId(), getTypeAndClassifier() );
+    }
+
+    public static VersionlessArtifactRef parse( final String spec )
+    {
+        final String[] parts = spec.split( ":" );
+
+        if ( parts.length < 2 || isEmpty( parts[0] ) || isEmpty( parts[1] ) )
+        {
+            throw new InvalidRefException(
+                                           "VersionlessArtifactRef must contain AT LEAST non-empty groupId and artifactId. (Given: '"
+                                               + spec + "')" );
+        }
+
+        final String g = parts[0];
+        final String a = parts[1];
+
+        String t = "pom";
+        String c = null;
+
+        if ( parts.length > 2 )
+        {
+            // we probably have a type in there.
+            t = parts[2];
+
+            if ( parts.length > 3 )
+            {
+                // we have a classifier? What if it's GATV??
+                // assume it's just a classifier...
+                c = parts[3];
+
+                if ( parts.length > 4 )
+                {
+                    // okay, wtf? It's a GATVC, and we need to shift to eliminate the V...
+                    c = parts[4];
+                }
+            }
+        }
+
+        // assume non-optional, because it might not matter if you're parsing a string like this...you'd be more careful if you were reading something
+        // that had an optional field, because it's not in the normal GATV[C] spec.
+        return new VersionlessArtifactRef( g, a, t, c, false );
     }
 
     public String getType()
