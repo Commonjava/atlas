@@ -11,15 +11,105 @@
 package org.commonjava.maven.atlas.ident.ref;
 
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
-import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
-import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.ref.VersionlessArtifactRef;
 import org.junit.Test;
 
 public class VersionlessArtifactRefTest
 {
+
+    @Test
+    public void parseGA()
+    {
+        final String g = "org.foo";
+        final String a = "bar";
+        final VersionlessArtifactRef var = VersionlessArtifactRef.parse( String.format( "%s:%s", g, a ) );
+
+        assertThat( var.getGroupId(), equalTo( g ) );
+        assertThat( var.getArtifactId(), equalTo( a ) );
+        assertThat( var.getType(), equalTo( "pom" ) );
+        assertThat( var.getClassifier(), nullValue() );
+    }
+
+    @Test
+    public void parseGAT()
+    {
+        final String g = "org.foo";
+        final String a = "bar";
+        final String t = "zip";
+
+        final VersionlessArtifactRef var = VersionlessArtifactRef.parse( String.format( "%s:%s:%s", g, a, t ) );
+
+        assertThat( var.getGroupId(), equalTo( g ) );
+        assertThat( var.getArtifactId(), equalTo( a ) );
+        assertThat( var.getType(), equalTo( t ) );
+        assertThat( var.getClassifier(), nullValue() );
+    }
+
+    @Test
+    public void parseGATC()
+    {
+        final String g = "org.foo";
+        final String a = "bar";
+        final String t = "zip";
+        final String c = "sources";
+
+        final VersionlessArtifactRef var = VersionlessArtifactRef.parse( String.format( "%s:%s:%s:%s", g, a, t, c ) );
+
+        assertThat( var.getGroupId(), equalTo( g ) );
+        assertThat( var.getArtifactId(), equalTo( a ) );
+        assertThat( var.getType(), equalTo( t ) );
+        assertThat( var.getClassifier(), equalTo( c ) );
+    }
+
+    @Test
+    public void parseGATVC_VersionDiscarded()
+    {
+        final String g = "org.foo";
+        final String a = "bar";
+        final String t = "zip";
+        final String v = "1.0";
+        final String c = "sources";
+
+        final VersionlessArtifactRef var =
+            VersionlessArtifactRef.parse( String.format( "%s:%s:%s:%s:%s", g, a, t, v, c ) );
+
+        assertThat( var.getGroupId(), equalTo( g ) );
+        assertThat( var.getArtifactId(), equalTo( a ) );
+        assertThat( var.getType(), equalTo( t ) );
+        assertThat( var.getClassifier(), equalTo( c ) );
+    }
+
+    @Test
+    public void parseGATV_MistakeForGATC()
+    {
+        final String g = "org.foo";
+        final String a = "bar";
+        final String t = "zip";
+        final String v = "1.0";
+
+        final VersionlessArtifactRef var = VersionlessArtifactRef.parse( String.format( "%s:%s:%s:%s", g, a, t, v ) );
+
+        assertThat( var.getGroupId(), equalTo( g ) );
+        assertThat( var.getArtifactId(), equalTo( a ) );
+        assertThat( var.getType(), equalTo( t ) );
+        assertThat( var.getClassifier(), equalTo( v ) );
+    }
+
+    @Test
+    public void parseGATVC()
+    {
+        final String g = "org.foo";
+        final String a = "bar";
+        final VersionlessArtifactRef var = VersionlessArtifactRef.parse( String.format( "%s:%s", g, a ) );
+
+        assertThat( var.getGroupId(), equalTo( g ) );
+        assertThat( var.getArtifactId(), equalTo( a ) );
+        assertThat( var.getType(), equalTo( "pom" ) );
+        assertThat( var.getClassifier(), nullValue() );
+    }
+
     @Test
     public void identicalVersionlessArtifactsAreNotEqualWhenOptionalFlagsDiffer()
     {
