@@ -424,7 +424,10 @@ public class FileNeo4JGraphConnection
         final IndexHits<Relationship> hits = graph.index()
                                                   .forRelationships( ALL_RELATIONSHIPS )
                                                   .query( RELATIONSHIP_ID, "*" );
-        return convertToRelationships( hits, cache );
+        synchronized ( hits )
+        {
+            return convertToRelationships( hits, cache );
+        }
     }
 
     @Override
@@ -593,10 +596,8 @@ public class FileNeo4JGraphConnection
                                                       .forRelationships( ALL_RELATIONSHIPS );
 
                 final String relId = id( rel );
-                final IndexHits<Relationship> relHits = relIdx.get( RELATIONSHIP_ID, relId );
-
-                Relationship relationship;
-                if ( relHits.size() < 1 )
+                Relationship relationship = getRelationship( relId );
+                if ( relationship == null )
                 {
                     final Node from = nodes[0];
 
@@ -660,7 +661,6 @@ public class FileNeo4JGraphConnection
                 }
                 else
                 {
-                    relationship = relHits.next();
                     logger.debug( "== {} ({})", relationship, toProjectRelationship( relationship, cache ) );
 
                     addToURISetProperty( rel.getSources(), SOURCE_URI, relationship );
@@ -777,15 +777,12 @@ public class FileNeo4JGraphConnection
 
         if ( selected != oldRel )
         {
-            final RelationshipIndex relIdx = graph.index()
-                                                  .forRelationships( ALL_RELATIONSHIPS );
-
             //                logger.info( "Checking for existing DB relationship for: {}", selected );
             final String selId = id( selected );
-            IndexHits<Relationship> hits = relIdx.get( RELATIONSHIP_ID, selId );
-            if ( hits.hasNext() )
+            Relationship result = getRelationship( selId );
+            if ( result != null )
             {
-                return hits.next();
+                return result;
             }
 
             logger.info( "Creating ad-hoc db relationship for selection: {} (replacing: {})", selected, oldRel );
@@ -796,12 +793,9 @@ public class FileNeo4JGraphConnection
             final Transaction tx = graph.beginTx();
             try
             {
-                Relationship result = null;
-                hits = relIdx.get( RELATIONSHIP_ID, selId );
-                if ( hits.hasNext() )
+                result = getRelationship( selId );
+                if ( result != null )
                 {
-                    result = hits.next();
-
                     logger.debug( "Adding relationship {} to selections index", result );
                     Conversions.setSelection( old.getId(), result.getId(), paramsNode );
 
@@ -1042,8 +1036,10 @@ public class FileNeo4JGraphConnection
                                            .forRelationships( ALL_RELATIONSHIPS );
 
         final IndexHits<Relationship> hits = idx.get( RELATIONSHIP_ID, relId );
-
-        return hits.hasNext() ? hits.next() : null;
+        synchronized ( hits )
+        {
+            return hits.hasNext() ? hits.next() : null;
+        }
     }
 
     private static final int SHUTDOWN_WAIT = 5;
@@ -2410,7 +2406,7 @@ public class FileNeo4JGraphConnection
     }
 
     @Override
-    public void addProjectError( final ProjectVersionRef ref, final Throwable error )
+    public void addProjectError( final ProjectVersionRef ref, final String error )
         throws RelationshipGraphConnectionException
     {
         Node node = getNode( ref );
@@ -2423,7 +2419,7 @@ public class FileNeo4JGraphConnection
     }
 
     @Override
-    public Throwable getProjectError( final ProjectVersionRef ref )
+    public String getProjectError( final ProjectVersionRef ref )
     {
         final Node node = getNode( ref );
         if ( node == null )

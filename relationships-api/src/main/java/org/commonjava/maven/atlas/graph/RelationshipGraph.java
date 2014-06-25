@@ -1,5 +1,7 @@
 package org.commonjava.maven.atlas.graph;
 
+import static org.apache.commons.lang.StringUtils.join;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -64,7 +66,9 @@ public final class RelationshipGraph
     public void storeProjectError( final ProjectVersionRef ref, final Throwable error )
         throws RelationshipGraphException
     {
-        getConnectionInternal().addProjectError( ref, error );
+        getConnectionInternal().addProjectError( ref,
+                                                 String.format( "%s\n%s", error.getMessage(),
+                                                                join( error.getStackTrace(), "\n  " ) ) );
 
         for ( final RelationshipGraphListener listener : listeners )
         {
@@ -72,7 +76,7 @@ public final class RelationshipGraph
         }
     }
 
-    public Throwable getProjectError( final ProjectVersionRef ref )
+    public String getProjectError( final ProjectVersionRef ref )
     {
         return getConnectionInternal().getProjectError( ref );
     }
@@ -679,13 +683,13 @@ public final class RelationshipGraph
         getConnectionInternal().printStats();
     }
 
-    public Map<ProjectVersionRef, Throwable> getAllProjectErrors()
+    public Map<ProjectVersionRef, String> getAllProjectErrors()
     {
-        final Map<ProjectVersionRef, Throwable> errors = new HashMap<ProjectVersionRef, Throwable>();
+        final Map<ProjectVersionRef, String> errors = new HashMap<ProjectVersionRef, String>();
         final Set<ProjectVersionRef> projects = getConnectionInternal().getAllProjects( params );
         for ( final ProjectVersionRef ref : projects )
         {
-            final Throwable error = getConnectionInternal().getProjectError( ref );
+            final String error = getConnectionInternal().getProjectError( ref );
             if ( error != null )
             {
                 errors.put( ref, error );

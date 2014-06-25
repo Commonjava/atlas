@@ -75,7 +75,7 @@ public class JungGraphConnection
 
     private final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
 
-    private final Map<ProjectVersionRef, Throwable> errors = new HashMap<ProjectVersionRef, Throwable>();
+    private final Map<ProjectVersionRef, String> errors = new HashMap<ProjectVersionRef, String>();
 
     private final String workspaceId;
 
@@ -1173,14 +1173,14 @@ public class JungGraphConnection
     }
 
     @Override
-    public void addProjectError( final ProjectVersionRef ref, final Throwable error )
+    public void addProjectError( final ProjectVersionRef ref, final String error )
         throws RelationshipGraphConnectionException
     {
         errors.put( ref, error );
     }
 
     @Override
-    public Throwable getProjectError( final ProjectVersionRef ref )
+    public String getProjectError( final ProjectVersionRef ref )
     {
         return errors.get( ref );
     }

@@ -1133,55 +1133,19 @@ public final class Conversions
         }
     }
 
-    public static void storeError( final Node node, final Throwable error )
+    public static void storeError( final Node node, final String error )
     {
-        final ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = null;
-        try
-        {
-            oos = new ObjectOutputStream( baos );
-            oos.writeObject( error );
-
-            node.setProperty( PROJECT_ERROR, baos.toByteArray() );
-        }
-        catch ( final IOException e )
-        {
-            throw new IllegalStateException( "Cannot construct ObjectOutputStream to wrap ByteArrayOutputStream!", e );
-        }
-        finally
-        {
-            IOUtils.closeQuietly( oos );
-        }
+        node.setProperty( PROJECT_ERROR, error );
     }
 
-    public static Throwable getError( final Node node )
+    public static String getError( final Node node )
     {
         if ( !node.hasProperty( PROJECT_ERROR ) )
         {
             return null;
         }
 
-        final byte[] data = (byte[]) node.getProperty( PROJECT_ERROR );
-        ObjectInputStream ois = null;
-        try
-        {
-            ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
-            return (Throwable) ois.readObject();
-        }
-        catch ( final IOException e )
-        {
-            throw new IllegalStateException(
-                                             "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing "
-                                                 + data.length + " bytes!", e );
-        }
-        catch ( final ClassNotFoundException e )
-        {
-            throw new IllegalStateException( "Cannot read Throwable. A class was missing: " + e.getMessage(), e );
-        }
-        finally
-        {
-            IOUtils.closeQuietly( ois );
-        }
+        return (String) node.getProperty( PROJECT_ERROR );
     }
 
 }

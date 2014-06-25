@@ -59,7 +59,7 @@ public interface RelationshipGraphConnection
     Set<ProjectRelationship<?>> addRelationships( ProjectRelationship<?>... rel )
         throws RelationshipGraphConnectionException;
 
-    void addProjectError( ProjectVersionRef ref, Throwable error )
+    void addProjectError( ProjectVersionRef ref, String error )
         throws RelationshipGraphConnectionException;
 
     void clearProjectError( ProjectVersionRef ref )
@@ -82,7 +82,7 @@ public interface RelationshipGraphConnection
      * ################################################
      */
 
-    Throwable getProjectError( ProjectVersionRef ref );
+    String getProjectError( ProjectVersionRef ref );
 
     Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaredBy( ViewParams params, ProjectVersionRef root );
 
