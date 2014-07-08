@@ -100,7 +100,7 @@ public class FileNeo4jConnectionFactory
         try
         {
             FileUtils.forceDelete( db );
-            result = db.exists();
+            result = !db.exists();
         }
         catch ( final IOException e )
         {
