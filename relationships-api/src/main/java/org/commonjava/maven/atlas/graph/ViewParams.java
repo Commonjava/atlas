@@ -142,7 +142,7 @@ public class ViewParams
     public ViewParams( final String workspaceId, final ProjectRelationshipFilter filter, final GraphMutator mutator,
                        final Set<URI> activePomLocations, final Set<URI> activeSources,
                        final Map<ProjectRef, ProjectVersionRef> selections, final Map<String, String> properties,
-                       final Set<ProjectVersionRef> roots )
+                       final Collection<ProjectVersionRef> roots )
     {
         this.workspaceId = workspaceId;
         this.filter = filter;
@@ -499,10 +499,25 @@ public class ViewParams
             return this;
         }
 
+        /**
+         * Adds selected versions into selections map. To work properly keys
+         * must be instances of {@link ProjectRef} or of the same class as the
+         * one used in {@link ViewParams#getSelection(ProjectRef)} and
+         * {@link ViewParams#hasSelection(ProjectRef)}.
+         * 
+         * @param selections
+         *            map of {@link ProjectRef} to {@link ProjectVersionRef},
+         *            can be {@code null} indicating that no selections were
+         *            done
+         * @return this instance for method chaining
+         */
         public Builder withSelections( final Map<ProjectRef, ProjectVersionRef> selections )
         {
             this.selections.clear();
-            this.selections.putAll( selections );
+            if ( selections != null )
+            {
+                this.selections.putAll( selections );
+            }
             return this;
         }
 
