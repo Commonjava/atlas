@@ -2409,13 +2409,23 @@ public class FileNeo4JGraphConnection
     public void addProjectError( final ProjectVersionRef ref, final String error )
         throws RelationshipGraphConnectionException
     {
-        Node node = getNode( ref );
-        if ( node == null )
+        final Transaction tx = graph.beginTx();
+        try
         {
-            node = newProjectNode( ref );
+            Node node = getNode( ref );
+            if ( node == null )
+            {
+                node = newProjectNode( ref );
+            }
+            
+            Conversions.storeError( node, error );
+            
+            tx.success();
         }
-
-        Conversions.storeError( node, error );
+        finally
+        {
+            tx.finish();
+        }
     }
 
     @Override
