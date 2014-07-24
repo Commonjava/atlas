@@ -60,7 +60,7 @@ public final class RelationshipGraphFactory
             final RelationshipGraphConnection connection =
                 connectionManager.openConnection( params.getWorkspaceId(), create );
 
-            cache = new ConnectionCache( timer, connectionCaches, connection );
+            cache = new ConnectionCache( timer, connectionCaches, connection, wsid );
             connectionCaches.put( wsid, cache );
 
             logger.info( "Created new connection to graph db: {}\nVia:\n  {}", params.getWorkspaceId(),
@@ -106,7 +106,16 @@ public final class RelationshipGraphFactory
         throws RelationshipGraphException
     {
         checkClosed();
-        return connectionManager.delete( workspaceId );
+        boolean result = connectionManager.delete( workspaceId );
+        if ( result )
+        {
+            final ConnectionCache connectionCache = connectionCaches.get( workspaceId );
+            if ( connectionCache != null )
+            {
+                connectionCache.closeNow();
+            }
+        }
+        return result;
     }
 
     private void checkClosed()
@@ -149,6 +158,8 @@ public final class RelationshipGraphFactory
 
         private RelationshipGraphConnection connection;
 
+        private final String wsid;
+        
         private final Map<ViewParams, RelationshipGraph> graphs = new HashMap<ViewParams, RelationshipGraph>();
 
         private final Timer timer;
@@ -158,17 +169,18 @@ public final class RelationshipGraphFactory
         private final Map<String, ConnectionCache> mapOfCaches;
 
         ConnectionCache( final Timer timer, final Map<String, ConnectionCache> mapOfCaches,
-                         final RelationshipGraphConnection connection )
+                         final RelationshipGraphConnection connection, final String wsid )
         {
             this.timer = timer;
             this.mapOfCaches = mapOfCaches;
             this.connection = connection;
+            this.wsid = wsid;
         }
 
         public synchronized void closeNow()
             throws RelationshipGraphConnectionException
         {
-            mapOfCaches.remove( this );
+            mapOfCaches.remove( wsid );
 
             graphs.clear();
 

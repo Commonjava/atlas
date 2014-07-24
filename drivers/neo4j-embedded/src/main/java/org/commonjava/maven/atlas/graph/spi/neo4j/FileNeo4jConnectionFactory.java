@@ -101,6 +101,14 @@ public class FileNeo4jConnectionFactory
         {
             FileUtils.forceDelete( db );
             result = !db.exists();
+            if ( result )
+            {
+                FileNeo4JGraphConnection connection = openConnections.remove( workspaceId );
+                if ( connection != null )
+                {
+                    connection.close();
+                }
+            }
         }
         catch ( final IOException e )
         {
