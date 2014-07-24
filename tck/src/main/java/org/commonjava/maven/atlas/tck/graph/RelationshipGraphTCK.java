@@ -16,7 +16,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.net.URI;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 
@@ -30,7 +29,6 @@ import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.traverse.AncestryTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
-import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.junit.Test;
@@ -159,15 +157,6 @@ public abstract class RelationshipGraphTCK
         assertThat( iterator.next(), equalTo( c ) );
         assertThat( iterator.next(), equalTo( p ) );
         assertThat( iterator.next(), equalTo( r ) );
-    }
-
-    private RelationshipGraph openGraph( final ViewParams params, final boolean create )
-        throws Exception
-    {
-        final RelationshipGraph graph =
-            graphFactory().open( new ViewParams.Builder( params ).withActiveSources( Collections.singleton( RelationshipUtils.ANY_SOURCE_URI ) )
-                                                                 .build(), create );
-        return graph;
     }
 
 }

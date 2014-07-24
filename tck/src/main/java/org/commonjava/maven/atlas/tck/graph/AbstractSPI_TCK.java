@@ -12,12 +12,14 @@ package org.commonjava.maven.atlas.tck.graph;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collections;
 import java.util.Date;
 
 import org.commonjava.maven.atlas.graph.RelationshipGraph;
 import org.commonjava.maven.atlas.graph.RelationshipGraphFactory;
 import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.junit.After;
 import org.junit.Before;
@@ -68,6 +70,15 @@ public abstract class AbstractSPI_TCK
         }
 
         return graphFactory;
+    }
+
+    protected final RelationshipGraph openGraph( final ViewParams params, final boolean create )
+        throws Exception
+    {
+        final RelationshipGraph graph =
+            graphFactory().open( new ViewParams.Builder( params ).withActiveSources( Collections.singleton( RelationshipUtils.ANY_SOURCE_URI ) )
+                                                                 .build(), create );
+        return graph;
     }
 
     private long start;

@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 public class FileNeo4jConnectionFactory
     implements RelationshipGraphConnectionFactory
 {
-
     private final Map<String, FileNeo4JGraphConnection> openConnections =
         new HashMap<String, FileNeo4JGraphConnection>();
 
@@ -96,19 +95,17 @@ public class FileNeo4jConnectionFactory
             return false;
         }
 
+        final FileNeo4JGraphConnection connection = openConnections.remove( workspaceId );
+        if ( connection != null )
+        {
+            connection.close();
+        }
+
         boolean result = false;
         try
         {
             FileUtils.forceDelete( db );
             result = !db.exists();
-            if ( result )
-            {
-                FileNeo4JGraphConnection connection = openConnections.remove( workspaceId );
-                if ( connection != null )
-                {
-                    connection.close();
-                }
-            }
         }
         catch ( final IOException e )
         {
