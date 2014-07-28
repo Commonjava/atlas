@@ -106,13 +106,28 @@ public final class RelationshipGraphFactory
         throws RelationshipGraphException
     {
         checkClosed();
-        boolean result = connectionManager.delete( workspaceId );
-        if ( result )
+        boolean result;
+        try
+        {
+            result = connectionManager.delete( workspaceId );
+        }
+        finally
         {
             final ConnectionCache connectionCache = connectionCaches.get( workspaceId );
             if ( connectionCache != null )
             {
-                connectionCache.closeNow();
+                try
+                {
+                    connectionCache.closeNow();
+                }
+                catch ( final RelationshipGraphConnectionException ex )
+                {
+                    logger.error( "Error when trying to close connection cache: {}", ex );
+                }
+                catch ( final RuntimeException ex )
+                {
+                    logger.error( "Unexpected error when trying to close connection cache: {}", ex );
+                }
             }
         }
         return result;
@@ -187,7 +202,10 @@ public final class RelationshipGraphFactory
             final RelationshipGraphConnection conn = connection;
             connection = null;
 
-            conn.close();
+            if ( !conn.isClosed() )
+            {
+                conn.close();
+            }
         }
 
         public synchronized void startCloseTimer()
