@@ -1080,6 +1080,12 @@ public class FileNeo4JGraphConnection
     }
 
     @Override
+    public boolean isClosed()
+    {
+        return closed;
+    }
+
+    @Override
     public void run()
     {
         try

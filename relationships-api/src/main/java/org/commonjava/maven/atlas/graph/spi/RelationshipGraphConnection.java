@@ -173,6 +173,8 @@ public interface RelationshipGraphConnection
     void close()
         throws RelationshipGraphConnectionException;
 
+    boolean isClosed();
+
     String getWorkspaceId();
 
 }

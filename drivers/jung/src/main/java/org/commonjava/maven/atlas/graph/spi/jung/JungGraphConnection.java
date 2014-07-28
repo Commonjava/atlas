@@ -59,6 +59,8 @@ public class JungGraphConnection
 {
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
+    private boolean closed = false;
+
     private DirectedGraph<ProjectVersionRef, ProjectRelationship<?>> graph =
         new DirectedSparseMultigraph<ProjectVersionRef, ProjectRelationship<?>>();
 
@@ -548,7 +550,14 @@ public class JungGraphConnection
     @Override
     public void close()
     {
-        // NOP; stored in memory.
+        // NOP; stored in memory, just set the flag.
+        closed = true;
+    }
+
+    @Override
+    public boolean isClosed()
+    {
+        return closed;
     }
 
     //    @Override
