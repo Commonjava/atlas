@@ -12,8 +12,13 @@ package org.commonjava.maven.atlas.ident.ref;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
+import java.io.Serializable;
+
 public class TypeAndClassifier
+    implements Serializable
 {
+    private static final long serialVersionUID = 1L;
+
     private final String type;
 
     private final String classifier;
