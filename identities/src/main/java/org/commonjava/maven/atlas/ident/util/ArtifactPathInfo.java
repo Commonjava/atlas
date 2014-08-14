@@ -38,7 +38,7 @@ public class ArtifactPathInfo
 
     public static ArtifactPathInfo parse( final String path )
     {
-        if ( path == null )
+        if ( path == null || path.length() < 1 )
         {
             return null;
         }
