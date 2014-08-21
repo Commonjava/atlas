@@ -112,11 +112,11 @@ public class SnapshotPart
             }
             else if ( isLocalSnapshot() && !oSnap.isLocalSnapshot() )
             {
-                return -1;
+                return 1;
             }
             else if ( !isLocalSnapshot() && oSnap.isLocalSnapshot() )
             {
-                return 1;
+                return -1;
             }
 
             return 0;
