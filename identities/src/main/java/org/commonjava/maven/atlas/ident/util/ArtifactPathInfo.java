@@ -28,13 +28,19 @@ public class ArtifactPathInfo
 
     private static final int ARTIFACT_ID_GROUP = 3;
 
-    private static final int FILE_GROUP = 5;
+    private static final int FILE_GROUP = 7;
 
     private static final int VERSION_GROUP = 8;
 
-    private static final int CLASSIFIER_GROUP = 12;
+    private static final int NON_REMOTE_SNAP_CLASSIFIER_GROUP = 12;
 
-    private static final int TYPE_GROUP = 14;
+    private static final int REMOTE_SNAP_CLASSIFIER_GROUP = 14;
+
+    private static final int NON_REMOTE_SNAP_TYPE_GROUP = 14;
+
+    private static final int REMOTE_SNAP_TYPE_GROUP = 16;
+
+    private static final int REMOTE_SNAPSHOT_GROUP_COUNT = 16;
 
     public static ArtifactPathInfo parse( final String path )
     {
@@ -50,12 +56,26 @@ public class ArtifactPathInfo
             return null;
         }
 
+        final int groupCount = matcher.groupCount();
+
         final String g = matcher.group( GROUP_ID_GROUP )
                                 .replace( '/', '.' );
         final String a = matcher.group( ARTIFACT_ID_GROUP );
         final String v = matcher.group( VERSION_GROUP );
-        final String c = matcher.group( CLASSIFIER_GROUP );
-        final String t = matcher.group( TYPE_GROUP );
+
+        final String c;
+        final String t;
+        if ( groupCount == REMOTE_SNAPSHOT_GROUP_COUNT )
+        {
+            c = matcher.group( REMOTE_SNAP_CLASSIFIER_GROUP );
+            t = matcher.group( REMOTE_SNAP_TYPE_GROUP );
+        }
+        else
+        {
+            c = matcher.group( NON_REMOTE_SNAP_CLASSIFIER_GROUP );
+            t = matcher.group( NON_REMOTE_SNAP_TYPE_GROUP );
+        }
+
         final String f = matcher.group( FILE_GROUP );
 
         return new ArtifactPathInfo( g, a, v, c, t, f, path );

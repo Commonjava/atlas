@@ -13,6 +13,7 @@ package org.commonjava.maven.atlas.ident.util;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 import java.util.regex.Matcher;
@@ -23,7 +24,9 @@ import org.commonjava.maven.atlas.ident.version.part.SnapshotPart;
 public class SnapshotUtils
 {
 
-    public static final String SNAPSHOT_TSTAMP_FORMAT = "yyyyMMdd.hhmmss";
+    private static final String LAST_UPDATED_FORMAT = "yyyyMMddHHmmss";
+
+    public static final String SNAPSHOT_TSTAMP_FORMAT = "yyyyMMdd.HHmmss";
 
     public static final String RAW_REMOTE_SNAPSHOT_PART_PATTERN = "([0-9]{8}.[0-9]{6})-([0-9]+)";
 
@@ -39,6 +42,13 @@ public class SnapshotUtils
     public static String generateSnapshotTimestamp( final Date d )
     {
         return getFormat().format( d );
+    }
+
+    public static Date getCurrentTimestamp()
+    {
+        final Calendar cal = Calendar.getInstance( TimeZone.getTimeZone( "UTC" ) );
+        cal.set( Calendar.MILLISECOND, 0 );
+        return cal.getTime();
     }
 
     public static boolean isSnapshotVersion( final String literal )
@@ -96,7 +106,7 @@ public class SnapshotUtils
     private static DateFormat getFormat()
     {
         final SimpleDateFormat fmt = new SimpleDateFormat( SNAPSHOT_TSTAMP_FORMAT );
-        fmt.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
+        //        fmt.setTimeZone( TimeZone.getTimeZone( "UTC" ) );
 
         return fmt;
     }
@@ -114,6 +124,17 @@ public class SnapshotUtils
         }
 
         return part;
+    }
+
+    public static String generateUpdateTimestamp( final Date d )
+    {
+        return new SimpleDateFormat( LAST_UPDATED_FORMAT ).format( d );
+    }
+
+    public static Date parseUpdateTimestamp( final String tstamp )
+        throws ParseException
+    {
+        return new SimpleDateFormat( LAST_UPDATED_FORMAT ).parse( tstamp );
     }
 
 }

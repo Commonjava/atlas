@@ -473,4 +473,9 @@ public class SingleVersion
         return true;
     }
 
+    public SnapshotPart getSnapshotPart()
+    {
+        return isSnapshot() ? (SnapshotPart) getLastPart() : null;
+    }
+
 }
