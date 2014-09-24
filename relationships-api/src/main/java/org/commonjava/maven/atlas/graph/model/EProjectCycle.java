@@ -32,7 +32,7 @@ public class EProjectCycle
 
     private static final long serialVersionUID = 1L;
 
-    private List<ProjectRelationship<?>> participants = new ArrayList<ProjectRelationship<?>>();
+    private List<ProjectRelationship<?>> relationships = new ArrayList<ProjectRelationship<?>>();
 
     public static final class Builder
     {
@@ -102,17 +102,17 @@ public class EProjectCycle
 
     public EProjectCycle( final List<ProjectRelationship<?>> cycle )
     {
-        this.participants = new ArrayList<ProjectRelationship<?>>( cycle );
+        this.relationships = new ArrayList<ProjectRelationship<?>>( cycle );
     }
 
     public boolean contains( final ProjectRelationship<?> rel )
     {
-        return participants.contains( rel );
+        return relationships.contains( rel );
     }
 
     public boolean contains( final ProjectVersionRef ref )
     {
-        for ( final ProjectRelationship<?> rel : participants )
+        for ( final ProjectRelationship<?> rel : relationships )
         {
             if ( rel.getDeclaring()
                     .equals( ref ) )
@@ -126,15 +126,15 @@ public class EProjectCycle
 
     public int indexOf( final ProjectRelationship<?> rel )
     {
-        return participants.indexOf( rel );
+        return relationships.indexOf( rel );
     }
 
     public int indexOf( final ProjectVersionRef ref )
     {
         int targetIdx = -1;
-        for ( int i = 0; i < participants.size(); i++ )
+        for ( int i = 0; i < relationships.size(); i++ )
         {
-            final ProjectRelationship<?> rel = participants.get( i );
+            final ProjectRelationship<?> rel = relationships.get( i );
             if ( rel.getDeclaring()
                     .equals( ref ) )
             {
@@ -158,7 +158,7 @@ public class EProjectCycle
     @Override
     public Iterator<ProjectRelationship<?>> iterator()
     {
-        return participants.iterator();
+        return relationships.iterator();
     }
 
     @Override
@@ -173,13 +173,13 @@ public class EProjectCycle
     @Override
     public Collection<ProjectRelationship<?>> getExactAllRelationships()
     {
-        return new ArrayList<ProjectRelationship<?>>( participants );
+        return new ArrayList<ProjectRelationship<?>>( relationships );
     }
 
     public Set<ProjectVersionRef> getAllParticipatingProjects()
     {
         final Set<ProjectVersionRef> refs = new HashSet<ProjectVersionRef>();
-        for ( final ProjectRelationship<?> rel : participants )
+        for ( final ProjectRelationship<?> rel : relationships )
         {
             refs.add( rel.getDeclaring() );
             refs.add( rel.getTarget()
@@ -189,10 +189,20 @@ public class EProjectCycle
         return refs;
     }
 
+    public List<ProjectRelationship<?>> getRelationships()
+    {
+        return relationships;
+    }
+
+    public void setRelationships( final List<ProjectRelationship<?>> relationships )
+    {
+        this.relationships = relationships;
+    }
+
     @Override
     public String toString()
     {
-        return String.format( "Project cycle: [%s]", join( participants, " -> " ) );
+        return String.format( "Project cycle: [%s]", join( relationships, " -> " ) );
     }
 
     @Override
@@ -201,7 +211,7 @@ public class EProjectCycle
         final int prime = 31;
         int result = 1;
 
-        final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( participants );
+        final List<ProjectRelationship<?>> sorted = new ArrayList<ProjectRelationship<?>>( relationships );
         Collections.sort( sorted, RelationshipComparator.INSTANCE );
 
         result = prime * result + sorted.hashCode();
@@ -224,9 +234,9 @@ public class EProjectCycle
             return false;
         }
         final EProjectCycle other = (EProjectCycle) obj;
-        if ( participants == null )
+        if ( relationships == null )
         {
-            if ( other.participants != null )
+            if ( other.relationships != null )
             {
                 return false;
             }
@@ -234,8 +244,8 @@ public class EProjectCycle
         else
         {
 
-            final Set<ProjectRelationship<?>> cycle = new HashSet<ProjectRelationship<?>>( this.participants );
-            final Set<ProjectRelationship<?>> otherCycle = new HashSet<ProjectRelationship<?>>( other.participants );
+            final Set<ProjectRelationship<?>> cycle = new HashSet<ProjectRelationship<?>>( this.relationships );
+            final Set<ProjectRelationship<?>> otherCycle = new HashSet<ProjectRelationship<?>>( other.relationships );
 
             for ( final ProjectRelationship<?> rel : cycle )
             {
