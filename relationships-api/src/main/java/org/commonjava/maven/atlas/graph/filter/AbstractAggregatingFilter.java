@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -54,7 +55,7 @@ public abstract class AbstractAggregatingFilter
     @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        final Set<ProjectRelationshipFilter> childFilters = new HashSet<ProjectRelationshipFilter>();
+        final Set<ProjectRelationshipFilter> childFilters = new LinkedHashSet<ProjectRelationshipFilter>();
         for ( final ProjectRelationshipFilter filter : getFilters() )
         {
             //            if ( filter.accept( parent ) )
