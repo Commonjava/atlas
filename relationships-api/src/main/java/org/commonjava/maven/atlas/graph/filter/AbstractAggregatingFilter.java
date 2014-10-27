@@ -54,7 +54,7 @@ public abstract class AbstractAggregatingFilter
     @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        final List<ProjectRelationshipFilter> childFilters = new ArrayList<ProjectRelationshipFilter>();
+        final Set<ProjectRelationshipFilter> childFilters = new HashSet<ProjectRelationshipFilter>();
         for ( final ProjectRelationshipFilter filter : getFilters() )
         {
             //            if ( filter.accept( parent ) )
@@ -72,7 +72,7 @@ public abstract class AbstractAggregatingFilter
         return newChildFilter( childFilters );
     }
 
-    protected abstract AbstractAggregatingFilter newChildFilter( List<ProjectRelationshipFilter> childFilters );
+    protected abstract AbstractAggregatingFilter newChildFilter( Collection<ProjectRelationshipFilter> childFilters );
 
     @Override
     public Iterator<ProjectRelationshipFilter> iterator()

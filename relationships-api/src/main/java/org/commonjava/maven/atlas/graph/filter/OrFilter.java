@@ -54,7 +54,7 @@ public class OrFilter
     }
 
     @Override
-    protected AbstractAggregatingFilter newChildFilter( final List<ProjectRelationshipFilter> childFilters )
+    protected AbstractAggregatingFilter newChildFilter( final Collection<ProjectRelationshipFilter> childFilters )
     {
         if ( !filtersEqual( childFilters ) )
         {
