@@ -52,11 +52,6 @@ public final class RelationshipGraphFactory
         ConnectionCache cache = connectionCaches.get( wsid );
         if ( cache == null || !cache.isOpen() )
         {
-            if ( !create )
-            {
-                throw new RelationshipGraphException( "No such workspace: %s", wsid );
-            }
-
             final RelationshipGraphConnection connection =
                 connectionManager.openConnection( params.getWorkspaceId(), create );
 

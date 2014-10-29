@@ -41,12 +41,12 @@ public class FileNeo4jConnectionFactory
         {
             if ( !create )
             {
-                throw new RelationshipGraphConnectionException( "Workspace does not exist: {}.", workspaceId );
+                throw new RelationshipGraphConnectionException( "Workspace does not exist: %s.", workspaceId );
             }
             else if ( !db.mkdirs() )
             {
                 throw new RelationshipGraphConnectionException(
-                                                                "Failed to create workspace directory for: {}. (dir: {})",
+                                                                "Failed to create workspace directory for: %s. (dir: %s)",
                                                                 workspaceId, db );
             }
             //
@@ -139,7 +139,7 @@ public class FileNeo4jConnectionFactory
 
         if ( !failedClose.isEmpty() )
         {
-            throw new RelationshipGraphConnectionException( "Failed to close: {}", new JoinString( ", ", failedClose ) );
+            throw new RelationshipGraphConnectionException( "Failed to close: %s", new JoinString( ", ", failedClose ) );
         }
     }
 

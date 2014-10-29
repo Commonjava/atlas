@@ -46,7 +46,7 @@ public class RelationshipGraphException
         {
             try
             {
-                final String formatted = String.format( message, params );
+                final String formatted = String.format( message.replaceAll( "\\{\\}", "%s" ), params );
                 message = formatted;
             }
             catch ( final IllegalFormatException e )
