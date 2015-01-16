@@ -64,7 +64,7 @@ public abstract class AbstractAggregatingFilter
             //            }
         }
 
-        if ( getFilters().equals( childFilters ) )
+        if ( filtersEqual( childFilters ) )
         {
             return this;
         }
@@ -123,7 +123,16 @@ public abstract class AbstractAggregatingFilter
         {
             //            if ( orderMatters )
             //            {
-            return filters.equals( otherFilters );
+            if ( otherFilters instanceof List )
+            {
+                return filters.equals( otherFilters );
+            }
+            else
+            {
+                List<ProjectRelationshipFilter> otherFiltersList = 
+                        new ArrayList<ProjectRelationshipFilter>( otherFilters );
+                return filters.equals( otherFiltersList );
+            }
             //            }
             //            else
             //            {
