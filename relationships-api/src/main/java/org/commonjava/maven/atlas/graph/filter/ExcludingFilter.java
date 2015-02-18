@@ -35,13 +35,21 @@ public class ExcludingFilter
     {
         final ProjectVersionRef target = rel.getTarget()
                                             .asProjectVersionRef();
-        return !excludedSubgraphs.contains( target );
+        return !excludedSubgraphs.contains( target ) && filter.accept( rel );
     }
 
     @Override
     public ProjectRelationshipFilter getChildFilter( final ProjectRelationship<?> parent )
     {
-        return this;
+        ProjectRelationshipFilter childfilter = filter.getChildFilter( parent );
+        if ( childfilter == filter )
+        {
+            return this;
+        }
+        else
+        {
+            return new ExcludingFilter( excludedSubgraphs, childfilter );
+        }
     }
 
     @Override
