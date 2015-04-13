@@ -38,8 +38,6 @@ import java.util.List;
 import java.util.Locale;
 
 import org.commonjava.maven.atlas.ident.util.VersionUtils;
-import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
@@ -197,6 +195,12 @@ public class SingleVersionComparisonsTest
 
         comp = c2.compareTo( c1 );
         checkTrue( "expected > 0: " + v2 + " > " + v1 + " (got: " + comp + ")", comp > 0 );
+    }
+
+    @Test
+    public void testZeroFill()
+    {
+        checkVersionsEqual( "7", "7.0.0" );
     }
 
     @Test
