@@ -171,6 +171,8 @@ public class Neo4jGraphPath
     {
         final int prime = 31;
         int result = 1;
+        result = prime * result + Long.valueOf( startNode ).hashCode();
+        result = prime * result + Long.valueOf( endNode ).hashCode();
         result = prime * result + Arrays.hashCode( relationships );
         return result;
     }
@@ -191,6 +193,14 @@ public class Neo4jGraphPath
             return false;
         }
         final Neo4jGraphPath other = (Neo4jGraphPath) obj;
+        if ( startNode != other.startNode )
+        {
+            return false;
+        }
+        if ( endNode != other.endNode )
+        {
+            return false;
+        }
         if ( !Arrays.equals( relationships, other.relationships ) )
         {
             return false;
