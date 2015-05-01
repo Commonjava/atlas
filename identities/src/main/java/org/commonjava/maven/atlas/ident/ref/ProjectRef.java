@@ -158,7 +158,7 @@ public class ProjectRef
             comp = artifactId.compareTo( o.artifactId );
         }
 
-        return 0;
+        return comp;
     }
 
     public boolean matches( final ProjectRef ref )
