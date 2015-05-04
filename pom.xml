@@ -27,7 +27,7 @@
 
   <groupId>org.commonjava.maven.atlas</groupId>
   <artifactId>atlas-parent</artifactId>
-  <version>0.14.0</version>
+  <version>0.14.1-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Atlas :: Maven Project-Graph :: Parent</name>
@@ -36,7 +36,7 @@
     <connection>scm:git:https://github.com/Commonjava/atlas.git</connection>
     <developerConnection>scm:git:git@github.com:Commonjava/atlas.git</developerConnection>
     <url>http://github.com/Commonjava/atlas</url>
-    <tag>atlas-parent-0.14.0</tag>
+    <tag>HEAD</tag>
   </scm>
   
   <properties>
@@ -48,17 +48,17 @@
       <dependency>
         <groupId>org.commonjava.maven.atlas</groupId>
         <artifactId>atlas-identities</artifactId>
-        <version>0.14.0</version>
+        <version>0.14.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.maven.atlas</groupId>
         <artifactId>atlas-relationships-api</artifactId>
-        <version>0.14.0</version>
+        <version>0.14.1-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.maven.atlas</groupId>
         <artifactId>atlas-drivers-tck</artifactId>
-        <version>0.14.0</version>
+        <version>0.14.1-SNAPSHOT</version>
         <scope>test</scope>
       </dependency>
       
