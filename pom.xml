@@ -130,5 +130,6 @@
     <module>relationships-api</module>
     <module>tck</module>
     <module>drivers</module>
+    <module>bindings</module>
   </modules>
 </project>
