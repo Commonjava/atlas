@@ -115,7 +115,7 @@ public final class RelationshipUtils
         return false;
     }
 
-    public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<ProjectRelationship<?>> relationships )
+    public static Map<ProjectVersionRef, List<ProjectRelationship<?>>> mapByDeclaring( final Collection<? extends ProjectRelationship<?>> relationships )
     {
         final Logger logger = LoggerFactory.getLogger( RelationshipUtils.class );
         logger.debug( "Mapping {} relationships by declaring GAV:\n\n  {}\n\n", relationships.size(), new JoinString( "\n  ", relationships ) );
@@ -158,9 +158,9 @@ public final class RelationshipUtils
         }
     }
 
-    public static void filterTerminalParents( final Collection<ProjectRelationship<?>> rels )
+    public static void filterTerminalParents( final Collection<? extends ProjectRelationship<?>> rels )
     {
-        for ( final Iterator<ProjectRelationship<?>> it = rels.iterator(); it.hasNext(); )
+        for ( final Iterator<? extends ProjectRelationship<?>> it = rels.iterator(); it.hasNext(); )
         {
             final ProjectRelationship<?> rel = it.next();
             if ( ( rel instanceof ParentRelationship ) && ( (ParentRelationship) rel ).isTerminus() )
@@ -170,7 +170,7 @@ public final class RelationshipUtils
         }
     }
 
-    public static void filter( final Set<ProjectRelationship<?>> rels, final RelationshipType... types )
+    public static void filter( final Set<? extends ProjectRelationship<?>> rels, final RelationshipType... types )
     {
         if ( rels == null || rels.isEmpty() )
         {
@@ -183,7 +183,7 @@ public final class RelationshipUtils
         }
 
         Arrays.sort( types );
-        for ( final Iterator<ProjectRelationship<?>> iterator = rels.iterator(); iterator.hasNext(); )
+        for ( final Iterator<? extends ProjectRelationship<?>> iterator = rels.iterator(); iterator.hasNext(); )
         {
             final ProjectRelationship<?> rel = iterator.next();
             if ( Arrays.binarySearch( types, rel.getType() ) < 0 )
@@ -193,7 +193,7 @@ public final class RelationshipUtils
         }
     }
 
-    public static void filter( final Set<ProjectRelationship<?>> rels, final ProjectRelationshipFilter filter )
+    public static void filter( final Set<? extends ProjectRelationship<?>> rels, final ProjectRelationshipFilter filter )
     {
         if ( filter == null || filter instanceof AnyFilter )
         {
@@ -205,7 +205,7 @@ public final class RelationshipUtils
             return;
         }
 
-        for ( final Iterator<ProjectRelationship<?>> iterator = rels.iterator(); iterator.hasNext(); )
+        for ( final Iterator<? extends ProjectRelationship<?>> iterator = rels.iterator(); iterator.hasNext(); )
         {
             final ProjectRelationship<?> rel = iterator.next();
             if ( !filter.accept( rel ) )
@@ -220,7 +220,7 @@ public final class RelationshipUtils
         return declarers( Arrays.asList( relationships ) );
     }
 
-    public static Set<ProjectVersionRef> declarers( final Collection<ProjectRelationship<?>> relationships )
+    public static Set<ProjectVersionRef> declarers( final Collection<? extends ProjectRelationship<?>> relationships )
     {
         final Set<ProjectVersionRef> results = new HashSet<ProjectVersionRef>();
         for ( final ProjectRelationship<?> rel : relationships )
@@ -236,7 +236,7 @@ public final class RelationshipUtils
         return targets( Arrays.asList( relationships ) );
     }
 
-    public static Set<ProjectVersionRef> targets( final Collection<ProjectRelationship<?>> relationships )
+    public static Set<ProjectVersionRef> targets( final Collection<? extends ProjectRelationship<?>> relationships )
     {
         if ( relationships == null )
         {
@@ -257,7 +257,7 @@ public final class RelationshipUtils
         return gavs( Arrays.asList( relationships ) );
     }
 
-    public static Set<ProjectVersionRef> gavs( final Collection<ProjectRelationship<?>> relationships )
+    public static Set<ProjectVersionRef> gavs( final Collection<? extends ProjectRelationship<?>> relationships )
     {
         final Set<ProjectVersionRef> results = new HashSet<ProjectVersionRef>();
         for ( final ProjectRelationship<?> rel : relationships )

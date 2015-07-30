@@ -23,6 +23,8 @@ import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.ref.VersionlessArtifactRef;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.core.JsonGenerator;
@@ -31,6 +33,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
+import com.fasterxml.jackson.databind.deser.std.StdKeyDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
@@ -38,34 +41,52 @@ public class ProjectVersionRefSerializerModule
     extends SimpleModule
 {
 
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
+
     private static final long serialVersionUID = 1L;
 
     public ProjectVersionRefSerializerModule()
     {
         super( "ProjectRef (with variants) Serializer" );
 
+        logger.debug( "Registering ProjectRef serializer/deserialer" );
         // ProjectRef
         addSerializer( ProjectRef.class, new ProjectRefSerializer<ProjectRef>( ProjectRef.class ) );
+        addKeySerializer( ProjectRef.class, new ProjectRefSerializer<ProjectRef>( ProjectRef.class ) );
 
         addDeserializer( ProjectRef.class, new ProjectRefDeserializer<ProjectRef>( ProjectRef.class ) );
+        addKeyDeserializer( ProjectRef.class, new ProjectRefKeyDeserializer<ProjectRef>( ProjectRef.class ) );
 
+        logger.debug( "Registering ProjectVersionRef serializer/deserialer" );
         // ProjectVersionRef
         addSerializer( ProjectVersionRef.class, new ProjectRefSerializer<ProjectVersionRef>( ProjectVersionRef.class ) );
+        addKeySerializer( ProjectVersionRef.class,
+                          new ProjectRefSerializer<ProjectVersionRef>( ProjectVersionRef.class ) );
 
         addDeserializer( ProjectVersionRef.class,
                          new ProjectRefDeserializer<ProjectVersionRef>( ProjectVersionRef.class ) );
+        addKeyDeserializer( ProjectVersionRef.class,
+                            new ProjectRefKeyDeserializer<ProjectVersionRef>( ProjectVersionRef.class ) );
 
+        logger.debug( "Registering ArtifactRef serializer/deserialer" );
         // ArtifactRef
         addSerializer( ArtifactRef.class, new ProjectRefSerializer<ArtifactRef>( ArtifactRef.class ) );
+        addKeySerializer( ArtifactRef.class, new ProjectRefSerializer<ArtifactRef>( ArtifactRef.class ) );
 
         addDeserializer( ArtifactRef.class, new ProjectRefDeserializer<ArtifactRef>( ArtifactRef.class ) );
+        addKeyDeserializer( ArtifactRef.class, new ProjectRefKeyDeserializer<ArtifactRef>( ArtifactRef.class ) );
 
+        logger.debug( "Registering VersionlessArtifactRef serializer/deserialer" );
         // VersionlessArtifactRef
         addSerializer( VersionlessArtifactRef.class,
                        new ProjectRefSerializer<VersionlessArtifactRef>( VersionlessArtifactRef.class ) );
+        addKeySerializer( VersionlessArtifactRef.class,
+                          new ProjectRefSerializer<VersionlessArtifactRef>( VersionlessArtifactRef.class ) );
 
         addDeserializer( VersionlessArtifactRef.class,
                          new ProjectRefDeserializer<VersionlessArtifactRef>( VersionlessArtifactRef.class ) );
+        addKeyDeserializer( VersionlessArtifactRef.class,
+                            new ProjectRefKeyDeserializer<VersionlessArtifactRef>( VersionlessArtifactRef.class ) );
     }
 
     @Override
@@ -81,6 +102,28 @@ public class ProjectVersionRefSerializerModule
         return getClass().equals( other.getClass() );
     }
 
+    private <T extends ProjectRef> T parse( final String value, final Class<T> type )
+        throws IOException
+    {
+        try
+        {
+            final Method parseMethod = type.getMethod( "parse", String.class );
+            return type.cast( parseMethod.invoke( null, value ) );
+        }
+        catch ( final NoSuchMethodException e )
+        {
+            throw new IOException( "Failed to lookup/invoke parse() method on " + type.getSimpleName(), e );
+        }
+        catch ( final IllegalAccessException e )
+        {
+            throw new IOException( "Failed to lookup/invoke parse() method on " + type.getSimpleName(), e );
+        }
+        catch ( final InvocationTargetException e )
+        {
+            throw new IOException( "Failed to lookup/invoke parse() method on " + type.getSimpleName(), e );
+        }
+    }
+
     private static final class ProjectRefSerializer<T extends ProjectRef>
         extends StdSerializer<T>
     {
@@ -90,15 +133,14 @@ public class ProjectVersionRefSerializerModule
         }
 
         @Override
-        public void serialize( final T src, final JsonGenerator generator,
-                               final SerializerProvider provider )
+        public void serialize( final T src, final JsonGenerator generator, final SerializerProvider provider )
             throws IOException, JsonGenerationException
         {
             generator.writeString( src.toString() );
         }
     }
 
-    private static final class ProjectRefDeserializer<T extends ProjectRef>
+    private class ProjectRefDeserializer<T extends ProjectRef>
         extends StdDeserializer<T>
     {
         private static final long serialVersionUID = 1L;
@@ -115,24 +157,30 @@ public class ProjectVersionRefSerializerModule
         public T deserialize( final JsonParser jp, final DeserializationContext ctxt )
             throws IOException, JsonProcessingException
         {
-            try
-            {
-                final Method parseMethod = refCls.getMethod( "parse", String.class );
-                return refCls.cast( parseMethod.invoke( null, jp.getText() ) );
-            }
-            catch ( final NoSuchMethodException e )
-            {
-                throw new IOException( "Failed to lookup/invoke parse() method on " + refCls.getSimpleName(), e );
-            }
-            catch ( final IllegalAccessException e )
-            {
-                throw new IOException( "Failed to lookup/invoke parse() method on " + refCls.getSimpleName(), e );
-            }
-            catch ( final InvocationTargetException e )
-            {
-                throw new IOException( "Failed to lookup/invoke parse() method on " + refCls.getSimpleName(), e );
-            }
+            return parse( jp.getText(), refCls );
         }
+    }
+
+    public class ProjectRefKeyDeserializer<T extends ProjectRef>
+        extends StdKeyDeserializer
+    {
+        private static final long serialVersionUID = 1L;
+
+        private final Class<T> refCls;
+
+        public ProjectRefKeyDeserializer( final Class<T> type )
+        {
+            super( type );
+            this.refCls = type;
+        }
+
+        @Override
+        protected Object _parse( final String key, final DeserializationContext ctxt )
+            throws Exception
+        {
+            return parse( key, refCls );
+        }
+
     }
 
 }

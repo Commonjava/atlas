@@ -17,6 +17,7 @@ package org.commonjava.maven.atlas.graph.rel;
 
 import java.io.Serializable;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -30,12 +31,38 @@ public final class ParentRelationship
 
     private static final long serialVersionUID = 1L;
 
+    public static final URI TERMINAL_PARENT_SOURCE_URI;
+    static
+    {
+        final String uri = "atlas:terminal-parent";
+        try
+        {
+            TERMINAL_PARENT_SOURCE_URI = new URI( uri );
+        }
+        catch ( final URISyntaxException e )
+        {
+            throw new IllegalStateException( "Terminal-parent source URI constant is invalid: " + uri, e );
+        }
+
+    }
+
     /**
      * Ancestry terminus. This is to signify that the declaring project has NO parent relationship.
      */
-    public ParentRelationship( final URI source, final ProjectVersionRef declaring )
+    public ParentRelationship( final ProjectVersionRef declaring )
     {
-        super( source, RelationshipType.PARENT, declaring, declaring, 0 );
+        super( TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0 );
+    }
+
+    /**
+     * Ancestry terminus. This is to signify that the declaring project has NO parent relationship.
+     * This form is deprecated.
+     * @see ParentRelationship#ParentRelationship(ProjectVersionRef)
+     */
+    @Deprecated
+    public ParentRelationship( final URI unused, final ProjectVersionRef declaring )
+    {
+        super( TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0 );
     }
 
     public ParentRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target )

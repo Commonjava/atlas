@@ -17,6 +17,8 @@ package org.commonjava.maven.atlas.graph;
 
 import static org.apache.commons.lang.StringUtils.join;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +48,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class RelationshipGraph
+    implements Closeable
 {
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
@@ -194,15 +197,23 @@ public final class RelationshipGraph
         }
     }
 
+    @Override
     public synchronized void close()
-        throws RelationshipGraphException
+        throws IOException
     {
         userCount--;
         logger.info( "User count decremented to: {} for: {}", userCount, params );
 
         if ( userCount < 1 )
         {
-            forceClose();
+            try
+            {
+                forceClose();
+            }
+            catch ( final RelationshipGraphException e )
+            {
+                throw new IOException( "Failed to close graph.", e );
+            }
         }
 
         logger.info( "NOT closing; there are other users registered!" );
@@ -557,11 +568,27 @@ public final class RelationshipGraph
         return getConnectionInternal().getDirectRelationshipsTo( params, to, includeManagedInfo, true, types );
     }
 
+    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final ProjectVersionRef to,
+                                                                  final boolean includeManagedInfo,
+                                                                  final boolean includeConcreteInfo,
+                                                                  final RelationshipType... types )
+    {
+        return getConnectionInternal().getDirectRelationshipsTo( params, to, includeManagedInfo, includeConcreteInfo,
+                                                                 types );
+    }
+
     public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
                                                                     final boolean managed,
                                                                     final RelationshipType... types )
     {
         return getConnectionInternal().getDirectRelationshipsFrom( params, source, managed, true, types );
+    }
+
+    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
+                                                                    final boolean managed, final boolean concrete,
+                                                                    final RelationshipType... types )
+    {
+        return getConnectionInternal().getDirectRelationshipsFrom( params, source, managed, concrete, types );
     }
 
     public Set<ProjectVersionRef> getAllIncompleteSubgraphs()
@@ -727,6 +754,11 @@ public final class RelationshipGraph
         }
 
         return connection;
+    }
+
+    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaring( final ProjectVersionRef root )
+    {
+        return getConnectionInternal().getRelationshipsDeclaredBy( params, root );
     }
 
 }
