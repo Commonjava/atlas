@@ -41,13 +41,13 @@ extends AbstractTraversal
 
     private final ProjectRelationshipFilter rootFilter;
 
-    private final Set<ProjectRef> to;
+    private final Set<? extends ProjectRef> to;
 
     private final Map<ProjectRef, OrFilter> cache = new HashMap<ProjectRef, OrFilter>();
 
     private final Set<List<ProjectRelationship<?>>> paths = new HashSet<List<ProjectRelationship<?>>>();
 
-    public PathsTraversal( final ProjectRelationshipFilter filter, final Set<ProjectRef> toGas )
+    public PathsTraversal( final ProjectRelationshipFilter filter, final Set<? extends ProjectRef> toGas )
     {
         this.rootFilter = filter;
         this.to = toGas;
@@ -56,7 +56,7 @@ extends AbstractTraversal
     @Override
     public boolean preCheck( final ProjectRelationship<?> relationship, final List<ProjectRelationship<?>> path )
     {
-        ProjectVersionRef declaring = relationship.getDeclaring().asProjectVersionRef();
+        final ProjectVersionRef declaring = relationship.getDeclaring().asProjectVersionRef();
         if ( path.isEmpty() || path.get( path.size() - 1 ).getTarget().asProjectVersionRef().equals( declaring ) )
         {
             final ProjectRef dRef = declaring.asProjectRef();
@@ -91,8 +91,8 @@ extends AbstractTraversal
                             new HashSet<ProjectRelationshipFilter>( f.getFilters() );
                     if ( child instanceof OrFilter )
                     {
-                        List<ProjectRelationshipFilter> childFilters =
-                                (List<ProjectRelationshipFilter>) ( (OrFilter) child ).getFilters();
+                        final List<? extends ProjectRelationshipFilter> childFilters =
+                            ( (OrFilter) child ).getFilters();
                         if ( !filters.containsAll( childFilters ) )
                         {
                             filters.addAll( childFilters );
