@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
+import com.fasterxml.jackson.databind.KeyDeserializer;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -38,10 +39,8 @@ import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
 
 public class ProjectVersionRefSerializerModule
-    extends SimpleModule
+                extends SimpleModule
 {
-
-    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private static final long serialVersionUID = 1L;
 
@@ -49,19 +48,21 @@ public class ProjectVersionRefSerializerModule
     {
         super( "ProjectRef (with variants) Serializer" );
 
+        Logger logger = LoggerFactory.getLogger( getClass() );
         logger.debug( "Registering ProjectRef serializer/deserialer" );
         // ProjectRef
-        addSerializer( ProjectRef.class, new ProjectRefSerializer<ProjectRef>( ProjectRef.class ) );
-        addKeySerializer( ProjectRef.class, new ProjectRefSerializer<ProjectRef>( ProjectRef.class ) );
+        addSerializer( ProjectRef.class, new ProjectRefSerializer<ProjectRef>( ProjectRef.class, false ) );
+        addKeySerializer( ProjectRef.class, new ProjectRefSerializer<ProjectRef>( ProjectRef.class, true ) );
 
         addDeserializer( ProjectRef.class, new ProjectRefDeserializer<ProjectRef>( ProjectRef.class ) );
         addKeyDeserializer( ProjectRef.class, new ProjectRefKeyDeserializer<ProjectRef>( ProjectRef.class ) );
 
         logger.debug( "Registering ProjectVersionRef serializer/deserialer" );
         // ProjectVersionRef
-        addSerializer( ProjectVersionRef.class, new ProjectRefSerializer<ProjectVersionRef>( ProjectVersionRef.class ) );
+        addSerializer( ProjectVersionRef.class,
+                       new ProjectRefSerializer<ProjectVersionRef>( ProjectVersionRef.class, false ) );
         addKeySerializer( ProjectVersionRef.class,
-                          new ProjectRefSerializer<ProjectVersionRef>( ProjectVersionRef.class ) );
+                          new ProjectRefSerializer<ProjectVersionRef>( ProjectVersionRef.class, true ) );
 
         addDeserializer( ProjectVersionRef.class,
                          new ProjectRefDeserializer<ProjectVersionRef>( ProjectVersionRef.class ) );
@@ -70,8 +71,8 @@ public class ProjectVersionRefSerializerModule
 
         logger.debug( "Registering ArtifactRef serializer/deserialer" );
         // ArtifactRef
-        addSerializer( ArtifactRef.class, new ProjectRefSerializer<ArtifactRef>( ArtifactRef.class ) );
-        addKeySerializer( ArtifactRef.class, new ProjectRefSerializer<ArtifactRef>( ArtifactRef.class ) );
+        addSerializer( ArtifactRef.class, new ProjectRefSerializer<ArtifactRef>( ArtifactRef.class, false ) );
+        addKeySerializer( ArtifactRef.class, new ProjectRefSerializer<ArtifactRef>( ArtifactRef.class, true ) );
 
         addDeserializer( ArtifactRef.class, new ProjectRefDeserializer<ArtifactRef>( ArtifactRef.class ) );
         addKeyDeserializer( ArtifactRef.class, new ProjectRefKeyDeserializer<ArtifactRef>( ArtifactRef.class ) );
@@ -79,9 +80,9 @@ public class ProjectVersionRefSerializerModule
         logger.debug( "Registering VersionlessArtifactRef serializer/deserialer" );
         // VersionlessArtifactRef
         addSerializer( VersionlessArtifactRef.class,
-                       new ProjectRefSerializer<VersionlessArtifactRef>( VersionlessArtifactRef.class ) );
+                       new ProjectRefSerializer<VersionlessArtifactRef>( VersionlessArtifactRef.class, false ) );
         addKeySerializer( VersionlessArtifactRef.class,
-                          new ProjectRefSerializer<VersionlessArtifactRef>( VersionlessArtifactRef.class ) );
+                          new ProjectRefSerializer<VersionlessArtifactRef>( VersionlessArtifactRef.class, true ) );
 
         addDeserializer( VersionlessArtifactRef.class,
                          new ProjectRefDeserializer<VersionlessArtifactRef>( VersionlessArtifactRef.class ) );
@@ -92,8 +93,7 @@ public class ProjectVersionRefSerializerModule
     @Override
     public int hashCode()
     {
-        return getClass().getSimpleName()
-                         .hashCode() + 17;
+        return getClass().getSimpleName().hashCode() + 17;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class ProjectVersionRefSerializerModule
     }
 
     private <T extends ProjectRef> T parse( final String value, final Class<T> type )
-        throws IOException
+                    throws IOException
     {
         try
         {
@@ -125,23 +125,33 @@ public class ProjectVersionRefSerializerModule
     }
 
     private static final class ProjectRefSerializer<T extends ProjectRef>
-        extends StdSerializer<T>
+                    extends StdSerializer<T>
     {
-        ProjectRefSerializer( final Class<T> refCls )
+        private boolean keySer;
+
+        ProjectRefSerializer( final Class<T> refCls, boolean keySer )
         {
             super( refCls );
+            this.keySer = keySer;
         }
 
         @Override
         public void serialize( final T src, final JsonGenerator generator, final SerializerProvider provider )
-            throws IOException, JsonGenerationException
+                        throws IOException, JsonGenerationException
         {
-            generator.writeString( src.toString() );
+            if ( keySer )
+            {
+                generator.writeFieldName( src.toString() );
+            }
+            else
+            {
+                generator.writeString( src.toString() );
+            }
         }
     }
 
     private class ProjectRefDeserializer<T extends ProjectRef>
-        extends StdDeserializer<T>
+                    extends StdDeserializer<T>
     {
         private static final long serialVersionUID = 1L;
 
@@ -155,14 +165,14 @@ public class ProjectVersionRefSerializerModule
 
         @Override
         public T deserialize( final JsonParser jp, final DeserializationContext ctxt )
-            throws IOException, JsonProcessingException
+                        throws IOException, JsonProcessingException
         {
             return parse( jp.getText(), refCls );
         }
     }
 
     public class ProjectRefKeyDeserializer<T extends ProjectRef>
-        extends StdKeyDeserializer
+                    extends KeyDeserializer
     {
         private static final long serialVersionUID = 1L;
 
@@ -170,17 +180,15 @@ public class ProjectVersionRefSerializerModule
 
         public ProjectRefKeyDeserializer( final Class<T> type )
         {
-            super( type );
             this.refCls = type;
         }
 
         @Override
-        protected Object _parse( final String key, final DeserializationContext ctxt )
-            throws Exception
+        public Object deserializeKey( String key, DeserializationContext ctxt )
+                        throws IOException, JsonProcessingException
         {
             return parse( key, refCls );
         }
-
     }
 
 }

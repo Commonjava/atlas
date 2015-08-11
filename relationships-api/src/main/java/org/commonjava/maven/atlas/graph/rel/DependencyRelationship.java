@@ -113,11 +113,7 @@ public final class DependencyRelationship
             return false;
         }
         final DependencyRelationship other = (DependencyRelationship) obj;
-        if ( isManaged() != other.isManaged() )
-        {
-            return false;
-        }
-        return true;
+        return isManaged() == other.isManaged();
     }
 
     @Override
@@ -150,8 +146,9 @@ public final class DependencyRelationship
         final ProjectVersionRef d = getDeclaring().selectVersion( version, force );
         final ArtifactRef t = getTarget();
 
+        Set<ProjectRef> var = getExcludes();
         return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
-                                           getExcludes().toArray( new ProjectRef[] {} ) );
+                                           var.toArray( new ProjectRef[var.size()] ) );
     }
 
     @Override
@@ -167,8 +164,9 @@ public final class DependencyRelationship
         ArtifactRef t = getTarget();
         t = new ArtifactRef( t.selectVersion( version, force ), t.getType(), t.getClassifier(), t.isOptional() );
 
+        Set<ProjectRef> var = getExcludes();
         return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
-                                           getExcludes().toArray( new ProjectRef[] {} ) );
+                                           var.toArray( new ProjectRef[var.size()] ) );
     }
 
     @Override
@@ -176,8 +174,9 @@ public final class DependencyRelationship
     {
         final ArtifactRef t = getTarget();
 
+        Set<ProjectRef> var = getExcludes();
         return new DependencyRelationship( getSources(), getPomLocation(), ref, t, getScope(), getIndex(), isManaged(),
-                                           getExcludes().toArray( new ProjectRef[] {} ) );
+                                           var.toArray( new ProjectRef[var.size()] ) );
     }
 
     @Override
@@ -189,8 +188,9 @@ public final class DependencyRelationship
             (ArtifactRef) ( ( ref instanceof ArtifactRef ) ? ref : new ArtifactRef( ref, t.getType(),
                                                                                     t.getClassifier(), t.isOptional() ) );
 
+        Set<ProjectRef> var = getExcludes();
         return new DependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),
-                                           getExcludes().toArray( new ProjectRef[] {} ) );
+                                           var.toArray( new ProjectRef[var.size()] ) );
     }
 
     public boolean isBOM()

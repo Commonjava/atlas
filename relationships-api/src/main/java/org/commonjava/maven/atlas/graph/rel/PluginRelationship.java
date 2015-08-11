@@ -104,11 +104,7 @@ public final class PluginRelationship
             return false;
         }
         final PluginRelationship other = (PluginRelationship) obj;
-        if ( isManaged() != other.isManaged() )
-        {
-            return false;
-        }
-        return true;
+        return isManaged() == other.isManaged();
     }
 
     @Override

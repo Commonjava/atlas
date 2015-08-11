@@ -201,11 +201,7 @@ public class Neo4jGraphPath
         {
             return false;
         }
-        if ( !Arrays.equals( relationships, other.relationships ) )
-        {
-            return false;
-        }
-        return true;
+        return Arrays.equals( relationships, other.relationships );
     }
 
     @Override

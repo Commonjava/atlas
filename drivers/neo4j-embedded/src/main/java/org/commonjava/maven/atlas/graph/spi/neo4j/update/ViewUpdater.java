@@ -214,13 +214,8 @@ public class ViewUpdater
     @Override
     public boolean includeChildren( final Path path, final Neo4jGraphPath graphPath, final GraphPathInfo pathInfo )
     {
-        if ( stopNode != null && path.endNode()
-                                     .getId() == stopNode.getId() )
-        {
-            return false;
-        }
+        return !( stopNode != null && path.endNode().getId() == stopNode.getId() );
 
-        return true;
     }
 
     @Override

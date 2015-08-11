@@ -1286,7 +1286,7 @@ public class FileNeo4JGraphConnection
 
         try
         {
-            final Traverser traverser = description.traverse( start.toArray( new Node[] {} ) );
+            final Traverser traverser = description.traverse( start.toArray( new Node[start.size()] ) );
             for ( @SuppressWarnings( "unused" )
             final Path path : traverser )
             {
@@ -2236,7 +2236,6 @@ public class FileNeo4JGraphConnection
                         logger.debug( "Uncaching: {}", r );
                         toUncache.add( r );
                         uncache = true;
-                        continue;
                     }
                     else
                     {
@@ -2244,7 +2243,6 @@ public class FileNeo4JGraphConnection
                         toUncacheNode.add( r.getStartNode() );
                         toUncacheNode.add( r.getEndNode() );
                         toUncache.add( r );
-                        continue;
                     }
                 }
             }

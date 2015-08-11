@@ -40,16 +40,16 @@ public enum GraphRelType
 
     private boolean managed = false;
 
-    private GraphRelType()
+    GraphRelType()
     {
     }
 
-    private GraphRelType( final org.commonjava.maven.atlas.graph.rel.RelationshipType atlasType )
+    GraphRelType( final org.commonjava.maven.atlas.graph.rel.RelationshipType atlasType )
     {
         this.atlasType = atlasType;
     }
 
-    private GraphRelType( final org.commonjava.maven.atlas.graph.rel.RelationshipType atlasType, final boolean managed )
+    GraphRelType( final org.commonjava.maven.atlas.graph.rel.RelationshipType atlasType, final boolean managed )
     {
         this.atlasType = atlasType;
         this.managed = managed;

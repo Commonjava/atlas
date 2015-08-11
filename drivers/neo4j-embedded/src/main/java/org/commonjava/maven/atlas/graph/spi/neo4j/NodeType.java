@@ -18,6 +18,6 @@ package org.commonjava.maven.atlas.graph.spi.neo4j;
 public enum NodeType
 {
 
-    PROJECT, CYCLE;
+    PROJECT, CYCLE
 
 }

@@ -217,7 +217,6 @@ public final class RelationshipGraph
         }
 
         logger.info( "NOT closing; there are other users registered!" );
-        return;
     }
 
     // +++ IMPORTED FROM EProjectWeb...
@@ -276,7 +275,7 @@ public final class RelationshipGraph
         final Set<T> result = new HashSet<T>( rels );
 
         final Set<ProjectRelationship<?>> rejected =
-            getConnectionInternal().addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+            getConnectionInternal().addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
         result.removeAll( rejected );
 
         if ( !result.isEmpty() )

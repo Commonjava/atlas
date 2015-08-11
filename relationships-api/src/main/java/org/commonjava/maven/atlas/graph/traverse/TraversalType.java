@@ -18,6 +18,6 @@ package org.commonjava.maven.atlas.graph.traverse;
 public enum TraversalType
 {
 
-    depth_first, breadth_first;
+    depth_first, breadth_first
 
 }

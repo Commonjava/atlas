@@ -110,11 +110,7 @@ public class JungGraphPath
             return false;
         }
         final JungGraphPath other = (JungGraphPath) obj;
-        if ( !Arrays.equals( rels, other.rels ) )
-        {
-            return false;
-        }
-        return true;
+        return Arrays.equals( rels, other.rels );
     }
 
     @Override

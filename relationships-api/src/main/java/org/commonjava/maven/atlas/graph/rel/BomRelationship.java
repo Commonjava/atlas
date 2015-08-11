@@ -16,6 +16,7 @@
 package org.commonjava.maven.atlas.graph.rel;
 
 import java.net.URI;
+import java.util.Collection;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -32,7 +33,7 @@ public class BomRelationship
 
     private static final long serialVersionUID = 1L;
 
-    public BomRelationship( final Set<URI> sources, final ProjectVersionRef d, final ProjectVersionRef t,
+    public BomRelationship( final Collection<URI> sources, final ProjectVersionRef d, final ProjectVersionRef t,
                             final int index )
     {
         // BOMs are actually marked as concrete...somewhat counter-intuitive, 
@@ -49,7 +50,7 @@ public class BomRelationship
         super( source, RelationshipType.BOM, d, t, index, false );
     }
 
-    public BomRelationship( final Set<URI> sources, final URI pomLocation, final ProjectVersionRef d,
+    public BomRelationship( final Collection<URI> sources, final URI pomLocation, final ProjectVersionRef d,
                             final ProjectVersionRef t, final int index )
     {
         // BOMs are actually marked as concrete...somewhat counter-intuitive, 

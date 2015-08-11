@@ -118,11 +118,7 @@ public class DependencyOnlyFilter
         {
             return false;
         }
-        if ( useImpliedScope != other.useImpliedScope )
-        {
-            return false;
-        }
-        return true;
+        return useImpliedScope == other.useImpliedScope;
     }
 
     @Override
