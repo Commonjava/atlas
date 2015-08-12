@@ -41,6 +41,8 @@ public class BuildOrderTraversal
 
     private Set<EProjectCycle> cycles;
 
+    private Set<ProjectVersionRef> allowedProjects;
+
     public BuildOrderTraversal()
     {
     }
@@ -48,6 +50,11 @@ public class BuildOrderTraversal
     public BuildOrderTraversal( final ProjectRelationshipFilter filter )
     {
         super( new OrFilter( filter, ParentFilter.EXCLUDE_TERMINAL_PARENTS ) );
+    }
+
+    public BuildOrderTraversal( final Set<ProjectVersionRef> allowedProjects )
+    {
+        this.allowedProjects = allowedProjects;
     }
 
     public BuildOrder getBuildOrder()
@@ -59,6 +66,11 @@ public class BuildOrderTraversal
     protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
                                           final List<ProjectRelationship<?>> path )
     {
+        if ( !verifyProjectsAllowed( relationship, path ) )
+        {
+            return false;
+        }
+
         final ProjectVersionRef decl = relationship.getDeclaring();
 
         ProjectVersionRef target = relationship.getTarget();
@@ -84,6 +96,40 @@ public class BuildOrderTraversal
         }
 
         return true;
+    }
+
+    private boolean verifyProjectsAllowed( final ProjectRelationship<?> relationship,
+                                           final List<ProjectRelationship<?>> path )
+    {
+        if ( allowedProjects == null )
+        {
+            return true;
+        }
+        else if ( allowedProjects.isEmpty() )
+        {
+            return false;
+        }
+
+        if ( !verifyRelationshipProjectsAllowed( relationship ) )
+        {
+            return false;
+        }
+
+        for ( final ProjectRelationship<?> rel : path )
+        {
+            if ( !verifyRelationshipProjectsAllowed( rel ) )
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private boolean verifyRelationshipProjectsAllowed( final ProjectRelationship<?> relationship )
+    {
+        return allowedProjects == null
+            || ( allowedProjects.contains( relationship.getDeclaring() ) && allowedProjects.contains( relationship.getTarget() ) );
     }
 
     @Override

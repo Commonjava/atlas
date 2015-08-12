@@ -35,14 +35,6 @@ public class RelationshipPathComparator
     {
         final int commonLen = Math.min( one.size(), two.size() );
 
-        if ( one.size() > commonLen )
-        {
-            return 1;
-        }
-        else if ( two.size() > commonLen )
-        {
-            return -1;
-        }
 
         for ( int i = 0; i < commonLen; i++ )
         {
@@ -60,6 +52,15 @@ public class RelationshipPathComparator
             {
                 return result;
             }
+        }
+
+        if ( one.size() > commonLen )
+        {
+            return 1;
+        }
+        else if ( two.size() > commonLen )
+        {
+            return -1;
         }
 
         return 0;

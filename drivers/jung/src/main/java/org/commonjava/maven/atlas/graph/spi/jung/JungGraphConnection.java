@@ -547,7 +547,7 @@ public class JungGraphConnection
         incompleteSubgraphs.clear();
         variableSubgraphs.clear();
 
-        addRelationships( rels.toArray( new ProjectRelationship<?>[] {} ) );
+        addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
 
         recomputeIncompleteSubgraphs();
     }

@@ -294,11 +294,7 @@ public class RangeVersionSpec
         {
             return false;
         }
-        if ( upperInclusive != other.upperInclusive )
-        {
-            return false;
-        }
-        return true;
+        return upperInclusive == other.upperInclusive;
     }
 
 }

@@ -29,7 +29,7 @@ public enum RelationshipType
 
     private final Set<String> names;
 
-    private RelationshipType( final String... names )
+    RelationshipType( final String... names )
     {
         this.names = Collections.unmodifiableSet( new HashSet<String>( Arrays.asList( names ) ) );
     }

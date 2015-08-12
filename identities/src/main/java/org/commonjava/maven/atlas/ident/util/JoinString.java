@@ -19,6 +19,7 @@ import static org.apache.commons.lang.StringUtils.join;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 public class JoinString
 {
@@ -30,13 +31,13 @@ public class JoinString
     public JoinString( final String joint, final Collection<?> items )
     {
         this.joint = joint;
-        this.items = items;
+        this.items = items == null ? Collections.emptyList() : items;
     }
 
     public JoinString( final String joint, final Object[] items )
     {
         this.joint = joint;
-        this.items = Arrays.asList( items );
+        this.items = items == null ? Collections.emptyList() : Arrays.asList( items );
     }
 
     @Override

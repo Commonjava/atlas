@@ -65,7 +65,7 @@
       <dependency>
         <groupId>org.commonjava.boms</groupId>
         <artifactId>web-commons-bom</artifactId>
-        <version>16</version>
+        <version>17-SNAPSHOT</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -128,8 +128,8 @@
   <modules>
     <module>identities</module>
     <module>relationships-api</module>
+    <module>bindings</module>
     <module>tck</module>
     <module>drivers</module>
-    <module>bindings</module>
   </modules>
 </project>

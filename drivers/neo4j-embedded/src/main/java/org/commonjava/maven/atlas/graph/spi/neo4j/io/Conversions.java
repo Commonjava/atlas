@@ -471,7 +471,7 @@ public final class Conversions
 
                 result =
                     new DependencyRelationship( source, pomLocation, from, artifact, scope, index, managed,
-                                                excludes.toArray( new ProjectRef[] {} ) );
+                                                excludes.toArray( new ProjectRef[excludes.size()] ) );
                 break;
             }
             case PLUGIN_DEP:

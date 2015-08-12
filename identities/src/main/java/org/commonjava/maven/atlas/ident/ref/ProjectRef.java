@@ -142,11 +142,7 @@ public class ProjectRef
         {
             return false;
         }
-        if ( !groupId.equals( other.groupId ) )
-        {
-            return false;
-        }
-        return true;
+        return groupId.equals( other.groupId );
     }
 
     @Override
@@ -176,13 +172,8 @@ public class ProjectRef
         }
 
         final String aidPattern = toWildcard( getArtifactId() );
-        if ( !ref.getArtifactId()
-                 .matches( aidPattern ) )
-        {
-            return false;
-        }
+        return ref.getArtifactId().matches( aidPattern );
 
-        return true;
     }
 
     private String toWildcard( final String val )

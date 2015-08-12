@@ -36,13 +36,13 @@ public enum DependencyScope
 
     private String realName;
 
-    private DependencyScope( final String realName, final DependencyScope... implied )
+    DependencyScope( final String realName, final DependencyScope... implied )
     {
         this.realName = realName;
         this.implied = new HashSet<DependencyScope>( Arrays.asList( implied ) );
     }
 
-    private DependencyScope( final DependencyScope... implied )
+    DependencyScope( final DependencyScope... implied )
     {
         realName = name();
         this.implied = new HashSet<DependencyScope>( Arrays.asList( implied ) );

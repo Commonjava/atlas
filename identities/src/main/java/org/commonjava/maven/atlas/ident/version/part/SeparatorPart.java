@@ -78,11 +78,7 @@ public class SeparatorPart
             return false;
         }
         final SeparatorPart other = (SeparatorPart) obj;
-        if ( type != other.type )
-        {
-            return false;
-        }
-        return true;
+        return type == other.type;
     }
 
 }

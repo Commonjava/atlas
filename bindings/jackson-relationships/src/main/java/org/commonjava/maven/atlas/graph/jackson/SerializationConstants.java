@@ -34,7 +34,7 @@ public final class SerializationConstants
 
     public static final SerializedString GAV = PROJECT_VERSION;
 
-    public static final SerializedString RELATIONSHIP_TYPE = new SerializedString( "rel" );
+    public static final SerializedString RELATIONSHIP_TYPE = new SerializedString( "type" );
 
     public static final SerializedString DECLARING_REF = new SerializedString( "declaring" );
 
@@ -43,6 +43,8 @@ public final class SerializationConstants
     public static final SerializedString INDEX = new SerializedString( "idx" );
 
     public static final SerializedString MANAGED = new SerializedString( "managed" );
+
+    public static final SerializedString REPORTING = new SerializedString( "reporting" );
 
     public static final SerializedString SCOPE = new SerializedString( "scope" );
 

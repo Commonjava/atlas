@@ -193,11 +193,7 @@ public class DependencyFilter
         {
             return false;
         }
-        if ( useImpliedScopes != other.useImpliedScopes )
-        {
-            return false;
-        }
-        return true;
+        return useImpliedScopes == other.useImpliedScopes;
     }
 
     @Override

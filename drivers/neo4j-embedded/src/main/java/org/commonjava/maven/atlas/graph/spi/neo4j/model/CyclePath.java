@@ -201,12 +201,12 @@ public class CyclePath
         {
             if ( i % 2 == 1 )
             {
-                result += Long.valueOf( it.next() )
+                result += it.next()
                               .hashCode();
             }
             else
             {
-                result -= Long.valueOf( it.next() )
+                result -= it.next()
                               .hashCode();
             }
 

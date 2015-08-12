@@ -43,12 +43,8 @@ public class ParentFilter
     @Override
     public boolean doAccept( final ProjectRelationship<?> rel )
     {
-        if ( allowTerminalParent || !( (ParentRelationship) rel ).isTerminus() )
-        {
-            return true;
-        }
+        return allowTerminalParent || !( (ParentRelationship) rel ).isTerminus();
 
-        return false;
     }
 
     @Override
@@ -82,11 +78,7 @@ public class ParentFilter
             return false;
         }
         final ParentFilter other = (ParentFilter) obj;
-        if ( allowTerminalParent != other.allowTerminalParent )
-        {
-            return false;
-        }
-        return true;
+        return allowTerminalParent == other.allowTerminalParent;
     }
 
     @Override

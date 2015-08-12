@@ -15,21 +15,15 @@
  */
 package org.commonjava.maven.atlas.graph.jackson;
 
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.CURRENT_JSON_VERSION;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.DECLARING_REF;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.INDEX;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.JSON_VERSION;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.MANAGED;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.PLUGIN_REF;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.POM_LOCATION_URI;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.RELATIONSHIP_TYPE;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.SCOPE;
-import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.TARGET_REF;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 
+import com.fasterxml.jackson.core.*;
 import org.commonjava.maven.atlas.graph.rel.BomRelationship;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
@@ -43,11 +37,6 @@ import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
-import com.fasterxml.jackson.core.JsonGenerationException;
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.io.SerializedString;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.JsonDeserializer;
@@ -55,9 +44,13 @@ import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.*;
 
 public class ProjectRelationshipSerializerModule
-    extends SimpleModule
+                extends SimpleModule
 {
 
     private static final long serialVersionUID = 1L;
@@ -72,8 +65,7 @@ public class ProjectRelationshipSerializerModule
     @Override
     public int hashCode()
     {
-        return getClass().getSimpleName()
-                         .hashCode() + 17;
+        return getClass().getSimpleName().hashCode() + 17;
     }
 
     @Override
@@ -84,7 +76,7 @@ public class ProjectRelationshipSerializerModule
 
     @SuppressWarnings( "rawtypes" )
     private static final class ProjectRelationshipSerializer
-        extends StdSerializer<ProjectRelationship>
+                    extends StdSerializer<ProjectRelationship>
     {
         ProjectRelationshipSerializer()
         {
@@ -95,29 +87,47 @@ public class ProjectRelationshipSerializerModule
         @Override
         public void serialize( final ProjectRelationship value, final JsonGenerator gen,
                                final SerializerProvider provider )
-            throws IOException, JsonGenerationException
+                        throws IOException, JsonGenerationException
         {
             gen.writeStartObject();
-            gen.writeNumberField( JSON_VERSION.getValue(), SerializationConstants.CURRENT_JSON_VERSION );
             gen.writeStringField( RELATIONSHIP_TYPE.getValue(), value.getType().name() );
+            gen.writeStringField( POM_LOCATION_URI.getValue(), value.getPomLocation().toString() );
+            gen.writeArrayFieldStart( SOURCE_URIS.getValue() );
+
+            Set<URI> sources = value.getSources();
+            for ( URI uri : sources )
+            {
+                gen.writeString( uri.toString() );
+            }
+            gen.writeEndArray();
             provider.defaultSerializeField( DECLARING_REF.getValue(), value.getDeclaring(), gen );
             provider.defaultSerializeField( TARGET_REF.getValue(), value.getTarget(), gen );
-            gen.writeNumberField(INDEX.getValue(), value.getIndex());
 
             switch ( value.getType() )
             {
                 case DEPENDENCY:
                 {
-                    gen.writeStringField( SCOPE.getValue(), ( (DependencyRelationship) value ).getScope()
-                                                                                                   .realName() );
+                    gen.writeStringField( SCOPE.getValue(), ( (DependencyRelationship) value ).getScope().realName() );
+                    gen.writeBooleanField( MANAGED.getValue(), value.isManaged() );
                     break;
                 }
                 case PLUGIN_DEP:
                 {
-                    provider.defaultSerializeField( PLUGIN_REF.getValue(), ( (PluginDependencyRelationship) value ).getPlugin(), gen );
+                    provider.defaultSerializeField( PLUGIN_REF.getValue(),
+                                                    ( (PluginDependencyRelationship) value ).getPlugin(), gen );
+                    gen.writeBooleanField( MANAGED.getValue(), value.isManaged() );
+                    break;
+                }
+                case PLUGIN:
+                {
+
+                    gen.writeBooleanField( MANAGED.getValue(), value.isManaged() );
+                    gen.writeBooleanField( REPORTING.getValue(), ( (PluginRelationship) value ).isReporting() );
                     break;
                 }
             }
+
+            gen.writeNumberField( INDEX.getValue(), value.getIndex() );
             gen.writeEndObject();
         }
 
@@ -125,7 +135,7 @@ public class ProjectRelationshipSerializerModule
 
     @SuppressWarnings( "rawtypes" )
     private static final class ProjectRelationshipDeserializer
-        extends StdDeserializer<ProjectRelationship>
+                    extends StdDeserializer<ProjectRelationship>
     {
         private static final long serialVersionUID = 1L;
 
@@ -136,30 +146,17 @@ public class ProjectRelationshipSerializerModule
 
         @Override
         public ProjectRelationship deserialize( final JsonParser jp, final DeserializationContext ctx )
-            throws IOException, JsonProcessingException
+                        throws IOException, JsonProcessingException
         {
-            final int version = expectField( jp, JSON_VERSION ).nextIntValue( CURRENT_JSON_VERSION );
-            if ( version > CURRENT_JSON_VERSION )
-            {
-                throw new JsonParseException( "Cannot deserialize ProjectRelationship JSON with version: " + version,
-                                              jp.getCurrentLocation() );
-            }
-            
             final JsonDeserializer<Object> prDeser =
-                ctx.findRootValueDeserializer( ctx.getTypeFactory()
-                                                  .constructType( ProjectRef.class ) );
-            final JsonDeserializer<Object> pvrDeser =
-                ctx.findRootValueDeserializer( ctx.getTypeFactory()
-                                                  .constructType( ProjectVersionRef.class ) );
+                            ctx.findRootValueDeserializer( ctx.getTypeFactory().constructType( ProjectRef.class ) );
+            final JsonDeserializer<Object> pvrDeser = ctx.findRootValueDeserializer(
+                            ctx.getTypeFactory().constructType( ProjectVersionRef.class ) );
             final JsonDeserializer<Object> arDeser =
-                ctx.findRootValueDeserializer( ctx.getTypeFactory()
-                                                  .constructType( ArtifactRef.class ) );
+                            ctx.findRootValueDeserializer( ctx.getTypeFactory().constructType( ArtifactRef.class ) );
 
             final RelationshipType type =
-                RelationshipType.getType( expectField( jp, RELATIONSHIP_TYPE ).nextTextValue() );
-            
-            expectField( jp, DECLARING_REF ).nextTextValue();
-            final ProjectVersionRef declaring = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
+                            RelationshipType.getType( expectField( jp, RELATIONSHIP_TYPE ).nextTextValue() );
 
             final String uri = expectField( jp, POM_LOCATION_URI ).nextTextValue();
             URI pomLocation;
@@ -169,10 +166,35 @@ public class ProjectRelationshipSerializerModule
             }
             catch ( final URISyntaxException e )
             {
-                throw new JsonParseException( "Invalid " + POM_LOCATION_URI + ": '" + uri + "': "
-                    + e.getMessage(), jp.getCurrentLocation(), e );
+                throw new JsonParseException( "Invalid " + POM_LOCATION_URI + ": '" + uri + "': " + e.getMessage(),
+                                              jp.getCurrentLocation(), e );
             }
 
+            Collection<URI> sources = new HashSet<URI>();
+            expectField( jp, SOURCE_URIS );
+            ff( jp, JsonToken.START_ARRAY );
+            while ( jp.nextToken() != JsonToken.END_ARRAY && jp.getCurrentToken() != null )
+            {
+                String u = jp.getText();
+                if ( u == null )
+                {
+                    continue;
+                }
+
+                try
+                {
+                    sources.add( new URI( u ) );
+                }
+                catch ( URISyntaxException e )
+                {
+                    throw new JsonParseException( "Failed to parse source URI: " + u, jp.getCurrentLocation() );
+                }
+            }
+
+            expectField( jp, DECLARING_REF ).nextTextValue();
+            final ProjectVersionRef declaring = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
+
+            ProjectRelationship<?> rel = null;
             switch ( type )
             {
                 case DEPENDENCY:
@@ -182,29 +204,34 @@ public class ProjectRelationshipSerializerModule
 
                     final DependencyScope scope = DependencyScope.getScope( expectField( jp, SCOPE ).nextTextValue() );
 
-                    return new DependencyRelationship( pomLocation, declaring, target, scope, getIndex( jp ),
-                                                       isManaged( jp ) );
+                    rel = new DependencyRelationship( sources, pomLocation, declaring, target, scope, getIndex( jp ),
+                                                      isManaged( jp ) );
+                    break;
                 }
                 case EXTENSION:
                 {
                     expectField( jp, TARGET_REF ).nextTextValue();
                     final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
 
-                    return new ExtensionRelationship( pomLocation, declaring, target, getIndex( jp ) );
+                    rel = new ExtensionRelationship( sources, pomLocation, declaring, target, getIndex( jp ) );
+                    break;
                 }
                 case PARENT:
                 {
                     expectField( jp, TARGET_REF ).nextTextValue();
                     final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
 
-                    return new ParentRelationship( pomLocation, declaring, target );
+                    rel = new ParentRelationship( sources, declaring, target );
+                    break;
                 }
                 case PLUGIN:
                 {
                     expectField( jp, TARGET_REF ).nextTextValue();
                     final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
 
-                    return new PluginRelationship( pomLocation, declaring, target, getIndex( jp ), isManaged( jp ) );
+                    rel = new PluginRelationship( sources, pomLocation, declaring, target, getIndex( jp ),
+                                                  isManaged( jp ), isReporting( jp ) );
+                    break;
                 }
                 case PLUGIN_DEP:
                 {
@@ -214,25 +241,57 @@ public class ProjectRelationshipSerializerModule
                     expectField( jp, TARGET_REF ).nextTextValue();
                     final ArtifactRef target = (ArtifactRef) arDeser.deserialize( jp, ctx );
 
-                    return new PluginDependencyRelationship( pomLocation, declaring, plugin, target, getIndex( jp ),
-                                                             isManaged( jp ) );
+                    rel = new PluginDependencyRelationship( sources, pomLocation, declaring, plugin, target,
+                                                            getIndex( jp ), isManaged( jp ) );
+                    break;
                 }
                 case BOM:
                 {
                     expectField( jp, TARGET_REF ).nextTextValue();
                     final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
 
-                    return new BomRelationship( pomLocation, declaring, target, getIndex( jp ) );
+                    rel = new BomRelationship( sources, pomLocation, declaring, target, getIndex( jp ) );
+                    break;
                 }
             }
 
-            return null;
+            while ( jp.getCurrentToken() != JsonToken.END_OBJECT )
+            {
+                jp.nextToken();
+            }
+
+            return rel;
+        }
+
+        private void ff( JsonParser jp, JsonToken token )
+                        throws JsonParseException, IOException
+        {
+            if ( jp.getCurrentToken() == token )
+            {
+                return;
+            }
+
+            JsonToken t = null;
+            do
+            {
+                t = jp.nextToken();
+                if ( t == null )
+                {
+                    throw new JsonParseException( "Expected token: " + token, jp.getCurrentLocation() );
+                }
+            }
+            while ( t != token );
         }
 
         private JsonParser expectField( final JsonParser jp, final SerializedString named )
-            throws JsonParseException, IOException
+                        throws JsonParseException, IOException
         {
-            if ( !jp.nextFieldName( named ) )
+            while ( jp.getCurrentToken() != null && !named.getValue().equals( jp.getCurrentName() ) )
+            {
+                jp.nextToken();
+            }
+
+            if ( !named.getValue().equals( jp.getCurrentName() ) )
             {
                 throw new JsonParseException( "Expected field: " + named, jp.getCurrentLocation() );
             }
@@ -241,16 +300,23 @@ public class ProjectRelationshipSerializerModule
         }
 
         private boolean isManaged( final JsonParser jp )
-            throws JsonParseException, IOException
+                        throws IOException
         {
             return expectField( jp, MANAGED ).nextBooleanValue();
         }
 
         private int getIndex( final JsonParser jp )
-            throws JsonParseException, IOException
+                        throws IOException
         {
             return expectField( jp, INDEX ).nextIntValue( 0 );
         }
+
+        private boolean isReporting( final JsonParser jp )
+                        throws IOException
+        {
+            return expectField( jp, REPORTING ).nextBooleanValue();
+        }
+
     }
 
 }

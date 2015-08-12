@@ -22,7 +22,7 @@ public enum VersionPartSeparator
 
     private String rendered;
 
-    private VersionPartSeparator( final String rendered )
+    VersionPartSeparator( final String rendered )
     {
         this.rendered = rendered;
     }

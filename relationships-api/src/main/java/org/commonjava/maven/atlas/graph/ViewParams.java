@@ -393,8 +393,7 @@ public class ViewParams
 
     public boolean hasSelection( final ProjectVersionRef ref )
     {
-        return selections == null ? false : selections.containsKey( ref )
-            || selections.containsKey( ref.asProjectRef() );
+        return selections != null && ( selections.containsKey( ref ) || selections.containsKey( ref.asProjectRef() ) );
     }
 
     public String renderSelections()

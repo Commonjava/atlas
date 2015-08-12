@@ -108,15 +108,8 @@ public class ImpactTraversal
 
         final Set<List<ProjectRelationship<?>>> paths = impactedPaths.get( relationship.getTarget()
                                                                                        .asProjectVersionRef() );
-        if ( paths != null && paths.isEmpty() )
-        {
-            // we've seen an impact target, we don't need to go further.
+        return !( paths != null && paths.isEmpty() );
 
-            // TODO: huh??
-            return false;
-        }
-
-        return true;
     }
 
 }

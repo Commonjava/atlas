@@ -214,11 +214,7 @@ public abstract class AbstractProjectRelationship<T extends ProjectVersionRef>
         {
             return false;
         }
-        if ( type != other.type )
-        {
-            return false;
-        }
-        return true;
+        return type == other.type;
     }
 
     @Override

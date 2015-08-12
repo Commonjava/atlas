@@ -16,7 +16,6 @@
 package org.commonjava.maven.atlas.graph.filter;
 
 import java.util.Collection;
-import java.util.List;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 
