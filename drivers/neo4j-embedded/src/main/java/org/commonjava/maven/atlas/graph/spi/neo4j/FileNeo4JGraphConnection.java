@@ -666,7 +666,7 @@ public class FileNeo4JGraphConnection
                 }
                 else
                 {
-                    logger.debug( "== {} ({})", relationship, toProjectRelationship( relationship, cache ) );
+                    logger.debug( "== {} ({})", relationship, new RelToString( relationship, cache ) );
 
                     addToURISetProperty( rel.getSources(), SOURCE_URI, relationship );
                 }
@@ -1740,9 +1740,6 @@ public class FileNeo4JGraphConnection
         }
     }
 
-    /**
-     * @deprecated Use {@link #getDirectRelationshipsFrom(GraphView,ProjectVersionRef,boolean,boolean,RelationshipType...)} instead
-     */
     @Deprecated
     @Override
     public Set<ProjectRelationship<?>> getDirectRelationshipsFrom( final ViewParams params,
@@ -1966,8 +1963,7 @@ public class FileNeo4JGraphConnection
                 final Relationship hit = hits.next();
                 final ProjectVersionRef ref = toProjectVersionRef( hit.getEndNode(), cache );
 
-                final ProjectRelationship<?> rel = Conversions.toProjectRelationship( hit, cache );
-                logger.info( "[MUTATION] {} => {} (via: {})", target, ref, rel );
+                logger.debug( "[MUTATION] {} => {} (via: {})", target, ref, new RelToString( hit, cache ) );
 
                 return ref;
             }
