@@ -25,9 +25,11 @@ import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 public final class BuildOrder
 {
 
-    private final List<ProjectRef> order;
+    private List<ProjectRef> order;
 
-    private final Set<EProjectCycle> cycles;
+    private Set<EProjectCycle> cycles;
+
+    public BuildOrder(){}
 
     public BuildOrder( final List<ProjectRef> order, final Set<EProjectCycle> cycles )
     {
@@ -45,4 +47,13 @@ public final class BuildOrder
         return cycles;
     }
 
+    public void setOrder( List<ProjectRef> order )
+    {
+        this.order = order;
+    }
+
+    public void setCycles( Set<EProjectCycle> cycles )
+    {
+        this.cycles = cycles;
+    }
 }
