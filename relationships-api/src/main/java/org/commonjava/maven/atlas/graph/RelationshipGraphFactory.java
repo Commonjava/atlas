@@ -210,7 +210,7 @@ public final class RelationshipGraphFactory
             final RelationshipGraphConnection conn = connection;
             connection = null;
 
-            if ( !conn.isClosed() )
+            if ( conn != null && !conn.isClosed() )
             {
                 conn.close();
             }
