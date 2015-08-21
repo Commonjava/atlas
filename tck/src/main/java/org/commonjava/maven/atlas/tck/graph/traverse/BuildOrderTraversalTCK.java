@@ -244,7 +244,7 @@ public abstract class BuildOrderTraversalTCK
         final BuildOrder buildOrderObj = bo.getBuildOrder();
         final List<ProjectRef> buildOrder = buildOrderObj.getOrder();
 
-        logger.info( "Build order: %s", buildOrder );
+        logger.info( "Build order: {}", buildOrder );
         assertThat( buildOrder.size(), equalTo( 3 ) );
 
         assertRelativeOrder( relativeOrder, buildOrder );

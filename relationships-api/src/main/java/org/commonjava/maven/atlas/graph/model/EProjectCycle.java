@@ -105,6 +105,8 @@ public class EProjectCycle
         }
     }
 
+    public EProjectCycle(){}
+
     public EProjectCycle( final List<ProjectRelationship<?>> cycle )
     {
         this.relationships = new ArrayList<ProjectRelationship<?>>( cycle );
