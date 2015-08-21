@@ -15,37 +15,25 @@
  */
 package org.commonjava.maven.atlas.graph.jackson;
 
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
-
 import com.fasterxml.jackson.core.*;
-import org.commonjava.maven.atlas.graph.rel.BomRelationship;
-import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
-import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
-import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
-import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
-import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
-import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.rel.RelationshipType;
-import org.commonjava.maven.atlas.ident.DependencyScope;
-import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
-import org.commonjava.maven.atlas.ident.ref.ProjectRef;
-import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-
-import com.fasterxml.jackson.core.io.SerializedString;
 import com.fasterxml.jackson.databind.DeserializationContext;
-import com.fasterxml.jackson.databind.JsonDeserializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.fasterxml.jackson.databind.ser.std.StdSerializer;
+import org.commonjava.maven.atlas.graph.rel.*;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
+import org.commonjava.maven.atlas.ident.DependencyScope;
+import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
+import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.*;
 
@@ -90,9 +78,9 @@ public class ProjectRelationshipSerializerModule
                         throws IOException, JsonGenerationException
         {
             gen.writeStartObject();
-            gen.writeStringField( RELATIONSHIP_TYPE.getValue(), value.getType().name() );
-            gen.writeStringField( POM_LOCATION_URI.getValue(), value.getPomLocation().toString() );
-            gen.writeArrayFieldStart( SOURCE_URIS.getValue() );
+            gen.writeStringField( RELATIONSHIP_TYPE, value.getType().name() );
+            gen.writeStringField( POM_LOCATION_URI, value.getPomLocation().toString() );
+            gen.writeArrayFieldStart( SOURCE_URIS );
 
             Set<URI> sources = value.getSources();
             for ( URI uri : sources )
@@ -100,40 +88,40 @@ public class ProjectRelationshipSerializerModule
                 gen.writeString( uri.toString() );
             }
             gen.writeEndArray();
-            provider.defaultSerializeField( DECLARING_REF.getValue(), value.getDeclaring(), gen );
-            provider.defaultSerializeField( TARGET_REF.getValue(), value.getTarget(), gen );
+            provider.defaultSerializeField( DECLARING_REF, value.getDeclaring(), gen );
+            provider.defaultSerializeField( TARGET_REF, value.getTarget(), gen );
 
             switch ( value.getType() )
             {
                 case DEPENDENCY:
                 {
-                    gen.writeStringField( SCOPE.getValue(), ( (DependencyRelationship) value ).getScope().realName() );
-                    gen.writeBooleanField( MANAGED.getValue(), value.isManaged() );
+                    gen.writeStringField( SCOPE, ( (DependencyRelationship) value ).getScope().realName() );
+                    gen.writeBooleanField( MANAGED, value.isManaged() );
                     break;
                 }
                 case PLUGIN_DEP:
                 {
-                    provider.defaultSerializeField( PLUGIN_REF.getValue(),
+                    provider.defaultSerializeField( PLUGIN_REF,
                                                     ( (PluginDependencyRelationship) value ).getPlugin(), gen );
-                    gen.writeBooleanField( MANAGED.getValue(), value.isManaged() );
+                    gen.writeBooleanField( MANAGED, value.isManaged() );
                     break;
                 }
                 case PLUGIN:
                 {
 
-                    gen.writeBooleanField( MANAGED.getValue(), value.isManaged() );
-                    gen.writeBooleanField( REPORTING.getValue(), ( (PluginRelationship) value ).isReporting() );
+                    gen.writeBooleanField( MANAGED, value.isManaged() );
+                    gen.writeBooleanField( REPORTING, ( (PluginRelationship) value ).isReporting() );
                     break;
                 }
             }
 
-            gen.writeNumberField( INDEX.getValue(), value.getIndex() );
+            gen.writeNumberField( INDEX, value.getIndex() );
             gen.writeEndObject();
         }
 
     }
 
-    @SuppressWarnings( "rawtypes" )
+    @SuppressWarnings( {"rawtypes", "unchecked"} )
     private static final class ProjectRelationshipDeserializer
                     extends StdDeserializer<ProjectRelationship>
     {
@@ -146,177 +134,212 @@ public class ProjectRelationshipSerializerModule
 
         @Override
         public ProjectRelationship deserialize( final JsonParser jp, final DeserializationContext ctx )
-                        throws IOException, JsonProcessingException
+                        throws JsonProcessingException, IOException
         {
-            final JsonDeserializer<Object> prDeser =
-                            ctx.findRootValueDeserializer( ctx.getTypeFactory().constructType( ProjectRef.class ) );
-            final JsonDeserializer<Object> pvrDeser = ctx.findRootValueDeserializer(
-                            ctx.getTypeFactory().constructType( ProjectVersionRef.class ) );
-            final JsonDeserializer<Object> arDeser =
-                            ctx.findRootValueDeserializer( ctx.getTypeFactory().constructType( ArtifactRef.class ) );
+            Map<String, Object> ast = new HashMap<String, Object>();
+            Map<String, JsonLocation> locations = new HashMap<String, JsonLocation>();
+
+            JsonToken token = jp.getCurrentToken();
+            String currentField = null;
+            List<String> currentArry = null;
+
+            Logger logger = LoggerFactory.getLogger( getClass() );
+            do
+            {
+                logger.info( "Token: {}", token );
+                switch(token)
+                {
+                    case START_ARRAY:
+                    {
+                        logger.info( "Starting array for field: {}", currentField );
+                        currentArry = new ArrayList<String>();
+                        break;
+                    }
+                    case END_ARRAY:
+                        logger.info( "Ending array for field: {}", currentField );
+                        locations.put( currentField, jp.getCurrentLocation() );
+                        ast.put(currentField, currentArry);
+                        currentArry = null;
+                        break;
+                    case FIELD_NAME:
+                        currentField = jp.getCurrentName();
+                        break;
+                    case VALUE_STRING:
+                        if ( currentArry != null )
+                        {
+                            currentArry.add(jp.getText());
+                        }
+                        else
+                        {
+                            locations.put( currentField, jp.getCurrentLocation() );
+                            ast.put( currentField, jp.getText() );
+                        }
+                        break;
+                    case VALUE_NUMBER_INT:
+                        locations.put( currentField, jp.getCurrentLocation() );
+                        ast.put( currentField, jp.getIntValue() );
+                        break;
+                    case VALUE_NUMBER_FLOAT:
+                        locations.put( currentField, jp.getCurrentLocation() );
+                        ast.put( currentField, jp.getFloatValue() );
+                        break;
+                    case VALUE_TRUE:
+                        locations.put( currentField, jp.getCurrentLocation() );
+                        ast.put( currentField, Boolean.TRUE );
+                        break;
+                    case VALUE_FALSE:
+                        locations.put( currentField, jp.getCurrentLocation() );
+                        ast.put( currentField, Boolean.FALSE );
+                        break;
+                }
+
+                token = jp.nextToken();
+            }
+            while ( token != JsonToken.END_OBJECT );
+
+            StringBuilder sb = new StringBuilder();
+            sb.append( "AST is:" );
+            for ( String field : ast.keySet() )
+            {
+                Object value = ast.get( field );
+                sb.append( "\n  " ).append(field).append( " = ");
+                if ( value == null )
+                {
+                    sb.append( "null");
+                }
+                else
+                {
+                    sb.append( value ).append( "  (type: ").append(value.getClass().getSimpleName()).append(")");
+                }
+            }
+
+            logger.info(sb.toString());
 
             final RelationshipType type =
-                            RelationshipType.getType( expectField( jp, RELATIONSHIP_TYPE ).nextTextValue() );
+                            RelationshipType.getType( (String) ast.get(RELATIONSHIP_TYPE) );
 
-            final String uri = expectField( jp, POM_LOCATION_URI ).nextTextValue();
+            final String uri = (String) ast.get( POM_LOCATION_URI );
             URI pomLocation;
-            try
+            if ( uri == null )
             {
-                pomLocation = new URI( uri );
+                pomLocation = RelationshipUtils.POM_ROOT_URI;
             }
-            catch ( final URISyntaxException e )
+            else
             {
-                throw new JsonParseException( "Invalid " + POM_LOCATION_URI + ": '" + uri + "': " + e.getMessage(),
-                                              jp.getCurrentLocation(), e );
+                try
+                {
+                    pomLocation = new URI( uri );
+                }
+                catch ( final URISyntaxException e )
+                {
+                    throw new JsonParseException( "Invalid " + POM_LOCATION_URI + ": '" + uri + "': " + e.getMessage(),
+                                                  locations.get(POM_LOCATION_URI), e );
+                }
             }
 
             Collection<URI> sources = new HashSet<URI>();
-            expectField( jp, SOURCE_URIS );
-            ff( jp, JsonToken.START_ARRAY );
-            while ( jp.nextToken() != JsonToken.END_ARRAY && jp.getCurrentToken() != null )
+            List<String> srcs = (List<String>) ast.get(SOURCE_URIS);
+            if ( srcs != null )
             {
-                String u = jp.getText();
-                if ( u == null )
+                for ( String u: srcs )
                 {
-                    continue;
-                }
-
-                try
-                {
-                    sources.add( new URI( u ) );
-                }
-                catch ( URISyntaxException e )
-                {
-                    throw new JsonParseException( "Failed to parse source URI: " + u, jp.getCurrentLocation() );
+                    try
+                    {
+                        sources.add( new URI( u ) );
+                    }
+                    catch ( URISyntaxException e )
+                    {
+                        throw new JsonParseException( "Failed to parse source URI: " + u, locations.get(SOURCE_URIS) );
+                    }
                 }
             }
 
-            expectField( jp, DECLARING_REF ).nextTextValue();
-            final ProjectVersionRef declaring = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
+            String decl = (String) ast.get( DECLARING_REF );
+            final ProjectVersionRef declaring = ProjectVersionRef.parse( decl );
+
+            String tgt = (String) ast.get( TARGET_REF );
+            Integer index = (Integer) ast.get( INDEX );
+            if ( index == null )
+            {
+                index = 0;
+            }
+
+            // handle null implicitly by comparing to true.
+            boolean managed = Boolean.TRUE.equals( ast.get( MANAGED ) );
 
             ProjectRelationship<?> rel = null;
             switch ( type )
             {
                 case DEPENDENCY:
                 {
-                    expectField( jp, TARGET_REF ).nextTextValue();
-                    final ArtifactRef target = (ArtifactRef) arDeser.deserialize( jp, ctx );
+                    final ArtifactRef target = ArtifactRef.parse( tgt );
 
-                    final DependencyScope scope = DependencyScope.getScope( expectField( jp, SCOPE ).nextTextValue() );
+                    String scp = (String) ast.get(SCOPE);
+                    final DependencyScope scope;
+                    if ( scp == null )
+                    {
+                        scope = DependencyScope.compile;
+                    }
+                    else
+                    {
+                        scope = DependencyScope.getScope( scp );
+                    }
 
-                    rel = new DependencyRelationship( sources, pomLocation, declaring, target, scope, getIndex( jp ),
-                                                      isManaged( jp ) );
+                    rel = new DependencyRelationship( sources, pomLocation, declaring, target, scope, index,
+                                                      managed );
                     break;
                 }
                 case EXTENSION:
                 {
-                    expectField( jp, TARGET_REF ).nextTextValue();
-                    final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
+                    final ProjectVersionRef target = ProjectVersionRef.parse( tgt );
 
-                    rel = new ExtensionRelationship( sources, pomLocation, declaring, target, getIndex( jp ) );
+                    rel = new ExtensionRelationship( sources, pomLocation, declaring, target, index );
                     break;
                 }
                 case PARENT:
                 {
-                    expectField( jp, TARGET_REF ).nextTextValue();
-                    final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
+                    final ProjectVersionRef target = ProjectVersionRef.parse( tgt );
 
                     rel = new ParentRelationship( sources, declaring, target );
                     break;
                 }
                 case PLUGIN:
                 {
-                    expectField( jp, TARGET_REF ).nextTextValue();
-                    final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
+                    final ProjectVersionRef target = ProjectVersionRef.parse( tgt );
 
-                    rel = new PluginRelationship( sources, pomLocation, declaring, target, getIndex( jp ),
-                                                  isManaged( jp ), isReporting( jp ) );
+                    Boolean report = (Boolean) ast.get( REPORTING );
+                    rel = new PluginRelationship( sources, pomLocation, declaring, target, index,
+                                                  managed, Boolean.TRUE.equals(report) );
                     break;
                 }
                 case PLUGIN_DEP:
                 {
-                    expectField( jp, PLUGIN_REF ).nextTextValue();
-                    final ProjectRef plugin = (ProjectRef) prDeser.deserialize( jp, ctx );
+                    String plug = (String) ast.get( PLUGIN_REF );
+                    if ( plug == null )
+                    {
+                        throw new JsonParseException(
+                                "No plugin reference (field: " + PLUGIN_REF + ") found in plugin-dependency relationship!",
+                                jp.getCurrentLocation() );
+                    }
 
-                    expectField( jp, TARGET_REF ).nextTextValue();
-                    final ArtifactRef target = (ArtifactRef) arDeser.deserialize( jp, ctx );
+                    final ProjectRef plugin = ProjectRef.parse( plug );
+                    final ArtifactRef target = ArtifactRef.parse( tgt );
 
-                    rel = new PluginDependencyRelationship( sources, pomLocation, declaring, plugin, target,
-                                                            getIndex( jp ), isManaged( jp ) );
+                    rel = new PluginDependencyRelationship( sources, pomLocation, declaring, plugin, target, index,
+                                                            managed );
                     break;
                 }
                 case BOM:
                 {
-                    expectField( jp, TARGET_REF ).nextTextValue();
-                    final ProjectVersionRef target = (ProjectVersionRef) pvrDeser.deserialize( jp, ctx );
+                    final ProjectVersionRef target = ProjectVersionRef.parse( tgt );
 
-                    rel = new BomRelationship( sources, pomLocation, declaring, target, getIndex( jp ) );
+                    rel = new BomRelationship( sources, pomLocation, declaring, target, index );
                     break;
                 }
             }
 
-            while ( jp.getCurrentToken() != JsonToken.END_OBJECT )
-            {
-                jp.nextToken();
-            }
-
             return rel;
         }
-
-        private void ff( JsonParser jp, JsonToken token )
-                        throws JsonParseException, IOException
-        {
-            if ( jp.getCurrentToken() == token )
-            {
-                return;
-            }
-
-            JsonToken t = null;
-            do
-            {
-                t = jp.nextToken();
-                if ( t == null )
-                {
-                    throw new JsonParseException( "Expected token: " + token, jp.getCurrentLocation() );
-                }
-            }
-            while ( t != token );
-        }
-
-        private JsonParser expectField( final JsonParser jp, final SerializedString named )
-                        throws JsonParseException, IOException
-        {
-            while ( jp.getCurrentToken() != null && !named.getValue().equals( jp.getCurrentName() ) )
-            {
-                jp.nextToken();
-            }
-
-            if ( !named.getValue().equals( jp.getCurrentName() ) )
-            {
-                throw new JsonParseException( "Expected field: " + named, jp.getCurrentLocation() );
-            }
-
-            return jp;
-        }
-
-        private boolean isManaged( final JsonParser jp )
-                        throws IOException
-        {
-            return expectField( jp, MANAGED ).nextBooleanValue();
-        }
-
-        private int getIndex( final JsonParser jp )
-                        throws IOException
-        {
-            return expectField( jp, INDEX ).nextIntValue( 0 );
-        }
-
-        private boolean isReporting( final JsonParser jp )
-                        throws IOException
-        {
-            return expectField( jp, REPORTING ).nextBooleanValue();
-        }
-
     }
 
 }
