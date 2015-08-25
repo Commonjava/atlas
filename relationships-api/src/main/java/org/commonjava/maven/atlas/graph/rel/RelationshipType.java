@@ -50,6 +50,11 @@ public enum RelationshipType
         type = type.trim();
         for ( final RelationshipType rt : values() )
         {
+            if ( rt.name().equals(type))
+            {
+                return rt;
+            }
+
             for ( final String name : rt.names() )
             {
                 if ( name.equalsIgnoreCase( type ) )
