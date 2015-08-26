@@ -52,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.*;
@@ -1028,7 +1029,7 @@ public class FileNeo4JGraphConnection
 
     @Override
     public synchronized void close()
-        throws RelationshipGraphConnectionException
+        throws IOException
     {
         closed = true;
 
@@ -1046,7 +1047,7 @@ public class FileNeo4JGraphConnection
                 logger.info( "Waiting for shutdown..." );
                 if ( graph.isAvailable( 1000 * SHUTDOWN_WAIT ) )
                 {
-                    throw new RelationshipGraphConnectionException( "Failed to shutdown graph: %s.", dbDir );
+                    throw new IOException( "Failed to shutdown graph: " + dbDir );
                 }
 
                 graph = null;
@@ -1055,7 +1056,7 @@ public class FileNeo4JGraphConnection
             }
             catch ( final Exception e )
             {
-                throw new RelationshipGraphConnectionException( "Failed to shutdown: " + e.getMessage(), e );
+                throw new IOException( "Failed to shutdown: " + e.getMessage(), e );
             }
         }
 
@@ -1074,7 +1075,7 @@ public class FileNeo4JGraphConnection
         {
             close();
         }
-        catch ( final RelationshipGraphConnectionException e )
+        catch ( final IOException e )
         {
             //            new Logger( getClass() ).debug( "Failed to shutdown graph database. Reason: {}", e, e.getMessage() );
         }

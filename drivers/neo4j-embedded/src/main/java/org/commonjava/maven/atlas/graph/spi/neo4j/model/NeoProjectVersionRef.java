@@ -15,8 +15,6 @@
  */
 package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 
-import static org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoIdentityUtils.getStringProperty;
-
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.ref.*;
 import org.commonjava.maven.atlas.ident.util.VersionUtils;
@@ -24,10 +22,9 @@ import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationExcep
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.commonjava.maven.atlas.ident.version.VersionSpec;
 import org.neo4j.graphdb.Node;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoIdentityUtils.getStringProperty;
 
 /**
  * Reference to a particular release of a project (or module, in terms of Maven builds). A release may contain many artifacts (see {@link NeoArtifactRef}).
@@ -116,9 +113,6 @@ public class NeoProjectVersionRef
     @Override
     public ProjectVersionRef asProjectVersionRef()
     {
-        Logger logger = LoggerFactory.getLogger( getClass() );
-        logger.debug("Trying to create new ProjectVersionRef from: {}", getClass().getSimpleName());
-
         return NeoProjectVersionRef.class.equals( getClass() ) ?
                 this :
                 new NeoProjectVersionRef( this );

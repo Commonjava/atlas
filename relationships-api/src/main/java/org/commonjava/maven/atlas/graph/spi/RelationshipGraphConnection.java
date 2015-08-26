@@ -15,6 +15,8 @@
  */
 package org.commonjava.maven.atlas.graph.spi;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,7 @@ import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public interface RelationshipGraphConnection
+    extends Closeable
 {
 
     /* 
@@ -168,9 +171,6 @@ public interface RelationshipGraphConnection
     ProjectVersionRef getPathTargetRef( GraphPath<?> path );
 
     List<ProjectVersionRef> getPathRefs( ViewParams params, GraphPath<?> path );
-
-    void close()
-        throws RelationshipGraphConnectionException;
 
     boolean isClosed();
 

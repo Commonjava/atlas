@@ -15,22 +15,14 @@
  */
 package org.commonjava.maven.atlas.graph.spi.neo4j.io;
 
-import static org.apache.commons.lang.StringUtils.join;
-import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
-import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.UNKNOWN_SOURCE_URI;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.*;
-
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.commonjava.maven.atlas.graph.ViewParams;
+import org.commonjava.maven.atlas.graph.jackson.ProjectRelationshipSerializerModule;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
@@ -38,8 +30,17 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
-import org.commonjava.maven.atlas.graph.spi.neo4j.model.*;
-import org.commonjava.maven.atlas.ident.DependencyScope;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoArtifactRef;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoBomRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoDependencyRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoExtensionRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoParentRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoPluginDependencyRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoPluginRelationship;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoProjectVersionRef;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoTypeAndClassifier;
+import org.commonjava.maven.atlas.ident.jackson.ProjectVersionRefSerializerModule;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -48,6 +49,25 @@ import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import static org.apache.commons.lang.StringUtils.join;
 
 public final class Conversions
 {
@@ -156,8 +176,7 @@ public final class Conversions
         }
 
         final Object value = container.getProperty( property );
-        if ( value.getClass()
-                  .isArray() )
+        if ( value.getClass().isArray() )
         {
             final Object[] elements = (Object[]) value;
             return elements.length;
@@ -188,7 +207,7 @@ public final class Conversions
     }
 
     public static List<ProjectRelationship<?, ?>> convertToRelationships( final Iterable<Relationship> relationships,
-                                                                       final ConversionCache cache )
+                                                                          final ConversionCache cache )
     {
         final List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>();
         for ( final Relationship relationship : relationships )
@@ -204,8 +223,8 @@ public final class Conversions
     }
 
     public static List<ProjectRelationship<?, ?>> convertToRelationships( final Iterable<Long> relationships,
-                                                                       final GraphAdmin admin,
-                                                                       final ConversionCache cache )
+                                                                          final GraphAdmin admin,
+                                                                          final ConversionCache cache )
     {
         final List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>();
         for ( final Long rid : relationships )
@@ -226,7 +245,7 @@ public final class Conversions
         Logger logger = LoggerFactory.getLogger( Conversions.class );
 
         logger.debug( "Adding {} (type: {}) to node: {}", ref, ref.getClass().getSimpleName(), node );
-        if ( !( ref instanceof NeoProjectVersionRef ) || ((NeoProjectVersionRef)ref).isDirty() )
+        if ( !( ref instanceof NeoProjectVersionRef ) || ( (NeoProjectVersionRef) ref ).isDirty() )
         {
             final String g = ref.getGroupId();
             final String a = ref.getArtifactId();
@@ -254,17 +273,15 @@ public final class Conversions
         }
 
         markConnected( node, connected );
-//
-//        logger.debug( "groupId of {} is:\nNeoIdentityUtils: {}\nConversions: {}\nDirect access: {}", node,
-//                      NeoIdentityUtils.getStringProperty( node, GROUP_ID, null, null ),
-//                      getStringProperty( GROUP_ID, node ), node.hasProperty( GROUP_ID ) ? node.getProperty( GROUP_ID ) : null );
+        //
+        //        logger.debug( "groupId of {} is:\nNeoIdentityUtils: {}\nConversions: {}\nDirect access: {}", node,
+        //                      NeoIdentityUtils.getStringProperty( node, GROUP_ID, null, null ),
+        //                      getStringProperty( GROUP_ID, node ), node.hasProperty( GROUP_ID ) ? node.getProperty( GROUP_ID ) : null );
     }
 
     public static boolean isAtlasType( final Relationship rel )
     {
-        return GraphRelType.valueOf( rel.getType()
-                                        .name() )
-                           .isAtlasRelationship();
+        return GraphRelType.valueOf( rel.getType().name() ).isAtlasRelationship();
     }
 
     public static boolean isType( final Node node, final NodeType type )
@@ -310,8 +327,7 @@ public final class Conversions
 
     private static boolean empty( final String val )
     {
-        return val == null || val.trim()
-                                 .length() < 1;
+        return val == null || val.trim().length() < 1;
     }
 
     @SuppressWarnings( "incomplete-switch" )
@@ -320,10 +336,10 @@ public final class Conversions
         relationship.setProperty( INDEX, rel.getIndex() );
         String[] srcs = toStringArray( rel.getSources() );
         Logger logger = LoggerFactory.getLogger( Conversions.class );
-        logger.debug( "Storing rel: {}\nwith sources: {}\n in property: {}\nRelationship: {}", rel, Arrays.toString(srcs), SOURCE_URI, relationship );
+        logger.debug( "Storing rel: {}\nwith sources: {}\n in property: {}\nRelationship: {}", rel,
+                      Arrays.toString( srcs ), SOURCE_URI, relationship );
         relationship.setProperty( SOURCE_URI, srcs );
-        relationship.setProperty( POM_LOCATION_URI, rel.getPomLocation()
-                                                       .toString() );
+        relationship.setProperty( POM_LOCATION_URI, rel.getPomLocation().toString() );
 
         switch ( rel.getType() )
         {
@@ -332,8 +348,7 @@ public final class Conversions
                 final DependencyRelationship specificRel = (DependencyRelationship) rel;
                 toRelationshipProperties( (ArtifactRef) rel.getTarget(), relationship );
                 relationship.setProperty( IS_MANAGED, specificRel.isManaged() );
-                relationship.setProperty( SCOPE, specificRel.getScope()
-                                                            .realName() );
+                relationship.setProperty( SCOPE, specificRel.getScope().realName() );
 
                 final Set<ProjectRef> excludes = specificRel.getExcludes();
                 if ( excludes != null && !excludes.isEmpty() )
@@ -346,9 +361,7 @@ public final class Conversions
                             sb.append( "," );
                         }
 
-                        sb.append( exclude.getGroupId() )
-                          .append( ":" )
-                          .append( exclude.getArtifactId() );
+                        sb.append( exclude.getGroupId() ).append( ":" ).append( exclude.getArtifactId() );
                     }
 
                     relationship.setProperty( EXCLUDES, sb.toString() );
@@ -417,8 +430,7 @@ public final class Conversions
             }
         }
 
-        final GraphRelType mapper = GraphRelType.valueOf( rel.getType()
-                                                             .name() );
+        final GraphRelType mapper = GraphRelType.valueOf( rel.getType().name() );
 
         //        LOGGER.debug( "Converting relationship of type: {} (atlas type: {})", mapper,
         //                                              mapper.atlasType() );
@@ -429,7 +441,7 @@ public final class Conversions
         }
 
         if ( rel.getStartNode() == null || rel.getEndNode() == null || !isType( rel.getStartNode(), NodeType.PROJECT )
-            || !isType( rel.getEndNode(), NodeType.PROJECT ) )
+                || !isType( rel.getEndNode(), NodeType.PROJECT ) )
         {
             return null;
         }
@@ -439,14 +451,12 @@ public final class Conversions
         {
             case DEPENDENCY:
             {
-                result =
-                    new NeoDependencyRelationship( rel );
+                result = new NeoDependencyRelationship( rel );
                 break;
             }
             case PLUGIN_DEP:
             {
-                result =
-                        new NeoPluginDependencyRelationship( rel );
+                result = new NeoPluginDependencyRelationship( rel );
                 break;
             }
             case PLUGIN:
@@ -471,8 +481,8 @@ public final class Conversions
             }
             default:
             {
-                throw new IllegalArgumentException( "I don't know how to construct the atlas relationship for type: "
-                    + mapper.atlasType() );
+                throw new IllegalArgumentException(
+                        "I don't know how to construct the atlas relationship for type: " + mapper.atlasType() );
             }
         }
 
@@ -487,7 +497,32 @@ public final class Conversions
 
     public static String id( final ProjectRelationship<?, ?> rel )
     {
-        return DigestUtils.shaHex( rel.toString() );
+        try
+        {
+            String json = newMapper().writeValueAsString( rel );
+
+            // FIXME: Rookie mistake! You can't add debug info to toString() with this here.
+            return DigestUtils.shaHex( json );
+        }
+        catch ( JsonProcessingException e )
+        {
+            throw new IllegalArgumentException( "Cannot serialize relationship for ID generation: " + e.getMessage(),
+                                                e );
+        }
+    }
+
+    private static ObjectMapper newMapper()
+    {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModules( ProjectVersionRefSerializerModule.INSTANCE,
+                                ProjectRelationshipSerializerModule.INSTANCE,
+                                NeoSpecificProjectRelationshipSerializerModule.INSTANCE,
+                                NeoSpecificProjectVersionRefSerializerModule.INSTANCE );
+
+        mapper.disable( SerializationFeature.WRITE_NULL_MAP_VALUES, SerializationFeature.WRITE_EMPTY_JSON_ARRAYS );
+        mapper.disable( DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES );
+
+        return mapper;
     }
 
     private static ArtifactRef toArtifactRef( final ProjectVersionRef ref, final Relationship rel )
@@ -548,6 +583,10 @@ public final class Conversions
                 }
                 catch ( final URISyntaxException e )
                 {
+                    Logger logger = LoggerFactory.getLogger( Conversions.class );
+                    logger.warn(
+                            String.format( "Failed to construct URI from: %s\nContainer: %s\nReason: %s", container,
+                                           uri, e.getMessage() ), e );
                 }
             }
         }
@@ -1005,8 +1044,8 @@ public final class Conversions
         catch ( final IOException e )
         {
             throw new IllegalStateException(
-                                             "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing "
-                                                 + data.length + " bytes!", e );
+                    "Cannot construct ObjectInputStream to wrap ByteArrayInputStream containing " + data.length
+                            + " bytes!", e );
         }
         catch ( final ClassNotFoundException e )
         {
@@ -1058,6 +1097,9 @@ public final class Conversions
 
     public static void setSelection( final long originRid, final long targetRid, final Node viewNode )
     {
+        Logger logger = LoggerFactory.getLogger( Conversions.class );
+        logger.info( "Setting selection. Deselecting: {} in favor of: {} (view-node: {})", originRid, targetRid,
+                     viewNode );
         viewNode.setProperty( DESELECTION_TARGET_PREFIX + originRid, targetRid );
         viewNode.setProperty( SELECTION_ORIGIN_PREFIX + targetRid, originRid );
     }

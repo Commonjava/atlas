@@ -15,7 +15,11 @@
  */
 package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 
-import org.commonjava.maven.atlas.ident.ref.*;
+import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
+import org.commonjava.maven.atlas.ident.ref.InvalidRefException;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
+import org.commonjava.maven.atlas.ident.ref.TypeAndClassifier;
+import org.commonjava.maven.atlas.ident.ref.VersionlessArtifactRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
@@ -27,15 +31,15 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  * @author jdcasey
  */
 public class NeoVersionlessArtifactRef
-    extends NeoProjectRef
+        extends NeoProjectRef
         implements VersionlessArtifactRef
 {
 
     private static final long serialVersionUID = 1L;
 
-    private final TypeAndClassifier tc;
+    private TypeAndClassifier tc;
 
-    private final boolean optional;
+    private boolean optional;
 
     public NeoVersionlessArtifactRef( final ArtifactRef ref )
     {
@@ -61,7 +65,7 @@ public class NeoVersionlessArtifactRef
 
     public NeoVersionlessArtifactRef( final String groupId, final String artifactId, final String type,
                                       final String classifier, final boolean optional )
-        throws InvalidVersionSpecificationException
+            throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId );
         this.tc = new NeoTypeAndClassifier( type, classifier );
@@ -81,8 +85,8 @@ public class NeoVersionlessArtifactRef
         if ( parts.length < 2 || isEmpty( parts[0] ) || isEmpty( parts[1] ) )
         {
             throw new InvalidRefException(
-                                           "VersionlessArtifactRef must contain AT LEAST non-empty groupId and artifactId. (Given: '"
-                                               + spec + "')" );
+                    "VersionlessArtifactRef must contain AT LEAST non-empty groupId and artifactId. (Given: '" + spec
+                            + "')" );
         }
 
         final String g = parts[0];
@@ -160,7 +164,7 @@ public class NeoVersionlessArtifactRef
         {
             return false;
         }
-        if ( !(obj instanceof VersionlessArtifactRef) )
+        if ( !( obj instanceof VersionlessArtifactRef ) )
         {
             return false;
         }

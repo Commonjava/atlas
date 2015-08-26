@@ -15,9 +15,12 @@
  */
 package org.commonjava.maven.atlas.graph.spi;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Set;
 
 public interface RelationshipGraphConnectionFactory
+    extends Closeable
 {
 
     RelationshipGraphConnection openConnection( String workspaceId, boolean create )
@@ -32,7 +35,7 @@ public interface RelationshipGraphConnectionFactory
         throws RelationshipGraphConnectionException;
 
     void close()
-        throws RelationshipGraphConnectionException;
+        throws IOException;
 
     boolean exists( String workspaceId );
 

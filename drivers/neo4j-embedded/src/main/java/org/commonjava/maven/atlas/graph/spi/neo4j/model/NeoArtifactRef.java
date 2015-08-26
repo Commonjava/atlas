@@ -48,7 +48,7 @@ public class NeoArtifactRef
 
     private static final long serialVersionUID = 1L;
 
-    private final NeoTypeAndClassifier tc;
+    private NeoTypeAndClassifier tc;
 
     private Boolean optional;
 

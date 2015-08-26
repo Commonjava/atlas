@@ -52,7 +52,11 @@ public final class NeoDependencyRelationship
     public final DependencyScope getScope()
     {
         final String scopeStr = Conversions.getStringProperty( Conversions.SCOPE, rel );
-        return DependencyScope.getScope( scopeStr );
+        Logger logger = LoggerFactory.getLogger( getClass() );
+        logger.debug("Got scope from relationship: {} of: {}", rel, scopeStr );
+
+        DependencyScope scope = DependencyScope.getScope( scopeStr );
+        return scope == null ? DependencyScope.compile : scope;
     }
 
     @Override
@@ -86,8 +90,8 @@ public final class NeoDependencyRelationship
     @Override
     public String toString()
     {
-        return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s, rel=%d)]", getDeclaring(),
-                              getTarget(), isManaged(), getScope(), getIndex(), rel.getId() );
+        return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s)]", getDeclaring(),
+                              getTarget(), isManaged(), getScope(), getIndex() );
     }
 
     @Override

@@ -29,11 +29,12 @@ import org.neo4j.graphdb.Relationship;
 import java.io.Serializable;
 import java.net.URI;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Set;
 
 public final class NeoParentRelationship
-    extends AbstractNeoProjectRelationship<NeoParentRelationship, ParentRelationship, ProjectVersionRef>
-    implements Serializable, ParentRelationship
+        extends AbstractNeoProjectRelationship<NeoParentRelationship, ParentRelationship, ProjectVersionRef>
+        implements Serializable, ParentRelationship
 {
 
     private static final long serialVersionUID = 1L;
@@ -104,7 +105,7 @@ public final class NeoParentRelationship
     {
         Set<URI> srcs = getSources();
         boolean changed = false;
-        for ( URI src: sources )
+        for ( URI src : sources )
         {
             changed = srcs.add( src ) || changed;
         }
@@ -117,4 +118,11 @@ public final class NeoParentRelationship
         return this;
     }
 
+    @Override
+    public Set<URI> getSources()
+    {
+        return isTerminus() ?
+                Collections.singleton( RelationshipUtils.TERMINAL_PARENT_SOURCE_URI ) :
+                super.getSources();
+    }
 }

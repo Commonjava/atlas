@@ -165,7 +165,7 @@ public class NeoProjectRef
     @Override
     public String toString()
     {
-        return String.format( "%s:%s", getArtifactId(), getGroupId() );
+        return String.format( "%s:%s", getGroupId(), getArtifactId() );
     }
 
     @Override
