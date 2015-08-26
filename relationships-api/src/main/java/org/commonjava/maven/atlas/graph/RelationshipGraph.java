@@ -15,21 +15,6 @@
  */
 package org.commonjava.maven.atlas.graph;
 
-import static org.apache.commons.lang.StringUtils.join;
-
-import java.io.Closeable;
-import java.io.IOException;
-import java.net.URI;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
 import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.model.EProjectDirectRelationships;
@@ -44,8 +29,16 @@ import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
 import org.commonjava.maven.atlas.graph.traverse.TraversalType;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.net.URI;
+import java.util.*;
+
+import static org.apache.commons.lang.StringUtils.join;
 
 public final class RelationshipGraph
         implements Closeable
@@ -109,17 +102,17 @@ public final class RelationshipGraph
         getConnectionInternal().clearProjectError( ref );
     }
 
-    public Set<ProjectRelationship<?>> storeRelationships( final ProjectRelationship<?>... relationships )
+    public Set<ProjectRelationship<?, ?>> storeRelationships( final ProjectRelationship<?, ?>... relationships )
             throws RelationshipGraphException
     {
-        final List<ProjectRelationship<?>> rels = Arrays.asList( relationships );
+        final List<ProjectRelationship<?, ?>> rels = Arrays.asList( relationships );
 
         for ( final RelationshipGraphListener listener : listeners )
         {
             listener.storing( this, rels );
         }
 
-        final Set<ProjectRelationship<?>> rejected = getConnectionInternal().addRelationships( relationships );
+        final Set<ProjectRelationship<?, ?>> rejected = getConnectionInternal().addRelationships( relationships );
 
         for ( final RelationshipGraphListener listener : listeners )
         {
@@ -129,8 +122,8 @@ public final class RelationshipGraph
         return rejected;
     }
 
-    public Set<ProjectRelationship<?>> storeRelationships(
-            final Collection<? extends ProjectRelationship<?>> relationships )
+    public Set<ProjectRelationship<?, ?>> storeRelationships(
+            final Collection<? extends ProjectRelationship<?, ?>> relationships )
             throws RelationshipGraphException
     {
         for ( final RelationshipGraphListener listener : listeners )
@@ -138,8 +131,8 @@ public final class RelationshipGraph
             listener.storing( this, relationships );
         }
 
-        final Set<ProjectRelationship<?>> rejected = getConnectionInternal().addRelationships(
-                relationships.toArray( new ProjectRelationship<?>[relationships.size()] ) );
+        final Set<ProjectRelationship<?, ?>> rejected = getConnectionInternal().addRelationships(
+                relationships.toArray( new ProjectRelationship<?, ?>[relationships.size()] ) );
 
         for ( final RelationshipGraphListener listener : listeners )
         {
@@ -223,9 +216,9 @@ public final class RelationshipGraph
 
     // +++ IMPORTED FROM EProjectWeb...
 
-    public Set<ProjectRelationship<?>> getAllRelationships()
+    public Set<ProjectRelationship<?, ?>> getAllRelationships()
     {
-        return new HashSet<ProjectRelationship<?>>( getConnectionInternal().getAllRelationships( params ) );
+        return new HashSet<ProjectRelationship<?, ?>>( getConnectionInternal().getAllRelationships( params ) );
     }
 
     public boolean isComplete()
@@ -248,13 +241,13 @@ public final class RelationshipGraph
         return Collections.unmodifiableSet( getConnectionInternal().getVariableProjects( params ) );
     }
 
-    public Set<ProjectRelationship<?>> add( final EProjectDirectRelationships rels )
+    public Set<ProjectRelationship<?, ?>> add( final EProjectDirectRelationships rels )
             throws RelationshipGraphException
     {
         return addAll( rels.getAllRelationships() );
     }
 
-    public boolean add( final ProjectRelationship<?> rel )
+    public boolean add( final ProjectRelationship<?, ?> rel )
             throws RelationshipGraphException
     {
         if ( rel == null )
@@ -265,7 +258,7 @@ public final class RelationshipGraph
         return getConnectionInternal().addRelationships( rel ).isEmpty();
     }
 
-    public <T extends ProjectRelationship<?>> Set<T> addAll( final Collection<T> rels )
+    public <T extends ProjectRelationship<?, ?>> Set<T> addAll( final Collection<T> rels )
             throws RelationshipGraphException
     {
         if ( rels == null )
@@ -275,8 +268,8 @@ public final class RelationshipGraph
 
         final Set<T> result = new HashSet<T>( rels );
 
-        final Set<ProjectRelationship<?>> rejected =
-                getConnectionInternal().addRelationships( rels.toArray( new ProjectRelationship<?>[rels.size()] ) );
+        final Set<ProjectRelationship<?, ?>> rejected =
+                getConnectionInternal().addRelationships( rels.toArray( new ProjectRelationship<?, ?>[rels.size()] ) );
         result.removeAll( rejected );
 
         if ( !result.isEmpty() )
@@ -287,7 +280,7 @@ public final class RelationshipGraph
         return result;
     }
 
-    public <T extends ProjectRelationship<?>> Set<T> addAll( final T... rels )
+    public <T extends ProjectRelationship<?, ?>> Set<T> addAll( final T... rels )
             throws RelationshipGraphException
     {
         if ( rels == null )
@@ -337,24 +330,24 @@ public final class RelationshipGraph
         traverse( traversal, TraversalType.breadth_first );
     }
 
-    public Set<ProjectRelationship<?>> getUserRelationships( final ProjectVersionRef ref )
+    public Set<ProjectRelationship<?, ?>> getUserRelationships( final ProjectVersionRef ref )
     {
         if ( !getConnectionInternal().containsProject( params, ref ) )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( getConnectionInternal().getRelationshipsTargeting( params, ref ) );
+        return new HashSet<ProjectRelationship<?, ?>>( getConnectionInternal().getRelationshipsTargeting( params, ref ) );
     }
 
-    public Set<ProjectRelationship<?>> getDirectRelationships( final ProjectVersionRef ref )
+    public Set<ProjectRelationship<?, ?>> getDirectRelationships( final ProjectVersionRef ref )
     {
         if ( !getConnectionInternal().containsProject( params, ref ) )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( getConnectionInternal().getRelationshipsDeclaredBy( params, ref ) );
+        return new HashSet<ProjectRelationship<?, ?>>( getConnectionInternal().getRelationshipsDeclaredBy( params, ref ) );
     }
 
     public Set<ProjectVersionRef> getRoots()
@@ -362,7 +355,7 @@ public final class RelationshipGraph
         return params.getRoots();
     }
 
-    public Set<ProjectRelationship<?>> getExactAllRelationships()
+    public Set<ProjectRelationship<?, ?>> getExactAllRelationships()
     {
         return getAllRelationships();
     }
@@ -372,7 +365,7 @@ public final class RelationshipGraph
         return getConnectionInternal().isCycleParticipant( params, ref );
     }
 
-    public boolean isCycleParticipant( final ProjectRelationship<?> rel )
+    public boolean isCycleParticipant( final ProjectRelationship<?, ?> rel )
     {
         return getConnectionInternal().isCycleParticipant( params, rel );
     }
@@ -388,16 +381,16 @@ public final class RelationshipGraph
         return getConnectionInternal().getCycles( params );
     }
 
-    public Set<ProjectRelationship<?>> getRelationshipsTargeting( final ProjectVersionRef ref )
+    public Set<ProjectRelationship<?, ?>> getRelationshipsTargeting( final ProjectVersionRef ref )
     {
-        final Collection<? extends ProjectRelationship<?>> rels =
+        final Collection<? extends ProjectRelationship<?, ?>> rels =
                 getConnectionInternal().getRelationshipsTargeting( params, ref.asProjectVersionRef() );
         if ( rels == null )
         {
             return Collections.emptySet();
         }
 
-        return new HashSet<ProjectRelationship<?>>( rels );
+        return new HashSet<ProjectRelationship<?, ?>>( rels );
     }
 
     public RelationshipGraphConnection getDatabase()
@@ -439,12 +432,12 @@ public final class RelationshipGraph
         getConnectionInternal().reindex( ref );
     }
 
-    public Set<List<ProjectRelationship<?>>> getPathsTo( final ProjectVersionRef... projectVersionRefs )
+    public Set<List<ProjectRelationship<?, ?>>> getPathsTo( final ProjectVersionRef... projectVersionRefs )
     {
         return getConnectionInternal().getAllPathsTo( params, projectVersionRefs );
     }
 
-    public boolean introducesCycle( final ProjectRelationship<?> rel )
+    public boolean introducesCycle( final ProjectRelationship<?, ?> rel )
     {
         return getConnectionInternal().introducesCycle( params, rel );
     }
@@ -561,14 +554,14 @@ public final class RelationshipGraph
         return getConnectionInternal().containsProject( params, ref );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final ProjectVersionRef to,
+    public Set<ProjectRelationship<?, ?>> findDirectRelationshipsTo( final ProjectVersionRef to,
                                                                   final boolean includeManagedInfo,
                                                                   final RelationshipType... types )
     {
         return getConnectionInternal().getDirectRelationshipsTo( params, to, includeManagedInfo, true, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsTo( final ProjectVersionRef to,
+    public Set<ProjectRelationship<?, ?>> findDirectRelationshipsTo( final ProjectVersionRef to,
                                                                   final boolean includeManagedInfo,
                                                                   final boolean includeConcreteInfo,
                                                                   final RelationshipType... types )
@@ -577,14 +570,14 @@ public final class RelationshipGraph
                                                                  types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
+    public Set<ProjectRelationship<?, ?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
                                                                     final boolean managed,
                                                                     final RelationshipType... types )
     {
         return getConnectionInternal().getDirectRelationshipsFrom( params, source, managed, true, types );
     }
 
-    public Set<ProjectRelationship<?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
+    public Set<ProjectRelationship<?, ?>> findDirectRelationshipsFrom( final ProjectVersionRef source,
                                                                     final boolean managed, final boolean concrete,
                                                                     final RelationshipType... types )
     {
@@ -692,12 +685,12 @@ public final class RelationshipGraph
         return getConnectionInternal().getPathTargetRef( path );
     }
 
-    public GraphPath<?> createPath( final GraphPath<?> parentPath, final ProjectRelationship<?> relationship )
+    public GraphPath<?> createPath( final GraphPath<?> parentPath, final ProjectRelationship<?, ?> relationship )
     {
         return getConnectionInternal().createPath( parentPath, relationship );
     }
 
-    public GraphPath<?> createPath( final ProjectRelationship<?>... relationships )
+    public GraphPath<?> createPath( final ProjectRelationship<?, ?>... relationships )
     {
         return getConnectionInternal().createPath( relationships );
     }
@@ -756,7 +749,7 @@ public final class RelationshipGraph
         return connection;
     }
 
-    public Collection<? extends ProjectRelationship<?>> getRelationshipsDeclaring( final ProjectVersionRef root )
+    public Collection<? extends ProjectRelationship<?, ?>> getRelationshipsDeclaring( final ProjectVersionRef root )
     {
         return getConnectionInternal().getRelationshipsDeclaredBy( params, root );
     }

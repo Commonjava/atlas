@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.atlas.graph.spi.jung;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
@@ -64,7 +65,7 @@ public class JungGraphConnectionFactory
 
     @Override
     public void close()
-        throws RelationshipGraphConnectionException
+        throws IOException
     {
     }
 

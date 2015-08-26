@@ -22,9 +22,10 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
+import org.commonjava.maven.atlas.graph.rel.SimpleDependencyRelationship;
 import org.commonjava.maven.atlas.ident.DependencyScope;
-import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
-import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
@@ -47,8 +48,8 @@ public class DependencyFilterTest
     {
         final DependencyFilter filter = new DependencyFilter( DependencyScope.runtime );
         final DependencyRelationship rel =
-            new DependencyRelationship( testURI(), new ProjectVersionRef( "g", "a", "1" ),
-                                        new ArtifactRef( "g", "b", "2", "jar", null, false ), DependencyScope.test, 0,
+            new SimpleDependencyRelationship( testURI(), new SimpleProjectVersionRef( "g", "a", "1" ),
+                                        new SimpleArtifactRef( "g", "b", "2", "jar", null, false ), DependencyScope.test, 0,
                                         false );
 
         assertThat( filter.accept( rel ), equalTo( false ) );

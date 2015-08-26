@@ -15,155 +15,28 @@
  */
 package org.commonjava.maven.atlas.graph.rel;
 
-import java.io.Serializable;
-import java.net.URI;
-import java.util.Collection;
-
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 
-public final class PluginRelationship
-    extends AbstractProjectRelationship<ProjectVersionRef>
-    implements Serializable
+import java.io.Serializable;
+
+/**
+ * Created by jdcasey on 8/24/15.
+ */
+public interface PluginRelationship
+        extends ProjectRelationship<PluginRelationship, ProjectVersionRef>,Serializable
 {
-
-    private static final long serialVersionUID = 1L;
-
-    private final boolean reporting;
-
-    public PluginRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target,
-                               final int index, final boolean managed )
-    {
-        this( source, declaring, target, index, managed, false );
-    }
-
-    public PluginRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target,
-                               final int index, final boolean managed, final boolean reporting )
-    {
-        super( source, RelationshipType.PLUGIN, declaring, target, index, managed );
-        this.reporting = reporting;
-    }
-
-    public PluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                               final ProjectVersionRef target, final int index, final boolean managed )
-    {
-        this( source, pomLocation, declaring, target, index, managed, false );
-    }
-
-    public PluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                               final ProjectVersionRef target, final int index, final boolean managed,
-                               final boolean reporting )
-    {
-        super( source, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed );
-        this.reporting = reporting;
-    }
-
-    public PluginRelationship( final Collection<URI> sources, final URI pomLocation, final ProjectVersionRef declaring,
-                               final ProjectVersionRef target, final int index, final boolean managed,
-                               final boolean reporting )
-    {
-        super( sources, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed );
-        this.reporting = reporting;
-    }
-
-    public final boolean isReporting()
-    {
-        return reporting;
-    }
+    boolean isReporting();
 
     @Override
-    public synchronized ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef projectRef )
-    {
-        return new PluginRelationship( getSources(), getPomLocation(), projectRef, getTarget(), getIndex(),
-                                       isManaged(), reporting );
-    }
+    PluginRelationship cloneFor( ProjectVersionRef projectRef );
 
     @Override
-    public int hashCode()
-    {
-        final int prime = 31;
-        int result = super.hashCode();
-        result = prime * result + ( isManaged() ? 1231 : 1237 );
-        return result;
-    }
+    ArtifactRef getTargetArtifact();
 
     @Override
-    public boolean equals( final Object obj )
-    {
-        if ( this == obj )
-        {
-            return true;
-        }
-        if ( !super.equals( obj ) )
-        {
-            return false;
-        }
-        if ( getClass() != obj.getClass() )
-        {
-            return false;
-        }
-        final PluginRelationship other = (PluginRelationship) obj;
-        return isManaged() == other.isManaged();
-    }
+    PluginRelationship selectDeclaring( ProjectVersionRef ref );
 
     @Override
-    public String toString()
-    {
-        return String.format( "PluginRelationship [%s => %s (managed=%s, index=%s)]", getDeclaring(), getTarget(),
-                              isManaged(), getIndex() );
-    }
-
-    @Override
-    public ArtifactRef getTargetArtifact()
-    {
-        return new ArtifactRef( getTarget(), "maven-plugin", null, false );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
-    {
-        return selectDeclaring( version, false );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version, final boolean force )
-    {
-        final ProjectVersionRef d = getDeclaring().selectVersion( version, force );
-        final ProjectVersionRef t = getTarget();
-
-        return new PluginRelationship( getSources(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
-    {
-        return selectTarget( version, false );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
-    {
-        final ProjectVersionRef d = getDeclaring();
-        final ProjectVersionRef t = getTarget().selectVersion( version, force );
-
-        return new PluginRelationship( getSources(), getPomLocation(), d, t, getIndex(), isManaged(), isReporting() );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final ProjectVersionRef ref )
-    {
-        final ProjectVersionRef t = getTarget();
-
-        return new PluginRelationship( getSources(), getPomLocation(), ref, t, getIndex(), isManaged(), isReporting() );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectTarget( final ProjectVersionRef ref )
-    {
-        final ProjectVersionRef d = getDeclaring();
-
-        return new PluginRelationship( getSources(), getPomLocation(), d, ref, getIndex(), isManaged(), isReporting() );
-    }
-
+    PluginRelationship selectTarget( ProjectVersionRef ref );
 }
