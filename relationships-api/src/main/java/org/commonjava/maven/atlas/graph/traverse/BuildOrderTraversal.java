@@ -29,9 +29,7 @@ import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.traverse.model.BuildOrder;
-import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
-import org.commonjava.maven.atlas.ident.ref.ProjectRef;
-import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.*;
 
 public class BuildOrderTraversal
     extends AbstractFilteringTraversal
@@ -63,8 +61,8 @@ public class BuildOrderTraversal
     }
 
     @Override
-    protected boolean shouldTraverseEdge( final ProjectRelationship<?> relationship,
-                                          final List<ProjectRelationship<?>> path )
+    protected boolean shouldTraverseEdge( final ProjectRelationship<?, ?> relationship,
+                                          final List<ProjectRelationship<?, ?>> path )
     {
         if ( !verifyProjectsAllowed( relationship, path ) )
         {
@@ -79,8 +77,8 @@ public class BuildOrderTraversal
             target = ( (ArtifactRef) target ).asProjectVersionRef();
         }
 
-        final ProjectRef baseDecl = new ProjectRef( decl.getGroupId(), decl.getArtifactId() );
-        final ProjectRef baseTgt = new ProjectRef( target.getGroupId(), target.getArtifactId() );
+        final ProjectRef baseDecl = new SimpleProjectRef( decl.getGroupId(), decl.getArtifactId() );
+        final ProjectRef baseTgt = new SimpleProjectRef( target.getGroupId(), target.getArtifactId() );
 
         int declIdx = order.indexOf( baseDecl );
         final int tgtIdx = order.indexOf( baseTgt );
@@ -98,8 +96,8 @@ public class BuildOrderTraversal
         return true;
     }
 
-    private boolean verifyProjectsAllowed( final ProjectRelationship<?> relationship,
-                                           final List<ProjectRelationship<?>> path )
+    private boolean verifyProjectsAllowed( final ProjectRelationship<?, ?> relationship,
+                                           final List<ProjectRelationship<?, ?>> path )
     {
         if ( allowedProjects == null )
         {
@@ -115,7 +113,7 @@ public class BuildOrderTraversal
             return false;
         }
 
-        for ( final ProjectRelationship<?> rel : path )
+        for ( final ProjectRelationship<?, ?> rel : path )
         {
             if ( !verifyRelationshipProjectsAllowed( rel ) )
             {
@@ -126,7 +124,7 @@ public class BuildOrderTraversal
         return true;
     }
 
-    private boolean verifyRelationshipProjectsAllowed( final ProjectRelationship<?> relationship )
+    private boolean verifyRelationshipProjectsAllowed( final ProjectRelationship<?, ?> relationship )
     {
         return allowedProjects == null
             || ( allowedProjects.contains( relationship.getDeclaring() ) && allowedProjects.contains( relationship.getTarget() ) );
@@ -148,7 +146,7 @@ public class BuildOrderTraversal
                 ProjectRelationshipFilter filter = getRootFilter();
 
                 boolean include = true;
-                for ( final ProjectRelationship<?> rel : eProjectCycle )
+                for ( final ProjectRelationship<?, ?> rel : eProjectCycle )
                 {
                     if ( !filter.accept( rel ) )
                     {

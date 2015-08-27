@@ -15,6 +15,14 @@
  */
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
+import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -22,14 +30,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import org.apache.commons.io.FileUtils;
-import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
-import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
-import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
-import org.commonjava.maven.atlas.ident.util.JoinString;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class FileNeo4jConnectionFactory
     implements RelationshipGraphConnectionFactory
@@ -110,15 +110,15 @@ public class FileNeo4jConnectionFactory
             return false;
         }
 
-        final FileNeo4JGraphConnection connection = openConnections.remove( workspaceId );
-        if ( connection != null )
-        {
-            connection.close();
-        }
-
         boolean result = false;
         try
         {
+            final FileNeo4JGraphConnection connection = openConnections.remove( workspaceId );
+            if ( connection != null )
+            {
+                connection.close();
+            }
+
             FileUtils.forceDelete( db );
             result = !db.exists();
         }
@@ -132,7 +132,7 @@ public class FileNeo4jConnectionFactory
 
     @Override
     public synchronized void close()
-        throws RelationshipGraphConnectionException
+        throws IOException
     {
         final Logger logger = LoggerFactory.getLogger( getClass() );
 
@@ -143,7 +143,7 @@ public class FileNeo4jConnectionFactory
             {
                 conn.close();
             }
-            catch ( final RelationshipGraphConnectionException e )
+            catch ( final IOException e )
             {
                 failedClose.add( conn.getWorkspaceId() );
                 logger.error( "Failed to close: " + conn.getWorkspaceId() + ".", e );
@@ -154,7 +154,7 @@ public class FileNeo4jConnectionFactory
 
         if ( !failedClose.isEmpty() )
         {
-            throw new RelationshipGraphConnectionException( "Failed to close: %s", new JoinString( ", ", failedClose ) );
+            throw new IOException( "Failed to close: " + StringUtils.join( failedClose, ", " ) );
         }
     }
 

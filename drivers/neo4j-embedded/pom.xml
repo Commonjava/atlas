@@ -28,8 +28,29 @@
   <artifactId>atlas-driver-neo4j-embedded</artifactId>
 
   <name>Atlas :: Maven Project-Graph :: Embedded Neo4J API</name>
+
+  <properties>
+    <test-forkCount>1C</test-forkCount>
+    <test-redirectOutput>true</test-redirectOutput>
+  </properties>
   
   <dependencies>
+    <dependency>
+      <groupId>org.commonjava.maven.atlas</groupId>
+      <artifactId>atlas-bindings-jackson-identities</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>org.commonjava.maven.atlas</groupId>
+      <artifactId>atlas-bindings-jackson-relationships</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-databind</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+    </dependency>
     <dependency>
       <groupId>org.neo4j</groupId>
       <artifactId>neo4j</artifactId>
@@ -37,10 +58,6 @@
     <dependency>
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.google.code.gson</groupId>
-      <artifactId>gson</artifactId>
     </dependency>
     <dependency>
       <groupId>org.slf4j</groupId>

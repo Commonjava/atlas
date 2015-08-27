@@ -48,9 +48,9 @@ public class RelationshipPathComparatorTest
     public void sortParentDependencyPathAheadOfDirectDependency()
         throws InvalidVersionSpecificationException, URISyntaxException
     {
-        final List<List<ProjectRelationship<?>>> paths = new ArrayList<List<ProjectRelationship<?>>>();
+        final List<List<ProjectRelationship<?, ?>>> paths = new ArrayList<List<ProjectRelationship<?, ?>>>();
 
-        List<ProjectRelationship<?>> rels = new ArrayList<ProjectRelationship<?>>();
+        List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>();
 
         final ProjectVersionRef root = projectVersion( "group.id", "my-artifact", "1.0" );
 
@@ -62,21 +62,21 @@ public class RelationshipPathComparatorTest
 
         paths.add( rels );
 
-        rels = new ArrayList<ProjectRelationship<?>>();
+        rels = new ArrayList<ProjectRelationship<?, ?>>();
 
         final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
 
-        rels.add( new ParentRelationship( source, root, parent ) );
+        rels.add( new SimpleParentRelationship( source, root, parent ) );
         rels.add( dependency( source, parent, "org.foo", "bar", "1.1.1", 0 ) );
 
         paths.add( rels );
 
         Collections.sort( paths, RelationshipPathComparator.INSTANCE );
 
-        final List<ProjectRelationship<?>> result = paths.get( 0 );
-        final ProjectRelationship<?> firstResult = result.get( 0 );
+        final List<ProjectRelationship<?, ?>> result = paths.get( 0 );
+        final ProjectRelationship<?, ?> firstResult = result.get( 0 );
 
-        assertThat( ( firstResult instanceof ParentRelationship ), equalTo( true ) );
+        assertThat( ( firstResult instanceof SimpleParentRelationship ), equalTo( true ) );
     }
 
 }

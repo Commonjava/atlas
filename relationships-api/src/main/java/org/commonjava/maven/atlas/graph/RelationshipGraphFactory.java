@@ -15,6 +15,8 @@
  */
 package org.commonjava.maven.atlas.graph;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -31,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public final class RelationshipGraphFactory
+    implements Closeable
 {
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
@@ -128,7 +131,7 @@ public final class RelationshipGraphFactory
                 {
                     connectionCache.closeNow();
                 }
-                catch ( final RelationshipGraphConnectionException ex )
+                catch ( final IOException ex )
                 {
                     logger.error( "Error when trying to close connection cache: {}", ex );
                 }
@@ -151,7 +154,7 @@ public final class RelationshipGraphFactory
     }
 
     public synchronized void close()
-        throws RelationshipGraphException
+        throws IOException
     {
         closed = true;
         timer.cancel();
@@ -201,7 +204,7 @@ public final class RelationshipGraphFactory
         }
 
         public synchronized void closeNow()
-            throws RelationshipGraphConnectionException
+            throws IOException
         {
             mapOfCaches.remove( wsid );
 
@@ -229,7 +232,7 @@ public final class RelationshipGraphFactory
                         {
                             closeNow();
                         }
-                        catch ( final RelationshipGraphConnectionException e )
+                        catch ( final IOException e )
                         {
                             logger.error( "Failed to close graph connection cache: " + connection, e );
                         }

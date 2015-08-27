@@ -15,139 +15,29 @@
  */
 package org.commonjava.maven.atlas.graph.rel;
 
-import java.io.Serializable;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collection;
-
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 
-public final class ParentRelationship
-    extends AbstractProjectRelationship<ProjectVersionRef>
-    implements Serializable
+import java.io.Serializable;
+import java.net.URI;
+
+/**
+ * Created by jdcasey on 8/24/15.
+ */
+public interface ParentRelationship
+        extends ProjectRelationship<ParentRelationship, ProjectVersionRef>,Serializable
 {
+    @Override
+    ArtifactRef getTargetArtifact();
 
-    private static final long serialVersionUID = 1L;
-
-    public static final URI TERMINAL_PARENT_SOURCE_URI;
-    static
-    {
-        final String uri = "atlas:terminal-parent";
-        try
-        {
-            TERMINAL_PARENT_SOURCE_URI = new URI( uri );
-        }
-        catch ( final URISyntaxException e )
-        {
-            throw new IllegalStateException( "Terminal-parent source URI constant is invalid: " + uri, e );
-        }
-
-    }
-
-    /**
-     * Ancestry terminus. This is to signify that the declaring project has NO parent relationship.
-     */
-    public ParentRelationship( final ProjectVersionRef declaring )
-    {
-        super( TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0 );
-    }
-
-    /**
-     * Ancestry terminus. This is to signify that the declaring project has NO parent relationship.
-     * This form is deprecated.
-     * @see ParentRelationship#ParentRelationship(ProjectVersionRef)
-     */
-    @Deprecated
-    public ParentRelationship( final URI unused, final ProjectVersionRef declaring )
-    {
-        super( TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0 );
-    }
-
-    public ParentRelationship( final URI source, final ProjectVersionRef declaring, final ProjectVersionRef target )
-    {
-        super( source, RelationshipType.PARENT, declaring, target, 0 );
-    }
-
-    public ParentRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
-                               final ProjectVersionRef target )
-    {
-        super( sources, RelationshipType.PARENT, declaring, target, 0 );
-    }
+    boolean isTerminus();
 
     @Override
-    public String toString()
-    {
-        return String.format( "ParentRelationship [%s => %s]", getDeclaring(), getTarget() );
-    }
+    ParentRelationship selectDeclaring( ProjectVersionRef ref );
 
     @Override
-    public ArtifactRef getTargetArtifact()
-    {
-        return new ArtifactRef( getTarget(), "pom", null, false );
-    }
-
-    public boolean isTerminus()
-    {
-        return getDeclaring().equals( getTarget() );
-    }
+    ParentRelationship selectTarget( ProjectVersionRef ref );
 
     @Override
-    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version )
-    {
-        return selectDeclaring( version, false );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final SingleVersion version, final boolean force )
-    {
-        ProjectVersionRef d = getDeclaring();
-        final ProjectVersionRef t = getTarget();
-        final boolean self = d.equals( t );
-
-        d = d.selectVersion( version, force );
-
-        return new ParentRelationship( getSources(), d, self ? d : t );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version )
-    {
-        return selectTarget( version, false );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectTarget( final SingleVersion version, final boolean force )
-    {
-        final ProjectVersionRef d = getDeclaring();
-        ProjectVersionRef t = getTarget();
-        final boolean self = d.equals( t );
-
-        t = t.selectVersion( version, force );
-
-        return new ParentRelationship( getSources(), self ? t : d, t );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectDeclaring( final ProjectVersionRef ref )
-    {
-        final ProjectVersionRef t = getTarget();
-
-        return new ParentRelationship( getSources(), ref, t );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> selectTarget( final ProjectVersionRef ref )
-    {
-        final ProjectVersionRef d = getDeclaring();
-        return new ParentRelationship( getSources(), d, ref );
-    }
-
-    @Override
-    public ProjectRelationship<ProjectVersionRef> cloneFor( final ProjectVersionRef declaring )
-    {
-        return new ParentRelationship( getSources(), declaring, getTarget() );
-    }
-
+    ParentRelationship cloneFor( ProjectVersionRef declaring );
 }

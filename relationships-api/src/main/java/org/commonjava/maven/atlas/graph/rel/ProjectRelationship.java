@@ -21,10 +21,12 @@ import java.util.Collection;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
 
-public interface ProjectRelationship<T extends ProjectVersionRef>
+public interface ProjectRelationship<R extends ProjectRelationship<R, T>, T extends ProjectVersionRef>
     extends Serializable
 {
 
@@ -38,31 +40,19 @@ public interface ProjectRelationship<T extends ProjectVersionRef>
 
     ArtifactRef getTargetArtifact();
 
-    ProjectRelationship<T> cloneFor( final ProjectVersionRef projectRef );
+    R cloneFor( final ProjectVersionRef projectRef );
 
-    @Deprecated
-    ProjectRelationship<T> selectDeclaring( SingleVersion version );
+    R selectDeclaring( ProjectVersionRef ref );
 
-    @Deprecated
-    ProjectRelationship<T> selectDeclaring( SingleVersion version, boolean force );
-
-    @Deprecated
-    ProjectRelationship<T> selectTarget( SingleVersion version );
-
-    @Deprecated
-    ProjectRelationship<T> selectTarget( SingleVersion version, boolean force );
-
-    ProjectRelationship<T> selectDeclaring( ProjectVersionRef ref );
-
-    ProjectRelationship<T> selectTarget( ProjectVersionRef ref );
+    R selectTarget( ProjectVersionRef ref );
 
     boolean isManaged();
 
     Set<URI> getSources();
 
-    void addSource( URI source );
+    R addSource( URI source );
 
-    void addSources( Collection<URI> sources );
+    R addSources( Collection<URI> sources );
 
     URI getPomLocation();
 
