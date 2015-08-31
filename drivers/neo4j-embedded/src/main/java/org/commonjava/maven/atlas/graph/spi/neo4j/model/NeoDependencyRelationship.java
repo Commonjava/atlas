@@ -79,7 +79,7 @@ public final class NeoDependencyRelationship
         {
             return false;
         }
-        if ( getClass() != obj.getClass() )
+        if ( !( obj instanceof DependencyRelationship ) )
         {
             return false;
         }

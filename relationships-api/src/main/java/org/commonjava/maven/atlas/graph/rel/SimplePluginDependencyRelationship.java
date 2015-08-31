@@ -85,23 +85,23 @@ public final class SimplePluginDependencyRelationship
         {
             return false;
         }
-        if ( getClass() != obj.getClass() )
+        if ( !(obj instanceof PluginDependencyRelationship) )
         {
             return false;
         }
-        final SimplePluginDependencyRelationship other = (SimplePluginDependencyRelationship) obj;
+        final PluginDependencyRelationship other = (PluginDependencyRelationship) obj;
         if ( isManaged() != other.isManaged() )
         {
             return false;
         }
         if ( plugin == null )
         {
-            if ( other.plugin != null )
+            if ( other.getPlugin() != null )
             {
                 return false;
             }
         }
-        else if ( !plugin.equals( other.plugin ) )
+        else if ( !plugin.equals( other.getPlugin() ) )
         {
             return false;
         }

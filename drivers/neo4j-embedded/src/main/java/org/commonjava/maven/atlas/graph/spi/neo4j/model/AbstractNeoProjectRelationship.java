@@ -157,4 +157,57 @@ public abstract class AbstractNeoProjectRelationship<R extends AbstractNeoProjec
 
         return RelationshipUtils.POM_ROOT_URI;
     }
+
+    @Override
+    public int hashCode()
+    {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ( ( getDeclaring() == null ) ? 0 : getDeclaring().hashCode() );
+        result = prime * result + ( ( getTarget() == null ) ? 0 : getTarget().hashCode() );
+        result = prime * result + ( ( getType() == null ) ? 0 : getType().hashCode() );
+        return result;
+    }
+
+    @Override
+    public boolean equals( final Object obj )
+    {
+        if ( this == obj )
+        {
+            return true;
+        }
+        if ( obj == null )
+        {
+            return false;
+        }
+        if ( !(obj instanceof ProjectRelationship) )
+        {
+            return false;
+        }
+        final ProjectRelationship<?, ?> other = (ProjectRelationship<?, ?>) obj;
+        if ( getDeclaring() == null )
+        {
+            if ( other.getDeclaring() != null )
+            {
+                return false;
+            }
+        }
+        else if ( !getDeclaring().equals( other.getDeclaring() ) )
+        {
+            return false;
+        }
+        if ( getTarget() == null )
+        {
+            if ( other.getTarget() != null )
+            {
+                return false;
+            }
+        }
+        else if ( !getTarget().equals( other.getTarget() ) )
+        {
+            return false;
+        }
+        return getType() == other.getType();
+    }
+
 }

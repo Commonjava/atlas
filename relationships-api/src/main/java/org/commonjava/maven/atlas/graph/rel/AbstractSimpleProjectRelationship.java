@@ -182,34 +182,34 @@ public abstract class AbstractSimpleProjectRelationship<R extends ProjectRelatio
         {
             return false;
         }
-        if ( getClass() != obj.getClass() )
+        if ( !(obj instanceof ProjectRelationship) )
         {
             return false;
         }
-        final AbstractSimpleProjectRelationship<?, ?> other = (AbstractSimpleProjectRelationship<?, ?>) obj;
+        final ProjectRelationship<?, ?> other = (ProjectRelationship<?, ?>) obj;
         if ( declaring == null )
         {
-            if ( other.declaring != null )
+            if ( other.getDeclaring() != null )
             {
                 return false;
             }
         }
-        else if ( !declaring.equals( other.declaring ) )
+        else if ( !declaring.equals( other.getDeclaring() ) )
         {
             return false;
         }
         if ( target == null )
         {
-            if ( other.target != null )
+            if ( other.getTarget() != null )
             {
                 return false;
             }
         }
-        else if ( !target.equals( other.target ) )
+        else if ( !target.equals( other.getTarget() ) )
         {
             return false;
         }
-        return type == other.type;
+        return type == other.getType();
     }
 
     @Override

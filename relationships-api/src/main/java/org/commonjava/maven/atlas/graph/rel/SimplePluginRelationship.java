@@ -95,7 +95,7 @@ public final class SimplePluginRelationship
         {
             return false;
         }
-        if ( getClass() != obj.getClass() )
+        if ( !(obj instanceof PluginRelationship) )
         {
             return false;
         }

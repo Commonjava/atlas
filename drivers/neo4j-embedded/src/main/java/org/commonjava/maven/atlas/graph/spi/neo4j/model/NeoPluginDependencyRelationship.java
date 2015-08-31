@@ -70,26 +70,23 @@ public final class NeoPluginDependencyRelationship
         {
             return false;
         }
-        if ( getClass() != obj.getClass() )
+        if ( !(obj instanceof PluginDependencyRelationship) )
         {
             return false;
         }
-        final NeoPluginDependencyRelationship other = (NeoPluginDependencyRelationship) obj;
+        final PluginDependencyRelationship other = (PluginDependencyRelationship) obj;
         if ( isManaged() != other.isManaged() )
         {
             return false;
         }
-
-        ProjectRef plugin = getPlugin();
-        ProjectRef otherPlugin = other.getPlugin();
-        if ( plugin == null )
+        if ( getPlugin() == null )
         {
-            if ( otherPlugin != null )
+            if ( other.getPlugin() != null )
             {
                 return false;
             }
         }
-        else if ( !plugin.equals( otherPlugin ) )
+        else if ( !getPlugin().equals( other.getPlugin() ) )
         {
             return false;
         }

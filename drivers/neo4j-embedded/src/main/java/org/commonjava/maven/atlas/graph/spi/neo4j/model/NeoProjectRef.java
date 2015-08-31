@@ -24,6 +24,8 @@ import org.commonjava.maven.atlas.ident.ref.VersionlessArtifactRef;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.PropertyContainer;
 import org.neo4j.graphdb.Relationship;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.apache.commons.lang.StringUtils.isEmpty;
 
@@ -90,6 +92,10 @@ public class NeoProjectRef
 
     public NeoProjectRef( PropertyContainer container, String groupIdProperty, String artifactIdProperty )
     {
+        Logger logger = LoggerFactory.getLogger( getClass() );
+        logger.debug( "setting up project ref on container: {} with gid prop: {} and aid prop: {}", container,
+                      groupIdProperty, artifactIdProperty );
+
         this.container = container;
         this.groupIdProperty = groupIdProperty;
         this.artifactIdProperty = artifactIdProperty;
