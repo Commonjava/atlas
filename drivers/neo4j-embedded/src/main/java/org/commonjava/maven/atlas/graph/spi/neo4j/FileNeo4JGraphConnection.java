@@ -62,7 +62,7 @@ public class FileNeo4JGraphConnection
     implements Runnable, Neo4JGraphConnection
 {
 
-    private static final int BATCH_SIZE = 100;
+    static final int DEFAULT_BATCH_SIZE = 500;
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
@@ -130,15 +130,18 @@ public class FileNeo4JGraphConnection
 
     private final String workspaceId;
 
+    private int storageBatchSize = DEFAULT_BATCH_SIZE;
+
     private final FileNeo4jConnectionFactory factory;
 
     private final File dbDir;
 
-    FileNeo4JGraphConnection( final String workspaceId, final File dbDir, final boolean useShutdownHook,
+    FileNeo4JGraphConnection( final String workspaceId, final File dbDir, final boolean useShutdownHook, final int storageBatchSize,
                               final FileNeo4jConnectionFactory factory )
     {
         this.workspaceId = workspaceId;
         this.dbDir = dbDir;
+        this.storageBatchSize = storageBatchSize;
         this.factory = factory;
         this.adminAccess = new GraphAdminImpl( this );
 
@@ -512,7 +515,7 @@ public class FileNeo4JGraphConnection
         final List<ProjectRelationship<?, ?>> sorted = new ArrayList<ProjectRelationship<?, ?>>( Arrays.asList( rels ) );
         Collections.sort( sorted, RelationshipComparator.INSTANCE );
 
-        double batches = sorted.size() < BATCH_SIZE ? 1 : Math.ceil( (double) sorted.size() / (double) BATCH_SIZE );
+        double batches = sorted.size() < storageBatchSize ? 1 : Math.ceil( (double) sorted.size() / (double) storageBatchSize );
         logger.info( "\n\n\nProcessing {} batches of relationships ({} total relationships)\n\n\n\n", batches, sorted.size() );
 
         int processed = 0;
@@ -520,9 +523,9 @@ public class FileNeo4JGraphConnection
         {
             logger.info( "Starting batch #{} at: {}", i, processed );
             int upper = sorted.size(); // size() is one beyond upper index.
-            if ( upper - processed > BATCH_SIZE )
+            if ( upper - processed > storageBatchSize )
             {
-                upper = processed + BATCH_SIZE;
+                upper = processed + storageBatchSize;
             }
 
             List<ProjectRelationship<?, ?>> batch = sorted.subList( processed, upper );

@@ -41,6 +41,15 @@ public class FileNeo4jConnectionFactory
 
     private final boolean useShutdownHook;
 
+    private int storageBatchSize = FileNeo4JGraphConnection.DEFAULT_BATCH_SIZE;
+
+    public FileNeo4jConnectionFactory( final File dbBaseDirectory, final boolean useShutdownHook, final int storageBatchSize )
+    {
+        this.dbBaseDirectory = dbBaseDirectory;
+        this.useShutdownHook = useShutdownHook;
+        this.storageBatchSize = storageBatchSize;
+    }
+
     public FileNeo4jConnectionFactory( final File dbBaseDirectory, final boolean useShutdownHook )
     {
         this.dbBaseDirectory = dbBaseDirectory;
@@ -80,7 +89,7 @@ public class FileNeo4jConnectionFactory
         FileNeo4JGraphConnection conn = openConnections.get( workspaceId );
         if ( conn == null || !conn.isOpen() )
         {
-            conn = new FileNeo4JGraphConnection( workspaceId, db, useShutdownHook, this );
+            conn = new FileNeo4JGraphConnection( workspaceId, db, useShutdownHook, storageBatchSize, this );
             openConnections.put( workspaceId, conn );
         }
 
@@ -110,7 +119,6 @@ public class FileNeo4jConnectionFactory
             return false;
         }
 
-        boolean result = false;
         try
         {
             final FileNeo4JGraphConnection connection = openConnections.remove( workspaceId );
@@ -120,14 +128,12 @@ public class FileNeo4jConnectionFactory
             }
 
             FileUtils.forceDelete( db );
-            result = !db.exists();
+            return !db.exists();
         }
         catch ( final IOException e )
         {
             throw new RelationshipGraphConnectionException( "Failed to delete: %s. Reason: %s", e, db, e.getMessage() );
         }
-
-        return result;
     }
 
     @Override
