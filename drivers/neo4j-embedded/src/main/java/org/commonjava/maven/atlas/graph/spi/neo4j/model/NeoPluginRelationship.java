@@ -68,7 +68,7 @@ public final class NeoPluginRelationship
         {
             return false;
         }
-        if ( getClass() != obj.getClass() )
+        if ( !(obj instanceof PluginRelationship) )
         {
             return false;
         }

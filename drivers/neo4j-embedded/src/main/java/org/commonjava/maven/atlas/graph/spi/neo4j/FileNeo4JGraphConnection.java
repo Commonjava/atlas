@@ -62,6 +62,8 @@ public class FileNeo4JGraphConnection
     implements Runnable, Neo4JGraphConnection
 {
 
+    static final int DEFAULT_BATCH_SIZE = 500;
+
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     //    private static final int ADD_BATCHSIZE = 50;
@@ -128,15 +130,18 @@ public class FileNeo4JGraphConnection
 
     private final String workspaceId;
 
+    private int storageBatchSize = DEFAULT_BATCH_SIZE;
+
     private final FileNeo4jConnectionFactory factory;
 
     private final File dbDir;
 
-    FileNeo4JGraphConnection( final String workspaceId, final File dbDir, final boolean useShutdownHook,
+    FileNeo4JGraphConnection( final String workspaceId, final File dbDir, final boolean useShutdownHook, final int storageBatchSize,
                               final FileNeo4jConnectionFactory factory )
     {
         this.workspaceId = workspaceId;
         this.dbDir = dbDir;
+        this.storageBatchSize = storageBatchSize;
         this.factory = factory;
         this.adminAccess = new GraphAdminImpl( this );
 
@@ -510,11 +515,36 @@ public class FileNeo4JGraphConnection
         final List<ProjectRelationship<?, ?>> sorted = new ArrayList<ProjectRelationship<?, ?>>( Arrays.asList( rels ) );
         Collections.sort( sorted, RelationshipComparator.INSTANCE );
 
+        double batches = sorted.size() < storageBatchSize ? 1 : Math.ceil( (double) sorted.size() / (double) storageBatchSize );
+        logger.info( "\n\n\nProcessing {} batches of relationships ({} total relationships)\n\n\n\n", batches, sorted.size() );
+
+        int processed = 0;
+        for ( int i = 0; i < batches; i++ )
+        {
+            logger.info( "Starting batch #{} at: {}", i, processed );
+            int upper = sorted.size(); // size() is one beyond upper index.
+            if ( upper - processed > storageBatchSize )
+            {
+                upper = processed + storageBatchSize;
+            }
+
+            List<ProjectRelationship<?, ?>> batch = sorted.subList( processed, upper );
+            logger.info( "\n\n\nInserting relationship batch of size: {}\n\n\n\n", batch.size() );
+            insertRelationshipBatch( batch, cache, createdRelationshipsMap );
+            processed += batch.size();
+        }
+
+        return createdRelationshipsMap;
+    }
+
+    private void insertRelationshipBatch( List<ProjectRelationship<?, ?>> rels, ConversionCache cache,
+                                          Map<Long, ProjectRelationship<?, ?>> createdRelationshipsMap )
+    {
         final Transaction tx = graph.beginTx();
         try
         {
             //            int txBatchCount = 0;
-            nextRel: for ( final ProjectRelationship<?, ?> rel : sorted )
+            nextRel: for ( final ProjectRelationship<?, ?> rel : rels )
             {
                 if ( (rel instanceof AbstractNeoProjectRelationship ) && !( (AbstractNeoProjectRelationship) rel ).isDirty())
                 {
@@ -592,7 +622,7 @@ public class FileNeo4JGraphConnection
 
                         relationship = from.createRelationshipTo( to, grt );
 
-                        // now, we set an index on the relationship of where it is in the range of ALL atlas relationships 
+                        // now, we set an index on the relationship of where it is in the range of ALL atlas relationships
                         // for this node. ProjectRelationship<?>.getIndex() only gives the index for that TYPE, so we can't
                         // use it. The next value will be stored on the from node for the next go.
                         int nodeRelIdx = Conversions.getIntegerProperty( Conversions.ATLAS_RELATIONSHIP_COUNT, from, 0 );
@@ -641,7 +671,7 @@ public class FileNeo4JGraphConnection
 
                 // We don't really need transaction here, I don't think...
                 // but we're forced to use one to update the graph.
-                // So, to find a balance between memory consumed by a transaction 
+                // So, to find a balance between memory consumed by a transaction
                 // and speed (creating/committing txns takes time), we'll batch them.
                 //                txBatchCount++;
                 //                if ( txBatchCount >= ADD_BATCHSIZE )
@@ -660,8 +690,6 @@ public class FileNeo4JGraphConnection
         {
             tx.finish();
         }
-
-        return createdRelationshipsMap;
     }
 
     @Override

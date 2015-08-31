@@ -127,7 +127,7 @@ public final class SimpleDependencyRelationship
         {
             return false;
         }
-        if ( getClass() != obj.getClass() )
+        if ( !( obj instanceof DependencyRelationship ) )
         {
             return false;
         }
