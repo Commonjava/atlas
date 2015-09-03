@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.commonjava.maven.atlas</groupId>
     <artifactId>atlas-parent</artifactId>
-    <version>0.14.3-SNAPSHOT</version>
+    <version>0.15.0</version>
   </parent>
 
   <artifactId>atlas-drivers-parent</artifactId>
