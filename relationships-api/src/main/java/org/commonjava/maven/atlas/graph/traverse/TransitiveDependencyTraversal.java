@@ -35,7 +35,7 @@ public class TransitiveDependencyTraversal
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    private final Map<VersionlessArtifactRef, ArtifactRef> artifacts = new HashMap<VersionlessArtifactRef, ArtifactRef>();
+    private final Map<VersionlessArtifactRef, ArtifactRef> artifacts = new LinkedHashMap<VersionlessArtifactRef, ArtifactRef>();
 
     private final Map<VersionlessArtifactRef, Integer> seenArtifacts = new HashMap<VersionlessArtifactRef, Integer>();
 
