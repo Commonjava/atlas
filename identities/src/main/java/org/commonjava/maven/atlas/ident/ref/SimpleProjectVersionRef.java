@@ -61,7 +61,7 @@ public class SimpleProjectVersionRef
         if ( versionSpec == null && StringUtils.isEmpty( versionString ) )
         {
             throw new InvalidRefException(
-                    "Version spec AND string cannot both be null for '" + groupId + ":" + artifactId + "'" );
+                    "Version spec AND string cannot both be empty for '" + groupId + ":" + artifactId + "'" );
         }
 
         this.versionString = versionString;
