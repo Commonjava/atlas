@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.atlas.ident.ref;
 
+import org.apache.commons.lang.StringUtils;
 import org.commonjava.maven.atlas.ident.util.VersionUtils;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
@@ -57,10 +58,10 @@ public class SimpleProjectVersionRef
                              final String versionString )
     {
         super( groupId, artifactId );
-        if ( versionSpec == null && versionString == null )
+        if ( versionSpec == null && StringUtils.isEmpty( versionString ) )
         {
-            throw new InvalidRefException( "Version spec AND string cannot both be null for '" + groupId + ":"
-                + artifactId + "'" );
+            throw new InvalidRefException(
+                    "Version spec AND string cannot both be null for '" + groupId + ":" + artifactId + "'" );
         }
 
         this.versionString = versionString;
