@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 import org.commonjava.maven.atlas.graph.rel.AbstractSimpleProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.BomRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.rel.SimpleBomRelationship;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.neo4j.graphdb.Relationship;
@@ -94,5 +95,11 @@ public class NeoBomRelationship
     public String toString()
     {
         return String.format( "BomRelationship [%s => %s, rel=%d]", getDeclaring(), getTarget(), rel.getId() );
+    }
+
+    @Override
+    public BomRelationship detach()
+    {
+        return new SimpleBomRelationship( this );
     }
 }

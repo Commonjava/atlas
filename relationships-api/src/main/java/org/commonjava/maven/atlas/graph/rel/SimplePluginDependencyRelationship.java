@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectRef;
 
 import java.io.Serializable;
 import java.net.URI;
@@ -56,6 +57,12 @@ public final class SimplePluginDependencyRelationship
     {
         super( sources, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
         this.plugin = plugin;
+    }
+
+    public SimplePluginDependencyRelationship( PluginDependencyRelationship relationship )
+    {
+        super( relationship );
+        this.plugin = new SimpleProjectRef( relationship.getPlugin() );
     }
 
     @Override
@@ -113,6 +120,12 @@ public final class SimplePluginDependencyRelationship
     {
         return String.format( "PluginDependencyRelationship [%s -> (%s) => %s (managed=%s, index=%s)]", getDeclaring(),
                               plugin, getTarget(), isManaged(), getIndex() );
+    }
+
+    @Override
+    protected ArtifactRef cloneTarget( ArtifactRef target )
+    {
+        return new SimpleArtifactRef( target );
     }
 
     @Override

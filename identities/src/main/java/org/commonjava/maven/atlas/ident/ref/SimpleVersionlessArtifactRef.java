@@ -67,6 +67,13 @@ public class SimpleVersionlessArtifactRef
         this.optional = optional;
     }
 
+    public <T extends VersionlessArtifactRef> SimpleVersionlessArtifactRef( VersionlessArtifactRef ref )
+    {
+        super( ref );
+        this.tc = ref.getTypeAndClassifier();
+        this.optional = ref.isOptional();
+    }
+
     @Override
     public String toString()
     {

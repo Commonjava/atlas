@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.graph.rel.AbstractSimpleProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.rel.SimplePluginDependencyRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -91,6 +92,12 @@ public final class NeoPluginDependencyRelationship
             return false;
         }
         return true;
+    }
+
+    @Override
+    public PluginDependencyRelationship detach()
+    {
+        return new SimplePluginDependencyRelationship( this );
     }
 
     @Override

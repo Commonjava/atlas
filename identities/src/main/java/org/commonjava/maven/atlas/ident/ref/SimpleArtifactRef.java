@@ -77,6 +77,13 @@ public class SimpleArtifactRef
         this.optional = optional;
     }
 
+    public <T extends ArtifactRef> SimpleArtifactRef( ArtifactRef ref )
+    {
+        super( ref );
+        this.tc = ref.getTypeAndClassifier();
+        this.optional = ref.isOptional();
+    }
+
     @Override
     public String toString()
     {

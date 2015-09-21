@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 
 /** <b>NOTE:</b> BOM relationships are actually marked as concrete.
  * This may be somewhat counter-intuitive, but they are structural (like a parent POM).
@@ -67,6 +68,17 @@ public class SimpleBomRelationship
         // but they're structural, so managed isn't quite correct (despite 
         // Maven's unfortunate choice for location).
         super( source, pomLocation, RelationshipType.BOM, d, t, index, false );
+    }
+
+    public SimpleBomRelationship( BomRelationship relationship )
+    {
+        super( relationship );
+    }
+
+    @Override
+    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    {
+        return new SimpleProjectVersionRef( target );
     }
 
     @Override

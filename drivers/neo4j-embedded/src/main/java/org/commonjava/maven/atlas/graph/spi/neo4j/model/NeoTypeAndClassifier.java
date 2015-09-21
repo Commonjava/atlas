@@ -16,6 +16,7 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
+import org.commonjava.maven.atlas.ident.ref.SimpleTypeAndClassifier;
 import org.commonjava.maven.atlas.ident.ref.TypeAndClassifier;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Relationship;
@@ -152,6 +153,11 @@ public class NeoTypeAndClassifier
     public boolean isDirty()
     {
         return type != null || classifier != null;
+    }
+
+    public TypeAndClassifier detach()
+    {
+        return new SimpleTypeAndClassifier( this );
     }
 
 }

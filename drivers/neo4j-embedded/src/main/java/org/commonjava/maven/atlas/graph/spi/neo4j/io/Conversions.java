@@ -30,6 +30,7 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.NodeType;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.AbstractNeoProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoArtifactRef;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoBomRelationship;
@@ -185,7 +186,7 @@ public final class Conversions
         return 1;
     }
 
-    public static List<ProjectVersionRef> convertToProjects( final Iterable<Node> nodes, final ConversionCache cache )
+    public static List<ProjectVersionRef> convertToDetachedProjects( final Iterable<Node> nodes )
     {
         final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>();
         for ( final Node node : nodes )
@@ -200,19 +201,54 @@ public final class Conversions
                 continue;
             }
 
-            refs.add( Conversions.toProjectVersionRef( node, cache ) );
+            refs.add( Conversions.toProjectVersionRef( node ).detach() );
         }
 
         return refs;
     }
 
-    public static List<ProjectRelationship<?, ?>> convertToRelationships( final Iterable<Relationship> relationships,
-                                                                          final ConversionCache cache )
+    public static List<NeoProjectVersionRef> convertToProjects( final Iterable<Node> nodes )
+    {
+        final List<NeoProjectVersionRef> refs = new ArrayList<NeoProjectVersionRef>();
+        for ( final Node node : nodes )
+        {
+            if ( node.getId() == 0 )
+            {
+                continue;
+            }
+
+            if ( !Conversions.isType( node, NodeType.PROJECT ) )
+            {
+                continue;
+            }
+
+            refs.add( Conversions.toProjectVersionRef( node ) );
+        }
+
+        return refs;
+    }
+
+    public static List<ProjectRelationship<?, ?>> convertToDetachedRelationships( Iterable<Relationship> relationships )
     {
         final List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>();
         for ( final Relationship relationship : relationships )
         {
-            final ProjectRelationship<?, ?> rel = Conversions.toProjectRelationship( relationship, cache );
+            final AbstractNeoProjectRelationship<?, ?, ?> rel = Conversions.toProjectRelationship( relationship );
+            if ( rel != null )
+            {
+                rels.add( rel.detach() );
+            }
+        }
+
+        return rels;
+    }
+
+    public static List<AbstractNeoProjectRelationship<?, ?, ?>> convertToRelationships( final Iterable<Relationship> relationships )
+    {
+        final List<AbstractNeoProjectRelationship<?, ?, ?>> rels = new ArrayList<AbstractNeoProjectRelationship<?, ?, ?>>();
+        for ( final Relationship relationship : relationships )
+        {
+            final AbstractNeoProjectRelationship<?, ?, ?> rel = Conversions.toProjectRelationship( relationship );
             if ( rel != null )
             {
                 rels.add( rel );
@@ -222,15 +258,31 @@ public final class Conversions
         return rels;
     }
 
-    public static List<ProjectRelationship<?, ?>> convertToRelationships( final Iterable<Long> relationships,
-                                                                          final GraphAdmin admin,
-                                                                          final ConversionCache cache )
+    public static List<ProjectRelationship<?, ?>> convertToDetachedRelationships( final Iterable<Long> relationships,
+                                                                          final GraphAdmin admin )
     {
         final List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>();
         for ( final Long rid : relationships )
         {
             final Relationship relationship = admin.getRelationship( rid );
-            final ProjectRelationship<?, ?> rel = Conversions.toProjectRelationship( relationship, cache );
+            final ProjectRelationship<?, ?> rel = toProjectRelationship( relationship ).detach();
+            if ( rel != null )
+            {
+                rels.add( rel );
+            }
+        }
+
+        return rels;
+    }
+
+    public static List<AbstractNeoProjectRelationship<?, ?, ?>> convertToRelationships( final Iterable<Long> relationships,
+                                                                          final GraphAdmin admin )
+    {
+        final List<AbstractNeoProjectRelationship<?, ?, ?>> rels = new ArrayList<AbstractNeoProjectRelationship<?, ?, ?>>();
+        for ( final Long rid : relationships )
+        {
+            final Relationship relationship = admin.getRelationship( rid );
+            final AbstractNeoProjectRelationship<?, ?, ?> rel = toProjectRelationship( relationship );
             if ( rel != null )
             {
                 rels.add( rel );
@@ -295,20 +347,11 @@ public final class Conversions
     //        return toProjectVersionRef( node, null );
     //    }
 
-    public static ProjectVersionRef toProjectVersionRef( final Node node, final ConversionCache cache )
+    public static NeoProjectVersionRef toProjectVersionRef( final Node node )
     {
         if ( node == null )
         {
             return null;
-        }
-
-        if ( cache != null )
-        {
-            final ProjectVersionRef ref = cache.getProjectVersionRef( node );
-            if ( ref != null )
-            {
-                return ref;
-            }
         }
 
         if ( !isType( node, NodeType.PROJECT ) )
@@ -316,12 +359,7 @@ public final class Conversions
             throw new IllegalArgumentException( "Node " + node.getId() + " is not a project reference." );
         }
 
-        final ProjectVersionRef result = new NeoProjectVersionRef( node );
-        if ( cache != null )
-        {
-            cache.cache( node, result );
-        }
-
+        final NeoProjectVersionRef result = new NeoProjectVersionRef( node );
         return result;
     }
 
@@ -414,20 +452,11 @@ public final class Conversions
     //        return toProjectRelationship( rel, null );
     //    }
 
-    public static ProjectRelationship<?, ?> toProjectRelationship( final Relationship rel, final ConversionCache cache )
+    public static AbstractNeoProjectRelationship<?, ?, ?> toProjectRelationship( final Relationship rel )
     {
         if ( rel == null )
         {
             return null;
-        }
-
-        if ( cache != null )
-        {
-            final ProjectRelationship<?, ?> r = cache.getRelationship( rel );
-            if ( r != null )
-            {
-                return r;
-            }
         }
 
         final GraphRelType mapper = GraphRelType.valueOf( rel.getType().name() );
@@ -446,7 +475,7 @@ public final class Conversions
             return null;
         }
 
-        ProjectRelationship<?, ?> result = null;
+        AbstractNeoProjectRelationship<?, ?, ?> result = null;
         switch ( mapper.atlasType() )
         {
             case DEPENDENCY:
@@ -484,11 +513,6 @@ public final class Conversions
                 throw new IllegalArgumentException(
                         "I don't know how to construct the atlas relationship for type: " + mapper.atlasType() );
             }
-        }
-
-        if ( result != null && cache != null )
-        {
-            cache.cache( rel, result );
         }
 
         //        LOGGER.debug( "Returning project relationship: {}", result );
@@ -1010,7 +1034,7 @@ public final class Conversions
     //        return retrieveView( viewNode, null, driver );
     //    }
 
-    public static ViewParams retrieveView( final Node viewNode, final ConversionCache cache, final GraphAdmin maint )
+    public static ViewParams retrieveView( final Node viewNode, final GraphAdmin maint )
     {
         if ( !viewNode.hasProperty( VIEW_DATA ) )
         {
@@ -1019,25 +1043,11 @@ public final class Conversions
 
         final byte[] data = (byte[]) viewNode.getProperty( VIEW_DATA );
 
-        if ( cache != null )
-        {
-            final ViewParams view = cache.getSerializedObject( data, ViewParams.class );
-            if ( view != null )
-            {
-                return view;
-            }
-        }
-
         ObjectInputStream ois = null;
         try
         {
             ois = new ObjectInputStream( new ByteArrayInputStream( data ) );
             final ViewParams view = (ViewParams) ois.readObject();
-
-            if ( cache != null )
-            {
-                cache.cache( data, view );
-            }
 
             return view;
         }

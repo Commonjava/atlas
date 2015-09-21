@@ -26,7 +26,6 @@ import org.commonjava.maven.atlas.graph.ViewParams;
 import org.commonjava.maven.atlas.graph.model.EProjectCycle;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -46,8 +45,6 @@ public class CycleCacheUpdater
 
     private final Logger logger = LoggerFactory.getLogger( getClass() );
 
-    private final ConversionCache cache;
-
     private final Node viewNode;
 
     final Set<EProjectCycle> cycles = new HashSet<EProjectCycle>();
@@ -56,13 +53,11 @@ public class CycleCacheUpdater
 
     private final GraphAdmin admin;
 
-    public CycleCacheUpdater( final ViewParams view, final Node viewNode, final GraphAdmin admin,
-                              final ConversionCache cache )
+    public CycleCacheUpdater( final ViewParams view, final Node viewNode, final GraphAdmin admin )
     {
         this.view = view;
         this.viewNode = viewNode;
         this.admin = admin;
-        this.cache = cache;
     }
 
     @Override
@@ -96,7 +91,8 @@ public class CycleCacheUpdater
             logger.debug( "Adding cycle: {} (via: {})", cyclicPath, injector );
             Conversions.storeCachedCyclePath( cyclicPath, viewNode );
 
-            final List<ProjectRelationship<?, ?>> cycle = Conversions.convertToRelationships( cyclicPath, admin, cache );
+            final List<ProjectRelationship<?, ?>> cycle = new ArrayList<ProjectRelationship<?, ?>>(cyclicPath.length());
+            cycle.addAll( Conversions.convertToRelationships( cyclicPath, admin ) );
             logger.info( "CYCLES += {\n  {}\n}", new JoinString( "\n  ", cycle ) );
             cycles.add( new EProjectCycle( cycle ) );
 
@@ -189,12 +185,6 @@ public class CycleCacheUpdater
         logger.debug( "No cycle detected" );
 
         return null;
-    }
-
-    @Override
-    public void configure( final AtlasCollector<?> collector )
-    {
-        collector.setConversionCache( cache );
     }
 
     public int getCycleCount()

@@ -15,7 +15,6 @@
  */
 package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
-import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.GAV;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 import static org.commonjava.maven.atlas.graph.spi.neo4j.traverse.TraversalUtils.accepted;
 
@@ -30,10 +29,8 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
-import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoProjectVersionRef;
 import org.commonjava.maven.atlas.graph.spi.neo4j.update.CycleCacheUpdater;
 import org.commonjava.maven.atlas.ident.util.JoinString;
 import org.neo4j.graphdb.Direction;
@@ -58,8 +55,6 @@ public final class AtlasCollector<STATE>
     private final Set<Node> startNodes;
 
     private ViewParams view;
-
-    private ConversionCache cache = new ConversionCache();
 
     private TraverseVisitor visitor;
 
@@ -110,11 +105,6 @@ public final class AtlasCollector<STATE>
         this.useSelections = useSelections;
     }
 
-    public void setConversionCache( final ConversionCache cache )
-    {
-        this.cache = cache;
-    }
-
     @Override
     @SuppressWarnings( "rawtypes" )
     public final Iterable<Relationship> expand( final Path path, final BranchState state )
@@ -142,7 +132,7 @@ public final class AtlasCollector<STATE>
         for ( final Long rid : graphPath )
         {
             final Relationship r = admin.getRelationship( rid );
-            pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r, cache ) );
+            pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r ) );
         }
 
         logger.debug( "For {}, using pathInfo: {}", graphPath, pathInfo );
@@ -221,7 +211,7 @@ public final class AtlasCollector<STATE>
                         continue;
                     }
 
-                    if ( !accepted( selected, view, cache ) )
+                    if ( !accepted( selected, view ) )
                     {
                         logger.debug( "{} NOT accepted, likely due to incompatible POM location or source URI. Path: {}",
                                       r, path );
@@ -236,7 +226,7 @@ public final class AtlasCollector<STATE>
                     logger.debug( "After selection, using child relationship: {}", r );
                 }
 
-                final ProjectRelationship<?, ?> rel = toProjectRelationship( r, cache );
+                final ProjectRelationship<?, ?> rel = toProjectRelationship( r );
 
                 final Neo4jGraphPath nextPath = new Neo4jGraphPath( graphPath, r );
                 final GraphPathInfo nextPathInfo = pathInfo.getChildPathInfo( rel );
@@ -269,7 +259,7 @@ public final class AtlasCollector<STATE>
             @Override
             public String toString()
             {
-                return r + " " + String.valueOf( toProjectRelationship( r, cache ) );
+                return r + " " + String.valueOf( toProjectRelationship( r ) );
             }
         };
     }
@@ -286,7 +276,6 @@ public final class AtlasCollector<STATE>
         final AtlasCollector<STATE> collector =
             new AtlasCollector<STATE>( visitor, startNodes, connection, view, viewNode, admin, types,
                                        direction.reverse() );
-        collector.setConversionCache( cache );
         collector.setUseSelections( useSelections );
 
         return collector;

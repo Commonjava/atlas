@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.graph.rel.AbstractSimpleProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.BomRelationship;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.rel.SimpleDependencyRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -85,6 +86,12 @@ public final class NeoDependencyRelationship
         }
         final DependencyRelationship other = (DependencyRelationship) obj;
         return isManaged() == other.isManaged();
+    }
+
+    @Override
+    public DependencyRelationship detach()
+    {
+        return new SimpleDependencyRelationship( this );
     }
 
     @Override

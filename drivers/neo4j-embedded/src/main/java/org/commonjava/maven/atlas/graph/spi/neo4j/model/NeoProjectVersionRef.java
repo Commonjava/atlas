@@ -34,8 +34,8 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoIdentityUtils.
  *
  * @author jdcasey
  */
-public class NeoProjectVersionRef
-        extends NeoProjectRef
+public class NeoProjectVersionRef<T extends ProjectVersionRef>
+        extends NeoProjectRef<T>
         implements ProjectVersionRef
 {
 
@@ -367,5 +367,11 @@ public class NeoProjectVersionRef
     public boolean isDirty()
     {
         return super.isDirty() || versionString != null;
+    }
+
+    @Override
+    public T detach()
+    {
+        return (T) new SimpleProjectVersionRef( this );
     }
 }

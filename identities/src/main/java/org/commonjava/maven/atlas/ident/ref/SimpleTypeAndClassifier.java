@@ -42,6 +42,12 @@ public class SimpleTypeAndClassifier
         this( null, null );
     }
 
+    public <T extends TypeAndClassifier> SimpleTypeAndClassifier( TypeAndClassifier typeAndClassifier )
+    {
+        this.type = typeAndClassifier.getType();
+        this.classifier = typeAndClassifier.getClassifier();
+    }
+
     @Override
     public String getType()
     {

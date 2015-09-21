@@ -79,6 +79,13 @@ public class SimpleProjectVersionRef
         this( groupId, artifactId, null, versionString );
     }
 
+    public <T extends ProjectVersionRef> SimpleProjectVersionRef( ProjectVersionRef ref )
+    {
+        super( ref );
+        this.versionSpec = ref.getVersionSpecRaw();
+        this.versionString = ref.getVersionStringRaw();
+    }
+
     public static ProjectVersionRef parse( final String gav )
     {
         final String[] parts = gav.split( ":" );

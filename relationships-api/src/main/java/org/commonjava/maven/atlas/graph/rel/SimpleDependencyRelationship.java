@@ -76,6 +76,13 @@ public final class SimpleDependencyRelationship
         this.excludes = new HashSet<ProjectRef>( Arrays.asList( excludes ) );
     }
 
+    public SimpleDependencyRelationship( DependencyRelationship relationship )
+    {
+        super( relationship );
+        this.scope = relationship.getScope();
+        this.excludes = new HashSet<ProjectRef>( relationship.getExcludes() );
+    }
+
     @Override
     public final DependencyScope getScope()
     {
@@ -140,6 +147,12 @@ public final class SimpleDependencyRelationship
     {
         return String.format( "DependencyRelationship [%s => %s (managed=%s, scope=%s, index=%s)]", getDeclaring(),
                               getTarget(), isManaged(), scope, getIndex() );
+    }
+
+    @Override
+    protected ArtifactRef cloneTarget( ArtifactRef target )
+    {
+        return new SimpleArtifactRef( target );
     }
 
     @Override

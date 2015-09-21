@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 
 import java.io.Serializable;
 import java.net.URI;
@@ -57,10 +58,21 @@ public final class SimpleExtensionRelationship
         super( sources, RelationshipUtils.POM_ROOT_URI, RelationshipType.EXTENSION, declaring, target, index );
     }
 
+    public SimpleExtensionRelationship( ExtensionRelationship relationship )
+    {
+        super( relationship );
+    }
+
     @Override
     public String toString()
     {
         return String.format( "ExtensionRelationship [%s => %s (index=%s)]", getDeclaring(), getTarget(), getIndex() );
+    }
+
+    @Override
+    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    {
+        return new SimpleProjectVersionRef( target );
     }
 
     @Override

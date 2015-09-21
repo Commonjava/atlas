@@ -17,6 +17,7 @@ package org.commonjava.maven.atlas.graph.rel;
 
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 
 import java.io.Serializable;
 import java.lang.reflect.Constructor;
@@ -126,6 +127,19 @@ public abstract class AbstractSimpleProjectRelationship<R extends ProjectRelatio
         this.index = index;
         this.managed = managed;
     }
+
+    public AbstractSimpleProjectRelationship( ProjectRelationship<R, T> relationship )
+    {
+        this.sources.addAll( relationship.getSources() );
+        this.declaring = new SimpleProjectVersionRef( relationship.getDeclaring() );
+        this.pomLocation = relationship.getPomLocation();
+        this.index = relationship.getIndex();
+        this.managed = relationship.isManaged();
+        this.type = relationship.getType();
+        this.target = cloneTarget( relationship.getTarget() );
+    }
+
+    protected abstract T cloneTarget( T target );
 
     @Override
     public final boolean isManaged()

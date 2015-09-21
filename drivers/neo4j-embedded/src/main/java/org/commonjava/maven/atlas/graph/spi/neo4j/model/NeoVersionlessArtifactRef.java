@@ -18,6 +18,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.InvalidRefException;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleVersionlessArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.TypeAndClassifier;
 import org.commonjava.maven.atlas.ident.ref.VersionlessArtifactRef;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
@@ -30,8 +31,8 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  *
  * @author jdcasey
  */
-public class NeoVersionlessArtifactRef
-        extends NeoProjectRef
+public class NeoVersionlessArtifactRef<T extends VersionlessArtifactRef>
+        extends NeoProjectRef<T>
         implements VersionlessArtifactRef
 {
 
@@ -233,5 +234,11 @@ public class NeoVersionlessArtifactRef
         }
 
         return super.asVersionlessArtifactRef( tc, optional );
+    }
+
+    @Override
+    public T detach()
+    {
+        return (T) new SimpleVersionlessArtifactRef( this );
     }
 }

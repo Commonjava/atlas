@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.graph.rel.AbstractSimpleProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.rel.SimpleParentRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
@@ -124,5 +125,11 @@ public final class NeoParentRelationship
         return isTerminus() ?
                 Collections.singleton( RelationshipUtils.TERMINAL_PARENT_SOURCE_URI ) :
                 super.getSources();
+    }
+
+    @Override
+    public ParentRelationship detach()
+    {
+        return new SimpleParentRelationship( this );
     }
 }

@@ -17,6 +17,7 @@ package org.commonjava.maven.atlas.graph.spi.neo4j.traverse;
 
 import static org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions.toProjectRelationship;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -29,7 +30,6 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.commonjava.maven.atlas.graph.traverse.RelationshipGraphTraversal;
@@ -57,8 +57,6 @@ public class MembershipWrappedTraversalEvaluator<STATE>
     private boolean reversedExpander;
 
     private final ViewParams view;
-
-    private ConversionCache cache = new ConversionCache();
 
     private final GraphAdmin admin;
 
@@ -94,11 +92,6 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         this.reversedExpander = reversedExpander;
     }
 
-    public void setConversionCache( final ConversionCache cache )
-    {
-        this.cache = cache;
-    }
-
     @Override
     public Evaluation evaluate( final Path path )
     {
@@ -113,9 +106,11 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         if ( roots == null || roots.isEmpty() || roots.contains( path.startNode()
                                                                      .getId() ) )
         {
-            final ProjectRelationship<?, ?> lastRel = Conversions.toProjectRelationship( rel, cache );
+            final ProjectRelationship<?, ?> lastRel = Conversions.toProjectRelationship( rel );
 
-            final List<ProjectRelationship<?, ?>> relPath = Conversions.convertToRelationships( path.relationships(), cache );
+            final List<ProjectRelationship<?, ?>> relPath = new ArrayList<ProjectRelationship<?, ?>>(path.length());
+            relPath.addAll( Conversions.convertToRelationships( path.relationships() ) );
+
             if ( relPath.indexOf( lastRel ) == relPath.size() - 1 )
             {
                 //                logger.warn( "\n\n\n\n\nREMOVING last-relationship: {} from path!\n\n\n\n\n" );
@@ -157,7 +152,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
         for ( final Long rid : graphPath )
         {
             final Relationship r = admin.getRelationship( rid );
-            pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r, cache ) );
+            pathInfo = pathInfo.getChildPathInfo( toProjectRelationship( r ) );
         }
 
         GraphRelType[] childTypes = types;
@@ -209,7 +204,7 @@ public class MembershipWrappedTraversalEvaluator<STATE>
             }
             //            logger.info( "Attempting to expand: {}", r );
 
-            final ProjectRelationship<?, ?> projectRel = Conversions.toProjectRelationship( r, cache );
+            final ProjectRelationship<?, ?> projectRel = Conversions.toProjectRelationship( r );
 
             logger.debug( "Pre-checking relationship {} for expansion using filter: {}", projectRel, traversal );
             if ( traversal.preCheck( projectRel, rels ) )
@@ -229,16 +224,11 @@ public class MembershipWrappedTraversalEvaluator<STATE>
 
     private List<ProjectRelationship<?, ?>> getPathRelationships( final Path path )
     {
-        List<ProjectRelationship<?, ?>> rels;
+        List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>(path.length());
         final Iterable<Relationship> rs = path.relationships();
-        if ( rs == null )
+        if ( rs != null )
         {
-            //            logger.info( "Constructing empty relationship list for filter." );
-            rels = Collections.emptyList();
-        }
-        else
-        {
-            rels = Conversions.convertToRelationships( rs, cache );
+            rels.addAll( Conversions.convertToRelationships( rs ) );
             //            logger.info( "Got relationship list {} entries long for filter", rels.size() );
         }
 

@@ -28,7 +28,6 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphAdmin;
 import org.commonjava.maven.atlas.graph.spi.neo4j.ViewIndexes;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
@@ -52,8 +51,6 @@ public class ViewUpdater
 
     private final Node viewNode;
 
-    private final ConversionCache cache;
-
     private final GraphAdmin admin;
 
     private final CycleCacheUpdater cycleUpdater;
@@ -63,25 +60,22 @@ public class ViewUpdater
     private Node stopNode;
 
     public ViewUpdater( final ViewParams view, final Node viewNode, final ViewIndexes indexes,
-                        final ConversionCache cache, final GraphAdmin admin )
+                        final GraphAdmin admin )
     {
         this.viewNode = viewNode;
         this.indexes = indexes;
-        this.cache = cache;
         this.admin = admin;
-        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin, cache );
+        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin );
     }
 
     public ViewUpdater( final Node stopNode, final ViewParams view, final Node viewNode, final ViewIndexes indexes,
-                        final ConversionCache cache,
                         final GraphAdmin admin )
     {
         this.stopNode = stopNode;
         this.viewNode = viewNode;
         this.indexes = indexes;
-        this.cache = cache;
         this.admin = admin;
-        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin, cache );
+        this.cycleUpdater = new CycleCacheUpdater( view, viewNode, admin );
     }
 
     public void cacheRoots( final Set<Node> roots )
@@ -148,7 +142,6 @@ public class ViewUpdater
     @Override
     public void configure( final AtlasCollector<?> collector )
     {
-        collector.setConversionCache( cache );
         cycleUpdater.configure( collector );
     }
 

@@ -15,8 +15,6 @@
  */
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
-import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Relationship;
 
@@ -27,16 +25,13 @@ public class RelToString
 {
     private Relationship rel;
 
-    private final ConversionCache cache;
-
-    public RelToString( Relationship rel, ConversionCache cache )
+    public RelToString( Relationship rel )
     {
         this.rel = rel;
-        this.cache = cache;
     }
 
     public String toString()
     {
-        return Conversions.toProjectRelationship( rel, cache ).toString();
+        return Conversions.toProjectRelationship( rel ).toString();
     }
 }
