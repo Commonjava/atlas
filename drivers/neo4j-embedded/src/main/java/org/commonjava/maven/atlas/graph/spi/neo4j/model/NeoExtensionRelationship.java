@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.graph.rel.AbstractSimpleProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
 import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.rel.SimpleExtensionRelationship;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -58,6 +59,12 @@ public final class NeoExtensionRelationship
     public ArtifactRef getTargetArtifact()
     {
         return getTarget().asJarArtifact();
+    }
+
+    @Override
+    public ExtensionRelationship detach()
+    {
+        return new SimpleExtensionRelationship( this );
     }
 
     @Override

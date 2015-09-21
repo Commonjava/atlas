@@ -23,11 +23,11 @@ import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
 import org.commonjava.maven.atlas.graph.rel.*;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.AbstractNeoProjectRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.CyclePath;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoProjectVersionRef;
 import org.commonjava.maven.atlas.graph.spi.neo4j.traverse.*;
 import org.commonjava.maven.atlas.graph.spi.neo4j.update.CycleCacheUpdater;
 import org.commonjava.maven.atlas.graph.spi.neo4j.update.ViewUpdater;
@@ -243,7 +243,7 @@ public class FileNeo4JGraphConnection
         {
             final Node node = hits.next();
             final Iterable<Relationship> relationships = node.getRelationships( Direction.OUTGOING );
-            return convertToRelationships( relationships, new ConversionCache() );
+            return convertToRelationships( relationships );
         }
 
         return null;
@@ -263,7 +263,6 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final ConversionCache cache = new ConversionCache();
         if ( registerView( params ) )
         {
             final Node node = getNode( ref );
@@ -288,7 +287,7 @@ public class FileNeo4JGraphConnection
             while ( hits.hasNext() )
             {
                 final Relationship r = hits.next();
-                final ProjectRelationship<?, ?> rel = toProjectRelationship( r, cache );
+                final ProjectRelationship<?, ?> rel = toProjectRelationship( r );
                 result.add( rel );
             }
 
@@ -305,7 +304,7 @@ public class FileNeo4JGraphConnection
             final Node node = hits.next();
             // FIXME: What if this params has a filter or mutator?? Without a root, that would be very strange...
             final Iterable<Relationship> relationships = node.getRelationships( Direction.INCOMING );
-            return convertToRelationships( relationships, cache );
+            return convertToRelationships( relationships );
         }
 
         return null;
@@ -316,29 +315,28 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
+
         logger.debug( "Getting all-projects for: {}", params );
-        final ConversionCache cache = new ConversionCache();
         if ( registerView( params ) )
         {
             final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
 
-            final IndexHits<Node> nodeHits = cachedNodes.query( NID, "*" );
             final Set<ProjectVersionRef> nodes = new HashSet<ProjectVersionRef>();
+            final IndexHits<Node> nodeHits = cachedNodes.query( NID, "*" );
             while ( nodeHits.hasNext() )
             {
-                nodes.add( toProjectVersionRef( nodeHits.next(), cache ) );
+                nodes.add( toProjectVersionRef( nodeHits.next() ).detach() );
             }
 
             return nodes;
         }
 
         // FIXME: What if this params has a filter or mutator?? Without a root, that would be very strange...
-        return new HashSet<ProjectVersionRef>( convertToProjects( graph.index()
-                                                                       .forNodes( BY_GAV_IDX )
-                                                                       .query( GAV, "*" ), cache ) );
+        return new HashSet<ProjectVersionRef>(
+                convertToDetachedProjects( graph.index().forNodes( BY_GAV_IDX ).query( GAV, "*" ) ) );
     }
 
-    private void updateView( final ViewParams params, final ConversionCache cache )
+    private void updateView( final ViewParams params )
     {
         if ( params.getRoots() == null || params.getRoots()
                                                 .isEmpty() )
@@ -362,7 +360,7 @@ public class FileNeo4JGraphConnection
                 return;
             }
 
-            final ViewUpdater updater = new ViewUpdater( params, paramsNode, indexes, cache, adminAccess );
+            final ViewUpdater updater = new ViewUpdater( params, paramsNode, indexes, adminAccess );
             collectAtlasRelationships( params, updater, roots, false, Uniqueness.RELATIONSHIP_GLOBAL );
 
             logger.debug( "Traverse complete for update of params: {}", params.getShortId() );
@@ -378,7 +376,6 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final ConversionCache cache = new ConversionCache();
         if ( registerView( params ) )
         {
             final RelationshipIndex cachedRels = new ViewIndexes( graph.index(), params ).getCachedRelationships();
@@ -387,7 +384,7 @@ public class FileNeo4JGraphConnection
             final Set<ProjectRelationship<?, ?>> rels = new HashSet<ProjectRelationship<?, ?>>();
             while ( relHits.hasNext() )
             {
-                rels.add( toProjectRelationship( relHits.next(), cache ) );
+                rels.add( toProjectRelationship( relHits.next() ).detach() );
             }
 
             return rels;
@@ -398,7 +395,7 @@ public class FileNeo4JGraphConnection
                                                   .query( RELATIONSHIP_ID, "*" );
         synchronized ( hits )
         {
-            return convertToRelationships( hits, cache );
+            return convertToDetachedRelationships( hits );
         }
     }
 
@@ -415,8 +412,7 @@ public class FileNeo4JGraphConnection
 
         final Set<Node> endNodes = getNodes( refs );
 
-        final ConversionCache cache = new ConversionCache();
-        final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes, cache );
+        final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes );
         collectAtlasRelationships( params, visitor, getRoots( params ), false, Uniqueness.RELATIONSHIP_GLOBAL );
 
         final Map<GraphPath<?>, GraphPathInfo> result = new HashMap<GraphPath<?>, GraphPathInfo>();
@@ -426,7 +422,7 @@ public class FileNeo4JGraphConnection
             for ( final Long rid : path )
             {
                 final Relationship r = graph.getRelationshipById( rid );
-                info = info.getChildPathInfo( toProjectRelationship( r, cache ) );
+                info = info.getChildPathInfo( toProjectRelationship( r ) );
             }
 
             result.put( path, info );
@@ -459,7 +455,7 @@ public class FileNeo4JGraphConnection
         final Relationship rel = graph.getRelationshipById( rid );
         final Node target = rel.getEndNode();
 
-        return toProjectVersionRef( target, null );
+        return toProjectVersionRef( target );
     }
 
     @Override
@@ -474,14 +470,13 @@ public class FileNeo4JGraphConnection
 
         final Set<Node> endNodes = getNodes( refs );
 
-        final ConversionCache cache = new ConversionCache();
-        final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes, cache );
+        final PathCollectingVisitor visitor = new PathCollectingVisitor( endNodes );
         collectAtlasRelationships( params, visitor, getRoots( params ), false, Uniqueness.RELATIONSHIP_GLOBAL );
 
         final Set<List<ProjectRelationship<?, ?>>> result = new HashSet<List<ProjectRelationship<?, ?>>>();
         for ( final Neo4jGraphPath path : visitor )
         {
-            result.add( convertToRelationships( path, adminAccess, cache ) );
+            result.add( convertToDetachedRelationships( path, adminAccess ) );
         }
 
         return result;
@@ -509,7 +504,6 @@ public class FileNeo4JGraphConnection
     {
         checkClosed();
 
-        final ConversionCache cache = new ConversionCache();
         final Map<Long, ProjectRelationship<?, ?>> createdRelationshipsMap = new HashMap<Long, ProjectRelationship<?, ?>>();
 
         final List<ProjectRelationship<?, ?>> sorted = new ArrayList<ProjectRelationship<?, ?>>( Arrays.asList( rels ) );
@@ -530,15 +524,14 @@ public class FileNeo4JGraphConnection
 
             List<ProjectRelationship<?, ?>> batch = sorted.subList( processed, upper );
             logger.info( "\n\n\nInserting relationship batch of size: {}\n\n\n\n", batch.size() );
-            insertRelationshipBatch( batch, cache, createdRelationshipsMap );
+            insertRelationshipBatch( batch, createdRelationshipsMap );
             processed += batch.size();
         }
 
         return createdRelationshipsMap;
     }
 
-    private void insertRelationshipBatch( List<ProjectRelationship<?, ?>> rels, ConversionCache cache,
-                                          Map<Long, ProjectRelationship<?, ?>> createdRelationshipsMap )
+    private void insertRelationshipBatch( List<ProjectRelationship<?, ?>> rels, Map<Long, ProjectRelationship<?, ?>> createdRelationshipsMap )
     {
         final Transaction tx = graph.beginTx();
         try
@@ -664,7 +657,7 @@ public class FileNeo4JGraphConnection
                 }
                 else
                 {
-                    logger.debug( "== {} ({})", relationship, new RelToString( relationship, cache ) );
+                    logger.debug( "== {} ({})", relationship, new RelToString( relationship ) );
 
                     addToURISetProperty( rel.getSources(), SOURCE_URI, relationship );
                 }
@@ -762,7 +755,7 @@ public class FileNeo4JGraphConnection
             return graph.getRelationshipById( targetRid );
         }
 
-        final ProjectRelationship<?, ?> oldRel = toProjectRelationship( old, null );
+        final ProjectRelationship<?, ?> oldRel = toProjectRelationship( old );
         if ( oldRel == null )
         {
             return null;
@@ -880,16 +873,12 @@ public class FileNeo4JGraphConnection
         //            logger.debug( "starting traverse of: {}", net );
         traversal.startTraverse( graph );
 
-        final ConversionCache cache = new ConversionCache();
-
         final Node paramsNode = getViewNode( params );
 
         @SuppressWarnings( { "rawtypes", "unchecked" } )
         final MembershipWrappedTraversalEvaluator checker =
             new MembershipWrappedTraversalEvaluator( Collections.singleton( rootNode.getId() ), traversal, this,
                                                      params, paramsNode, adminAccess, relTypes );
-
-        checker.setConversionCache( cache );
 
         description = description.expand( checker )
                                  .evaluator( checker );
@@ -905,7 +894,9 @@ public class FileNeo4JGraphConnection
                     continue;
                 }
 
-                final List<ProjectRelationship<?, ?>> rels = convertToRelationships( path.relationships(), cache );
+                final List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>(path.length());
+                rels.addAll( convertToRelationships( path.relationships() ) );
+
                 logger.debug( "traversing path: {}", rels );
                 for ( final ProjectRelationship<?, ?> rel : rels )
                 {
@@ -1159,7 +1150,6 @@ public class FileNeo4JGraphConnection
 
         final Set<ProjectVersionRef> result = new HashSet<ProjectVersionRef>();
 
-        final ConversionCache cache = new ConversionCache();
         if ( registerView( params ) )
         {
             final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
@@ -1171,7 +1161,7 @@ public class FileNeo4JGraphConnection
                 if ( cacheHits.hasNext() )
                 {
                     logger.debug( "Including: {}", node );
-                    result.add( toProjectVersionRef( node, cache ) );
+                    result.add( toProjectVersionRef( node ) );
                 }
             }
         }
@@ -1180,7 +1170,7 @@ public class FileNeo4JGraphConnection
             for ( final Node node : hits )
             {
                 logger.debug( "Including: {}", node );
-                result.add( toProjectVersionRef( node, cache ) );
+                result.add( toProjectVersionRef( node ) );
             }
         }
 
@@ -1343,8 +1333,6 @@ public class FileNeo4JGraphConnection
             return null;
         }
 
-        final ConversionCache cache = new ConversionCache();
-
         final Transaction tx = graph.beginTx();
         Node paramsNode;
         try
@@ -1370,7 +1358,7 @@ public class FileNeo4JGraphConnection
                 //                }
 
                 logger.info( "Traversing graph to find cycles for params {}", params.getShortId() );
-                final CycleCacheUpdater cycleUpdater = new CycleCacheUpdater( params, paramsNode, adminAccess, cache );
+                final CycleCacheUpdater cycleUpdater = new CycleCacheUpdater( params, paramsNode, adminAccess );
                 // NOTE: Changing this means some cases of morphing filters/mutators may NOT report correct results.
                 //                collectAtlasRelationships( params, cycleUpdater, nodes, false, global ? Uniqueness.RELATIONSHIP_GLOBAL : Uniqueness.RELATIONSHIP_PATH );
                 collectAtlasRelationships( params, cycleUpdater, nodes, false, Uniqueness.RELATIONSHIP_GLOBAL );
@@ -1409,12 +1397,8 @@ public class FileNeo4JGraphConnection
             final List<ProjectRelationship<?, ?>> cycle = new ArrayList<ProjectRelationship<?, ?>>( cyclicPath.length() + 1 );
             for ( final long id : cyclicPath.getRelationshipIds() )
             {
-                ProjectRelationship<?, ?> rel = cache.getRelationship( id );
-                if ( rel == null )
-                {
-                    final Relationship r = graph.getRelationshipById( id );
-                    rel = toProjectRelationship( r, cache );
-                }
+                final Relationship r = graph.getRelationshipById( id );
+                ProjectRelationship<?, ?> rel = toProjectRelationship( r );
                 cycle.add( rel );
             }
 
@@ -1706,7 +1690,6 @@ public class FileNeo4JGraphConnection
                                            .forNodes( METADATA_INDEX_PREFIX + key )
                                            .query( GAV, "*" );
 
-        final ConversionCache cache = new ConversionCache();
         if ( registerView( params ) )
         {
             final Index<Node> cachedNodes = new ViewIndexes( graph.index(), params ).getCachedNodes();
@@ -1717,7 +1700,7 @@ public class FileNeo4JGraphConnection
                 if ( cachedNodes.get( NID, node.getId() )
                                 .hasNext() )
                 {
-                    result.add( toProjectVersionRef( node, cache ) );
+                    result.add( toProjectVersionRef( node ) );
                 }
             }
 
@@ -1725,7 +1708,7 @@ public class FileNeo4JGraphConnection
         }
         else
         {
-            return new HashSet<ProjectVersionRef>( convertToProjects( nodes, cache ) );
+            return new HashSet<ProjectVersionRef>( convertToProjects( nodes ) );
         }
     }
 
@@ -1793,12 +1776,11 @@ public class FileNeo4JGraphConnection
         {
             final Set<ProjectRelationship<?, ?>> result = new HashSet<ProjectRelationship<?, ?>>();
 
-            final ConversionCache cache = new ConversionCache();
             for ( final Relationship r : relationships )
             {
-                if ( TraversalUtils.acceptedInView( r, params, cache ) )
+                if ( TraversalUtils.acceptedInView( r, params ) )
                 {
-                    final ProjectRelationship<?, ?> rel = toProjectRelationship( r, cache );
+                    final ProjectRelationship<?, ?> rel = toProjectRelationship( r );
                     if ( rel != null )
                     {
                         result.add( rel );
@@ -1853,16 +1835,15 @@ public class FileNeo4JGraphConnection
         final Iterable<Relationship> relationships =
             node.getRelationships( Direction.INCOMING, grts.toArray( new GraphRelType[grts.size()] ) );
 
-        final ConversionCache cache = new ConversionCache();
         if ( relationships != null )
         {
             final Set<ProjectRelationship<?, ?>> result = new HashSet<ProjectRelationship<?, ?>>();
             for ( final Relationship r : relationships )
             {
                 logger.debug( "Examining relationship: {}", r );
-                if ( TraversalUtils.acceptedInView( r, params, cache ) )
+                if ( TraversalUtils.acceptedInView( r, params ) )
                 {
-                    final ProjectRelationship<?, ?> rel = toProjectRelationship( r, cache );
+                    final ProjectRelationship<?, ?> rel = toProjectRelationship( r );
                     if ( rel != null )
                     {
                         result.add( rel );
@@ -1883,7 +1864,7 @@ public class FileNeo4JGraphConnection
                                           .forNodes( BY_GA_IDX )
                                           .query( GA, projectRef.asProjectRef()
                                                                 .toString() );
-        return new HashSet<ProjectVersionRef>( convertToProjects( hits, new ConversionCache() ) );
+        return new HashSet<ProjectVersionRef>( convertToProjects( hits ) );
     }
 
     @Override
@@ -1955,7 +1936,6 @@ public class FileNeo4JGraphConnection
         //        logger.info( "Searching for managed override of: {} in: {}", target, path );
         final Neo4jGraphPath neopath = (Neo4jGraphPath) path;
 
-        final ConversionCache cache = new ConversionCache();
         for ( final Long id : neopath )
         {
             final Relationship r = graph.getRelationshipById( id );
@@ -1970,9 +1950,9 @@ public class FileNeo4JGraphConnection
             if ( hits != null && hits.hasNext() )
             {
                 final Relationship hit = hits.next();
-                final ProjectVersionRef ref = toProjectVersionRef( hit.getEndNode(), cache );
+                final ProjectVersionRef ref = toProjectVersionRef( hit.getEndNode() );
 
-                logger.debug( "[MUTATION] {} => {} (via: {})", target, ref, new RelToString( hit, cache ) );
+                logger.debug( "[MUTATION] {} => {} (via: {})", target, ref, new RelToString( hit ) );
 
                 return ref;
             }
@@ -2006,10 +1986,8 @@ public class FileNeo4JGraphConnection
                 + ". This is not a Neo4jGraphPathKey instance!" );
         }
 
-        final ConversionCache cache = new ConversionCache();
-
         final Neo4jGraphPath gp = (Neo4jGraphPath) path;
-        final List<ProjectRelationship<?, ?>> rels = convertToRelationships( gp, adminAccess, cache );
+        final List<AbstractNeoProjectRelationship<?, ?, ?>> rels = convertToRelationships( gp, adminAccess );
         final List<ProjectVersionRef> refs = new ArrayList<ProjectVersionRef>( rels.size() + 2 );
         for ( final ProjectRelationship<?, ?> rel : rels )
         {
@@ -2025,7 +2003,7 @@ public class FileNeo4JGraphConnection
         if ( refs.isEmpty() )
         {
             final Node node = graph.getNodeById( gp.getStartNodeId() );
-            final ProjectVersionRef ref = toProjectVersionRef( node, cache );
+            final ProjectVersionRef ref = toProjectVersionRef( node );
             if ( ref != null )
             {
                 refs.add( ref );
@@ -2119,7 +2097,7 @@ public class FileNeo4JGraphConnection
             return false;
         }
 
-        updateView( params, new ConversionCache() );
+        updateView( params );
 
         return true;
     }
@@ -2296,8 +2274,6 @@ public class FileNeo4JGraphConnection
 
         final IndexHits<Node> hits = confIdx.query( VIEW_ID, "*" );
 
-        final ConversionCache cache = new ConversionCache();
-
         Transaction tx = graph.beginTx();
         try
         {
@@ -2313,7 +2289,7 @@ public class FileNeo4JGraphConnection
 
         for ( final Node paramsNode : hits )
         {
-            final ViewParams params = Conversions.retrieveView( paramsNode, cache, adminAccess );
+            final ViewParams params = Conversions.retrieveView( paramsNode, adminAccess );
             logger.debug( "Updating params: {} ({})", params.getShortId(), paramsNode );
 
             //            if ( params == null || params.getShortId()
@@ -2342,7 +2318,7 @@ public class FileNeo4JGraphConnection
             }
 
             final ViewIndexes vi = new ViewIndexes( graph.index(), params );
-            final ViewUpdater vu = new ViewUpdater( params, paramsNode, vi, cache, adminAccess );
+            final ViewUpdater vu = new ViewUpdater( params, paramsNode, vi, adminAccess );
             vu.cacheRoots( getRoots( params, false ) );
             if ( vu.processAddedRelationships( newRelationships ) )
             {

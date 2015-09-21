@@ -19,6 +19,8 @@ import static org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoIdentityUtils.
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.ref.InvalidRefException;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
+import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectRef;
 import org.commonjava.maven.atlas.ident.ref.TypeAndClassifier;
 import org.commonjava.maven.atlas.ident.ref.VersionlessArtifactRef;
 import org.neo4j.graphdb.Node;
@@ -34,7 +36,7 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  *
  * @author jdcasey
  */
-public class NeoProjectRef
+public class NeoProjectRef<T extends ProjectRef>
     implements ProjectRef
 {
 
@@ -252,5 +254,10 @@ public class NeoProjectRef
     public boolean isDirty()
     {
         return groupId != null || artifactId != null;
+    }
+
+    public T detach()
+    {
+        return (T) new SimpleProjectRef( this );
     }
 }

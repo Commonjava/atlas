@@ -20,6 +20,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.InvalidRefException;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.TypeAndClassifier;
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.SingleVersion;
@@ -41,8 +42,8 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
  * 
  * @author jdcasey
  */
-public class NeoArtifactRef
-    extends NeoProjectVersionRef
+public class NeoArtifactRef<T extends ArtifactRef>
+    extends NeoProjectVersionRef<T>
     implements Serializable, ArtifactRef
 {
 
@@ -249,5 +250,11 @@ public class NeoArtifactRef
     public boolean isDirty()
     {
         return super.isDirty() || optional != null || tc.isDirty();
+    }
+
+    @Override
+    public T detach()
+    {
+        return (T) new SimpleArtifactRef( this );
     }
 }

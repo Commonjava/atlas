@@ -16,7 +16,6 @@
 package org.commonjava.maven.atlas.graph.spi.neo4j;
 
 import org.commonjava.maven.atlas.graph.rel.RelationshipPathComparator;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.neo4j.graphdb.Path;
 import org.neo4j.graphdb.Relationship;
@@ -33,8 +32,6 @@ public final class PathComparator
     public static final PathComparator INSTANCE = new PathComparator();
 
     private final RelationshipPathComparator pathComparator = RelationshipPathComparator.INSTANCE;
-
-    private final ConversionCache cache = new ConversionCache();
 
     private PathComparator()
     {

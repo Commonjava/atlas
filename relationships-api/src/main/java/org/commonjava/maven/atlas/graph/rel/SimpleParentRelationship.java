@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 
 import java.io.Serializable;
 import java.net.URI;
@@ -63,10 +64,21 @@ public final class SimpleParentRelationship
         super( sources, RelationshipType.PARENT, declaring, target, 0 );
     }
 
+    public SimpleParentRelationship( ParentRelationship relationship )
+    {
+        super( relationship );
+    }
+
     @Override
     public String toString()
     {
         return String.format( "ParentRelationship [%s => %s]", getDeclaring(), getTarget() );
+    }
+
+    @Override
+    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    {
+        return new SimpleProjectVersionRef( target );
     }
 
     @Override

@@ -20,7 +20,6 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.model.GraphPathInfo;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.Neo4jGraphPath;
 import org.neo4j.graphdb.Node;
 import org.neo4j.graphdb.Path;
@@ -34,12 +33,9 @@ public class PathCollectingVisitor
 
     private final Set<Neo4jGraphPath> paths = new HashSet<Neo4jGraphPath>();
 
-    private final ConversionCache cache;
-
-    public PathCollectingVisitor( final Set<Node> ends, final ConversionCache cache )
+    public PathCollectingVisitor( final Set<Node> ends )
     {
         this.ends = ends;
-        this.cache = cache;
     }
 
     public Set<Neo4jGraphPath> getPaths()
@@ -57,12 +53,6 @@ public class PathCollectingVisitor
         }
 
         return true;
-    }
-
-    @Override
-    public void configure( final AtlasCollector<?> collector )
-    {
-        collector.setConversionCache( cache );
     }
 
     @Override

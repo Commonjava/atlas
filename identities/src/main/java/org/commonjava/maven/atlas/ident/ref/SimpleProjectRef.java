@@ -46,6 +46,12 @@ public class SimpleProjectRef
         this.artifactId = artifactId;
     }
 
+    public <T extends ProjectRef> SimpleProjectRef( ProjectRef ref )
+    {
+        this.groupId = ref.getGroupId();
+        this.artifactId = ref.getArtifactId();
+    }
+
     public static ProjectRef parse( final String ga )
     {
         final String[] parts = ga.split( ":" );

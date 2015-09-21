@@ -210,4 +210,6 @@ public abstract class AbstractNeoProjectRelationship<R extends AbstractNeoProjec
         return getType() == other.getType();
     }
 
+    public abstract I detach();
+
 }

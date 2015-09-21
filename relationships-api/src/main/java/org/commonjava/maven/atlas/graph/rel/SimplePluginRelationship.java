@@ -23,6 +23,7 @@ import java.util.Set;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 
 public final class SimplePluginRelationship
     extends AbstractSimpleProjectRelationship<PluginRelationship, ProjectVersionRef>
@@ -69,6 +70,12 @@ public final class SimplePluginRelationship
         this.reporting = reporting;
     }
 
+    public SimplePluginRelationship( PluginRelationship relationship )
+    {
+        super( relationship );
+        this.reporting = relationship.isReporting();
+    }
+
     @Override
     public final boolean isReporting()
     {
@@ -108,6 +115,12 @@ public final class SimplePluginRelationship
     {
         return String.format( "PluginRelationship [%s => %s (managed=%s, index=%s)]", getDeclaring(), getTarget(),
                               isManaged(), getIndex() );
+    }
+
+    @Override
+    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    {
+        return new SimpleProjectVersionRef( target );
     }
 
     @Override

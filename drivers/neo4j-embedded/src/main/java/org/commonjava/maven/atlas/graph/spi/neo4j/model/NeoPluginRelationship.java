@@ -19,6 +19,7 @@ import org.commonjava.maven.atlas.graph.rel.AbstractSimpleProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
 import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.graph.rel.SimplePluginRelationship;
 import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -74,6 +75,12 @@ public final class NeoPluginRelationship
         }
         final PluginRelationship other = (PluginRelationship) obj;
         return isManaged() == other.isManaged();
+    }
+
+    @Override
+    public PluginRelationship detach()
+    {
+        return new SimplePluginRelationship( this );
     }
 
     @Override

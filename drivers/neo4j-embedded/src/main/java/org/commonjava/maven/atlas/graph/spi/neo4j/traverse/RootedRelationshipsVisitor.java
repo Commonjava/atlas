@@ -63,7 +63,7 @@ public class RootedRelationshipsVisitor
             }
             else
             {
-                found.add( Conversions.toProjectRelationship( r, getConversionCache() ) );
+                found.add( Conversions.toProjectRelationship( r ) );
             }
         }
 

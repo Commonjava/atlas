@@ -32,7 +32,6 @@ import org.commonjava.maven.atlas.graph.filter.ProjectRelationshipFilter;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.spi.neo4j.GraphRelType;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.ConversionCache;
 import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.neo4j.graphdb.Relationship;
 import org.slf4j.Logger;
@@ -70,14 +69,14 @@ public final class TraversalUtils
     //        return true;
     //    }
 
-    public static boolean acceptedInView( final Relationship r, final ViewParams view, final ConversionCache cache )
+    public static boolean acceptedInView( final Relationship r, final ViewParams view )
     {
-        return accepted( r, view, cache );
+        return accepted( r, view );
     }
 
-    public static boolean accepted( final Relationship r, final ViewParams view, final ConversionCache cache )
+    public static boolean accepted( final Relationship r, final ViewParams view )
     {
-        final ProjectRelationship<?, ?> rel = toProjectRelationship( r, cache );
+        final ProjectRelationship<?, ?> rel = toProjectRelationship( r );
 
         debug( "Checking relationship for acceptance: {} ({})", r, rel );
 
