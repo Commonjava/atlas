@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -99,7 +100,18 @@ public class FileNeo4jConnectionFactory
     @Override
     public Set<String> listWorkspaces()
     {
-        return new HashSet<String>( Arrays.asList( dbBaseDirectory.list() ) );
+        if( !dbBaseDirectory.exists() )
+        {
+            return Collections.emptySet();
+        }
+
+        String[] listing = dbBaseDirectory.list();
+        if ( listing == null )
+        {
+            return Collections.emptySet();
+        }
+
+        return new HashSet<String>( Arrays.asList( listing ) );
     }
 
     @Override
