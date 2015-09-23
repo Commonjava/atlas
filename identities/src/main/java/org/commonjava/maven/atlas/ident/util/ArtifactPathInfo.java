@@ -15,7 +15,9 @@
  */
 package org.commonjava.maven.atlas.ident.util;
 
+import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
+import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
 import org.commonjava.maven.atlas.ident.version.part.SnapshotPart;
 
@@ -255,6 +257,11 @@ public class ArtifactPathInfo
     public ProjectVersionRef getProjectId()
     {
         return new SimpleProjectVersionRef( getGroupId(), getArtifactId(), getVersion() );
+    }
+
+    public ArtifactRef getArtifact()
+    {
+        return new SimpleArtifactRef( getGroupId(), getArtifactId(), getVersion(), getType(), getClassifier(), false );
     }
 
 }
