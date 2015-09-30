@@ -53,7 +53,7 @@ public class RelationshipGraph_StoreAndVerifyInView_TCK
         final ProjectVersionRef d2 = new SimpleProjectVersionRef( "g", "d2", "2" );
 
         final RelationshipGraph graph =
-            openGraph( new ViewParams( newWorkspaceId(), new DependencyFilter(), new ManagedDependencyMutator(), gav ),
+            openGraph( new ViewParams( newWorkspaceId(), new DependencyFilter(), ManagedDependencyMutator.INSTANCE, gav ),
                        true );
 
         /* @formatter:off */
