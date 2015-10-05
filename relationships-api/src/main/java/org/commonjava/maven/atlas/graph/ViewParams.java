@@ -155,7 +155,7 @@ public class ViewParams
 
     public GraphMutator getMutator()
     {
-        return mutator == null ? new ManagedDependencyMutator() : mutator;
+        return mutator == null ? ManagedDependencyMutator.INSTANCE : mutator;
     }
 
     public ProjectRelationshipFilter getFilter()
@@ -449,7 +449,7 @@ public class ViewParams
             this.properties = new HashMap<String, String>();
             this.selections = new HashMap<ProjectRef, ProjectVersionRef>();
             this.filter = AnyFilter.INSTANCE;
-            this.mutator = new ManagedDependencyMutator();
+            this.mutator = ManagedDependencyMutator.INSTANCE;
         }
 
         public Builder( final String workspaceId, final Collection<ProjectVersionRef> roots )
@@ -461,7 +461,7 @@ public class ViewParams
             this.properties = new HashMap<String, String>();
             this.selections = new HashMap<ProjectRef, ProjectVersionRef>();
             this.filter = AnyFilter.INSTANCE;
-            this.mutator = new ManagedDependencyMutator();
+            this.mutator = ManagedDependencyMutator.INSTANCE;
         }
 
         public Builder( final ViewParams params )

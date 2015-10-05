@@ -27,8 +27,17 @@ public class ManagedDependencyMutator
     implements GraphMutator
 {
 
+    public static final ManagedDependencyMutator INSTANCE = new ManagedDependencyMutator();
+
     private static final long serialVersionUID = 1L;
 
+    /**
+     * Hidden constructor.
+     */
+    private ManagedDependencyMutator()
+    {
+    }
+    
     @Override
     public ProjectRelationship<?, ?> selectFor( final ProjectRelationship<?, ?> rel, final GraphPath<?> path,
                                              final RelationshipGraphConnection connection, final ViewParams params )
