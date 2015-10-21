@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import org.apache.commons.lang.StringUtils;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
@@ -240,8 +241,16 @@ public final class RelationshipGraphFactory
                 }
             };
 
-            logger.info( "Starting close-cache countdown for: {} ({}ms)", connection.getWorkspaceId(),
-                         CLOSE_WAIT_TIMEOUT );
+            if ( connection == null )
+            {
+                logger.warn( "Attempt to close an already closed ConnectionCache. Called from:\n  {}",
+                             StringUtils.join( (new Exception()).getStackTrace(), "\n  " ) );
+            }
+            else
+            {
+                logger.info( "Starting close-cache countdown for: {} ({}ms)",
+                             connection.getWorkspaceId(), CLOSE_WAIT_TIMEOUT );
+            }
 
             timer.schedule( closeTimer, CLOSE_WAIT_TIMEOUT );
         }
