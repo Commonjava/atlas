@@ -132,9 +132,10 @@ public class EProjectDirectRelationships
         return pluginDependencies;
     }
 
-    public final List<PluginDependencyRelationship> getPluginDependencies( final ProjectVersionRef plugin, final boolean managed )
+    public final List<PluginDependencyRelationship> getPluginDependencies( final ProjectVersionRef plugin, final boolean managed,
+                                                                           final boolean inherited )
     {
-        final PluginRelationship pr = new SimplePluginRelationship( source, getProjectRef(), plugin, 0, managed );
+        final PluginRelationship pr = new SimplePluginRelationship( source, getProjectRef(), plugin, 0, managed, inherited );
         return pluginDependencies.get( pr );
     }
 
@@ -446,10 +447,11 @@ public class EProjectDirectRelationships
             return managed ? managedPlugins.size() : plugins.size();
         }
 
-        public int getNextPluginDependencyIndex( final ProjectVersionRef plugin, final boolean managed )
+        public int getNextPluginDependencyIndex( final ProjectVersionRef plugin, final boolean managed,
+                                                 final boolean inherited )
         {
             final List<PluginDependencyRelationship> list =
-                pluginDependencies.get( new SimplePluginRelationship( source, ref, plugin, 0, managed ) );
+                pluginDependencies.get( new SimplePluginRelationship( source, ref, plugin, 0, managed, inherited ) );
             return list == null ? 0 : list.size();
         }
 
@@ -464,26 +466,26 @@ public class EProjectDirectRelationships
         }
 
         public Builder withDependency( final ProjectVersionRef ref, final String type, final String classifier, final DependencyScope scope,
-                                       final boolean managed )
+                                       final boolean managed, final boolean inherited )
         {
             withDependencies( new SimpleDependencyRelationship( source, ref, new SimpleArtifactRef( ref, type, classifier, false ),
                                                           scope,
-                                                          getNextDependencyIndex( managed ), managed ) );
+                                                          getNextDependencyIndex( managed ), managed, inherited ) );
 
             return this;
         }
 
-        public Builder withPlugin( final ProjectVersionRef ref, final boolean managed )
+        public Builder withPlugin( final ProjectVersionRef ref, final boolean managed, final boolean inherited )
         {
-            withPlugins( new SimplePluginRelationship( source, ref, ref, getNextPluginIndex( managed ), managed ) );
+            withPlugins( new SimplePluginRelationship( source, ref, ref, getNextPluginIndex( managed ), managed, inherited ) );
 
             return this;
         }
 
-        public Builder withExtension( final ProjectVersionRef ref )
+        public Builder withExtension( final ProjectVersionRef ref, final boolean inherited )
         {
             withExtensions( new SimpleExtensionRelationship( source, RelationshipUtils.POM_ROOT_URI, ref, ref,
-                                                       getNextExtensionIndex() ) );
+                                                       getNextExtensionIndex(), inherited ) );
             return this;
         }
 

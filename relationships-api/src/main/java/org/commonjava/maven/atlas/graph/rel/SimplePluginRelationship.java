@@ -35,42 +35,44 @@ public final class SimplePluginRelationship
     private final boolean reporting;
 
     public SimplePluginRelationship( final URI source, final ProjectVersionRef declaring,
-                                     final ProjectVersionRef target, final int index, final boolean managed )
+                                     final ProjectVersionRef target, final int index, final boolean managed,
+                                     final boolean inherited )
     {
-        this( source, declaring, target, index, managed, false );
+        this( source, declaring, target, index, managed, false, inherited );
     }
 
     public SimplePluginRelationship( final URI source, final ProjectVersionRef declaring,
                                      final ProjectVersionRef target, final int index, final boolean managed,
-                                     final boolean reporting )
+                                     final boolean reporting, final boolean inherited )
     {
-        super( source, RelationshipType.PLUGIN, declaring, target, index, managed );
+        super( source, RelationshipType.PLUGIN, declaring, target, index, managed, inherited, false );
         this.reporting = reporting;
     }
 
     public SimplePluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                                     final ProjectVersionRef target, final int index, final boolean managed )
+                                     final ProjectVersionRef target, final int index, final boolean managed,
+                                     final boolean inherited )
     {
-        this( source, pomLocation, declaring, target, index, managed, false );
+        this( source, pomLocation, declaring, target, index, managed, false, inherited );
     }
 
     public SimplePluginRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
                                      final ProjectVersionRef target, final int index, final boolean managed,
-                                     final boolean reporting )
+                                     final boolean reporting, final boolean inherited )
     {
-        super( source, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed );
+        super( source, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed, inherited, false );
         this.reporting = reporting;
     }
 
     public SimplePluginRelationship( final Collection<URI> sources, final URI pomLocation,
                                      final ProjectVersionRef declaring, final ProjectVersionRef target, final int index,
-                                     final boolean managed, final boolean reporting )
+                                     final boolean managed, final boolean reporting, final boolean inherited )
     {
-        super( sources, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed );
+        super( sources, pomLocation, RelationshipType.PLUGIN, declaring, target, index, managed, inherited, false );
         this.reporting = reporting;
     }
 
-    public SimplePluginRelationship( PluginRelationship relationship )
+    public SimplePluginRelationship( final PluginRelationship relationship )
     {
         super( relationship );
         this.reporting = relationship.isReporting();
@@ -118,7 +120,7 @@ public final class SimplePluginRelationship
     }
 
     @Override
-    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    protected ProjectVersionRef cloneTarget( final ProjectVersionRef target )
     {
         return new SimpleProjectVersionRef( target );
     }
@@ -134,7 +136,7 @@ public final class SimplePluginRelationship
     {
         final ProjectVersionRef t = getTarget();
 
-        return new SimplePluginRelationship( getSources(), getPomLocation(), ref, t, getIndex(), isManaged(), isReporting() );
+        return new SimplePluginRelationship( getSources(), getPomLocation(), ref, t, getIndex(), isManaged(), isReporting(), isInherited() );
     }
 
     @Override
@@ -142,31 +144,31 @@ public final class SimplePluginRelationship
     {
         final ProjectVersionRef d = getDeclaring();
 
-        return new SimplePluginRelationship( getSources(), getPomLocation(), d, ref, getIndex(), isManaged(), isReporting() );
+        return new SimplePluginRelationship( getSources(), getPomLocation(), d, ref, getIndex(), isManaged(), isReporting(), isInherited() );
     }
 
     @Override
     public synchronized PluginRelationship cloneFor( final ProjectVersionRef projectRef )
     {
         return new SimplePluginRelationship( getSources(), getPomLocation(), projectRef, getTarget(), getIndex(),
-                                             isManaged(), reporting );
+                                             isManaged(), reporting, isInherited() );
     }
 
     @Override
-    public PluginRelationship addSource( URI source )
+    public PluginRelationship addSource( final URI source )
     {
         Set<URI> srcs = getSources();
         srcs.add( source );
         return new SimplePluginRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(), getIndex(),
-                                             isManaged(), reporting );
+                                             isManaged(), reporting, isInherited() );
     }
 
     @Override
-    public PluginRelationship addSources( Collection<URI> sources )
+    public PluginRelationship addSources( final Collection<URI> sources )
     {
         Set<URI> srcs = getSources();
         srcs.addAll( sources );
         return new SimplePluginRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(), getIndex(),
-                                             isManaged(), reporting );
+                                             isManaged(), reporting, isInherited() );
     }
 }

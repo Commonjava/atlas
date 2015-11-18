@@ -60,9 +60,9 @@ public class RelationshipGraph_StoreAndVerifyInView_TCK
         graph.storeRelationships(
                 new SimpleParentRelationship(src, gav),
                 new SimpleDependencyRelationship(src, gav, d1.asArtifactRef("jar",
-                        null), DependencyScope.compile, 0, true),
+                        null), DependencyScope.compile, 0, true, false ),
                 new SimpleDependencyRelationship(src, gav, d2.asArtifactRef("jar",
-                        null), DependencyScope.compile, 1, true));
+                        null), DependencyScope.compile, 1, true, false ));
         /* @formatter:on */
 
         graph.containsGraph( gav );

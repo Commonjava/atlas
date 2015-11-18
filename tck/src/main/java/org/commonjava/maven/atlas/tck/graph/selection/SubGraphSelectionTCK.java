@@ -52,8 +52,8 @@ public class SubGraphSelectionTCK
         final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        graph.storeRelationships( new SimpleDependencyRelationship( source, project, new SimpleArtifactRef( varDep, null, null, false ), null, 0, false ),
-                                  new SimpleDependencyRelationship( source, varDep,  new SimpleArtifactRef( varD2,  null, null, false ), null, 0, false ) );
+        graph.storeRelationships( new SimpleDependencyRelationship( source, project, new SimpleArtifactRef( varDep, null, null, false ), null, 0, false, false ),
+                                  new SimpleDependencyRelationship( source, varDep,  new SimpleArtifactRef( varD2,  null, null, false ), null, 0, false, false ) );
         /* @formatter:on */
 
         Set<ProjectVersionRef> variables = graph.getVariableSubgraphs();

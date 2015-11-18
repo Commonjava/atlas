@@ -38,7 +38,7 @@ import static org.commonjava.maven.atlas.graph.jackson.SerializationConstants.*;
 public final class ProjectRelationshipSerializer<T extends ProjectRelationship>
         extends StdSerializer<T>
 {
-    public ProjectRelationshipSerializer( Class<T> cls )
+    public ProjectRelationshipSerializer( final Class<T> cls )
     {
         super( cls );
     }
@@ -51,6 +51,7 @@ public final class ProjectRelationshipSerializer<T extends ProjectRelationship>
         gen.writeStartObject();
         gen.writeStringField( RELATIONSHIP_TYPE, value.getType().name() );
         gen.writeStringField( POM_LOCATION_URI, value.getPomLocation().toString() );
+        gen.writeBooleanField( INHERITED, value.isInherited() );
 
         Set<URI> sources = value.getSources();
         if ( sources != null )
@@ -81,6 +82,9 @@ public final class ProjectRelationshipSerializer<T extends ProjectRelationship>
 
         switch ( value.getType() )
         {
+            case BOM:
+                gen.writeBooleanField( MIXIN, value.isMixin() );
+                break;
             case DEPENDENCY:
             {
                 gen.writeStringField( SCOPE, ( (DependencyRelationship) value ).getScope().realName() );

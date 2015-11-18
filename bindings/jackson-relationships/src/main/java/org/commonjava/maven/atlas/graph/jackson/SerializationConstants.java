@@ -42,7 +42,11 @@ public final class SerializationConstants
 
     public static final String INDEX = "idx";
 
+    public static final String INHERITED = "inherited";
+
     public static final String MANAGED = "managed";
+
+    public static final String MIXIN = "mixin";
 
     public static final String REPORTING = "reporting";
 

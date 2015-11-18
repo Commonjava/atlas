@@ -47,14 +47,14 @@ public class TransitiveDependencyTraversal_PreferDirectTCK
         final ProjectVersionRef d1 = projectVersion( "other.group", "dep-L1", "1.0.1" );
         final ProjectVersionRef d2a = projectVersion( "foo", "dep-L2", "1.1.1" );
         final ProjectVersionRef d2b = projectVersion( "foo", "dep-L2", "1.0" );
-        
+
         final RelationshipGraph graph = simpleGraph( root );
 
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, root ),
-                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false ),
-                                  new SimpleDependencyRelationship( source, root, d2a.asJarArtifact(), compile, 1, false ),
-                                  new SimpleDependencyRelationship( source, d1, d2b.asJarArtifact(), compile, 0, false )
+                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false, false ),
+                                  new SimpleDependencyRelationship( source, root, d2a.asJarArtifact(), compile, 1, false, false ),
+                                  new SimpleDependencyRelationship( source, d1, d2b.asJarArtifact(), compile, 0, false, false )
         );
         /* @formatter:on */
 

@@ -52,8 +52,8 @@ public class TransitiveDependencyTraversal_DepOfDep_ExtMgmtTCK
 
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, root ),
-                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false ),
-                                  new SimpleDependencyRelationship( source, d1, d2.asJarArtifact(), compile, 0, false )
+                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false, false ),
+                                  new SimpleDependencyRelationship( source, d1, d2.asJarArtifact(), compile, 0, false, false )
         );
         /* @formatter:on */
 

@@ -55,10 +55,10 @@ public class CycleDetection_IntroduceToExistingTCK
         final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        graph.storeRelationships( new SimpleDependencyRelationship( source, project, new SimpleArtifactRef( dep, null, null, false ), null, 0, false ),
-                                         new SimpleDependencyRelationship( source, dep,  new SimpleArtifactRef( dep2,  null, null, false ), null, 0, false ) );
-        
-        final boolean introduces = graph.introducesCycle( new SimpleDependencyRelationship( source, dep,  new SimpleArtifactRef( project,  null, null, false ), null, 0, false ) );
+        graph.storeRelationships( new SimpleDependencyRelationship( source, project, new SimpleArtifactRef( dep, null, null, false ), null, 0, false, false ),
+                                         new SimpleDependencyRelationship( source, dep,  new SimpleArtifactRef( dep2,  null, null, false ), null, 0, false, false ) );
+
+        final boolean introduces = graph.introducesCycle( new SimpleDependencyRelationship( source, dep,  new SimpleArtifactRef( project,  null, null, false ), null, 0, false, false ) );
         /* @formatter:on */
 
         assertThat( introduces, equalTo( true ) );

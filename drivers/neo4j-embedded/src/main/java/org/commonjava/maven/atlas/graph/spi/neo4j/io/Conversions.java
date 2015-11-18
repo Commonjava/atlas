@@ -91,6 +91,10 @@ public final class Conversions
 
     public static final String IS_MANAGED = "managed";
 
+    public static final String IS_INHERITED = "inherited";
+
+    public static final String IS_MIXIN = "mixin";
+
     public static final String PLUGIN_GROUP_ID = "plugin_groupId";
 
     public static final String PLUGIN_ARTIFACT_ID = "plugin_artifactId";
@@ -228,7 +232,7 @@ public final class Conversions
         return refs;
     }
 
-    public static List<ProjectRelationship<?, ?>> convertToDetachedRelationships( Iterable<Relationship> relationships )
+    public static List<ProjectRelationship<?, ?>> convertToDetachedRelationships( final Iterable<Relationship> relationships )
     {
         final List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>();
         for ( final Relationship relationship : relationships )
@@ -378,9 +382,13 @@ public final class Conversions
                       Arrays.toString( srcs ), SOURCE_URI, relationship );
         relationship.setProperty( SOURCE_URI, srcs );
         relationship.setProperty( POM_LOCATION_URI, rel.getPomLocation().toString() );
+        relationship.setProperty( IS_INHERITED, rel.isInherited() );
 
         switch ( rel.getType() )
         {
+            case BOM:
+                relationship.setProperty( IS_MIXIN, rel.isMixin() );
+                break;
             case DEPENDENCY:
             {
                 final DependencyRelationship specificRel = (DependencyRelationship) rel;

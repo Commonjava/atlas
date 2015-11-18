@@ -52,7 +52,7 @@ public class RelationshipGraph_NullPathOnTargetExprVersionTCK
 
         final URI src = new URI( "test:source-uri" );
         final ProjectRelationship<?, ?> rel =
-            new SimpleDependencyRelationship( src, from, to.asArtifactRef( "jar", null ), DependencyScope.compile, 0, false );
+            new SimpleDependencyRelationship( src, from, to.asArtifactRef( "jar", null ), DependencyScope.compile, 0, false, false );
 
         final RelationshipGraph graph = simpleGraph( from );
         final GraphPath<?> path = graph.createPath( rel );

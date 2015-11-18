@@ -62,20 +62,20 @@ public class EProjectRelationshipsTest
         final DependencyRelationship papi =
             new SimpleDependencyRelationship( source, p, new SimpleArtifactRef( "org.apache.maven", "maven-plugin-api", "3.0.3",
                                                                     null, null, false ), DependencyScope.compile,
-                                        idx++, false );
+                                        idx++, false, false );
         final DependencyRelationship art =
             new SimpleDependencyRelationship( source, p, new SimpleArtifactRef( "org.apache.maven", "maven-artifact", "3.0.3",
                                                                     null, null, false ), DependencyScope.compile,
-                                        idx++, false );
+                                        idx++, false, false );
         final PluginRelationship jarp =
             new SimplePluginRelationship( source, p, new SimpleProjectVersionRef( "org.apache.maven.plugins", "maven-jar-plugin",
-                                                                      "2.2" ), pidx++, false );
+                                                                      "2.2" ), pidx++, false, false );
         final PluginRelationship comp =
             new SimplePluginRelationship( source, p, new SimpleProjectVersionRef( "org.apache.maven.plugins",
-                                                                      "maven-compiler-plugin", "2.3.2" ), pidx++, false );
+                                                                      "maven-compiler-plugin", "2.3.2" ), pidx++, false, false );
         final ExtensionRelationship wag =
             new SimpleExtensionRelationship( source, p, new SimpleProjectVersionRef( "org.apache.maven.wagon",
-                                                                         "wagon-provider-webdav", "1.0" ), 0 );
+                                                                         "wagon-provider-webdav", "1.0" ), 0, false );
 
         prb.withParent( parentRel );
         prb.withDependencies( papi, art );

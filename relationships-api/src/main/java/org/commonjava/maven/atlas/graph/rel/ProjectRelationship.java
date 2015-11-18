@@ -56,4 +56,8 @@ public interface ProjectRelationship<R extends ProjectRelationship<R, T>, T exte
 
     URI getPomLocation();
 
+    boolean isInherited();
+
+    boolean isMixin();
+
 }
