@@ -50,7 +50,7 @@ public class DependencyFilterTest
         final DependencyRelationship rel =
             new SimpleDependencyRelationship( testURI(), new SimpleProjectVersionRef( "g", "a", "1" ),
                                         new SimpleArtifactRef( "g", "b", "2", "jar", null, false ), DependencyScope.test, 0,
-                                        false );
+                                        false, false );
 
         assertThat( filter.accept( rel ), equalTo( false ) );
     }

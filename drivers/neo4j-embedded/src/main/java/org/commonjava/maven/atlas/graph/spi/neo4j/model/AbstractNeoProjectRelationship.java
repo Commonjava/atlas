@@ -49,13 +49,13 @@ public abstract class AbstractNeoProjectRelationship<R extends AbstractNeoProjec
 
     protected Set<URI> sources;
 
-    protected AbstractNeoProjectRelationship( Relationship rel, RelationshipType type )
+    protected AbstractNeoProjectRelationship( final Relationship rel, final RelationshipType type )
     {
         this.rel = rel;
         this.type = type;
     }
 
-    protected R cloneDirtyState( R old )
+    protected R cloneDirtyState( final R old )
     {
         this.dirty = old.isDirty();
         this.declaring = old.declaring;
@@ -64,21 +64,21 @@ public abstract class AbstractNeoProjectRelationship<R extends AbstractNeoProjec
         return (R) this;
     }
 
-    protected R withDeclaring( ProjectVersionRef declaring )
+    protected R withDeclaring( final ProjectVersionRef declaring )
     {
         this.declaring = declaring;
         this.dirty = true;
         return (R) this;
     }
 
-    protected R withTarget( T target )
+    protected R withTarget( final T target )
     {
         this.target = target;
         this.dirty = true;
         return (R) this;
     }
 
-    protected R withSources( Set<URI> sources )
+    protected R withSources( final Set<URI> sources )
     {
         this.sources = sources;
         this.dirty = true;
@@ -124,6 +124,18 @@ public abstract class AbstractNeoProjectRelationship<R extends AbstractNeoProjec
     public boolean isManaged()
     {
         return NeoIdentityUtils.getBooleanProperty( rel, Conversions.IS_MANAGED, null, false );
+    }
+
+    @Override
+    public boolean isInherited()
+    {
+        return NeoIdentityUtils.getBooleanProperty( rel, Conversions.IS_INHERITED, null, false );
+    }
+
+    @Override
+    public boolean isMixin()
+    {
+        return NeoIdentityUtils.getBooleanProperty( rel, Conversions.IS_MIXIN, null, false );
     }
 
     @Override

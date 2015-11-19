@@ -48,11 +48,11 @@ public class TransitiveDependencyTraversal_DepOfDepTCK
         final ProjectVersionRef d2 = projectVersion( "foo", "dep-L2", "1.1.1" );
 
         final RelationshipGraph graph = simpleGraph( root );
-        
+
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, root ),
-                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false ),
-                                  new SimpleDependencyRelationship( source, d1, d2.asJarArtifact(), compile, 0, false )
+                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false, false ),
+                                  new SimpleDependencyRelationship( source, d1, d2.asJarArtifact(), compile, 0, false, false )
         );
         /* @formatter:on */
 

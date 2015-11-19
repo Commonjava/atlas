@@ -82,7 +82,7 @@ public class ProjectRelationshipSerializerModuleTest
                 new SimpleDependencyRelationship( URI.create( "some:test:location" ), RelationshipUtils.POM_ROOT_URI,
                                             new SimpleProjectVersionRef( "org.foo", "bar", "1" ),
                                             new SimpleProjectVersionRef( "org.foo", "dep", "1.1" ).asJarArtifact(),
-                                            DependencyScope.compile, 0, false );
+                                            DependencyScope.compile, 0, false, false );
 
         String json = mapper.writeValueAsString( rel );
         System.out.println( json );

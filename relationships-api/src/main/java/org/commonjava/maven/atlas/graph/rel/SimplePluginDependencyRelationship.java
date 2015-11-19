@@ -37,29 +37,31 @@ public final class SimplePluginDependencyRelationship
 
     public SimplePluginDependencyRelationship( final URI source, final ProjectVersionRef declaring,
                                                final ProjectRef plugin, final ArtifactRef target, final int index,
-                                               final boolean managed )
+                                               final boolean managed, final boolean inherited )
     {
-        super( source, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
+        super( source, RelationshipType.PLUGIN_DEP, declaring, target, index, managed, inherited, false );
         this.plugin = plugin;
     }
 
     public SimplePluginDependencyRelationship( final URI source, final URI pomLocation,
                                                final ProjectVersionRef declaring, final ProjectRef plugin,
-                                               final ArtifactRef target, final int index, final boolean managed )
+                                               final ArtifactRef target, final int index, final boolean managed,
+                                               final boolean inherited )
     {
-        super( source, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
+        super( source, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed, inherited, false );
         this.plugin = plugin;
     }
 
     public SimplePluginDependencyRelationship( final Collection<URI> sources, final URI pomLocation,
                                                final ProjectVersionRef declaring, final ProjectRef plugin,
-                                               final ArtifactRef target, final int index, final boolean managed )
+                                               final ArtifactRef target, final int index, final boolean managed,
+                                               final boolean inherited )
     {
-        super( sources, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed );
+        super( sources, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed, inherited, false );
         this.plugin = plugin;
     }
 
-    public SimplePluginDependencyRelationship( PluginDependencyRelationship relationship )
+    public SimplePluginDependencyRelationship( final PluginDependencyRelationship relationship )
     {
         super( relationship );
         this.plugin = new SimpleProjectRef( relationship.getPlugin() );
@@ -123,7 +125,7 @@ public final class SimplePluginDependencyRelationship
     }
 
     @Override
-    protected ArtifactRef cloneTarget( ArtifactRef target )
+    protected ArtifactRef cloneTarget( final ArtifactRef target )
     {
         return new SimpleArtifactRef( target );
     }
@@ -140,7 +142,7 @@ public final class SimplePluginDependencyRelationship
         final ArtifactRef t = getTarget();
 
         return new SimplePluginDependencyRelationship( getSources(), getPomLocation(), ref, getPlugin(), t, getIndex(),
-                                                 isManaged() );
+                                                 isManaged(), isInherited() );
     }
 
     @Override
@@ -153,31 +155,31 @@ public final class SimplePluginDependencyRelationship
                                                                                     t.getClassifier(), t.isOptional() ) );
 
         return new SimplePluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
-                                                 isManaged() );
+                                                 isManaged(), isInherited() );
     }
 
     @Override
     public synchronized PluginDependencyRelationship cloneFor( final ProjectVersionRef projectRef )
     {
         return new SimplePluginDependencyRelationship( getSources(), getPomLocation(), projectRef, plugin, getTarget(),
-                                                       getIndex(), isManaged() );
+                                                       getIndex(), isManaged(), isInherited() );
     }
 
     @Override
-    public PluginDependencyRelationship addSource( URI source )
+    public PluginDependencyRelationship addSource( final URI source )
     {
         Set<URI> srcs = getSources();
         srcs.add( source );
         return new SimplePluginDependencyRelationship( srcs, getPomLocation(), getDeclaring(), plugin, getTarget(),
-                                                       getIndex(), isManaged() );
+                                                       getIndex(), isManaged(), isInherited() );
     }
 
     @Override
-    public PluginDependencyRelationship addSources( Collection<URI> sources )
+    public PluginDependencyRelationship addSources( final Collection<URI> sources )
     {
         Set<URI> srcs = getSources();
         srcs.addAll( sources );
         return new SimplePluginDependencyRelationship( srcs, getPomLocation(), getDeclaring(), plugin, getTarget(),
-                                                       getIndex(), isManaged() );
+                                                       getIndex(), isManaged(), isInherited() );
     }
 }

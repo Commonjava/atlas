@@ -180,6 +180,8 @@ public final class ProjectRelationshipDeserializer<T extends ProjectRelationship
 
         // handle null implicitly by comparing to true.
         boolean managed = Boolean.TRUE.equals( ast.get( MANAGED ) );
+        boolean inherited = Boolean.TRUE.equals( ast.get( INHERITED ) );
+        boolean mixin = Boolean.TRUE.equals( ast.get( MIXIN ) );
 
         ProjectRelationship<?, ?> rel = null;
         switch ( type )
@@ -200,14 +202,14 @@ public final class ProjectRelationshipDeserializer<T extends ProjectRelationship
                 }
 
                 rel = new SimpleDependencyRelationship( sources, pomLocation, declaring, target, scope, index,
-                                                        managed );
+                                                        managed, inherited );
                 break;
             }
             case EXTENSION:
             {
                 final ProjectVersionRef target = SimpleProjectVersionRef.parse( tgt );
 
-                rel = new SimpleExtensionRelationship( sources, pomLocation, declaring, target, index );
+                rel = new SimpleExtensionRelationship( sources, pomLocation, declaring, target, index, inherited );
                 break;
             }
             case PARENT:
@@ -223,7 +225,7 @@ public final class ProjectRelationshipDeserializer<T extends ProjectRelationship
 
                 Boolean report = (Boolean) ast.get( REPORTING );
                 rel = new SimplePluginRelationship( sources, pomLocation, declaring, target, index, managed,
-                                                    Boolean.TRUE.equals( report ) );
+                                                    Boolean.TRUE.equals( report ), inherited );
                 break;
             }
             case PLUGIN_DEP:
@@ -240,14 +242,14 @@ public final class ProjectRelationshipDeserializer<T extends ProjectRelationship
                 final ArtifactRef target = SimpleArtifactRef.parse( tgt );
 
                 rel = new SimplePluginDependencyRelationship( sources, pomLocation, declaring, plugin, target,
-                                                              index, managed );
+                                                              index, managed, inherited );
                 break;
             }
             case BOM:
             {
                 final ProjectVersionRef target = SimpleProjectVersionRef.parse( tgt );
 
-                rel = new SimpleBomRelationship( sources, pomLocation, declaring, target, index );
+                rel = new SimpleBomRelationship( sources, pomLocation, declaring, target, index, inherited, mixin );
                 break;
             }
         }

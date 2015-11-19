@@ -35,48 +35,48 @@ public class SimpleBomRelationship
     private static final long serialVersionUID = 1L;
 
     public SimpleBomRelationship( final Collection<URI> sources, final ProjectVersionRef d, final ProjectVersionRef t,
-                                  final int index )
+                                  final int index, final boolean inherited, final boolean mixin )
     {
-        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
-        // but they're structural, so managed isn't quite correct (despite 
+        // BOMs are actually marked as concrete...somewhat counter-intuitive,
+        // but they're structural, so managed isn't quite correct (despite
         // Maven's unfortunate choice for location).
-        super( sources, RelationshipType.BOM, d, t, index, false );
+        super( sources, RelationshipType.BOM, d, t, index, false, inherited, mixin );
     }
 
     public SimpleBomRelationship( final URI source, final ProjectVersionRef d, final ProjectVersionRef t,
-                                  final int index )
+                                  final int index, final boolean inherited, final boolean mixin )
     {
-        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
-        // but they're structural, so managed isn't quite correct (despite 
+        // BOMs are actually marked as concrete...somewhat counter-intuitive,
+        // but they're structural, so managed isn't quite correct (despite
         // Maven's unfortunate choice for location).
-        super( source, RelationshipType.BOM, d, t, index, false );
+        super( source, RelationshipType.BOM, d, t, index, false, inherited, mixin );
     }
 
     public SimpleBomRelationship( final Collection<URI> sources, final URI pomLocation, final ProjectVersionRef d,
-                                  final ProjectVersionRef t, final int index )
+                                  final ProjectVersionRef t, final int index, final boolean inherited, final boolean mixin )
     {
-        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
-        // but they're structural, so managed isn't quite correct (despite 
+        // BOMs are actually marked as concrete...somewhat counter-intuitive,
+        // but they're structural, so managed isn't quite correct (despite
         // Maven's unfortunate choice for location).
-        super( sources, pomLocation, RelationshipType.BOM, d, t, index, false );
+        super( sources, pomLocation, RelationshipType.BOM, d, t, index, false, inherited, mixin );
     }
 
     public SimpleBomRelationship( final URI source, final URI pomLocation, final ProjectVersionRef d,
-                                  final ProjectVersionRef t, final int index )
+                                  final ProjectVersionRef t, final int index, final boolean inherited, final boolean mixin )
     {
-        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
-        // but they're structural, so managed isn't quite correct (despite 
+        // BOMs are actually marked as concrete...somewhat counter-intuitive,
+        // but they're structural, so managed isn't quite correct (despite
         // Maven's unfortunate choice for location).
-        super( source, pomLocation, RelationshipType.BOM, d, t, index, false );
+        super( source, pomLocation, RelationshipType.BOM, d, t, index, false, inherited, mixin );
     }
 
-    public SimpleBomRelationship( BomRelationship relationship )
+    public SimpleBomRelationship( final BomRelationship relationship )
     {
         super( relationship );
     }
 
     @Override
-    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    protected ProjectVersionRef cloneTarget( final ProjectVersionRef target )
     {
         return new SimpleProjectVersionRef( target );
     }
@@ -92,7 +92,7 @@ public class SimpleBomRelationship
     {
         final ProjectVersionRef t = getTarget();
 
-        return new SimpleBomRelationship( getSources(), ref, t, getIndex() );
+        return new SimpleBomRelationship( getSources(), ref, t, getIndex(), isInherited(), isMixin() );
     }
 
     @Override
@@ -100,31 +100,31 @@ public class SimpleBomRelationship
     {
         final ProjectVersionRef d = getDeclaring();
 
-        return new SimpleBomRelationship( getSources(), d, ref, getIndex() );
+        return new SimpleBomRelationship( getSources(), d, ref, getIndex(), isInherited(), isMixin() );
     }
 
     @Override
     public BomRelationship cloneFor( final ProjectVersionRef declaring )
     {
-        return new SimpleBomRelationship( getSources(), getPomLocation(), declaring, getTarget(), getIndex() );
+        return new SimpleBomRelationship( getSources(), getPomLocation(), declaring, getTarget(), getIndex(), isInherited(), isMixin() );
     }
 
     @Override
-    public BomRelationship addSource( URI source )
+    public BomRelationship addSource( final URI source )
     {
         Set<URI> srcs = getSources();
         srcs.add( source );
         return new SimpleBomRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(),
-                                          getIndex() );
+                                          getIndex(), isInherited(), isMixin() );
     }
 
     @Override
-    public BomRelationship addSources( Collection<URI> sources )
+    public BomRelationship addSources( final Collection<URI> sources )
     {
         Set<URI> srcs = getSources();
         srcs.addAll( sources );
         return new SimpleBomRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(),
-                                          getIndex() );
+                                          getIndex(), isInherited(), isMixin() );
     }
 
     @Override

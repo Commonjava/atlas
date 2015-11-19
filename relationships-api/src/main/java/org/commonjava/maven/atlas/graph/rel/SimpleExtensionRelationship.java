@@ -34,31 +34,33 @@ public final class SimpleExtensionRelationship
     private static final long serialVersionUID = 1L;
 
     public SimpleExtensionRelationship( final URI source, final URI pomLocation, final ProjectVersionRef declaring,
-                                        final ProjectVersionRef target, final int index )
+                                        final ProjectVersionRef target, final int index, final boolean inherited )
     {
-        super( source, pomLocation, RelationshipType.EXTENSION, declaring, target, index );
+        super( source, pomLocation, RelationshipType.EXTENSION, declaring, target, index, inherited, false );
     }
 
     public SimpleExtensionRelationship( final Collection<URI> sources, final URI pomLocation,
                                         final ProjectVersionRef declaring, final ProjectVersionRef target,
-                                        final int index )
+                                        final int index, final boolean inherited )
     {
-        super( sources, pomLocation, RelationshipType.EXTENSION, declaring, target, index );
+        super( sources, pomLocation, RelationshipType.EXTENSION, declaring, target, index, inherited, false );
     }
 
     public SimpleExtensionRelationship( final URI source, final ProjectVersionRef declaring,
-                                        final ProjectVersionRef target, final int index )
+                                        final ProjectVersionRef target, final int index,
+                                        final boolean inherited )
     {
-        super( source, RelationshipUtils.POM_ROOT_URI, RelationshipType.EXTENSION, declaring, target, index );
+        super( source, RelationshipUtils.POM_ROOT_URI, RelationshipType.EXTENSION, declaring, target, index, inherited, false );
     }
 
     public SimpleExtensionRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
-                                        final ProjectVersionRef target, final int index )
+                                        final ProjectVersionRef target, final int index,
+                                        final boolean inherited )
     {
-        super( sources, RelationshipUtils.POM_ROOT_URI, RelationshipType.EXTENSION, declaring, target, index );
+        super( sources, RelationshipUtils.POM_ROOT_URI, RelationshipType.EXTENSION, declaring, target, index, inherited, false );
     }
 
-    public SimpleExtensionRelationship( ExtensionRelationship relationship )
+    public SimpleExtensionRelationship( final ExtensionRelationship relationship )
     {
         super( relationship );
     }
@@ -70,7 +72,7 @@ public final class SimpleExtensionRelationship
     }
 
     @Override
-    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    protected ProjectVersionRef cloneTarget( final ProjectVersionRef target )
     {
         return new SimpleProjectVersionRef( target );
     }
@@ -86,7 +88,8 @@ public final class SimpleExtensionRelationship
     {
         final ProjectVersionRef t = getTarget();
 
-        return new SimpleExtensionRelationship( getSources(), getPomLocation(), ref, t, getIndex() );
+        // TODO
+        return new SimpleExtensionRelationship( getSources(), getPomLocation(), ref, t, getIndex(), isInherited() );
     }
 
     @Override
@@ -94,28 +97,28 @@ public final class SimpleExtensionRelationship
     {
         final ProjectVersionRef d = getDeclaring();
 
-        return new SimpleExtensionRelationship( getSources(), getPomLocation(), d, ref, getIndex() );
+        return new SimpleExtensionRelationship( getSources(), getPomLocation(), d, ref, getIndex(), isInherited() );
     }
 
     @Override
     public ExtensionRelationship cloneFor( final ProjectVersionRef declaring )
     {
-        return new SimpleExtensionRelationship( getSources(), getPomLocation(), declaring, getTarget(), getIndex() );
+        return new SimpleExtensionRelationship( getSources(), getPomLocation(), declaring, getTarget(), getIndex(), isInherited() );
     }
 
     @Override
-    public ExtensionRelationship addSource( URI source )
+    public ExtensionRelationship addSource( final URI source )
     {
         Set<URI> srcs = getSources();
         srcs.add( source );
-        return new SimpleExtensionRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(), getIndex() );
+        return new SimpleExtensionRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(), getIndex(), isInherited() );
     }
 
     @Override
-    public ExtensionRelationship addSources( Collection<URI> sources )
+    public ExtensionRelationship addSources( final Collection<URI> sources )
     {
         Set<URI> srcs = getSources();
         srcs.addAll( sources );
-        return new SimpleExtensionRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(), getIndex() );
+        return new SimpleExtensionRelationship( srcs, getPomLocation(), getDeclaring(), getTarget(), getIndex(), isInherited() );
     }
 }

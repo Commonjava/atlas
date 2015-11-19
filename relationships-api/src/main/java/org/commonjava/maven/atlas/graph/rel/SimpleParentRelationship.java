@@ -38,7 +38,7 @@ public final class SimpleParentRelationship
      */
     public SimpleParentRelationship( final ProjectVersionRef declaring )
     {
-        super( RelationshipUtils.TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0 );
+        super( RelationshipUtils.TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0, false, false );
     }
 
     /**
@@ -49,22 +49,22 @@ public final class SimpleParentRelationship
     @Deprecated
     public SimpleParentRelationship( final URI unused, final ProjectVersionRef declaring )
     {
-        super( RelationshipUtils.TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0 );
+        super( RelationshipUtils.TERMINAL_PARENT_SOURCE_URI, RelationshipType.PARENT, declaring, declaring, 0, false, false );
     }
 
     public SimpleParentRelationship( final URI source, final ProjectVersionRef declaring,
                                      final ProjectVersionRef target )
     {
-        super( source, RelationshipType.PARENT, declaring, target, 0 );
+        super( source, RelationshipType.PARENT, declaring, target, 0, false, false );
     }
 
     public SimpleParentRelationship( final Collection<URI> sources, final ProjectVersionRef declaring,
                                      final ProjectVersionRef target )
     {
-        super( sources, RelationshipType.PARENT, declaring, target, 0 );
+        super( sources, RelationshipType.PARENT, declaring, target, 0, false, false );
     }
 
-    public SimpleParentRelationship( ParentRelationship relationship )
+    public SimpleParentRelationship( final ParentRelationship relationship )
     {
         super( relationship );
     }
@@ -76,7 +76,7 @@ public final class SimpleParentRelationship
     }
 
     @Override
-    protected ProjectVersionRef cloneTarget( ProjectVersionRef target )
+    protected ProjectVersionRef cloneTarget( final ProjectVersionRef target )
     {
         return new SimpleProjectVersionRef( target );
     }
@@ -115,7 +115,7 @@ public final class SimpleParentRelationship
     }
 
     @Override
-    public ParentRelationship addSource( URI source )
+    public ParentRelationship addSource( final URI source )
     {
         Set<URI> srcs = getSources();
         srcs.add( source );
@@ -123,7 +123,7 @@ public final class SimpleParentRelationship
     }
 
     @Override
-    public ParentRelationship addSources( Collection<URI> sources )
+    public ParentRelationship addSources( final Collection<URI> sources )
     {
         Set<URI> srcs = getSources();
         srcs.addAll( sources );

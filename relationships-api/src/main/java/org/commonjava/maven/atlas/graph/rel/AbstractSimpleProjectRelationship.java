@@ -44,6 +44,10 @@ public abstract class AbstractSimpleProjectRelationship<R extends ProjectRelatio
 
     private boolean managed = false;
 
+    private boolean inherited;
+
+    private boolean mixin;
+
     @SuppressWarnings( "rawtypes" )
     private transient Constructor<? extends AbstractSimpleProjectRelationship> cloneCtor;
 
@@ -52,54 +56,58 @@ public abstract class AbstractSimpleProjectRelationship<R extends ProjectRelatio
     private final boolean cloneUsesLocation = true;
 
     protected AbstractSimpleProjectRelationship( final URI source, final RelationshipType type,
-                                                 final ProjectVersionRef declaring, final T target, final int index )
+                                                 final ProjectVersionRef declaring, final T target, final int index,
+                                                 final boolean inherited, final boolean mixin )
     {
-        this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, false );
+        this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, false, inherited, mixin );
     }
 
     protected AbstractSimpleProjectRelationship( final Collection<URI> sources, final RelationshipType type,
-                                                 final ProjectVersionRef declaring, final T target, final int index )
+                                                 final ProjectVersionRef declaring, final T target, final int index,
+                                                 final boolean inherited, final boolean mixin )
     {
-        this( sources, POM_ROOT_URI, type, declaring, target, index, false );
+        this( sources, POM_ROOT_URI, type, declaring, target, index, false, inherited, mixin );
     }
 
     protected AbstractSimpleProjectRelationship( final URI source, final RelationshipType type,
                                                  final ProjectVersionRef declaring, final T target, final int index,
-                                                 final boolean managed )
+                                                 final boolean managed, final boolean inherited, final boolean mixin )
     {
-        this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, managed );
+        this( Collections.singleton( source ), POM_ROOT_URI, type, declaring, target, index, managed, inherited, mixin );
     }
 
     protected AbstractSimpleProjectRelationship( final Collection<URI> sources, final RelationshipType type,
                                                  final ProjectVersionRef declaring, final T target, final int index,
-                                                 final boolean managed )
+                                                 final boolean managed, final boolean inherited, final boolean mixin )
     {
-        this( sources, POM_ROOT_URI, type, declaring, target, index, managed );
-    }
-
-    protected AbstractSimpleProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type,
-                                                 final ProjectVersionRef declaring, final T target, final int index )
-    {
-        this( Collections.singleton( source ), pomLocation, type, declaring, target, index, false );
-    }
-
-    protected AbstractSimpleProjectRelationship( final Collection<URI> sources, final URI pomLocation,
-                                                 final RelationshipType type, final ProjectVersionRef declaring,
-                                                 final T target, final int index )
-    {
-        this( sources, pomLocation, type, declaring, target, index, false );
+        this( sources, POM_ROOT_URI, type, declaring, target, index, managed, inherited, mixin );
     }
 
     protected AbstractSimpleProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type,
                                                  final ProjectVersionRef declaring, final T target, final int index,
-                                                 final boolean managed )
+                                                 final boolean inherited, final boolean mixin )
     {
-        this( Collections.singleton( source ), pomLocation, type, declaring, target, index, managed );
+        this( Collections.singleton( source ), pomLocation, type, declaring, target, index, false, inherited, mixin );
     }
 
     protected AbstractSimpleProjectRelationship( final Collection<URI> sources, final URI pomLocation,
                                                  final RelationshipType type, final ProjectVersionRef declaring,
-                                                 final T target, final int index, final boolean managed )
+                                                 final T target, final int index, final boolean inherited, final boolean mixin )
+    {
+        this( sources, pomLocation, type, declaring, target, index, false, inherited, mixin );
+    }
+
+    protected AbstractSimpleProjectRelationship( final URI source, final URI pomLocation, final RelationshipType type,
+                                                 final ProjectVersionRef declaring, final T target, final int index,
+                                                 final boolean managed, final boolean inherited, final boolean mixin )
+    {
+        this( Collections.singleton( source ), pomLocation, type, declaring, target, index, managed, inherited, mixin );
+    }
+
+    protected AbstractSimpleProjectRelationship( final Collection<URI> sources, final URI pomLocation,
+                                                 final RelationshipType type, final ProjectVersionRef declaring,
+                                                 final T target, final int index, final boolean managed,
+                                                 final boolean inherited, final boolean mixin )
     {
         if ( sources == null )
         {
@@ -126,15 +134,19 @@ public abstract class AbstractSimpleProjectRelationship<R extends ProjectRelatio
         this.target = target;
         this.index = index;
         this.managed = managed;
+        this.inherited = inherited;
+        this.mixin = mixin;
     }
 
-    public AbstractSimpleProjectRelationship( ProjectRelationship<R, T> relationship )
+    public AbstractSimpleProjectRelationship( final ProjectRelationship<R, T> relationship )
     {
         this.sources.addAll( relationship.getSources() );
         this.declaring = new SimpleProjectVersionRef( relationship.getDeclaring() );
         this.pomLocation = relationship.getPomLocation();
         this.index = relationship.getIndex();
         this.managed = relationship.isManaged();
+        this.inherited = relationship.isInherited();
+        this.mixin = relationship.isMixin();
         this.type = relationship.getType();
         this.target = cloneTarget( relationship.getTarget() );
     }
@@ -145,6 +157,18 @@ public abstract class AbstractSimpleProjectRelationship<R extends ProjectRelatio
     public final boolean isManaged()
     {
         return managed;
+    }
+
+    @Override
+    public final boolean isInherited()
+    {
+        return inherited;
+    }
+
+    @Override
+    public final boolean isMixin()
+    {
+        return mixin;
     }
 
     @Override

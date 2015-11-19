@@ -126,7 +126,7 @@ public class NeoProjectRelationshipEqualitiesTest
         ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "org.foo", "dep", "1.0" );
 
         DependencyRelationship rel = new SimpleDependencyRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2.asJarArtifact(),
-                                                                            DependencyScope.compile, 0, false );
+                                                                            DependencyScope.compile, 0, false, false );
 
         Relationship r = store( rel );
 
@@ -134,7 +134,7 @@ public class NeoProjectRelationshipEqualitiesTest
         assertThat( result, equalTo( rel ) );
     }
 
-    private Relationship store( ProjectRelationship<?, ?> rel )
+    private Relationship store( final ProjectRelationship<?, ?> rel )
     {
         Relationship r;
         Transaction tx = graph.beginTx();
@@ -165,7 +165,7 @@ public class NeoProjectRelationshipEqualitiesTest
         ProjectVersionRef pvr = new SimpleProjectVersionRef( "org.foo", "bar", "1" );
         ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "org.foo", "dep", "1.0" );
 
-        ExtensionRelationship rel = new SimpleExtensionRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2, 0 );
+        ExtensionRelationship rel = new SimpleExtensionRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2, 0, false );
 
         Relationship r = store( rel );
 
@@ -180,7 +180,7 @@ public class NeoProjectRelationshipEqualitiesTest
         ProjectVersionRef pvr = new SimpleProjectVersionRef( "org.foo", "bar", "1" );
         ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "org.foo", "dep", "1.0" );
 
-        BomRelationship rel = new SimpleBomRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2, 0 );
+        BomRelationship rel = new SimpleBomRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2, 0, false, false );
 
         Relationship r = store( rel );
 
@@ -195,7 +195,7 @@ public class NeoProjectRelationshipEqualitiesTest
         ProjectVersionRef pvr = new SimpleProjectVersionRef( "org.foo", "bar", "1" );
         ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "org.foo", "dep", "1.0" );
 
-        PluginRelationship rel = new SimplePluginRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2, 0, false );
+        PluginRelationship rel = new SimplePluginRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2, 0, false, false );
 
         Relationship r = store( rel );
 
@@ -211,7 +211,7 @@ public class NeoProjectRelationshipEqualitiesTest
         ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "org.foo", "dep", "1.0" );
         ProjectRef pr = new SimpleProjectRef( "org.foo", "plugin" );
 
-        PluginDependencyRelationship rel = new SimplePluginDependencyRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pr, pvr2.asJarArtifact(), 0, false );
+        PluginDependencyRelationship rel = new SimplePluginDependencyRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pr, pvr2.asJarArtifact(), 0, false, false );
 
         Relationship r = store( rel );
 
@@ -235,12 +235,12 @@ public class NeoProjectRelationshipEqualitiesTest
         List<ProjectRelationship<?, ?>> rels = Arrays.<ProjectRelationship<?, ?>> asList(
             new SimpleParentRelationship( TEST_URI, pvr, parent ),
             new SimpleDependencyRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, dep.asJarArtifact(),
-                                              DependencyScope.compile, 0, false ),
-            new SimpleBomRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, bom, 0 ),
-            new SimpleExtensionRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, ext, 0 ),
-            new SimplePluginRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, plug, 0, false ),
+                                              DependencyScope.compile, 0, false, false ),
+            new SimpleBomRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, bom, 0, false, false ),
+            new SimpleExtensionRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, ext, 0, false ),
+            new SimplePluginRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, plug, 0, false, false ),
             new SimplePluginDependencyRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pr,
-                                                    pdep.asJarArtifact(), 0, false ) );
+                                                    pdep.asJarArtifact(), 0, false, false ) );
 
         List<Relationship> rs = new ArrayList<Relationship>();
         for ( ProjectRelationship<?, ?> rel : rels )

@@ -65,8 +65,8 @@ public class ParentDependencyBuildOrderTCK
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, c ),
                                   new SimpleParentRelationship( source, b, p ),
-                                  new SimpleDependencyRelationship( source, c, b.asJarArtifact(), null, 0, false ),
-                                  new SimpleDependencyRelationship( source, b, a.asJarArtifact(), null, 0, false )
+                                  new SimpleDependencyRelationship( source, c, b.asJarArtifact(), null, 0, false, false ),
+                                  new SimpleDependencyRelationship( source, b, a.asJarArtifact(), null, 0, false, false )
         );
         /* @formatter:on */
 

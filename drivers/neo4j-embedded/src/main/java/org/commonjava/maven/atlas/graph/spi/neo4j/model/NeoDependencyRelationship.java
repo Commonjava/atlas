@@ -44,7 +44,7 @@ public final class NeoDependencyRelationship
 
     private static final long serialVersionUID = 1L;
 
-    public NeoDependencyRelationship( Relationship rel )
+    public NeoDependencyRelationship( final Relationship rel )
     {
         super(rel, RelationshipType.DEPENDENCY);
     }
@@ -152,7 +152,7 @@ public final class NeoDependencyRelationship
     }
 
     @Override
-    public DependencyRelationship addSource( URI source )
+    public DependencyRelationship addSource( final URI source )
     {
         Set<URI> sources = getSources();
         if ( sources.add( source ) )
@@ -164,7 +164,7 @@ public final class NeoDependencyRelationship
     }
 
     @Override
-    public DependencyRelationship addSources( Collection<URI> sources )
+    public DependencyRelationship addSources( final Collection<URI> sources )
     {
         Set<URI> srcs = getSources();
         boolean changed = false;
