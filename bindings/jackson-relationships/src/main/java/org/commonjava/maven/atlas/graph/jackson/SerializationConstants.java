@@ -48,6 +48,8 @@ public final class SerializationConstants
 
     public static final String MIXIN = "mixin";
 
+    public static final String OPTIONAL = "optional";
+
     public static final String REPORTING = "reporting";
 
     public static final String SCOPE = "scope";
