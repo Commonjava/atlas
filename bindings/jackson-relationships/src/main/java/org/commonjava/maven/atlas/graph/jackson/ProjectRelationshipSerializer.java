@@ -89,6 +89,7 @@ public final class ProjectRelationshipSerializer<T extends ProjectRelationship>
             {
                 gen.writeStringField( SCOPE, ( (DependencyRelationship) value ).getScope().realName() );
                 gen.writeBooleanField( MANAGED, value.isManaged() );
+                gen.writeBooleanField( OPTIONAL, value.getTargetArtifact().isOptional() );
                 break;
             }
             case PLUGIN_DEP:
