@@ -23,8 +23,8 @@ import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class ManagedDependencyMutator
-    extends VersionManagerMutator
-    implements GraphMutator
+        extends VersionManagerMutator
+        implements GraphMutator
 {
 
     public static final ManagedDependencyMutator INSTANCE = new ManagedDependencyMutator();
@@ -37,10 +37,10 @@ public class ManagedDependencyMutator
     private ManagedDependencyMutator()
     {
     }
-    
+
     @Override
     public ProjectRelationship<?, ?> selectFor( final ProjectRelationship<?, ?> rel, final GraphPath<?> path,
-                                             final RelationshipGraphConnection connection, final ViewParams params )
+                                                final RelationshipGraphConnection connection, final ViewParams params )
     {
         if ( rel.getType() != RelationshipType.DEPENDENCY ) // TODO: BOM types??
         {
@@ -52,8 +52,7 @@ public class ManagedDependencyMutator
         if ( mutated == null || mutated == rel )
         {
             final ProjectVersionRef managed =
-                connection
-                                                  .getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
+                    connection.getManagedTargetFor( rel.getTarget(), path, RelationshipType.DEPENDENCY );
             if ( managed != null )
             {
                 mutated = rel.selectTarget( managed );
