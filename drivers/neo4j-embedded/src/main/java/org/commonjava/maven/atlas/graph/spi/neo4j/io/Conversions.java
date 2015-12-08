@@ -63,6 +63,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -232,12 +233,34 @@ public final class Conversions
         return refs;
     }
 
-    public static List<ProjectRelationship<?, ?>> convertToDetachedRelationships( final Iterable<Relationship> relationships )
+    /**
+     * Converts an iterable of relationships to project relationships detached from database.
+     *
+     * @param relationships iterable of {@link AbstractNeoProjectRelationship} or {@link Relationship}
+     * @return list of detached relationships
+     * @throws IllegalArgumentException if an iterable of unsupported classes is passed
+     */
+    public static List<ProjectRelationship<?, ?>> convertToDetachedRelationships( final Iterable<?> relationships )
     {
         final List<ProjectRelationship<?, ?>> rels = new ArrayList<ProjectRelationship<?, ?>>();
-        for ( final Relationship relationship : relationships )
+        Iterator<?> iterator = relationships.iterator();
+        while ( iterator.hasNext() )
         {
-            final AbstractNeoProjectRelationship<?, ?, ?> rel = Conversions.toProjectRelationship( relationship );
+            final AbstractNeoProjectRelationship<?, ?, ?> rel;
+            Object next = iterator.next();
+            if ( next instanceof AbstractNeoProjectRelationship )
+            {
+                rel = ( AbstractNeoProjectRelationship<?, ?, ?>) next;
+            }
+            else if ( next instanceof Relationship )
+            {
+                rel = Conversions.toProjectRelationship( ( Relationship ) next );
+            }
+            else
+            {
+                throw new IllegalArgumentException( "Relationship class " + next.getClass().getCanonicalName()
+                                                  + " cannot be converted to detached relationship." );
+            }
             if ( rel != null )
             {
                 rels.add( rel.detach() );
