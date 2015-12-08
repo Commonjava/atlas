@@ -252,7 +252,7 @@ public final class Conversions
             {
                 rel = ( AbstractNeoProjectRelationship<?, ?, ?>) next;
             }
-            else if ( next instanceof AbstractNeoProjectRelationship )
+            else if ( next instanceof Relationship )
             {
                 rel = Conversions.toProjectRelationship( ( Relationship ) next );
             }
