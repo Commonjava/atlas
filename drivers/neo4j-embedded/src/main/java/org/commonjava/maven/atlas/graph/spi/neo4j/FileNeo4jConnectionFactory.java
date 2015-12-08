@@ -20,11 +20,14 @@ import org.apache.commons.lang.StringUtils;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnection;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionException;
 import org.commonjava.maven.atlas.graph.spi.RelationshipGraphConnectionFactory;
+import org.neo4j.kernel.StoreLockException;
+import org.neo4j.kernel.lifecycle.LifecycleException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.channels.OverlappingFileLockException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -41,6 +44,8 @@ public class FileNeo4jConnectionFactory
     private final File dbBaseDirectory;
 
     private final boolean useShutdownHook;
+
+    private final Logger logger = LoggerFactory.getLogger( getClass() );
 
     private int storageBatchSize = FileNeo4JGraphConnection.DEFAULT_BATCH_SIZE;
 
@@ -90,7 +95,40 @@ public class FileNeo4jConnectionFactory
         FileNeo4JGraphConnection conn = openConnections.get( workspaceId );
         if ( conn == null || !conn.isOpen() )
         {
-            conn = new FileNeo4JGraphConnection( workspaceId, db, useShutdownHook, storageBatchSize, this );
+            conn = null;
+            int attempt = 0;
+
+            while ( conn == null )
+            {
+                attempt++;
+                try
+                {
+                    conn = new FileNeo4JGraphConnection( workspaceId, db, useShutdownHook, storageBatchSize, this );
+                }
+                catch ( RuntimeException ex )
+                {
+                    if ( ex.getCause() instanceof LifecycleException
+                            && ex.getCause().getCause() instanceof StoreLockException
+                            && ex.getCause().getCause().getCause() instanceof OverlappingFileLockException
+                            && attempt < 3 )
+                    {
+                        logger.warn( "Tried to connect to DB which is not closed (yet). {} Retrying in 5s.", ex.toString() );
+                        try
+                        {
+                            Thread.sleep(5000);
+                        }
+                        catch ( InterruptedException ez )
+                        {
+                            logger.error( "The wait delay was interrupted.", ex );
+                        }
+                    }
+                    else
+                    {
+                        throw ex;
+                    }
+                }
+            }
+
             openConnections.put( workspaceId, conn );
         }
 
