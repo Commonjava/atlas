@@ -61,9 +61,9 @@ public class DependencyExcludesBuildOrderTCK
 
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( c ),
-                                  new SimpleDependencyRelationship( source, c, b.asJarArtifact(), null, 0, false, false, d ),
-                                  new SimpleDependencyRelationship( source, b, a.asJarArtifact(), DependencyScope.runtime, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, b, d.asJarArtifact(), DependencyScope.runtime, 1, false, false )
+                                  new SimpleDependencyRelationship( source, c, b.asJarArtifact(), null, 0, false, false, false, d ),
+                                  new SimpleDependencyRelationship( source, b, a.asJarArtifact(), DependencyScope.runtime, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, b, d.asJarArtifact(), DependencyScope.runtime, 1, false, false, false )
         );
         /* @formatter:on */
 

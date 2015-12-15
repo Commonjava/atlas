@@ -171,7 +171,7 @@ public class NeoProjectRelationshipSerializerModuleTest
         ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "org.foo", "dep", "1.0" );
 
         DependencyRelationship rel = new SimpleDependencyRelationship(TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, pvr2.asJarArtifact(),
-                                                                            DependencyScope.compile, 0, false, false );
+                                                                            DependencyScope.compile, 0, false, false, false );
 
         String json = mapper.writeValueAsString( rel );
 
@@ -320,7 +320,7 @@ public class NeoProjectRelationshipSerializerModuleTest
         List<ProjectRelationship<?, ?>> rels = Arrays.<ProjectRelationship<?, ?>> asList(
                 new SimpleParentRelationship( TEST_URI, pvr, parent ),
                 new SimpleDependencyRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, dep.asJarArtifact(),
-                                                  DependencyScope.compile, 0, false, false ),
+                                                  DependencyScope.compile, 0, false, false, false ),
                 new SimpleBomRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, ext, 0, false, false ),
                 new SimpleExtensionRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, ext, 0, false ),
                 new SimplePluginRelationship( TEST_URI, RelationshipUtils.POM_ROOT_URI, pvr, plug, 0, false, false ),

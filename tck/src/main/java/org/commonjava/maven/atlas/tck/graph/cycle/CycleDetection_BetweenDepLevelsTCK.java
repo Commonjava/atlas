@@ -56,9 +56,9 @@ public class CycleDetection_BetweenDepLevelsTCK
 
         /* @formatter:off */
         final Set<ProjectRelationship<?, ?>> rejected = graph.storeRelationships(
-                                         new SimpleDependencyRelationship( source, project, new SimpleArtifactRef( dep, null, null, false ), null, 0, false, false ),
-                                         new SimpleDependencyRelationship( source, dep,  new SimpleArtifactRef( dep2,  null, null, false ), null, 0, false, false ),
-                                         new SimpleDependencyRelationship( source, dep2,  new SimpleArtifactRef( dep,  null, null, false ), null, 0, false, false ) );
+                                         new SimpleDependencyRelationship( source, project, new SimpleArtifactRef( dep, null, null, false ), null, 0, false, false, false ),
+                                         new SimpleDependencyRelationship( source, dep,  new SimpleArtifactRef( dep2,  null, null, false ), null, 0, false, false, false ),
+                                         new SimpleDependencyRelationship( source, dep2,  new SimpleArtifactRef( dep,  null, null, false ), null, 0, false, false, false ) );
         /* @formatter:on */
 
         assertThat( rejected, notNullValue() );

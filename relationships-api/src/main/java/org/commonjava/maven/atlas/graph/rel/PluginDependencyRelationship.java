@@ -40,4 +40,6 @@ public interface PluginDependencyRelationship
 
     @Override
     PluginDependencyRelationship selectTarget( ProjectVersionRef ref );
+
+    boolean isOptional();
 }

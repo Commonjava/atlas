@@ -46,4 +46,6 @@ public interface DependencyRelationship
     DependencyRelationship selectTarget( ProjectVersionRef ref );
 
     boolean isBOM();
+
+    boolean isOptional();
 }

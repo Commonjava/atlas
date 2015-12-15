@@ -58,11 +58,11 @@ public class CycleDetection_RootDependentTCK
         /* @formatter:off */
         // a --> b --> c --> a
         // d --> e --> c --> a --> b --> c
-        graph.storeRelationships( new SimpleDependencyRelationship( source, a, new SimpleArtifactRef( b, null, null, false ), null, 0, false, false ),
-                                         new SimpleDependencyRelationship( source, b,  new SimpleArtifactRef( c,  null, null, false ), null, 0, false, false ),
-                                         new SimpleDependencyRelationship( source, c,  new SimpleArtifactRef( a,  null, null, false ), null, 0, false, false ),
-                                         new SimpleDependencyRelationship( source, d, new SimpleArtifactRef( e, null, null, false ), null, 0, false, false ),
-                                         new SimpleDependencyRelationship( source, e,  new SimpleArtifactRef( c,  null, null, false ), null, 0, false, false ) );
+        graph.storeRelationships( new SimpleDependencyRelationship( source, a, new SimpleArtifactRef( b, null, null, false ), null, 0, false, false, false ),
+                                         new SimpleDependencyRelationship( source, b,  new SimpleArtifactRef( c,  null, null, false ), null, 0, false, false, false ),
+                                         new SimpleDependencyRelationship( source, c,  new SimpleArtifactRef( a,  null, null, false ), null, 0, false, false, false ),
+                                         new SimpleDependencyRelationship( source, d, new SimpleArtifactRef( e, null, null, false ), null, 0, false, false, false ),
+                                         new SimpleDependencyRelationship( source, e,  new SimpleArtifactRef( c,  null, null, false ), null, 0, false, false, false ) );
         /* @formatter:on */
 
         final RelationshipGraph graph2 =

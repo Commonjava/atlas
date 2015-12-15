@@ -466,11 +466,11 @@ public class EProjectDirectRelationships
         }
 
         public Builder withDependency( final ProjectVersionRef ref, final String type, final String classifier, final DependencyScope scope,
-                                       final boolean managed, final boolean inherited )
+                                       final boolean managed, final boolean inherited, final boolean optional )
         {
-            withDependencies( new SimpleDependencyRelationship( source, ref, new SimpleArtifactRef( ref, type, classifier, false ),
+            withDependencies( new SimpleDependencyRelationship( source, ref, new SimpleArtifactRef( ref, type, classifier, optional ),
                                                           scope,
-                                                          getNextDependencyIndex( managed ), managed, inherited ) );
+                                                          getNextDependencyIndex( managed ), managed, inherited, optional ) );
 
             return this;
         }

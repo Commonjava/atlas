@@ -55,7 +55,7 @@ public class LargeBatchInsertTCK
         for ( int i = 0; i < 550; i++ )
         {
             rels.add(new SimpleDependencyRelationship( sourceURI(), RelationshipUtils.POM_ROOT_URI, myRef, newArtifact(),
-                                                       DependencyScope.compile, i, false, false ) );
+                                                       DependencyScope.compile, i, false, false, false ) );
         }
 
         final RelationshipGraph graph = simpleGraph( myRef );

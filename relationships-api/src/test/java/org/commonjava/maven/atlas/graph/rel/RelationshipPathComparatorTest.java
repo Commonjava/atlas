@@ -57,8 +57,8 @@ public class RelationshipPathComparatorTest
         final ProjectVersionRef dep = projectVersion( "org.group", "dep-1", "1.0" );
 
         final URI source = testURI();
-        rels.add( dependency( source, root, dep, 0, false ) );
-        rels.add( dependency( source, dep, projectVersion( "org.foo", "bar", "1.0" ), 0, false ) );
+        rels.add( dependency( source, root, dep, 0, false, false ) );
+        rels.add( dependency( source, dep, projectVersion( "org.foo", "bar", "1.0" ), 0, false, false ) );
 
         paths.add( rels );
 
@@ -67,7 +67,7 @@ public class RelationshipPathComparatorTest
         final ProjectVersionRef parent = projectVersion( "group.id", "parent", "1" );
 
         rels.add( new SimpleParentRelationship( source, root, parent ) );
-        rels.add( dependency( source, parent, "org.foo", "bar", "1.1.1", 0, false ) );
+        rels.add( dependency( source, parent, "org.foo", "bar", "1.1.1", 0, false, false ) );
 
         paths.add( rels );
 

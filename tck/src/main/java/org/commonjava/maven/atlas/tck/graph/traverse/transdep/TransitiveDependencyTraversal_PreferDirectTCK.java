@@ -52,9 +52,9 @@ public class TransitiveDependencyTraversal_PreferDirectTCK
 
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, root ),
-                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, root, d2a.asJarArtifact(), compile, 1, false, false ),
-                                  new SimpleDependencyRelationship( source, d1, d2b.asJarArtifact(), compile, 0, false, false )
+                                  new SimpleDependencyRelationship( source, root, d1.asJarArtifact(), compile, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, root, d2a.asJarArtifact(), compile, 1, false, false, false ),
+                                  new SimpleDependencyRelationship( source, d1, d2b.asJarArtifact(), compile, 0, false, false, false )
         );
         /* @formatter:on */
 

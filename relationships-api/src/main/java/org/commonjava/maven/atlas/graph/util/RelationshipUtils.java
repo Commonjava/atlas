@@ -411,33 +411,34 @@ public final class RelationshipUtils
     }
 
     public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
-                                                     final String version, final int index, final boolean inherited )
+                                                     final String version, final int index, final boolean inherited, final boolean optional )
         throws InvalidVersionSpecificationException
     {
-        return dependency( source, owner, groupId, artifactId, version, null, null, false, null, index, false, inherited );
+        return dependency( source, owner, groupId, artifactId, version, null, null, optional, null, index, false, inherited );
     }
 
     public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner,
-                                                     final ProjectVersionRef dep, final int index, final boolean inherited )
+                                                     final ProjectVersionRef dep, final int index, final boolean inherited,
+                                                     final boolean optional )
                     throws InvalidVersionSpecificationException
     {
-        return dependency( source, owner, dep, null, null, false, null, index, false, inherited );
+        return dependency( source, owner, dep, null, null, optional, null, index, false, inherited );
     }
 
     public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
                                                      final String version, final DependencyScope scope, final int index, final boolean managed,
-                                                     final boolean inherited )
+                                                     final boolean inherited, final boolean optional )
         throws InvalidVersionSpecificationException
     {
-        return dependency( source, owner, groupId, artifactId, version, null, null, false, scope, index, managed, inherited );
+        return dependency( source, owner, groupId, artifactId, version, null, null, optional, scope, index, managed, inherited );
     }
 
     public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final ProjectVersionRef dep,
                                                      final DependencyScope scope, final int index, final boolean managed,
-                                                     final boolean inherited )
+                                                     final boolean inherited, final boolean optional )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleDependencyRelationship( source, owner, artifact( dep, null, null, false ), scope, index, managed, inherited );
+        return new SimpleDependencyRelationship( source, owner, artifact( dep, null, null, optional ), scope, index, managed, inherited, optional );
     }
 
     public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final String groupId, final String artifactId,
@@ -445,8 +446,8 @@ public final class RelationshipUtils
                                                      final DependencyScope scope, final int index, final boolean managed, final boolean inherited )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleDependencyRelationship( source, owner, artifact( groupId, artifactId, version, type, classifier, optional ), null, index,
-                                                 false, inherited );
+        return new SimpleDependencyRelationship( source, owner, artifact( groupId, artifactId, version, type, classifier, optional ), scope, index,
+                                                 managed, inherited, optional );
     }
 
     public static DependencyRelationship dependency( final URI source, final ProjectVersionRef owner, final ProjectVersionRef dep, final String type,
@@ -454,37 +455,39 @@ public final class RelationshipUtils
                                                      final boolean managed, final boolean inherited )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleDependencyRelationship( source, owner, artifact( dep, type, classifier, optional ), null, index, false, inherited );
+        return new SimpleDependencyRelationship( source, owner, artifact( dep, type, classifier, optional ), scope, index, managed, inherited, optional );
     }
 
     public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
-                                                     final String artifactId, final String version, final int index, final boolean inherited )
+                                                     final String artifactId, final String version, final int index, final boolean inherited,
+                                                     final boolean optional )
         throws InvalidVersionSpecificationException
     {
-        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, false, null, index, false, inherited );
+        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, optional, null, index, false, inherited );
     }
 
     public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
-                                                     final ProjectVersionRef dep, final int index, final boolean inherited )
+                                                     final ProjectVersionRef dep, final int index, final boolean inherited,
+                                                     final boolean optional )
         throws InvalidVersionSpecificationException
     {
-        return dependency( source, pomLocation, owner, dep, null, null, false, null, index, false, inherited );
+        return dependency( source, pomLocation, owner, dep, null, null, optional, null, index, false, inherited );
     }
 
     public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
                                                      final String artifactId, final String version, final DependencyScope scope, final int index,
-                                                     final boolean managed, final boolean inherited )
+                                                     final boolean managed, final boolean inherited, final boolean optional )
         throws InvalidVersionSpecificationException
     {
-        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, false, scope, index, managed, inherited );
+        return dependency( source, pomLocation, owner, groupId, artifactId, version, null, null, optional, scope, index, managed, inherited );
     }
 
     public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
                                                      final ProjectVersionRef dep, final DependencyScope scope, final int index,
-                                                     final boolean managed, final boolean inherited )
+                                                     final boolean managed, final boolean inherited, final boolean optional )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleDependencyRelationship( source, pomLocation, owner, artifact( dep, null, null, false ), scope, index, managed, inherited );
+        return new SimpleDependencyRelationship( source, pomLocation, owner, artifact( dep, null, null, optional ), scope, index, managed, inherited, optional );
     }
 
     public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner, final String groupId,
@@ -493,8 +496,8 @@ public final class RelationshipUtils
                                                      final boolean inherited )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleDependencyRelationship( source, pomLocation, owner, artifact( groupId, artifactId, version, type, classifier, optional ), null,
-                                           index, false, inherited );
+        return new SimpleDependencyRelationship( source, pomLocation, owner, artifact( groupId, artifactId, version, type, classifier, optional ), scope,
+                                                 index, managed, inherited, optional );
     }
 
     public static DependencyRelationship dependency( final URI source, final URI pomLocation, final ProjectVersionRef owner,
@@ -502,7 +505,7 @@ public final class RelationshipUtils
                                                      final DependencyScope scope, final int index, final boolean managed, final boolean inherited )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleDependencyRelationship( source, pomLocation, owner, artifact( dep, type, classifier, optional ), null, index, false, inherited );
+        return new SimpleDependencyRelationship( source, pomLocation, owner, artifact( dep, type, classifier, optional ), scope, index, managed, inherited, optional );
     }
 
     public static Set<RelationshipType> getRelationshipTypes( final ProjectRelationshipFilter filter )

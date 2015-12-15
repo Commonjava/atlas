@@ -66,12 +66,12 @@ public class RuntimeDependencyBuildOrderTCK
 
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, c ),
-                                  new SimpleDependencyRelationship( source, c, b.asJarArtifact(), null, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, c, d.asJarArtifact(), DependencyScope.test, 1, false, false ),
+                                  new SimpleDependencyRelationship( source, c, b.asJarArtifact(), null, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, c, d.asJarArtifact(), DependencyScope.test, 1, false, false, false ),
                                   new SimplePluginRelationship( source, c, pb, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, b, a.asJarArtifact(), DependencyScope.runtime, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, d, e.asJarArtifact(), DependencyScope.runtime, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, pb, pa.asJarArtifact(), null, 0, false, false )
+                                  new SimpleDependencyRelationship( source, b, a.asJarArtifact(), DependencyScope.runtime, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, d, e.asJarArtifact(), DependencyScope.runtime, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, pb, pa.asJarArtifact(), null, 0, false, false, false )
         );
         /* @formatter:on */
 
