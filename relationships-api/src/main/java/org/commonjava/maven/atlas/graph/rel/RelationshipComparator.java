@@ -47,23 +47,13 @@ public final class RelationshipComparator
                 return 1;
             }
 
-            if ( one.getTarget()
-                    .asProjectVersionRef()
-                    .equals( two.getDeclaring() ) )
+            int res = one.getDeclaring().compareTo( two.getDeclaring() );
+            if ( res == 0 )
             {
-                return -1;
+                res = one.getIndex() - two.getIndex();
             }
-            else if ( one.getDeclaring()
-                         .equals( two.getTarget()
-                                     .asProjectVersionRef() ) )
-            {
-                return 1;
-            }
-            else if ( one.getDeclaring()
-                         .equals( two.getDeclaring() ) )
-            {
-                return one.getIndex() - two.getIndex();
-            }
+
+            return res;
         }
         else
         {
@@ -71,8 +61,6 @@ public final class RelationshipComparator
                       .ordinal() - two.getType()
                                       .ordinal();
         }
-
-        return 0;
     }
 
 }
