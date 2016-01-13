@@ -261,7 +261,7 @@ public class ArtifactPathInfo
 
     public ArtifactRef getArtifact()
     {
-        return new SimpleArtifactRef( getGroupId(), getArtifactId(), getVersion(), getType(), getClassifier(), false );
+        return new SimpleArtifactRef( getGroupId(), getArtifactId(), getVersion(), getType(), getClassifier() );
     }
 
 }

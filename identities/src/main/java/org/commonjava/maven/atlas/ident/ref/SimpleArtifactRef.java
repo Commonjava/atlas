@@ -26,12 +26,12 @@ import org.commonjava.maven.atlas.ident.version.VersionSpec;
 /**
  * Represents an artifact, in Maven parlance. A tangible result of a build, which is typically made available in a Maven repository for others
  * to consume. NOTE: a POM file is both a piece of metadata AND an artifact in the Maven world!
- * 
+ *
  * Artifacts are based on the GAV coordinate for the project release, but also contain a type and optionally, a classifier. Type defaults to 'jar'.
- * 
+ *
  * @see {@link SimpleProjectRef}
  * @see {@link SimpleProjectVersionRef}
- * 
+ *
  * @author jdcasey
  */
 public class SimpleArtifactRef
@@ -43,45 +43,37 @@ public class SimpleArtifactRef
 
     private final TypeAndClassifier tc;
 
-    private final boolean optional;
-
     public SimpleArtifactRef( final String groupId, final String artifactId, final VersionSpec version,
-                              final String type, final String classifier, final boolean optional )
+                              final String type, final String classifier )
     {
         super( groupId, artifactId, version );
-        this.optional = optional;
         this.tc = new SimpleTypeAndClassifier( type, classifier );
     }
 
-    public SimpleArtifactRef( final ProjectVersionRef ref, final String type, final String classifier,
-                              final boolean optional )
+    public SimpleArtifactRef( final ProjectVersionRef ref, final String type, final String classifier )
     {
         super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpecRaw(), ref.getVersionStringRaw() );
-        this.optional = optional;
         this.tc = new SimpleTypeAndClassifier( type, classifier );
     }
 
-    public SimpleArtifactRef( final ProjectVersionRef ref, final TypeAndClassifier tc, final boolean optional )
+    public SimpleArtifactRef( final ProjectVersionRef ref, final TypeAndClassifier tc )
     {
         super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpecRaw(), ref.getVersionStringRaw() );
         this.tc = tc;
-        this.optional = optional;
     }
 
     public SimpleArtifactRef( final String groupId, final String artifactId, final String versionSpec,
-                              final String type, final String classifier, final boolean optional )
+                              final String type, final String classifier )
         throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId, versionSpec );
         this.tc = new SimpleTypeAndClassifier( type, classifier );
-        this.optional = optional;
     }
 
-    public <T extends ArtifactRef> SimpleArtifactRef( ArtifactRef ref )
+    public <T extends ArtifactRef> SimpleArtifactRef( final ArtifactRef ref )
     {
         super( ref );
         this.tc = ref.getTypeAndClassifier();
-        this.optional = ref.isOptional();
     }
 
     @Override
@@ -124,13 +116,13 @@ public class SimpleArtifactRef
 
         // assume non-optional, because it might not matter if you're parsing a string like this...you'd be more careful if you were reading something
         // that had an optional field, because it's not in the normal GATV[C] spec.
-        return new SimpleArtifactRef( g, a, v, t, c, false );
+        return new SimpleArtifactRef( g, a, v, t, c );
     }
 
     @Override
     public SimpleArtifactRef newRef( final String groupId, final String artifactId, final SingleVersion version )
     {
-        return new SimpleArtifactRef( groupId, artifactId, version, tc.getType(), tc.getClassifier(), optional );
+        return new SimpleArtifactRef( groupId, artifactId, version, tc.getType(), tc.getClassifier() );
     }
 
     @Override
@@ -151,30 +143,12 @@ public class SimpleArtifactRef
         return tc;
     }
 
-    public SimpleArtifactRef setOptional( final boolean optional )
-    {
-        if ( this.optional == optional )
-        {
-            return this;
-        }
-
-        return new SimpleArtifactRef( this, getType(), getClassifier(), optional );
-    }
-
-    @Override
-    public boolean isOptional()
-    {
-        return optional;
-    }
-
     @Override
     public int hashCode()
     {
         final int prime = 31;
         int result = super.hashCode();
         result = prime * result + ( ( tc == null ) ? 0 : tc.hashCode() );
-        result = prime * result + Boolean.valueOf( optional )
-                                         .hashCode();
         return result;
     }
 
@@ -225,7 +199,7 @@ public class SimpleArtifactRef
         if ( !( other instanceof ArtifactRef ) )
         {
             // compare vs. POM reference.
-            return artifactFieldsEqual( new SimpleArtifactRef( other, "pom", null, false ) );
+            return artifactFieldsEqual( new SimpleArtifactRef( other, "pom", null ) );
         }
 
         return artifactFieldsEqual( (ArtifactRef) other );

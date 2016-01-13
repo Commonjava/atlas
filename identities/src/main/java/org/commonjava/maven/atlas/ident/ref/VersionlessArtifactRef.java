@@ -27,8 +27,6 @@ public interface VersionlessArtifactRef
 
     TypeAndClassifier getTypeAndClassifier();
 
-    boolean isOptional();
-
     @Override
     VersionlessArtifactRef asVersionlessPomArtifact();
 
@@ -39,11 +37,6 @@ public interface VersionlessArtifactRef
     VersionlessArtifactRef asVersionlessArtifactRef( String type, String classifier );
 
     @Override
-    VersionlessArtifactRef asVersionlessArtifactRef( String type, String classifier, boolean optional );
-
-    @Override
     VersionlessArtifactRef asVersionlessArtifactRef( TypeAndClassifier tc );
 
-    @Override
-    VersionlessArtifactRef asVersionlessArtifactRef( TypeAndClassifier tc, boolean optional );
 }

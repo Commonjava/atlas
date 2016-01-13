@@ -199,7 +199,7 @@ public final class SimpleDependencyRelationship
         ArtifactRef t = getTarget();
         t =
             (ArtifactRef) ( ( ref instanceof ArtifactRef ) ? ref : new SimpleArtifactRef( ref, t.getType(),
-                                                                                    t.getClassifier(), t.isOptional() ) );
+                                                                                    t.getClassifier() ) );
 
         Set<ProjectRef> var = getExcludes();
         return new SimpleDependencyRelationship( getSources(), getPomLocation(), d, t, getScope(), getIndex(), isManaged(),

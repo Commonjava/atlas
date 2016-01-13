@@ -28,26 +28,25 @@ public final class IdentityUtils
     public static ArtifactRef artifact( final String groupId, final String artifactId, final String version )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleArtifactRef( projectVersion( groupId, artifactId, version ), null, null, false );
+        return new SimpleArtifactRef( projectVersion( groupId, artifactId, version ), null, null );
     }
 
     public static ArtifactRef artifact( final ProjectVersionRef ref )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleArtifactRef( ref, null, null, false );
+        return new SimpleArtifactRef( ref, null, null );
     }
 
     public static ArtifactRef artifact( final String groupId, final String artifactId, final String version,
-                                        final String type, final String classifier, final boolean optional )
+                                        final String type, final String classifier )
         throws InvalidVersionSpecificationException
     {
-        return new SimpleArtifactRef( projectVersion( groupId, artifactId, version ), type, classifier, optional );
+        return new SimpleArtifactRef( projectVersion( groupId, artifactId, version ), type, classifier );
     }
 
-    public static ArtifactRef artifact( final ProjectVersionRef dep, final String type, final String classifier,
-                                        final boolean optional )
+    public static ArtifactRef artifact( final ProjectVersionRef dep, final String type, final String classifier )
     {
-        return new SimpleArtifactRef( dep, type, classifier, optional );
+        return new SimpleArtifactRef( dep, type, classifier );
     }
 
     public static ProjectVersionRef projectVersion( final String src )

@@ -164,7 +164,7 @@ public final class SimplePluginDependencyRelationship
         ArtifactRef t = getTarget();
         t =
             (ArtifactRef) ( ( ref instanceof ArtifactRef ) ? ref : new SimpleArtifactRef( ref, t.getType(),
-                                                                                    t.getClassifier(), t.isOptional() ) );
+                                                                                    t.getClassifier() ) );
 
         return new SimplePluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
                                                  isManaged(), isInherited() );

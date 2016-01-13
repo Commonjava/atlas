@@ -73,7 +73,7 @@ public class LargeBatchInsertTCK
 
     private ArtifactRef newArtifact()
     {
-        return new SimpleArtifactRef( genName(), genName(), genNum(), "jar", null, false );
+        return new SimpleArtifactRef( genName(), genName(), genNum(), "jar", null );
     }
 
     private String genName()

@@ -34,11 +34,7 @@ public interface ProjectVersionRef
 
     ArtifactRef asArtifactRef( String type, String classifier );
 
-    ArtifactRef asArtifactRef( String type, String classifier, boolean optional );
-
     ArtifactRef asArtifactRef( TypeAndClassifier tc );
-
-    ArtifactRef asArtifactRef( TypeAndClassifier tc, boolean optional );
 
     VersionSpec getVersionSpecRaw();
 

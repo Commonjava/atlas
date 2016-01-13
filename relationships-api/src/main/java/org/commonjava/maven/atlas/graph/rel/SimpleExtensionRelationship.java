@@ -80,7 +80,7 @@ public final class SimpleExtensionRelationship
     @Override
     public ArtifactRef getTargetArtifact()
     {
-        return new SimpleArtifactRef( getTarget(), null, null, false );
+        return new SimpleArtifactRef( getTarget(), null, null );
     }
 
     @Override

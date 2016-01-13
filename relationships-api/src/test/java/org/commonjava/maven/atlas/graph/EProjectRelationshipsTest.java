@@ -61,11 +61,11 @@ public class EProjectRelationshipsTest
         int pidx = 0;
         final DependencyRelationship papi =
             new SimpleDependencyRelationship( source, p, new SimpleArtifactRef( "org.apache.maven", "maven-plugin-api", "3.0.3",
-                                                                    null, null, false ), DependencyScope.compile,
+                                                                    null, null ), DependencyScope.compile,
                                         idx++, false, false, false );
         final DependencyRelationship art =
             new SimpleDependencyRelationship( source, p, new SimpleArtifactRef( "org.apache.maven", "maven-artifact", "3.0.3",
-                                                                    null, null, false ), DependencyScope.compile,
+                                                                    null, null ), DependencyScope.compile,
                                         idx++, false, false, false );
         final PluginRelationship jarp =
             new SimplePluginRelationship( source, p, new SimpleProjectVersionRef( "org.apache.maven.plugins", "maven-jar-plugin",

@@ -33,7 +33,7 @@ public final class NeoIdentityUtils
 
     private NeoIdentityUtils(){}
 
-    public static String getStringProperty( PropertyContainer container, String named, String memVal )
+    public static String getStringProperty( final PropertyContainer container, final String named, final String memVal )
     {
         if ( memVal != null )
         {
@@ -49,7 +49,7 @@ public final class NeoIdentityUtils
         return v;
     }
 
-    public static String getStringProperty( PropertyContainer container, String named, String memVal, String defaultVal )
+    public static String getStringProperty( final PropertyContainer container, final String named, final String memVal, final String defaultVal )
     {
 //        Logger logger = LoggerFactory.getLogger( NeoIdentityUtils.class );
 //        logger.debug( "Looking for property: {} in: {}.\nMemory value: {}\nDefault value: {}", named, container, memVal, defaultVal);
@@ -64,7 +64,7 @@ public final class NeoIdentityUtils
         return memVal;
     }
 
-    public static boolean getBooleanProperty( PropertyContainer container, String named, Boolean memVal, boolean defaultVal )
+    public static boolean getBooleanProperty( final PropertyContainer container, final String named, final Boolean memVal, final boolean defaultVal )
     {
         if ( memVal != null )
         {
@@ -75,24 +75,21 @@ public final class NeoIdentityUtils
         return v == null ? defaultVal : v;
     }
 
-    public static ArtifactRef newNeoArtifactRef( ProjectVersionRef ref, ArtifactRef target )
+    public static ArtifactRef newNeoArtifactRef( final ProjectVersionRef ref, final ArtifactRef target )
     {
         NeoTypeAndClassifier tc;
-        Boolean optional;
         if ( target instanceof NeoArtifactRef )
         {
             tc = (NeoTypeAndClassifier) target.getTypeAndClassifier();
-            optional = ( (NeoArtifactRef) target ).getDirtyOptionalFlag();
         }
         else
         {
             tc = new NeoTypeAndClassifier( target.getType(), target.getClassifier() );
-            optional = target.isOptional();
         }
-        return new NeoArtifactRef( ref, tc, optional );
+        return new NeoArtifactRef( ref, tc );
     }
 
-    public static int getIntegerProperty( PropertyContainer container, String named, Integer memVal, int defaultVal )
+    public static int getIntegerProperty( final PropertyContainer container, final String named, final Integer memVal, final int defaultVal )
     {
         if ( memVal != null )
         {

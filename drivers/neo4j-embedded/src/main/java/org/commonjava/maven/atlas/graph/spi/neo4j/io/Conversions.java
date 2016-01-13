@@ -590,9 +590,8 @@ public final class Conversions
 
         final String type = getStringProperty( TYPE, rel );
         final String classifier = getStringProperty( CLASSIFIER, rel );
-        final boolean optional = getBooleanProperty( OPTIONAL, rel );
 
-        return new NeoArtifactRef( ref, new NeoTypeAndClassifier( rel ), optional );
+        return new NeoArtifactRef( ref, new NeoTypeAndClassifier( rel ) );
     }
 
     private static void toRelationshipProperties( final ArtifactRef target, final Relationship relationship )

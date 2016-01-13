@@ -99,7 +99,7 @@ public class NeoIdentitiesTest
     public void artifactRefCrossImplEquality()
     {
         ProjectVersionRef pvr = new SimpleProjectVersionRef( "org.foo", "bar", "1" );
-        ArtifactRef aref = new SimpleArtifactRef( pvr, "jar", null, false );
+        ArtifactRef aref = new SimpleArtifactRef( pvr, "jar", null );
         Node node = toNode( aref );
 
         NeoArtifactRef naref = new NeoArtifactRef( node );

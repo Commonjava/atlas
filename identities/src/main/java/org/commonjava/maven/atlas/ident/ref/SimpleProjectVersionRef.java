@@ -25,10 +25,10 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * Reference to a particular release of a project (or module, in terms of Maven builds). A release may contain many artifacts (see {@link SimpleArtifactRef}).
- * 
+ *
  * @see {@link SimpleProjectRef}
  * @see {@link SimpleArtifactRef}
- * 
+ *
  * @author jdcasey
  */
 public class SimpleProjectVersionRef
@@ -79,7 +79,7 @@ public class SimpleProjectVersionRef
         this( groupId, artifactId, null, versionString );
     }
 
-    public <T extends ProjectVersionRef> SimpleProjectVersionRef( ProjectVersionRef ref )
+    public <T extends ProjectVersionRef> SimpleProjectVersionRef( final ProjectVersionRef ref )
     {
         super( ref );
         this.versionSpec = ref.getVersionSpecRaw();
@@ -111,37 +111,25 @@ public class SimpleProjectVersionRef
     @Override
     public ArtifactRef asPomArtifact()
     {
-        return asArtifactRef( "pom", null, false );
+        return asArtifactRef( "pom", null );
     }
 
     @Override
     public ArtifactRef asJarArtifact()
     {
-        return asArtifactRef( "jar", null, false );
+        return asArtifactRef( "jar", null );
     }
 
     @Override
     public ArtifactRef asArtifactRef( final String type, final String classifier )
     {
-        return asArtifactRef( type, classifier, false );
-    }
-
-    @Override
-    public ArtifactRef asArtifactRef( final String type, final String classifier, final boolean optional )
-    {
-        return new SimpleArtifactRef( this, type, classifier, optional );
+        return new SimpleArtifactRef( this, type, classifier );
     }
 
     @Override
     public ArtifactRef asArtifactRef( final TypeAndClassifier tc )
     {
-        return asArtifactRef( tc, false );
-    }
-
-    @Override
-    public ArtifactRef asArtifactRef( final TypeAndClassifier tc, final boolean optional )
-    {
-        return new SimpleArtifactRef( this, tc, optional );
+        return new SimpleArtifactRef( this, tc );
     }
 
     @Override
@@ -237,6 +225,7 @@ public class SimpleProjectVersionRef
         return result;
     }
 
+    @Override
     public boolean versionlessEquals( final ProjectVersionRef other )
     {
         return this == other || super.equals( other );
