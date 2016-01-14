@@ -82,14 +82,14 @@ public final class PathComparator
         return 0;
     }
 
-    private int compareTypes( Relationship f, Relationship s )
+    private int compareTypes( final Relationship f, final Relationship s )
     {
         GraphRelType ft = GraphRelType.valueOf( f.getType().name() );
         GraphRelType st = GraphRelType.valueOf( s.getType().name() );
         return ft.ordinal() - st.ordinal();
     }
 
-    private int compareRels( Relationship first, Relationship second )
+    private int compareRels( final Relationship first, final Relationship second )
     {
         if ( first.getType() == second.getType() )
         {
@@ -105,27 +105,20 @@ public final class PathComparator
                 return 1;
             }
 
-            if ( first.getEndNode().getId() == second.getStartNode().getId() )
+            int res = ( (Long) first.getStartNode().getId() ).compareTo( second.getStartNode().getId() );
+            if ( res == 0 )
             {
-                return -1;
+                res = Conversions.getIntegerProperty( Conversions.INDEX, first )
+                        - Conversions.getIntegerProperty( Conversions.INDEX, second );
             }
-            else if ( first.getStartNode().getId() == second.getEndNode().getId() )
-            {
-                return 1;
-            }
-            else if ( first.getStartNode().getId() == second.getStartNode().getId() )
-            {
-                return Conversions.getIntegerProperty( Conversions.INDEX, first ) - Conversions.getIntegerProperty(
-                        Conversions.INDEX, second );
-            }
+
+            return res;
         }
         else
         {
             // really, we can't reach this because of the way the main compare method works...
             return compareTypes( first, second );
         }
-
-        return 0;
     }
 
 }
