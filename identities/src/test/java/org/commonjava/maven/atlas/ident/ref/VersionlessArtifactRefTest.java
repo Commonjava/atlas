@@ -118,22 +118,6 @@ public class VersionlessArtifactRefTest
     }
 
     @Test
-    public void identicalVersionlessArtifactsAreNotEqualWhenOptionalFlagsDiffer()
-    {
-        // net.sf.kxml:kxml2:*:jar
-        final String g = "net.sf.kxml";
-        final String a = "kxml2";
-        final String v = "1";
-        final String t = "jar";
-
-        final VersionlessArtifactRef r1 = new SimpleVersionlessArtifactRef( new SimpleArtifactRef( g, a, v, t, null ) );
-        final VersionlessArtifactRef r2 = new SimpleVersionlessArtifactRef( new SimpleArtifactRef( g, a, v, t, null ) );
-
-        assertThat( r1.equals( r2 ), equalTo( false ) );
-        assertThat( r1.hashCode() == r2.hashCode(), equalTo( false ) );
-    }
-
-    @Test
     public void twoIdenticalArtifactsWrappedInVersionlessInstanceAreEqual_DefaultTypeAndClassifier()
     {
         final ProjectVersionRef pvr = new SimpleProjectVersionRef( "group", "artifact", "1" );
