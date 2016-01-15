@@ -77,8 +77,7 @@ public class DependencyTreeRelationshipPrinter
             suffix = ":" + dr.getScope()
                              .name();
 
-            if ( dr.getTargetArtifact()
-                   .isOptional() )
+            if ( dr.isOptional() )
             {
                 localLabels.add( "OPTIONAL" );
             }

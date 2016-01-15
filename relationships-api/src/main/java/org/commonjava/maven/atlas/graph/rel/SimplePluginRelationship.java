@@ -128,7 +128,7 @@ public final class SimplePluginRelationship
     @Override
     public ArtifactRef getTargetArtifact()
     {
-        return new SimpleArtifactRef( getTarget(), "maven-plugin", null, false );
+        return new SimpleArtifactRef( getTarget(), "maven-plugin", null );
     }
 
     @Override

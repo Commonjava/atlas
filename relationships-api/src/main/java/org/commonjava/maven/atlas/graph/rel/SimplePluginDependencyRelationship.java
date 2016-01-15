@@ -35,12 +35,15 @@ public final class SimplePluginDependencyRelationship
 
     private final ProjectRef plugin;
 
+    private boolean optional;
+
     public SimplePluginDependencyRelationship( final URI source, final ProjectVersionRef declaring,
                                                final ProjectRef plugin, final ArtifactRef target, final int index,
                                                final boolean managed, final boolean inherited )
     {
         super( source, RelationshipType.PLUGIN_DEP, declaring, target, index, managed, inherited, false );
         this.plugin = plugin;
+        this.optional = optional;
     }
 
     public SimplePluginDependencyRelationship( final URI source, final URI pomLocation,
@@ -50,6 +53,7 @@ public final class SimplePluginDependencyRelationship
     {
         super( source, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed, inherited, false );
         this.plugin = plugin;
+        this.optional = optional;
     }
 
     public SimplePluginDependencyRelationship( final Collection<URI> sources, final URI pomLocation,
@@ -59,18 +63,26 @@ public final class SimplePluginDependencyRelationship
     {
         super( sources, pomLocation, RelationshipType.PLUGIN_DEP, declaring, target, index, managed, inherited, false );
         this.plugin = plugin;
+        this.optional = optional;
     }
 
     public SimplePluginDependencyRelationship( final PluginDependencyRelationship relationship )
     {
         super( relationship );
         this.plugin = new SimpleProjectRef( relationship.getPlugin() );
+        this.optional = optional;
     }
 
     @Override
     public final ProjectRef getPlugin()
     {
         return plugin;
+    }
+
+    @Override
+    public boolean isOptional()
+    {
+        return optional;
     }
 
     @Override
@@ -152,7 +164,7 @@ public final class SimplePluginDependencyRelationship
         ArtifactRef t = getTarget();
         t =
             (ArtifactRef) ( ( ref instanceof ArtifactRef ) ? ref : new SimpleArtifactRef( ref, t.getType(),
-                                                                                    t.getClassifier(), t.isOptional() ) );
+                                                                                    t.getClassifier() ) );
 
         return new SimplePluginDependencyRelationship( getSources(), getPomLocation(), d, getPlugin(), t, getIndex(),
                                                  isManaged(), isInherited() );

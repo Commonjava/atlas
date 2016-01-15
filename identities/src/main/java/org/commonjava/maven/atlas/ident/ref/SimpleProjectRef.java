@@ -19,7 +19,7 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 
 /**
  * Reference to a whole project (or module, in terms of Maven builds). This reference is not specific to a release of the project (see {@link SimpleProjectVersionRef}).
- * 
+ *
  * @author jdcasey
  */
 public class SimpleProjectRef
@@ -46,7 +46,7 @@ public class SimpleProjectRef
         this.artifactId = artifactId;
     }
 
-    public <T extends ProjectRef> SimpleProjectRef( ProjectRef ref )
+    public <T extends ProjectRef> SimpleProjectRef( final ProjectRef ref )
     {
         this.groupId = ref.getGroupId();
         this.artifactId = ref.getArtifactId();
@@ -85,38 +85,25 @@ public class SimpleProjectRef
     @Override
     public VersionlessArtifactRef asVersionlessPomArtifact()
     {
-        return asVersionlessArtifactRef( "pom", null, false );
+        return asVersionlessArtifactRef( "pom", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessJarArtifact()
     {
-        return asVersionlessArtifactRef( "jar", null, false );
+        return asVersionlessArtifactRef( "jar", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier )
     {
-        return asVersionlessArtifactRef( type, classifier, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier,
-                                                            final boolean optional )
-    {
-        return new SimpleVersionlessArtifactRef( this, type, classifier, optional );
+        return new SimpleVersionlessArtifactRef( this, type, classifier );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc )
     {
-        return asVersionlessArtifactRef( tc, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc, final boolean optional )
-    {
-        return new SimpleVersionlessArtifactRef( this, tc, optional );
+        return new SimpleVersionlessArtifactRef( this, tc );
     }
 
     @Override
@@ -158,6 +145,7 @@ public class SimpleProjectRef
         return groupId.equals( other.getGroupId() );
     }
 
+    @Override
     public int compareTo( final ProjectRef o )
     {
         int comp = groupId.compareTo( o.getGroupId() );

@@ -187,4 +187,10 @@ public final class NeoDependencyRelationship
         return DependencyScope._import == getScope() && "pom".equals( getTargetArtifact().getType() );
     }
 
+    @Override
+    public boolean isOptional()
+    {
+        return Conversions.getBooleanProperty( Conversions.OPTIONAL, rel );
+    }
+
 }

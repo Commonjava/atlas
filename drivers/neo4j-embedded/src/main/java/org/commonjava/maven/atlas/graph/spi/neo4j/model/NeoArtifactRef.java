@@ -34,12 +34,12 @@ import static org.apache.commons.lang.StringUtils.isEmpty;
 /**
  * Represents an artifact, in Maven parlance. A tangible result of a build, which is typically made available in a Maven repository for others
  * to consume. NOTE: a POM file is both a piece of metadata AND an artifact in the Maven world!
- * 
+ *
  * Artifacts are based on the GAV coordinate for the project release, but also contain a type and optionally, a classifier. Type defaults to 'jar'.
- * 
+ *
  * @see {@link NeoProjectRef}
  * @see {@link NeoProjectVersionRef}
- * 
+ *
  * @author jdcasey
  */
 public class NeoArtifactRef<T extends ArtifactRef>
@@ -51,32 +51,27 @@ public class NeoArtifactRef<T extends ArtifactRef>
 
     private NeoTypeAndClassifier tc;
 
-    private Boolean optional;
-
     public NeoArtifactRef( final String groupId, final String artifactId, final VersionSpec version, final String type,
-                           final String classifier, final boolean optional )
+                           final String classifier )
     {
         super( groupId, artifactId, version );
-        this.optional = optional;
         this.tc = new NeoTypeAndClassifier( type, classifier );
     }
 
-    public NeoArtifactRef( final NeoProjectVersionRef ref, final String type, final String classifier,
-                           final boolean optional )
+    public NeoArtifactRef( final NeoProjectVersionRef ref, final String type, final String classifier )
     {
-        this( ref, new NeoTypeAndClassifier( type, classifier ), optional );
+        this( ref, new NeoTypeAndClassifier( type, classifier ) );
     }
 
     public NeoArtifactRef( final NeoProjectVersionRef ref )
     {
-        this( ref, new NeoTypeAndClassifier( "pom", null ), false );
+        this( ref, new NeoTypeAndClassifier( "pom", null ) );
     }
 
-    public NeoArtifactRef( final ProjectVersionRef ref, final NeoTypeAndClassifier tc, final Boolean optional )
+    public NeoArtifactRef( final ProjectVersionRef ref, final NeoTypeAndClassifier tc )
     {
         super( ref );
         this.tc = tc;
-        this.optional = optional;
     }
 
     public NeoArtifactRef( final Node node )
@@ -86,12 +81,11 @@ public class NeoArtifactRef<T extends ArtifactRef>
     }
 
     public NeoArtifactRef( final String groupId, final String artifactId, final String versionSpec, final String type,
-                           final String classifier, final boolean optional )
+                           final String classifier )
         throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId, versionSpec );
         this.tc = new NeoTypeAndClassifier( type, classifier );
-        this.optional = optional;
     }
 
     @Override
@@ -134,13 +128,13 @@ public class NeoArtifactRef<T extends ArtifactRef>
 
         // assume non-optional, because it might not matter if you're parsing a string like this...you'd be more careful if you were reading something
         // that had an optional field, because it's not in the normal GATV[C] spec.
-        return new NeoArtifactRef( g, a, v, t, c, false );
+        return new NeoArtifactRef( g, a, v, t, c );
     }
 
     @Override
     public NeoArtifactRef newRef( final String groupId, final String artifactId, final SingleVersion version )
     {
-        return new NeoArtifactRef( groupId, artifactId, version, tc.getType(), tc.getClassifier(), isOptional() );
+        return new NeoArtifactRef( groupId, artifactId, version, tc.getType(), tc.getClassifier() );
     }
 
     @Override
@@ -161,30 +155,12 @@ public class NeoArtifactRef<T extends ArtifactRef>
         return tc;
     }
 
-    public NeoArtifactRef setOptional( final boolean optional )
-    {
-        if ( isOptional() == optional )
-        {
-            return this;
-        }
-
-        return new NeoArtifactRef( this, getType(), getClassifier(), optional );
-    }
-
-    @Override
-    public boolean isOptional()
-    {
-        return getBooleanProperty( container, Conversions.OPTIONAL, optional, false );
-    }
-
     @Override
     public int hashCode()
     {
         final int prime = 31;
         int result = super.hashCode();
         result = prime * result + ( ( tc == null ) ? 0 : tc.hashCode() );
-        result = prime * result + Boolean.valueOf( isOptional() )
-                                         .hashCode();
         return result;
     }
 
@@ -241,15 +217,10 @@ public class NeoArtifactRef<T extends ArtifactRef>
         return artifactFieldsEqual( (ArtifactRef) other );
     }
 
-    public Boolean getDirtyOptionalFlag()
-    {
-        return optional;
-    }
-
     @Override
     public boolean isDirty()
     {
-        return super.isDirty() || optional != null || tc.isDirty();
+        return super.isDirty() || tc.isDirty();
     }
 
     @Override

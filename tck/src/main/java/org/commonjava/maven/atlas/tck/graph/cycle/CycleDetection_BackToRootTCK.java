@@ -55,9 +55,9 @@ public class CycleDetection_BackToRootTCK
         final RelationshipGraph graph = simpleGraph( project );
 
         /* @formatter:off */
-        graph.storeRelationships( new SimpleDependencyRelationship( source, project, dep.asJarArtifact(), null, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, dep,  dep2.asJarArtifact(), null, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, dep2,  project.asJarArtifact(), null, 0, false, false ) );
+        graph.storeRelationships( new SimpleDependencyRelationship( source, project, dep.asJarArtifact(), null, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, dep,  dep2.asJarArtifact(), null, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, dep2,  project.asJarArtifact(), null, 0, false, false, false ) );
         /* @formatter:on */
 
         //        final EProjectGraph graph = getManager().getGraph( session, project );

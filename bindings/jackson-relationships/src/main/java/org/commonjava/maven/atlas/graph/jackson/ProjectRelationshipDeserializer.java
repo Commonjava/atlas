@@ -182,6 +182,7 @@ public final class ProjectRelationshipDeserializer<T extends ProjectRelationship
         boolean managed = Boolean.TRUE.equals( ast.get( MANAGED ) );
         boolean inherited = Boolean.TRUE.equals( ast.get( INHERITED ) );
         boolean mixin = Boolean.TRUE.equals( ast.get( MIXIN ) );
+        boolean optional = Boolean.TRUE.equals( ast.get( OPTIONAL ) );
 
         ProjectRelationship<?, ?> rel = null;
         switch ( type )
@@ -202,7 +203,7 @@ public final class ProjectRelationshipDeserializer<T extends ProjectRelationship
                 }
 
                 rel = new SimpleDependencyRelationship( sources, pomLocation, declaring, target, scope, index,
-                                                        managed, inherited );
+                                                        managed, inherited, optional );
                 break;
             }
             case EXTENSION:

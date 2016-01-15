@@ -118,27 +118,11 @@ public class VersionlessArtifactRefTest
     }
 
     @Test
-    public void identicalVersionlessArtifactsAreNotEqualWhenOptionalFlagsDiffer()
-    {
-        // net.sf.kxml:kxml2:*:jar
-        final String g = "net.sf.kxml";
-        final String a = "kxml2";
-        final String v = "1";
-        final String t = "jar";
-
-        final VersionlessArtifactRef r1 = new SimpleVersionlessArtifactRef( new SimpleArtifactRef( g, a, v, t, null, false ) );
-        final VersionlessArtifactRef r2 = new SimpleVersionlessArtifactRef( new SimpleArtifactRef( g, a, v, t, null, true ) );
-
-        assertThat( r1.equals( r2 ), equalTo( false ) );
-        assertThat( r1.hashCode() == r2.hashCode(), equalTo( false ) );
-    }
-
-    @Test
     public void twoIdenticalArtifactsWrappedInVersionlessInstanceAreEqual_DefaultTypeAndClassifier()
     {
         final ProjectVersionRef pvr = new SimpleProjectVersionRef( "group", "artifact", "1" );
-        final ArtifactRef r1 = new SimpleArtifactRef( pvr, null, null, false );
-        final ArtifactRef r2 = new SimpleArtifactRef( pvr, null, null, false );
+        final ArtifactRef r1 = new SimpleArtifactRef( pvr, null, null );
+        final ArtifactRef r2 = new SimpleArtifactRef( pvr, null, null );
 
         final VersionlessArtifactRef vr1 = new SimpleVersionlessArtifactRef( r1 );
         final VersionlessArtifactRef vr2 = new SimpleVersionlessArtifactRef( r2 );
@@ -151,8 +135,8 @@ public class VersionlessArtifactRefTest
     public void twoArtifactsWrappedInVersionlessInstanceAreNotEqualWhenTypeDiffers()
     {
         final ProjectVersionRef pvr = new SimpleProjectVersionRef( "group", "artifact", "1" );
-        final ArtifactRef r1 = new SimpleArtifactRef( pvr, "jar", null, false );
-        final ArtifactRef r2 = new SimpleArtifactRef( pvr, "pom", null, false );
+        final ArtifactRef r1 = new SimpleArtifactRef( pvr, "jar", null );
+        final ArtifactRef r2 = new SimpleArtifactRef( pvr, "pom", null );
 
         final VersionlessArtifactRef vr1 = new SimpleVersionlessArtifactRef( r1 );
         final VersionlessArtifactRef vr2 = new SimpleVersionlessArtifactRef( r2 );
@@ -165,8 +149,8 @@ public class VersionlessArtifactRefTest
     public void twoArtifactsWrappedInVersionlessInstanceAreNotEqualWhenClassifierDiffers()
     {
         final ProjectVersionRef pvr = new SimpleProjectVersionRef( "group", "artifact", "1" );
-        final ArtifactRef r1 = new SimpleArtifactRef( pvr, "jar", null, false );
-        final ArtifactRef r2 = new SimpleArtifactRef( pvr, "jar", "foo", false );
+        final ArtifactRef r1 = new SimpleArtifactRef( pvr, "jar", null );
+        final ArtifactRef r2 = new SimpleArtifactRef( pvr, "jar", "foo" );
 
         final VersionlessArtifactRef vr1 = new SimpleVersionlessArtifactRef( r1 );
         final VersionlessArtifactRef vr2 = new SimpleVersionlessArtifactRef( r2 );
@@ -180,8 +164,8 @@ public class VersionlessArtifactRefTest
     {
         final ProjectVersionRef pvr1 = new SimpleProjectVersionRef( "group", "artifact", "1" );
         final ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "group", "artifact", "2" );
-        final ArtifactRef r1 = new SimpleArtifactRef( pvr1, null, null, false );
-        final ArtifactRef r2 = new SimpleArtifactRef( pvr2, null, null, false );
+        final ArtifactRef r1 = new SimpleArtifactRef( pvr1, null, null );
+        final ArtifactRef r2 = new SimpleArtifactRef( pvr2, null, null );
 
         final VersionlessArtifactRef vr1 = new SimpleVersionlessArtifactRef( r1 );
         final VersionlessArtifactRef vr2 = new SimpleVersionlessArtifactRef( r2 );
@@ -195,8 +179,8 @@ public class VersionlessArtifactRefTest
     {
         final ProjectVersionRef pvr1 = new SimpleProjectVersionRef( "group", "artifact", "1" );
         final ProjectVersionRef pvr2 = new SimpleProjectVersionRef( "group", "artifact", "[2,3.1]" );
-        final ArtifactRef r1 = new SimpleArtifactRef( pvr1, null, null, false );
-        final ArtifactRef r2 = new SimpleArtifactRef( pvr2, null, null, false );
+        final ArtifactRef r1 = new SimpleArtifactRef( pvr1, null, null );
+        final ArtifactRef r2 = new SimpleArtifactRef( pvr2, null, null );
 
         // trigger parsing.
         r1.getVersionSpec();

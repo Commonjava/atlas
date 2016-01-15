@@ -40,28 +40,22 @@ public class NeoVersionlessArtifactRef<T extends VersionlessArtifactRef>
 
     private TypeAndClassifier tc;
 
-    private boolean optional;
-
     public NeoVersionlessArtifactRef( final ArtifactRef ref )
     {
         super( ref.getGroupId(), ref.getArtifactId() );
-        this.optional = ref.isOptional();
         this.tc = ref.getTypeAndClassifier();
     }
 
-    public NeoVersionlessArtifactRef( final ProjectRef ref, final String type, final String classifier,
-                                      final boolean optional )
+    public NeoVersionlessArtifactRef( final ProjectRef ref, final String type, final String classifier )
     {
         super( ref.getGroupId(), ref.getArtifactId() );
-        this.optional = optional;
         this.tc = new NeoTypeAndClassifier( type, classifier );
     }
 
-    public NeoVersionlessArtifactRef( final ProjectRef ref, final TypeAndClassifier tc, final boolean optional )
+    public NeoVersionlessArtifactRef( final ProjectRef ref, final TypeAndClassifier tc )
     {
         super( ref.getGroupId(), ref.getArtifactId() );
         this.tc = tc == null ? new NeoTypeAndClassifier() : tc;
-        this.optional = optional;
     }
 
     public NeoVersionlessArtifactRef( final String groupId, final String artifactId, final String type,
@@ -70,7 +64,6 @@ public class NeoVersionlessArtifactRef<T extends VersionlessArtifactRef>
     {
         super( groupId, artifactId );
         this.tc = new NeoTypeAndClassifier( type, classifier );
-        this.optional = optional;
     }
 
     @Override
@@ -139,17 +132,10 @@ public class NeoVersionlessArtifactRef<T extends VersionlessArtifactRef>
     }
 
     @Override
-    public boolean isOptional()
-    {
-        return optional;
-    }
-
-    @Override
     public int hashCode()
     {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ( optional ? 1231 : 1237 );
         result = prime * result + ( ( tc == null ) ? 0 : tc.hashCode() );
         return result;
     }
@@ -170,10 +156,6 @@ public class NeoVersionlessArtifactRef<T extends VersionlessArtifactRef>
             return false;
         }
         final VersionlessArtifactRef other = (VersionlessArtifactRef) obj;
-        if ( optional != other.isOptional() )
-        {
-            return false;
-        }
         if ( tc == null )
         {
             if ( other.getTypeAndClassifier() != null )
@@ -191,49 +173,36 @@ public class NeoVersionlessArtifactRef<T extends VersionlessArtifactRef>
     @Override
     public VersionlessArtifactRef asVersionlessPomArtifact()
     {
-        return asVersionlessArtifactRef( "pom", null, false );
+        return asVersionlessArtifactRef( "pom", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessJarArtifact()
     {
-        return asVersionlessArtifactRef( "jar", null, false );
+        return asVersionlessArtifactRef( "jar", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier )
     {
-        return asVersionlessArtifactRef( type, classifier, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier,
-                                                            final boolean optional )
-    {
         final TypeAndClassifier tc = new NeoTypeAndClassifier( type, classifier );
-        if ( NeoVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) && this.optional == optional )
+        if ( NeoVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) )
         {
             return this;
         }
 
-        return super.asVersionlessArtifactRef( type, classifier, optional );
+        return super.asVersionlessArtifactRef( type, classifier );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc )
     {
-        return asVersionlessArtifactRef( tc, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc, final boolean optional )
-    {
-        if ( NeoVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) && this.optional == optional )
+        if ( NeoVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) )
         {
             return this;
         }
 
-        return super.asVersionlessArtifactRef( tc, optional );
+        return super.asVersionlessArtifactRef( tc );
     }
 
     @Override

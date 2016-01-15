@@ -111,7 +111,7 @@ public class NeoProjectVersionRefSerializerModuleTest
             throws IOException
     {
         ArtifactRef aref = new SimpleArtifactRef( new SimpleProjectVersionRef( "org.foo", "bar", "1" ),
-                                                        new SimpleTypeAndClassifier( "jar", null ), false );
+                                                        new SimpleTypeAndClassifier( "jar", null ) );
 
         String json = mapper.writeValueAsString( aref );
 

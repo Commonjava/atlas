@@ -55,7 +55,7 @@ public class LargeBatchInsertTCK
         for ( int i = 0; i < 550; i++ )
         {
             rels.add(new SimpleDependencyRelationship( sourceURI(), RelationshipUtils.POM_ROOT_URI, myRef, newArtifact(),
-                                                       DependencyScope.compile, i, false, false ) );
+                                                       DependencyScope.compile, i, false, false, false ) );
         }
 
         final RelationshipGraph graph = simpleGraph( myRef );
@@ -73,7 +73,7 @@ public class LargeBatchInsertTCK
 
     private ArtifactRef newArtifact()
     {
-        return new SimpleArtifactRef( genName(), genName(), genNum(), "jar", null, false );
+        return new SimpleArtifactRef( genName(), genName(), genNum(), "jar", null );
     }
 
     private String genName()

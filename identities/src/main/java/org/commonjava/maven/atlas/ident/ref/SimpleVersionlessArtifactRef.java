@@ -22,7 +22,7 @@ import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationExcep
 /**
  * Special implementation of {@link SimpleArtifactRef} that forces all versions to ZERO, to allow calculation of transitive
  * dependency graphs, where version collisions of the same project are likely.
- * 
+ *
  * @author jdcasey
  */
 public class SimpleVersionlessArtifactRef
@@ -34,44 +34,36 @@ public class SimpleVersionlessArtifactRef
 
     private final TypeAndClassifier tc;
 
-    private final boolean optional;
-
     public SimpleVersionlessArtifactRef( final ArtifactRef ref )
     {
         super( ref.getGroupId(), ref.getArtifactId() );
-        this.optional = ref.isOptional();
         this.tc = ref.getTypeAndClassifier();
     }
 
-    public SimpleVersionlessArtifactRef( final ProjectRef ref, final String type, final String classifier,
-                                         final boolean optional )
+    public SimpleVersionlessArtifactRef( final ProjectRef ref, final String type, final String classifier )
     {
         super( ref.getGroupId(), ref.getArtifactId() );
-        this.optional = optional;
         this.tc = new SimpleTypeAndClassifier( type, classifier );
     }
 
-    public SimpleVersionlessArtifactRef( final ProjectRef ref, final TypeAndClassifier tc, final boolean optional )
+    public SimpleVersionlessArtifactRef( final ProjectRef ref, final TypeAndClassifier tc )
     {
         super( ref.getGroupId(), ref.getArtifactId() );
         this.tc = tc == null ? new SimpleTypeAndClassifier() : tc;
-        this.optional = optional;
     }
 
     public SimpleVersionlessArtifactRef( final String groupId, final String artifactId, final String type,
-                                         final String classifier, final boolean optional )
+                                         final String classifier )
         throws InvalidVersionSpecificationException
     {
         super( groupId, artifactId );
         this.tc = new SimpleTypeAndClassifier( type, classifier );
-        this.optional = optional;
     }
 
-    public <T extends VersionlessArtifactRef> SimpleVersionlessArtifactRef( VersionlessArtifactRef ref )
+    public <T extends VersionlessArtifactRef> SimpleVersionlessArtifactRef( final VersionlessArtifactRef ref )
     {
         super( ref );
         this.tc = ref.getTypeAndClassifier();
-        this.optional = ref.isOptional();
     }
 
     @Override
@@ -118,7 +110,7 @@ public class SimpleVersionlessArtifactRef
 
         // assume non-optional, because it might not matter if you're parsing a string like this...you'd be more careful if you were reading something
         // that had an optional field, because it's not in the normal GATV[C] spec.
-        return new SimpleVersionlessArtifactRef( g, a, t, c, false );
+        return new SimpleVersionlessArtifactRef( g, a, t, c );
     }
 
     @Override
@@ -140,17 +132,10 @@ public class SimpleVersionlessArtifactRef
     }
 
     @Override
-    public boolean isOptional()
-    {
-        return optional;
-    }
-
-    @Override
     public int hashCode()
     {
         final int prime = 31;
         int result = super.hashCode();
-        result = prime * result + ( optional ? 1231 : 1237 );
         result = prime * result + ( ( tc == null ) ? 0 : tc.hashCode() );
         return result;
     }
@@ -171,10 +156,6 @@ public class SimpleVersionlessArtifactRef
             return false;
         }
         final VersionlessArtifactRef other = (VersionlessArtifactRef) obj;
-        if ( optional != other.isOptional() )
-        {
-            return false;
-        }
         if ( tc == null )
         {
             if ( other.getTypeAndClassifier() != null )
@@ -192,48 +173,35 @@ public class SimpleVersionlessArtifactRef
     @Override
     public VersionlessArtifactRef asVersionlessPomArtifact()
     {
-        return asVersionlessArtifactRef( "pom", null, false );
+        return asVersionlessArtifactRef( "pom", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessJarArtifact()
     {
-        return asVersionlessArtifactRef( "jar", null, false );
+        return asVersionlessArtifactRef( "jar", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier )
     {
-        return asVersionlessArtifactRef( type, classifier, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier,
-                                                            final boolean optional )
-    {
         final TypeAndClassifier tc = new SimpleTypeAndClassifier( type, classifier );
-        if ( SimpleVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) && this.optional == optional )
+        if ( SimpleVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) )
         {
             return this;
         }
 
-        return super.asVersionlessArtifactRef( type, classifier, optional );
+        return super.asVersionlessArtifactRef( type, classifier );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc )
     {
-        return asVersionlessArtifactRef( tc, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc, final boolean optional )
-    {
-        if ( SimpleVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) && this.optional == optional )
+        if ( SimpleVersionlessArtifactRef.class.equals( getClass() ) && this.tc.equals( tc ) )
         {
             return this;
         }
 
-        return super.asVersionlessArtifactRef( tc, optional );
+        return super.asVersionlessArtifactRef( tc );
     }
 }

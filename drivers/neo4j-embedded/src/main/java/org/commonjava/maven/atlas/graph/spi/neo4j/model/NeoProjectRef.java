@@ -52,7 +52,7 @@ public class NeoProjectRef<T extends ProjectRef>
 
     private String artifactIdProperty = Conversions.ARTIFACT_ID;
 
-    public NeoProjectRef(ProjectRef ref)
+    public NeoProjectRef(final ProjectRef ref)
     {
         if ( ref instanceof NeoProjectRef)
         {
@@ -82,7 +82,7 @@ public class NeoProjectRef<T extends ProjectRef>
         }
     }
 
-    public NeoProjectRef( Node container )
+    public NeoProjectRef( final Node container )
     {
         this.container = container;
         if ( isEmpty( getGroupId() ) || isEmpty( getArtifactId() ) )
@@ -92,7 +92,7 @@ public class NeoProjectRef<T extends ProjectRef>
         }
     }
 
-    public NeoProjectRef( PropertyContainer container, String groupIdProperty, String artifactIdProperty )
+    public NeoProjectRef( final PropertyContainer container, final String groupIdProperty, final String artifactIdProperty )
     {
         Logger logger = LoggerFactory.getLogger( getClass() );
         logger.debug( "setting up project ref on container: {} with gid prop: {} and aid prop: {}", container,
@@ -136,38 +136,25 @@ public class NeoProjectRef<T extends ProjectRef>
     @Override
     public VersionlessArtifactRef asVersionlessPomArtifact()
     {
-        return asVersionlessArtifactRef( "pom", null, false );
+        return asVersionlessArtifactRef( "pom", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessJarArtifact()
     {
-        return asVersionlessArtifactRef( "jar", null, false );
+        return asVersionlessArtifactRef( "jar", null );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier )
     {
-        return asVersionlessArtifactRef( type, classifier, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final String type, final String classifier,
-                                                            final boolean optional )
-    {
-        return new NeoVersionlessArtifactRef( this, type, classifier, optional );
+        return new NeoVersionlessArtifactRef( this, type, classifier );
     }
 
     @Override
     public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc )
     {
-        return asVersionlessArtifactRef( tc, false );
-    }
-
-    @Override
-    public VersionlessArtifactRef asVersionlessArtifactRef( final TypeAndClassifier tc, final boolean optional )
-    {
-        return new NeoVersionlessArtifactRef( this, tc, optional );
+        return new NeoVersionlessArtifactRef( this, tc );
     }
 
     @Override
@@ -209,6 +196,7 @@ public class NeoProjectRef<T extends ProjectRef>
         return getGroupId().equals( other.getGroupId() );
     }
 
+    @Override
     public int compareTo( final ProjectRef o )
     {
         int comp = getGroupId().compareTo( o.getGroupId() );

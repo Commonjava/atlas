@@ -84,7 +84,7 @@ public final class SimpleParentRelationship
     @Override
     public ArtifactRef getTargetArtifact()
     {
-        return new SimpleArtifactRef( getTarget(), "pom", null, false );
+        return new SimpleArtifactRef( getTarget(), "pom", null );
     }
 
     @Override

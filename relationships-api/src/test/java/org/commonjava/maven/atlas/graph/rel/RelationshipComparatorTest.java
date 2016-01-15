@@ -31,9 +31,9 @@ public class RelationshipComparatorTest
         final ProjectVersionRef nodeY = projectVersion( "y", "y", "1.0" );
         final ProjectVersionRef nodeZ = projectVersion( "z", "z", "1.0" );
 
-        DependencyRelationship relA = dependency( POM_ROOT_URI, nodeW, nodeX, 0, false );
-        DependencyRelationship relB = dependency( POM_ROOT_URI, nodeX, nodeY, 0, false );
-        DependencyRelationship relC = dependency( POM_ROOT_URI, nodeY, nodeZ, 0, false );
+        DependencyRelationship relA = dependency( POM_ROOT_URI, nodeW, nodeX, 0, false, false );
+        DependencyRelationship relB = dependency( POM_ROOT_URI, nodeX, nodeY, 0, false, false );
+        DependencyRelationship relC = dependency( POM_ROOT_URI, nodeY, nodeZ, 0, false, false );
 
         assertThat( "relA < relB must be true to perform the test",
                     RelationshipComparator.INSTANCE.compare( relA, relB ), equalTo( -1 ) );

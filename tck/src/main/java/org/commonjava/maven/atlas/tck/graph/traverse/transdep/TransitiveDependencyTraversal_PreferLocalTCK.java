@@ -53,8 +53,8 @@ public class TransitiveDependencyTraversal_PreferLocalTCK
 
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, root, parent ),
-                                  new SimpleDependencyRelationship( source, root, d1a.asJarArtifact(), compile, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, parent, d1b.asJarArtifact(), compile, 0, false, false )
+                                  new SimpleDependencyRelationship( source, root, d1a.asJarArtifact(), compile, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, parent, d1b.asJarArtifact(), compile, 0, false, false, false )
         );
         /* @formatter:on */
 

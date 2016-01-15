@@ -49,13 +49,13 @@ public class AncestryTraversal_IgnoreNonParentRels_TCK
 
         /* @formatter:off */
         graph.storeRelationships( new SimpleParentRelationship( source, myRef, parentRef ),
-              new SimpleDependencyRelationship( source, myRef, new SimpleArtifactRef( new SimpleProjectVersionRef( "some.group", "foo", "1.0"   ), null, null, false ), null, 0, false, false ),
-              new SimpleDependencyRelationship( source, myRef, new SimpleArtifactRef( new SimpleProjectVersionRef( "some.group", "bar", "1.2.1" ), null, null, false ), null, 1, false, false ),
+              new SimpleDependencyRelationship( source, myRef, new SimpleArtifactRef( new SimpleProjectVersionRef( "some.group", "foo", "1.0"   ), null, null ), null, 0, false, false, false ),
+              new SimpleDependencyRelationship( source, myRef, new SimpleArtifactRef( new SimpleProjectVersionRef( "some.group", "bar", "1.2.1" ), null, null ), null, 1, false, false, false ),
               new SimplePluginRelationship( source, myRef, new SimpleProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0, false, false ),
               new SimplePluginRelationship( source, myRef, new SimpleProjectVersionRef( "org.apache.maven.plugins","maven-jar-plugin", "2.2" ), 1, false, false ),
               new SimpleExtensionRelationship( source, myRef, new SimpleProjectVersionRef( "org.apache.maven.plugins", "maven-compiler-plugin", "2.5.1" ), 0, false ),
               new SimpleParentRelationship( source, parentRef, grandRef ),
-              new SimpleDependencyRelationship( source, parentRef, new SimpleProjectVersionRef( "other.group", "utils", "3-1" ).asJarArtifact(), null, 0, false, false )
+              new SimpleDependencyRelationship( source, parentRef, new SimpleProjectVersionRef( "other.group", "utils", "3-1" ).asJarArtifact(), null, 0, false, false, false )
         );
         /* @formatter:on */
 

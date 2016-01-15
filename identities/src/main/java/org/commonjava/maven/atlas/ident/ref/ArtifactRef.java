@@ -29,9 +29,6 @@ public interface ArtifactRef
 
     TypeAndClassifier getTypeAndClassifier();
 
-    boolean isOptional();
-
-    ArtifactRef setOptional(boolean optional );
-
+    @Override
     boolean versionlessEquals( ProjectVersionRef other );
 }

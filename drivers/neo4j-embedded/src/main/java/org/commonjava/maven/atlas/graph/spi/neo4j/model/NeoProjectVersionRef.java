@@ -82,7 +82,7 @@ public class NeoProjectVersionRef<T extends ProjectVersionRef>
         this( groupId, artifactId, null, versionString );
     }
 
-    public NeoProjectVersionRef( ProjectVersionRef ref )
+    public NeoProjectVersionRef( final ProjectVersionRef ref )
     {
         super( ref );
         if ( container == null )
@@ -121,41 +121,29 @@ public class NeoProjectVersionRef<T extends ProjectVersionRef>
     @Override
     public ArtifactRef asPomArtifact()
     {
-        return asArtifactRef( "pom", null, false );
+        return asArtifactRef( "pom", null );
     }
 
     @Override
     public ArtifactRef asJarArtifact()
     {
-        return asArtifactRef( "jar", null, false );
+        return asArtifactRef( "jar", null );
     }
 
     @Override
     public ArtifactRef asArtifactRef( final String type, final String classifier )
     {
-        return asArtifactRef( type, classifier, false );
-    }
-
-    @Override
-    public ArtifactRef asArtifactRef( final String type, final String classifier, final boolean optional )
-    {
-        return new NeoArtifactRef( this, type, classifier, optional );
+        return new NeoArtifactRef( this, type, classifier );
     }
 
     @Override
     public ArtifactRef asArtifactRef( final TypeAndClassifier tc )
     {
-        return asArtifactRef( tc, false );
-    }
-
-    @Override
-    public ArtifactRef asArtifactRef( final TypeAndClassifier tc, final boolean optional )
-    {
         NeoTypeAndClassifier ntc = ( tc instanceof NeoTypeAndClassifier ) ?
                 (NeoTypeAndClassifier) tc :
                 new NeoTypeAndClassifier( tc.getType(), tc.getClassifier() );
 
-        return new NeoArtifactRef( this, ntc, optional );
+        return new NeoArtifactRef( this, ntc );
     }
 
     @Override
@@ -253,6 +241,7 @@ public class NeoProjectVersionRef<T extends ProjectVersionRef>
         return result;
     }
 
+    @Override
     public boolean versionlessEquals( final ProjectVersionRef other )
     {
         return this == other || super.equals( other );

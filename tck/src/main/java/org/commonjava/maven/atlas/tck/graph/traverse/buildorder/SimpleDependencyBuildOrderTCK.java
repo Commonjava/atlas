@@ -59,8 +59,8 @@ public class SimpleDependencyBuildOrderTCK
         final RelationshipGraph graph = simpleGraph( c );
 
         /* @formatter:off */
-        graph.storeRelationships( new SimpleDependencyRelationship( source, c, new SimpleArtifactRef( b, null, null, false ), null, 0, false, false ),
-                                  new SimpleDependencyRelationship( source, b, new SimpleArtifactRef( a, null, null, false ), null, 0, false, false ) );
+        graph.storeRelationships( new SimpleDependencyRelationship( source, c, new SimpleArtifactRef( b, null, null ), null, 0, false, false, false ),
+                                  new SimpleDependencyRelationship( source, b, new SimpleArtifactRef( a, null, null ), null, 0, false, false, false ) );
         /* @formatter:on */
 
         assertThat( graph.getAllRelationships()

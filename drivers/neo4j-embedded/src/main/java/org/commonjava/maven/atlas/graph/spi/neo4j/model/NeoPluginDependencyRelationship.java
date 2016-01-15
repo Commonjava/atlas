@@ -133,7 +133,7 @@ public final class NeoPluginDependencyRelationship
     }
 
     @Override
-    public PluginDependencyRelationship addSource( URI source )
+    public PluginDependencyRelationship addSource( final URI source )
     {
         Set<URI> sources = getSources();
         if ( sources.add( source ) )
@@ -145,7 +145,7 @@ public final class NeoPluginDependencyRelationship
     }
 
     @Override
-    public PluginDependencyRelationship addSources( Collection<URI> sources )
+    public PluginDependencyRelationship addSources( final Collection<URI> sources )
     {
         Set<URI> srcs = getSources();
         boolean changed = false;
@@ -160,6 +160,12 @@ public final class NeoPluginDependencyRelationship
         }
 
         return this;
+    }
+
+    @Override
+    public boolean isOptional()
+    {
+        return Conversions.getBooleanProperty( Conversions.OPTIONAL, rel );
     }
 
 }

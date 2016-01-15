@@ -418,6 +418,7 @@ public final class Conversions
                 toRelationshipProperties( (ArtifactRef) rel.getTarget(), relationship );
                 relationship.setProperty( IS_MANAGED, specificRel.isManaged() );
                 relationship.setProperty( SCOPE, specificRel.getScope().realName() );
+                relationship.setProperty( OPTIONAL, specificRel.isOptional() );
 
                 final Set<ProjectRef> excludes = specificRel.getExcludes();
                 if ( excludes != null && !excludes.isEmpty() )
@@ -589,15 +590,12 @@ public final class Conversions
 
         final String type = getStringProperty( TYPE, rel );
         final String classifier = getStringProperty( CLASSIFIER, rel );
-        final boolean optional = getBooleanProperty( OPTIONAL, rel );
 
-        return new NeoArtifactRef( ref, new NeoTypeAndClassifier( rel ), optional );
+        return new NeoArtifactRef( ref, new NeoTypeAndClassifier( rel ) );
     }
 
     private static void toRelationshipProperties( final ArtifactRef target, final Relationship relationship )
     {
-        relationship.setProperty( OPTIONAL, target.isOptional() );
-
         Logger logger = LoggerFactory.getLogger( Conversions.class );
         logger.debug( "Type of artifact: {} (type: {}) is: {}", target, target.getClass().getSimpleName(),
                       target.getType() );

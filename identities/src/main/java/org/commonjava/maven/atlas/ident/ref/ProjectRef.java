@@ -35,11 +35,7 @@ public interface ProjectRef
 
     VersionlessArtifactRef asVersionlessArtifactRef( String type, String classifier );
 
-    VersionlessArtifactRef asVersionlessArtifactRef( String type, String classifier, boolean optional );
-
     VersionlessArtifactRef asVersionlessArtifactRef( TypeAndClassifier tc );
-
-    VersionlessArtifactRef asVersionlessArtifactRef( TypeAndClassifier tc, boolean optional );
 
     boolean matches( ProjectRef ref );
 }
