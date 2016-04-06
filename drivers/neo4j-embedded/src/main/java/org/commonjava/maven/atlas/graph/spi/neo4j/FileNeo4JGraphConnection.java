@@ -94,8 +94,8 @@ public class FileNeo4JGraphConnection
 
     /* @formatter:off */
 //    private static final String CYPHER_SELECTION_RETRIEVAL = String.format(
-//        "CYPHER 1.8 START a=node({roots}) " 
-//            + "\nMATCH p1=(a)-[:{}*1..]->(s), " 
+//        "CYPHER 1.8 START a=node({roots}) "
+//            + "\nMATCH p1=(a)-[:{}*1..]->(s), "
 //            + "\n    p2=(a)-[:{}*1..]->(v) "
 //            + "\nWITH v, s, last(relationships(p1)) as r1, last(relationships(p2)) as r2 "
 //            + "\nWHERE v.{} = s.{} "
@@ -107,13 +107,13 @@ public class FileNeo4JGraphConnection
 //            + "\n    AND any(x in r2.{} "
 //            + "\n          WHERE x IN {roots}) "
 //            + "\nRETURN r1,r2,v,s",
-//        GRAPH_ATLAS_TYPES_CLAUSE, GRAPH_ATLAS_TYPES_CLAUSE, 
-//        Conversions.GROUP_ID, Conversions.GROUP_ID, 
-//        Conversions.ARTIFACT_ID, Conversions.ARTIFACT_ID, 
-//        Conversions.SELECTED_FOR, Conversions.SELECTED_FOR, 
+//        GRAPH_ATLAS_TYPES_CLAUSE, GRAPH_ATLAS_TYPES_CLAUSE,
+//        Conversions.GROUP_ID, Conversions.GROUP_ID,
+//        Conversions.ARTIFACT_ID, Conversions.ARTIFACT_ID,
+//        Conversions.SELECTED_FOR, Conversions.SELECTED_FOR,
 //        Conversions.DESELECTED_FOR, Conversions.DESELECTED_FOR
 //    );
-    
+
     /* @formatter:on */
 
     private boolean closed = false;
@@ -531,7 +531,7 @@ public class FileNeo4JGraphConnection
         return createdRelationshipsMap;
     }
 
-    private void insertRelationshipBatch( List<ProjectRelationship<?, ?>> rels, Map<Long, ProjectRelationship<?, ?>> createdRelationshipsMap )
+    private void insertRelationshipBatch( final List<ProjectRelationship<?, ?>> rels, final Map<Long, ProjectRelationship<?, ?>> createdRelationshipsMap )
     {
         final Transaction tx = graph.beginTx();
         try
@@ -2407,9 +2407,9 @@ public class FileNeo4JGraphConnection
             {
                 node = newProjectNode( ref );
             }
-            
+
             Conversions.storeError( node, error );
-            
+
             tx.success();
         }
         finally
