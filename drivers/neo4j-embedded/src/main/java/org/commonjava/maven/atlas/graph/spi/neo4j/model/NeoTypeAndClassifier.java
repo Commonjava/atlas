@@ -34,8 +34,6 @@ public class NeoTypeAndClassifier
 
     private Relationship rel;
 
-    private Node node;
-
     public NeoTypeAndClassifier( final String type, final String classifier )
     {
         this.type = type == null ? "jar" : type;
@@ -52,14 +50,9 @@ public class NeoTypeAndClassifier
         this( null, null );
     }
 
-    public NeoTypeAndClassifier( Relationship rel )
+    public NeoTypeAndClassifier( final Relationship rel )
     {
         this.rel = rel;
-    }
-
-    public NeoTypeAndClassifier( Node node )
-    {
-        this.node = node;
     }
 
     @Override

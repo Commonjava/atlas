@@ -15,8 +15,6 @@
  */
 package org.commonjava.maven.atlas.graph.spi.neo4j.model;
 
-import static org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoIdentityUtils.getBooleanProperty;
-import org.commonjava.maven.atlas.graph.spi.neo4j.io.Conversions;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.InvalidRefException;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
@@ -74,10 +72,10 @@ public class NeoArtifactRef<T extends ArtifactRef>
         this.tc = tc;
     }
 
-    public NeoArtifactRef( final Node node )
+    public NeoArtifactRef( final Node node, final NeoTypeAndClassifier tc )
     {
         super( node );
-        this.tc = new NeoTypeAndClassifier( node );
+        this.tc = tc;
     }
 
     public NeoArtifactRef( final String groupId, final String artifactId, final String versionSpec, final String type,

@@ -35,6 +35,7 @@ import org.commonjava.maven.atlas.graph.spi.neo4j.FileNeo4jConnectionFactory;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoArtifactRef;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoProjectRef;
 import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoProjectVersionRef;
+import org.commonjava.maven.atlas.graph.spi.neo4j.model.NeoTypeAndClassifier;
 import org.commonjava.maven.atlas.ident.jackson.ProjectVersionRefSerializerModule;
 import org.commonjava.maven.atlas.ident.ref.ArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -128,7 +129,7 @@ public class NeoProjectVersionRefSerializerModuleTest
             tx.finish();
         }
 
-        NeoArtifactRef naref = new NeoArtifactRef( node );
+        NeoArtifactRef naref = new NeoArtifactRef( node, new NeoTypeAndClassifier( "jar" ) );
         String njson = mapper.writeValueAsString( naref );
 
         assertThat( njson, equalTo( json ) );

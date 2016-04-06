@@ -102,12 +102,12 @@ public class NeoIdentitiesTest
         ArtifactRef aref = new SimpleArtifactRef( pvr, "jar", null );
         Node node = toNode( aref );
 
-        NeoArtifactRef naref = new NeoArtifactRef( node );
+        NeoArtifactRef naref = new NeoArtifactRef( node, new NeoTypeAndClassifier( "jar" ) );
 
         assertThat( naref, equalTo( aref ) );
     }
 
-    private Node toNode( ProjectVersionRef pvr )
+    private Node toNode( final ProjectVersionRef pvr )
     {
         Transaction tx = graph.beginTx();
         Node node;
