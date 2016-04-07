@@ -104,7 +104,7 @@ public final class NeoDependencyRelationship
     @Override
     public ArtifactRef getTarget()
     {
-        return target == null ? new NeoArtifactRef( rel.getEndNode() ) : target;
+        return target == null ? new NeoArtifactRef( rel.getEndNode(), new NeoTypeAndClassifier( rel ) ) : target;
     }
 
     @Override

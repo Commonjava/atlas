@@ -588,9 +588,6 @@ public final class Conversions
             return null;
         }
 
-        final String type = getStringProperty( TYPE, rel );
-        final String classifier = getStringProperty( CLASSIFIER, rel );
-
         return new NeoArtifactRef( ref, new NeoTypeAndClassifier( rel ) );
     }
 
