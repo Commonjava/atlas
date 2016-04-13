@@ -59,7 +59,7 @@ public class SimpleArtifactRef
     public SimpleArtifactRef( final ProjectVersionRef ref, final TypeAndClassifier tc )
     {
         super( ref.getGroupId(), ref.getArtifactId(), ref.getVersionSpecRaw(), ref.getVersionStringRaw() );
-        this.tc = tc;
+        this.tc = getSimpleTypeAndClassifier( tc );
     }
 
     public SimpleArtifactRef( final String groupId, final String artifactId, final String versionSpec,
@@ -73,7 +73,19 @@ public class SimpleArtifactRef
     public <T extends ArtifactRef> SimpleArtifactRef( final ArtifactRef ref )
     {
         super( ref );
-        this.tc = ref.getTypeAndClassifier();
+        this.tc = getSimpleTypeAndClassifier( ref.getTypeAndClassifier() );
+    }
+
+    private SimpleTypeAndClassifier getSimpleTypeAndClassifier( final TypeAndClassifier tc )
+    {
+        if ( tc instanceof SimpleTypeAndClassifier )
+        {
+            return ( SimpleTypeAndClassifier ) tc;
+        }
+        else
+        {
+            return new SimpleTypeAndClassifier( tc.getType(), tc.getClassifier() );
+        }
     }
 
     @Override
