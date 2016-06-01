@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.commonjava.maven.atlas</groupId>
     <artifactId>atlas-bindings-parent</artifactId>
-    <version>0.16.1</version>
+    <version>0.16.2-SNAPSHOT</version>
   </parent>
 
   <artifactId>atlas-bindings-jackson-relationships</artifactId>
