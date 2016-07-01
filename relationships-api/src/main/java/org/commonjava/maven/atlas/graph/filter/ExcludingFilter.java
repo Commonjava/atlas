@@ -23,6 +23,7 @@ import java.util.Set;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class ExcludingFilter
@@ -65,6 +66,12 @@ public class ExcludingFilter
         {
             return new ExcludingFilter( excludedSubgraphs, childfilter );
         }
+    }
+
+    @Override
+    public Set<ProjectRef> getDepExcludes()
+    {
+        return filter.getDepExcludes();
     }
 
     @Override

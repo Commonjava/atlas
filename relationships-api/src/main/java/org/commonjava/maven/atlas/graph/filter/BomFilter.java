@@ -28,8 +28,8 @@ public class BomFilter
 
     private BomFilter()
     {
-        // BOMs are actually marked as concrete...somewhat counter-intuitive, 
-        // but they're structural, so managed isn't quite correct (despite 
+        // BOMs are actually marked as concrete...somewhat counter-intuitive,
+        // but they're structural, so managed isn't quite correct (despite
         // Maven's unfortunate choice for location).
         super( RelationshipType.BOM, true, false, true );
     }

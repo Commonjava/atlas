@@ -23,13 +23,14 @@ import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
 import org.commonjava.maven.atlas.graph.rel.SimplePluginRelationship;
 import org.commonjava.maven.atlas.ident.DependencyScope;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 
 public class PluginRuntimeFilter
     implements ProjectRelationshipFilter
 {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -62,6 +63,12 @@ public class PluginRuntimeFilter
         }
 
         return child;
+    }
+
+    @Override
+    public Set<ProjectRef> getDepExcludes()
+    {
+        return null;
     }
 
     @Override

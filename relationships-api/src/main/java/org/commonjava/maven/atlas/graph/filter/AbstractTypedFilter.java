@@ -26,6 +26,7 @@ import java.util.Set;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 
 public abstract class AbstractTypedFilter
     implements ProjectRelationshipFilter
@@ -34,7 +35,7 @@ public abstract class AbstractTypedFilter
     //    private final Logger logger = new Logger( getClass() );
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -165,6 +166,12 @@ public abstract class AbstractTypedFilter
         //        }
 
         return false;
+    }
+
+    @Override
+    public Set<ProjectRef> getDepExcludes()
+    {
+        return null;
     }
 
     public Set<RelationshipType> getRelationshipTypes()
