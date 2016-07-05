@@ -20,12 +20,13 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 
 /**
  * Filter used to determine which paths in a dependency graph to traverse (or discover).
  * The full dependency graph (relation dependency, not just maven-style dependency)
  * will be QUITE extensive, so a filter should be used in NEARLY ALL cases.
- * 
+ *
  * @author jdcasey
  */
 public interface ProjectRelationshipFilter
@@ -34,26 +35,36 @@ public interface ProjectRelationshipFilter
 
     /**
      * Determine whether the given relationship should be traversed.
-     * 
+     *
      * @param rel The relationship in question
      * @return true to allow traversal, false otherwise.
      */
     boolean accept( ProjectRelationship<?, ?> rel );
 
     /**
-     * Return the filter used to handle the next wave of relationships after the 
+     * Return the filter used to handle the next wave of relationships after the
      * given one is traversed.
-     * 
+     *
      * @param parent The parent relationship for the set of relationships to which
      * the return filter from this method will be applied
-     * 
-     * @return This instance WHENEVER POSSIBLE, but possibly a different filter 
+     *
+     * @return This instance WHENEVER POSSIBLE, but possibly a different filter
      * if the relationship demands a shift in logic.
      */
     ProjectRelationshipFilter getChildFilter( ProjectRelationship<?, ?> parent );
 
     /**
-     * Retrieve a human-readable string that uniquely identifies the logic in this filter, 
+     * Provides set of dependency exclusions applied by this filter. It means only exclusions
+     * applied on dependency relationships, not subgraph exclusions, i.e. a changing set of with
+     * traversing the dependency graph, not the constant part which is provided as part of the
+     * request.
+     *
+     * @return the set of dependency exclusions, might be {@code null}
+     */
+    Set<ProjectRef> getDepExcludes();
+
+    /**
+     * Retrieve a human-readable string that uniquely identifies the logic in this filter,
      * along with any state stored in this instance.
      */
     String getLongId();

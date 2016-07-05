@@ -21,13 +21,14 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipType;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 
 public class AnyFilter
     implements ProjectRelationshipFilter
 {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -95,6 +96,12 @@ public class AnyFilter
     public Set<RelationshipType> getAllowedTypes()
     {
         return new HashSet<RelationshipType>( Arrays.asList( RelationshipType.values() ) );
+    }
+
+    @Override
+    public Set<ProjectRef> getDepExcludes()
+    {
+        return null;
     }
 
 }

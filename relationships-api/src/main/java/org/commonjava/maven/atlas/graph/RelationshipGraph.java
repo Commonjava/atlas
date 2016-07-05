@@ -700,6 +700,11 @@ public final class RelationshipGraph
         return getConnectionInternal().getPathRefs( params, path );
     }
 
+    public List<ProjectRelationship<?, ?>> getRelationships( final GraphPath<?> path )
+    {
+        return getConnectionInternal().getRelationships( params, path );
+    }
+
     RelationshipGraphConnection getConnection()
     {
         return connection;

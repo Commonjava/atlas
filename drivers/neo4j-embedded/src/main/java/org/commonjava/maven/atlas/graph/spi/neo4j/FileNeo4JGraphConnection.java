@@ -2014,6 +2014,19 @@ public class FileNeo4JGraphConnection
     }
 
     @Override
+    public List<ProjectRelationship<?, ?>> getRelationships( final ViewParams params, final GraphPath<?> path )
+    {
+        if ( path != null && !( path instanceof Neo4jGraphPath ) )
+        {
+            throw new IllegalArgumentException( "Cannot get refs for: " + path
+                + ". This is not a Neo4jGraphPathKey instance!" );
+        }
+
+        final Neo4jGraphPath gp = (Neo4jGraphPath) path;
+        return (List) convertToRelationships( gp, adminAccess );
+    }
+
+    @Override
     public GraphPath<?> createPath( final ProjectRelationship<?, ?>... rels )
     {
         if ( rels.length < 1 )

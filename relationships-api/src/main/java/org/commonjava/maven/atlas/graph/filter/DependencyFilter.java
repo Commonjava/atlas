@@ -34,7 +34,7 @@ public class DependencyFilter
 {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -150,6 +150,11 @@ public class DependencyFilter
         }
 
         return this;
+    }
+
+    public Set<ProjectRef> getDepExcludes()
+    {
+        return excludes;
     }
 
     public boolean isUseImpliedScopes()

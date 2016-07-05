@@ -38,7 +38,7 @@ public interface RelationshipGraphConnection
     extends Closeable
 {
 
-    /* 
+    /*
      * #########################
      * Mutations are viewless
      * #########################
@@ -61,7 +61,7 @@ public interface RelationshipGraphConnection
 
     /**
      * Add the given relationships. Skip/return those that introduce cycles.
-     * 
+     *
      * @return The set of relationships that were NOT added because they introduce cycles. NEVER null, but maybe empty.
      */
     Set<ProjectRelationship<?, ?>> addRelationships( ProjectRelationship<?, ?>... rel )
@@ -82,7 +82,7 @@ public interface RelationshipGraphConnection
     void reindex( final ProjectVersionRef ref )
         throws RelationshipGraphConnectionException;
 
-    /* 
+    /*
      * ################################################
      * Queries require a view
      * ---
@@ -171,6 +171,8 @@ public interface RelationshipGraphConnection
     ProjectVersionRef getPathTargetRef( GraphPath<?> path );
 
     List<ProjectVersionRef> getPathRefs( ViewParams params, GraphPath<?> path );
+
+    List<ProjectRelationship<?, ?>> getRelationships( ViewParams params, GraphPath<?> path );
 
     boolean isClosed();
 

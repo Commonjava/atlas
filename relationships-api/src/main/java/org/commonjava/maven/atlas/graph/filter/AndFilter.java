@@ -16,15 +16,19 @@
 package org.commonjava.maven.atlas.graph.filter;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 
 public class AndFilter
     extends AbstractAggregatingFilter
 {
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -52,6 +56,31 @@ public class AndFilter
         }
 
         return accepted;
+    }
+
+    @Override
+    public Set<ProjectRef> getDepExcludes()
+    {
+        Set<ProjectRef> excludes = null;
+        for (ProjectRelationshipFilter filter : getFilters())
+        {
+            Set<ProjectRef> filterExcludes = filter.getDepExcludes();
+            if (filterExcludes == null || filterExcludes.isEmpty())
+            {
+                excludes = null;
+                break;
+            }
+
+            if (excludes == null)
+            {
+                excludes = new HashSet<ProjectRef>(filterExcludes);
+            }
+            else
+            {
+                excludes.retainAll( filterExcludes );
+            }
+        }
+        return excludes;
     }
 
     @Override

@@ -16,8 +16,12 @@
 package org.commonjava.maven.atlas.graph.filter;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.ident.ref.ProjectRef;
 
 public class OrFilter
     extends AbstractAggregatingFilter
@@ -26,7 +30,7 @@ public class OrFilter
     //    private final Logger logger = new Logger( getClass() );
 
     /**
-     * 
+     *
      */
     private static final long serialVersionUID = 1L;
 
@@ -55,6 +59,23 @@ public class OrFilter
         }
 
         return accepted;
+    }
+
+    @Override
+    public Set<ProjectRef> getDepExcludes()
+    {
+        Set<ProjectRef> excludes = new HashSet<ProjectRef>();
+        for (ProjectRelationshipFilter filter : getFilters())
+        {
+            Set<ProjectRef> filterExcludes = filter.getDepExcludes();
+            if (filterExcludes == null)
+            {
+                continue;
+            }
+
+            excludes.addAll( filterExcludes );
+        }
+        return excludes;
     }
 
     @Override

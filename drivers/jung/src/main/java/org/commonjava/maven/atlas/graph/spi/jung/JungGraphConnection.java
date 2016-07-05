@@ -1183,6 +1183,19 @@ public class JungGraphConnection
     }
 
     @Override
+    public List<ProjectRelationship<?, ?>> getRelationships( final ViewParams params, final GraphPath<?> path )
+    {
+        if ( path != null && !( path instanceof JungGraphPath ) )
+        {
+            throw new IllegalArgumentException( "Cannot get target GAV for: " + path
+                + ". This is not a JungGraphPath instance!" );
+        }
+
+        final JungGraphPath gp = (JungGraphPath) path;
+        return gp.getPathElements();
+    }
+
+    @Override
     public String getWorkspaceId()
     {
         return workspaceId;
