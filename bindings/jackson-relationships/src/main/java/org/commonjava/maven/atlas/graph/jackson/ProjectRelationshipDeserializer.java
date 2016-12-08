@@ -19,7 +19,6 @@ import com.fasterxml.jackson.core.*;
 import com.fasterxml.jackson.databind.DeserializationContext;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 import org.commonjava.maven.atlas.graph.rel.*;
-import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.*;
 import org.slf4j.Logger;
@@ -135,7 +134,7 @@ public final class ProjectRelationshipDeserializer<T extends ProjectRelationship
         URI pomLocation;
         if ( uri == null )
         {
-            pomLocation = RelationshipUtils.POM_ROOT_URI;
+            pomLocation = RelationshipConstants.POM_ROOT_URI;
         }
         else
         {

@@ -66,39 +66,11 @@
         <version>0.16.3-SNAPSHOT</version>
       </dependency>
       <dependency>
-        <groupId>org.commonjava.maven.atlas</groupId>
-        <artifactId>atlas-driver-jung</artifactId>
-        <version>0.16.3-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.commonjava.maven.atlas</groupId>
-        <artifactId>atlas-driver-neo4j-embedded</artifactId>
-        <version>0.16.3-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.commonjava.maven.atlas</groupId>
-        <artifactId>atlas-drivers-tck</artifactId>
-        <version>0.16.3-SNAPSHOT</version>
-        <scope>test</scope>
-      </dependency>
-      
-      <dependency>
         <groupId>org.commonjava.boms</groupId>
         <artifactId>web-commons-bom</artifactId>
         <version>17</version>
         <scope>import</scope>
         <type>pom</type>
-      </dependency>
-      
-      <dependency>
-        <groupId>org.neo4j</groupId>
-        <artifactId>neo4j</artifactId>
-        <version>1.9.6</version>
-      </dependency>
-      <dependency>
-        <groupId>net.sf.jung</groupId>
-        <artifactId>jung-graph-impl</artifactId>
-        <version>2.0.1</version>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -149,8 +121,5 @@
     <module>identities</module>
     <module>relationships-api</module>
     <module>bindings</module>
-    <module>tck</module>
-    <module>drivers</module>
-    <module>ftests</module>
   </modules>
 </project>

@@ -24,7 +24,7 @@ import java.lang.reflect.Constructor;
 import java.net.URI;
 import java.util.*;
 
-import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
+import static org.commonjava.maven.atlas.graph.rel.RelationshipConstants.POM_ROOT_URI;
 
 public abstract class AbstractSimpleProjectRelationship<R extends ProjectRelationship<R, T>, T extends ProjectVersionRef>
     implements ProjectRelationship<R, T>, Serializable
