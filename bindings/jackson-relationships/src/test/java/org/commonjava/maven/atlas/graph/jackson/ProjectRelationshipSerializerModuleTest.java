@@ -17,7 +17,6 @@ package org.commonjava.maven.atlas.graph.jackson;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.commonjava.maven.atlas.graph.rel.*;
-import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.jackson.ProjectVersionRefSerializerModule;
 import org.commonjava.maven.atlas.ident.ref.SimpleProjectVersionRef;
@@ -79,7 +78,7 @@ public class ProjectRelationshipSerializerModuleTest
             throws Exception
     {
         DependencyRelationship rel =
-                new SimpleDependencyRelationship( URI.create( "some:test:location" ), RelationshipUtils.POM_ROOT_URI,
+                new SimpleDependencyRelationship( URI.create( "some:test:location" ), RelationshipConstants.POM_ROOT_URI,
                                             new SimpleProjectVersionRef( "org.foo", "bar", "1" ),
                                             new SimpleProjectVersionRef( "org.foo", "dep", "1.1" ).asJarArtifact(),
                                             DependencyScope.compile, 0, false, false, false );

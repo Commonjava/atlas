@@ -15,7 +15,7 @@
  */
 package org.commonjava.maven.atlas.graph.rel;
 
-import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.POM_ROOT_URI;
+import static org.commonjava.maven.atlas.graph.rel.RelationshipConstants.POM_ROOT_URI;
 
 import java.util.Comparator;
 

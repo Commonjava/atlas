@@ -15,6 +15,7 @@
  */
 package org.commonjava.maven.atlas.graph.model;
 
+import static org.commonjava.maven.atlas.graph.rel.RelationshipConstants.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.filterTerminalParents;
 
 import java.io.Serializable;
@@ -30,7 +31,6 @@ import java.util.Map;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.*;
-import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -484,7 +484,7 @@ public class EProjectDirectRelationships
 
         public Builder withExtension( final ProjectVersionRef ref, final boolean inherited )
         {
-            withExtensions( new SimpleExtensionRelationship( source, RelationshipUtils.POM_ROOT_URI, ref, ref,
+            withExtensions( new SimpleExtensionRelationship( source, POM_ROOT_URI, ref, ref,
                                                        getNextExtensionIndex(), inherited ) );
             return this;
         }

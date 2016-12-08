@@ -16,7 +16,6 @@
 package org.commonjava.maven.atlas.graph.model;
 
 import static org.apache.commons.lang.StringUtils.join;
-import static org.commonjava.maven.atlas.graph.util.RelationshipUtils.filterTerminalParents;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +28,7 @@ import java.util.Set;
 
 import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
 import org.commonjava.maven.atlas.graph.rel.RelationshipComparator;
+import org.commonjava.maven.atlas.graph.util.RelationshipUtils;
 import org.commonjava.maven.atlas.ident.ref.ProjectVersionRef;
 
 public class EProjectCycle
@@ -172,7 +172,7 @@ public class EProjectCycle
     public Collection<ProjectRelationship<?, ?>> getAllRelationships()
     {
         final Collection<ProjectRelationship<?, ?>> rels = getExactAllRelationships();
-        filterTerminalParents( rels );
+        RelationshipUtils.filterTerminalParents( rels );
 
         return rels;
     }
