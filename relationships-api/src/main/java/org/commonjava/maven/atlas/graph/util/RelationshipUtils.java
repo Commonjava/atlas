@@ -15,9 +15,11 @@
  */
 package org.commonjava.maven.atlas.graph.util;
 
+import static org.commonjava.maven.atlas.graph.rel.RelationshipConstants.POM_ROOT_URI;
 import static org.commonjava.maven.atlas.ident.util.IdentityUtils.artifact;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Collection;
 import java.util.Iterator;
 
@@ -139,4 +141,21 @@ public final class RelationshipUtils
         }
     }
 
+    public static URI profileLocation( final String profile )
+    {
+        if ( profile == null || profile.trim()
+                .length() < 1 )
+        {
+            return POM_ROOT_URI;
+        }
+
+        try
+        {
+            return new URI( "pom:profile:" + profile );
+        }
+        catch ( final URISyntaxException e )
+        {
+            throw new IllegalStateException( "Cannot construct pom-profile URI: 'pom:profile:" + profile + "'" );
+        }
+    }
 }
