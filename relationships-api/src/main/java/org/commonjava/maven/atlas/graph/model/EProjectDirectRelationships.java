@@ -30,7 +30,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.commonjava.maven.atlas.graph.rel.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.commonjava.maven.atlas.graph.rel.BomRelationship;
+import org.commonjava.maven.atlas.graph.rel.DependencyRelationship;
+import org.commonjava.maven.atlas.graph.rel.ExtensionRelationship;
+import org.commonjava.maven.atlas.graph.rel.ParentRelationship;
+import org.commonjava.maven.atlas.graph.rel.PluginDependencyRelationship;
+import org.commonjava.maven.atlas.graph.rel.PluginRelationship;
+import org.commonjava.maven.atlas.graph.rel.ProjectRelationship;
+import org.commonjava.maven.atlas.graph.rel.SimpleDependencyRelationship;
+import org.commonjava.maven.atlas.graph.rel.SimpleExtensionRelationship;
+import org.commonjava.maven.atlas.graph.rel.SimpleParentRelationship;
+import org.commonjava.maven.atlas.graph.rel.SimplePluginRelationship;
 import org.commonjava.maven.atlas.ident.DependencyScope;
 import org.commonjava.maven.atlas.ident.ref.SimpleArtifactRef;
 import org.commonjava.maven.atlas.ident.ref.ProjectRef;
@@ -42,25 +53,27 @@ public class EProjectDirectRelationships
 
     private static final long serialVersionUID = 1L;
 
-    private final URI source;
+    private URI source;
 
-    private final ProjectVersionRef ref;
+    private ProjectVersionRef projectRef;
 
-    private final List<BomRelationship> boms;
+    private List<BomRelationship> boms;
 
-    private final List<DependencyRelationship> dependencies;
+    private List<DependencyRelationship> dependencies;
 
-    private final List<DependencyRelationship> managedDependencies;
+    private List<DependencyRelationship> managedDependencies;
 
-    private final List<PluginRelationship> plugins;
+    private List<PluginRelationship> plugins;
 
-    private final List<PluginRelationship> managedPlugins;
+    private List<PluginRelationship> managedPlugins;
 
-    private final List<ExtensionRelationship> extensions;
+    private List<ExtensionRelationship> extensions;
 
-    private final ParentRelationship parent;
+    private ParentRelationship parent;
 
-    private final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies;
+    private Map<PluginKey, List<PluginDependencyRelationship>> pluginDependencies;
+
+    public EProjectDirectRelationships() {}
 
     public EProjectDirectRelationships( final URI source,
                                         final ProjectVersionRef ref,
@@ -69,10 +82,10 @@ public class EProjectDirectRelationships
                                         final List<DependencyRelationship> dependencies, final List<PluginRelationship> plugins,
                                         final List<DependencyRelationship> managedDependencies, final List<PluginRelationship> managedPlugins,
                                         final List<ExtensionRelationship> extensions,
-                                        final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies )
+                                        final Map<PluginKey, List<PluginDependencyRelationship>> pluginDependencies )
     {
         this.source = source;
-        this.ref = ref;
+        this.projectRef = ref;
         this.parent = parent;
         this.boms = Collections.unmodifiableList( boms );
         this.dependencies = Collections.unmodifiableList( dependencies );
@@ -81,10 +94,10 @@ public class EProjectDirectRelationships
         this.managedPlugins = Collections.unmodifiableList( managedPlugins );
         this.extensions = Collections.unmodifiableList( extensions );
 
-        final HashMap<PluginRelationship, List<PluginDependencyRelationship>> pdrels =
-            new HashMap<PluginRelationship, List<PluginDependencyRelationship>>();
+        final HashMap<PluginKey, List<PluginDependencyRelationship>> pdrels =
+            new HashMap<PluginKey, List<PluginDependencyRelationship>>();
 
-        for ( final Map.Entry<PluginRelationship, List<PluginDependencyRelationship>> entry : pluginDependencies.entrySet() )
+        for ( final Map.Entry<PluginKey, List<PluginDependencyRelationship>> entry : pluginDependencies.entrySet() )
         {
             pdrels.put( entry.getKey(), Collections.unmodifiableList( entry.getValue() ) );
         }
@@ -92,9 +105,14 @@ public class EProjectDirectRelationships
         this.pluginDependencies = Collections.unmodifiableMap( pdrels );
     }
 
+    public final URI getSource()
+    {
+        return source;
+    }
+
     public final ProjectVersionRef getProjectRef()
     {
-        return ref;
+        return projectRef;
     }
 
     public final List<DependencyRelationship> getDependencies()
@@ -127,7 +145,7 @@ public class EProjectDirectRelationships
         return parent;
     }
 
-    public final Map<PluginRelationship, List<PluginDependencyRelationship>> getPluginDependencies()
+    public final Map<PluginKey, List<PluginDependencyRelationship>> getPluginDependencies()
     {
         return pluginDependencies;
     }
@@ -135,8 +153,8 @@ public class EProjectDirectRelationships
     public final List<PluginDependencyRelationship> getPluginDependencies( final ProjectVersionRef plugin, final boolean managed,
                                                                            final boolean inherited )
     {
-        final PluginRelationship pr = new SimplePluginRelationship( source, getProjectRef(), plugin, 0, managed, inherited );
-        return pluginDependencies.get( pr );
+        PluginKey pk = new PluginKey( plugin, managed );
+        return pluginDependencies.get( pk );
     }
 
     public final List<BomRelationship> getBoms()
@@ -144,6 +162,7 @@ public class EProjectDirectRelationships
         return boms;
     }
 
+    @JsonIgnore
     @Override
     public Set<ProjectRelationship<?, ?>> getAllRelationships()
     {
@@ -153,6 +172,7 @@ public class EProjectDirectRelationships
         return rels;
     }
 
+    @JsonIgnore
     @Override
     public Set<ProjectRelationship<?, ?>> getExactAllRelationships()
     {
@@ -197,8 +217,8 @@ public class EProjectDirectRelationships
 
         private ParentRelationship parent;
 
-        private final Map<PluginRelationship, List<PluginDependencyRelationship>> pluginDependencies =
-            new HashMap<PluginRelationship, List<PluginDependencyRelationship>>();
+        private final Map<PluginKey, List<PluginDependencyRelationship>> pluginDependencies =
+            new HashMap<PluginKey, List<PluginDependencyRelationship>>();
 
         public Builder( final URI source, final ProjectVersionRef projectRef, final String... activeProfiles )
         {
@@ -329,14 +349,14 @@ public class EProjectDirectRelationships
                 rel = adjustDeclaring( rel );
                 final ProjectRef pluginRef = rel.getPlugin();
 
-                PluginRelationship pr = null;
+                PluginKey pk = null;
                 if ( rel.isManaged() )
                 {
                     for ( final PluginRelationship pluginRel : managedPlugins )
                     {
                         if ( pluginRef.equals( pluginRel.getTarget() ) )
                         {
-                            pr = pluginRel;
+                            pk = new PluginKey( pluginRel );
                             break;
                         }
                     }
@@ -347,23 +367,23 @@ public class EProjectDirectRelationships
                     {
                         if ( pluginRef.equals( pluginRel.getTarget() ) )
                         {
-                            pr = pluginRel;
+                            pk = new PluginKey( pluginRel );
                             break;
                         }
                     }
                 }
 
-                if ( pr == null )
+                if ( pk == null )
                 {
                     throw new IllegalArgumentException( "Orphaned plugin-level dependency found: " + rel
                         + ". Make sure you load plugin relationships BEFORE attempting to load plugin-dependency-relationships." );
                 }
 
-                List<PluginDependencyRelationship> pdrs = pluginDependencies.get( pr );
+                List<PluginDependencyRelationship> pdrs = pluginDependencies.get( pk );
                 if ( pdrs == null )
                 {
                     pdrs = new ArrayList<PluginDependencyRelationship>();
-                    pluginDependencies.put( pr, pdrs );
+                    pluginDependencies.put( pk, pdrs );
                 }
 
                 if ( !pdrs.contains( rel ) )
@@ -451,7 +471,7 @@ public class EProjectDirectRelationships
                                                  final boolean inherited )
         {
             final List<PluginDependencyRelationship> list =
-                pluginDependencies.get( new SimplePluginRelationship( source, ref, plugin, 0, managed, inherited ) );
+                pluginDependencies.get( new PluginKey( plugin, managed ) );
             return list == null ? 0 : list.size();
         }
 

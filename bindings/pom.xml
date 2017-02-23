@@ -35,14 +35,9 @@
       <groupId>org.commonjava.maven.atlas</groupId>
       <artifactId>atlas-identities</artifactId>
     </dependency>
-    <dependency>
-      <groupId>org.commonjava.maven.atlas</groupId>
-      <artifactId>atlas-relationships-api</artifactId>
-    </dependency>
   </dependencies>
   
   <modules>
     <module>jackson-identities</module>
-    <module>jackson-relationships</module>
   </modules>
 </project>

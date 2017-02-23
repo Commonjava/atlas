@@ -16,6 +16,7 @@
 package org.commonjava.maven.atlas.graph.jackson;
 
 import com.fasterxml.jackson.databind.module.SimpleModule;
+import org.commonjava.maven.atlas.graph.model.PluginKey;
 import org.commonjava.maven.atlas.graph.rel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,6 +52,8 @@ public class ProjectRelationshipSerializerModule
         {
             register( cls );
         }
+        addKeySerializer( PluginKey.class, new PluginKeySerializer() );
+        addKeyDeserializer( PluginKey.class, new PluginKeyDeserializer() );
     }
 
     private <T extends ProjectRelationship> void register( Class<T> cls )
