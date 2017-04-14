@@ -17,12 +17,15 @@ package org.commonjava.maven.atlas.ident.ref;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.commonjava.maven.atlas.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.maven.atlas.ident.version.VersionSpec;
+import org.commonjava.maven.atlas.ident.version.part.VersionPhrase;
 import org.junit.Test;
 
 public class ProjectVersionRefTest
@@ -85,6 +88,29 @@ public class ProjectVersionRefTest
         final Set<ProjectVersionRef> set = new HashSet<ProjectVersionRef>();
         assertThat( set.add( ref1 ), equalTo( true ) );
         assertThat( set.add( ref2 ), equalTo( false ) );
+    }
+
+    @Test
+    public void parseSnapshotWithNumericRebuildSuffix()
+            throws InvalidVersionSpecificationException
+    {
+        final String ver = "org.bar:foo:2.1.1.rebuild-SNAPSHOT";
+
+        final ProjectVersionRef ref = SimpleProjectVersionRef.parse( ver );
+        //new SimpleProjectVersionRef( "g", "a", ver );
+        final VersionSpec spec = ref.getVersionSpec();
+        final List<VersionPhrase> phrases = spec.getSingleVersion().getVersionPhrases();
+
+        System.out.println ("### ref " + ref + " and snap " + ref.getVersionSpec().isSnapshot());
+        System.out.println ("### spec " + spec.getSingleVersion() + " and " + spec.renderStandard());
+        System.out.println ("### phrases " + phrases);
+        System.out.println ("### snap " + spec.getSingleVersion().getSnapshotPart().renderStandard());
+        System.out.println ("### snap " + spec.getSingleVersion().isSnapshot());
+
+        assertTrue ( ref.isSnapshot() );
+        assertThat( "org.bar:foo:" + spec.renderStandard(), equalTo( ver ) );
+        assertTrue( "SNAPSHOT".equals( spec.getSingleVersion().getSnapshotPart().renderStandard() ) );
+        assertTrue( phrases.size() == 3);
     }
 
 }
