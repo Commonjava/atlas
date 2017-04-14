@@ -92,7 +92,10 @@ public class SingleVersion
             if ( ( part instanceof SeparatorPart )
                 && ( VersionPartSeparator.DASH == ( (SeparatorPart) part ).getValue() ) )
             {
-                if ( prev != null && !( prev instanceof StringPart ) )
+                // the next part is considering something like: "rebuild-SNAPTHOT"
+                final boolean prevNotString = !( prev instanceof StringPart );
+                final boolean nextIsSnapshot = ( next != null && ( next instanceof SnapshotPart ) );
+                if ( prev != null && ( prevNotString || nextIsSnapshot ) )
                 {
                     try
                     {
