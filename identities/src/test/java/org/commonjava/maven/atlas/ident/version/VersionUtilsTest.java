@@ -16,8 +16,10 @@
 package org.commonjava.maven.atlas.ident.version;
 
 import org.commonjava.maven.atlas.ident.util.VersionUtils;
-import org.commonjava.maven.atlas.ident.version.SingleVersion;
 import org.junit.Test;
+
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.junit.Assert.assertThat;
 
 public class VersionUtilsTest
 {
@@ -32,4 +34,15 @@ public class VersionUtilsTest
         System.out.println( version );
     }
 
+    @Test
+    public void SingleVersionStringValidationTest() throws Exception
+    {
+        final String invalid1 = "abc@1";
+        final String invalid2 = "abc//1";
+        final String valid = "abc123a.";
+
+        assertThat( VersionUtils.isValidSingleVersion( invalid1 ), equalTo( false ) );
+        assertThat( VersionUtils.isValidSingleVersion( invalid2 ), equalTo( false ) );
+        assertThat( VersionUtils.isValidSingleVersion( valid ), equalTo( true ) );
+    }
 }
