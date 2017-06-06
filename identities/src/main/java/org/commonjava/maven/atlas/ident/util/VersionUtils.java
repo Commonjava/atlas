@@ -111,9 +111,10 @@ public final class VersionUtils
     public static boolean isValidSingleVersion( final String version )
     {
         boolean result = true;
+        
         if ( version == null || version.trim().length() < 1 )
         {
-            result = false;
+            return false;
         }
         try
         {
