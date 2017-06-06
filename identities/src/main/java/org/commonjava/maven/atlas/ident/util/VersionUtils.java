@@ -108,4 +108,27 @@ public final class VersionUtils
         }
     }
 
+    public static boolean isValidSingleVersion( final String version )
+    {
+        boolean result = true;
+        
+        if ( version == null || version.trim().length() < 1 )
+        {
+            return false;
+        }
+        try
+        {
+            SingleVersion singleVersion = new VersionParser( version ).single();
+        }
+        catch ( final ParseException e )
+        {
+            result = false;
+        }
+        catch ( final TokenMgrError e )
+        {
+            result = false;
+        }
+        return result;
+    }
+
 }
