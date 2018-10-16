@@ -25,12 +25,12 @@
     <version>9</version>
   </parent>
 
-  <groupId>org.commonjava.maven.atlas</groupId>
+  <groupId>org.commonjava.atlas</groupId>
   <artifactId>atlas-parent</artifactId>
   <version>0.17.3-SNAPSHOT</version>
   <packaging>pom</packaging>
 
-  <name>Atlas :: Maven Project-Graph :: Parent</name>
+  <name>Atlas :: Parent</name>
   
   <scm>
     <connection>scm:git:https://github.com/Commonjava/atlas.git</connection>
@@ -46,22 +46,22 @@
   <dependencyManagement>
     <dependencies>
       <dependency>
-        <groupId>org.commonjava.maven.atlas</groupId>
+        <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-identities</artifactId>
         <version>0.17.3-SNAPSHOT</version>
       </dependency>
       <dependency>
-        <groupId>org.commonjava.maven.atlas</groupId>
+        <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-relationships-api</artifactId>
         <version>0.17.3-SNAPSHOT</version>
       </dependency>
       <dependency>
-        <groupId>org.commonjava.maven.atlas</groupId>
+        <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-bindings-jackson-identities</artifactId>
         <version>0.17.3-SNAPSHOT</version>
       </dependency>
       <dependency>
-        <groupId>org.commonjava.maven.atlas</groupId>
+        <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-bindings-jackson-relationships</artifactId>
         <version>0.17.1-SNAPSHOT</version>
       </dependency>
