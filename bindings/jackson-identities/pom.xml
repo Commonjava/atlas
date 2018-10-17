@@ -20,7 +20,7 @@
   <modelVersion>4.0.0</modelVersion>
 
   <parent>
-    <groupId>org.commonjava.maven.atlas</groupId>
+    <groupId>org.commonjava.atlas</groupId>
     <artifactId>atlas-bindings-parent</artifactId>
     <version>0.17.3-SNAPSHOT</version>
   </parent>
