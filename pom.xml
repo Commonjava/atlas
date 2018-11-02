@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
 
-    Copyright (C) 2012 Red Hat, Inc. (jdcasey@commonjava.org)
+    Copyright (C) 2012 Red Hat, Inc. (nos-devel@redhat.com)
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -22,12 +22,12 @@
   <parent>
     <groupId>org.commonjava</groupId>
     <artifactId>commonjava</artifactId>
-    <version>9</version>
+    <version>12</version>
   </parent>
 
   <groupId>org.commonjava.atlas</groupId>
   <artifactId>atlas-parent</artifactId>
-  <version>0.17.3-SNAPSHOT</version>
+  <version>1.0.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>Atlas :: Parent</name>
@@ -41,6 +41,9 @@
   
   <properties>
     <projectOwner>Red Hat, Inc.</projectOwner>
+    <projectEmail>nos-devel@redhat.com</projectEmail>
+    <pmd.skip>true</pmd.skip>
+    <enforceBestPractices>false</enforceBestPractices>
   </properties>
   
   <dependencyManagement>
@@ -48,17 +51,17 @@
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-identities</artifactId>
-        <version>0.17.3-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-relationships-api</artifactId>
-        <version>0.17.3-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-bindings-jackson-identities</artifactId>
-        <version>0.17.3-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
@@ -68,7 +71,7 @@
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-npm-identities</artifactId>
-        <version>0.17.3-SNAPSHOT</version>
+        <version>1.0.0-SNAPSHOT</version>
       </dependency>
       <dependency>
         <groupId>com.github.zafarkhaja</groupId>
@@ -86,6 +89,10 @@
   </dependencyManagement>
 
   <dependencies>
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-api</artifactId>
+    </dependency>
     <dependency>
       <groupId>commons-lang</groupId>
       <artifactId>commons-lang</artifactId>
