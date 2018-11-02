@@ -24,21 +24,22 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 /**
- * ArtifactRef use jsemver Version object. Ref https://github.com/zafarkhaja/jsemver
+ * NpmPackageRef use jsemver Version object. Ref https://github.com/zafarkhaja/jsemver
  *
  * Created by ruhan on 10/17/18.
  */
-public class NpmArtifactRef implements Externalizable
+public class NpmPackageRef
+                implements Externalizable
 {
     private String name;
 
     private Version version;
 
-    public NpmArtifactRef()
+    public NpmPackageRef()
     {
     }
 
-    public NpmArtifactRef( String name, Version version )
+    public NpmPackageRef( String name, Version version )
     {
         this.name = name;
         this.version = version;
@@ -57,7 +58,7 @@ public class NpmArtifactRef implements Externalizable
     @Override
     public String toString()
     {
-        return "ArtifactRef{" + "name='" + name + '\'' + ", version=" + version + '}';
+        return name + ":" + version;
     }
 
     @Override
@@ -68,7 +69,7 @@ public class NpmArtifactRef implements Externalizable
         if ( o == null || getClass() != o.getClass() )
             return false;
 
-        NpmArtifactRef that = (NpmArtifactRef) o;
+        NpmPackageRef that = (NpmPackageRef) o;
 
         if ( !name.equals( that.name ) )
             return false;
