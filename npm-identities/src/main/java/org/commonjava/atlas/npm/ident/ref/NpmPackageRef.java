@@ -28,11 +28,9 @@ import java.io.ObjectOutput;
  *
  * Created by ruhan on 10/17/18.
  */
-public class NpmPackageRef
+public class NpmPackageRef extends NpmProjectRef
                 implements Externalizable
 {
-    private String name;
-
     private Version version;
 
     public NpmPackageRef()
@@ -41,13 +39,8 @@ public class NpmPackageRef
 
     public NpmPackageRef( String name, Version version )
     {
-        this.name = name;
+        super( name );
         this.version = version;
-    }
-
-    public String getName()
-    {
-        return name;
     }
 
     public Version getVersion()
@@ -58,7 +51,7 @@ public class NpmPackageRef
     @Override
     public String toString()
     {
-        return name + ":" + version;
+        return getName() + ":" + version;
     }
 
     @Override
@@ -68,11 +61,11 @@ public class NpmPackageRef
             return true;
         if ( o == null || getClass() != o.getClass() )
             return false;
+        if ( !super.equals( o ) )
+            return false;
 
         NpmPackageRef that = (NpmPackageRef) o;
 
-        if ( !name.equals( that.name ) )
-            return false;
         return version.equals( that.version );
 
     }
@@ -80,7 +73,7 @@ public class NpmPackageRef
     @Override
     public int hashCode()
     {
-        int result = name.hashCode();
+        int result = super.hashCode();
         result = 31 * result + version.hashCode();
         return result;
     }
@@ -88,7 +81,7 @@ public class NpmPackageRef
     @Override
     public void writeExternal( ObjectOutput objectOutput ) throws IOException
     {
-        objectOutput.writeObject( name );
+        objectOutput.writeObject( getName() );
         objectOutput.writeObject( version.toString() );
     }
 
