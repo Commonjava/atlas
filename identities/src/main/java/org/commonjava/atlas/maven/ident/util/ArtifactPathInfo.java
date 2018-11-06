@@ -24,7 +24,7 @@ import org.commonjava.atlas.maven.ident.version.part.SnapshotPart;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-public class ArtifactPathInfo
+public class ArtifactPathInfo implements PathInfo
 {
 
     // regex developed at: http://fiddle.re/tvk5
@@ -162,11 +162,13 @@ public class ArtifactPathInfo
         return type;
     }
 
+    @Override
     public String getFile()
     {
         return file;
     }
 
+    @Override
     public String getFullPath()
     {
         return fullPath;

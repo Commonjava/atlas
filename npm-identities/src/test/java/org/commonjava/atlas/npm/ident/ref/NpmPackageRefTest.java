@@ -37,9 +37,13 @@ public class NpmPackageRefTest
     @Test
     public void pathParseTest()
     {
-        NpmPackageRef ref = NpmPackagePathInfo.parse( "/keycloak-connect/-/keycloak-connect-3.4.1.tgz" );
-        assertTrue( ref.getName().equals( "keycloak-connect" ) );
-        assertTrue( ref.getVersion().toString().equals( "3.4.1" ) );
+        String path = "/keycloak-connect/-/keycloak-connect-3.4.1.tgz";
+
+        NpmPackagePathInfo info = NpmPackagePathInfo.parse( path );
+        assertTrue( info.getName().equals( "keycloak-connect" ) );
+        assertTrue( info.getVersion().toString().equals( "3.4.1" ) );
+        assertTrue( info.getFile().equals( "keycloak-connect-3.4.1.tgz" ) );
+        assertTrue( info.getFullPath().equals( path ) );
     }
 
     @Test
