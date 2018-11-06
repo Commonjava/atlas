@@ -24,29 +24,23 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 
 /**
- * ArtifactRef use jsemver Version object. Ref https://github.com/zafarkhaja/jsemver
+ * NpmPackageRef use jsemver Version object. Ref https://github.com/zafarkhaja/jsemver
  *
  * Created by ruhan on 10/17/18.
  */
-public class NpmArtifactRef implements Externalizable
+public class NpmPackageRef extends NpmProjectRef
+                implements Externalizable
 {
-    private String name;
-
     private Version version;
 
-    public NpmArtifactRef()
+    public NpmPackageRef()
     {
     }
 
-    public NpmArtifactRef( String name, Version version )
+    public NpmPackageRef( String name, Version version )
     {
-        this.name = name;
+        super( name );
         this.version = version;
-    }
-
-    public String getName()
-    {
-        return name;
     }
 
     public Version getVersion()
@@ -57,7 +51,7 @@ public class NpmArtifactRef implements Externalizable
     @Override
     public String toString()
     {
-        return "ArtifactRef{" + "name='" + name + '\'' + ", version=" + version + '}';
+        return getName() + ":" + version;
     }
 
     @Override
@@ -67,11 +61,11 @@ public class NpmArtifactRef implements Externalizable
             return true;
         if ( o == null || getClass() != o.getClass() )
             return false;
-
-        NpmArtifactRef that = (NpmArtifactRef) o;
-
-        if ( !name.equals( that.name ) )
+        if ( !super.equals( o ) )
             return false;
+
+        NpmPackageRef that = (NpmPackageRef) o;
+
         return version.equals( that.version );
 
     }
@@ -79,7 +73,7 @@ public class NpmArtifactRef implements Externalizable
     @Override
     public int hashCode()
     {
-        int result = name.hashCode();
+        int result = super.hashCode();
         result = 31 * result + version.hashCode();
         return result;
     }
@@ -87,7 +81,7 @@ public class NpmArtifactRef implements Externalizable
     @Override
     public void writeExternal( ObjectOutput objectOutput ) throws IOException
     {
-        objectOutput.writeObject( name );
+        objectOutput.writeObject( getName() );
         objectOutput.writeObject( version.toString() );
     }
 

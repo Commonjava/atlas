@@ -16,6 +16,7 @@
 package org.commonjava.atlas.npm.ident.ref;
 
 import com.github.zafarkhaja.semver.Version;
+import org.commonjava.atlas.npm.ident.util.NpmPackagePathInfo;
 import org.commonjava.atlas.npm.ident.util.NpmVersionUtils;
 import org.junit.Test;
 
@@ -31,8 +32,16 @@ import static org.junit.Assert.assertTrue;
 /**
  * Created by ruhan on 10/17/18.
  */
-public class NpmArtifactRefTest
+public class NpmPackageRefTest
 {
+    @Test
+    public void pathParseTest()
+    {
+        NpmPackageRef ref = NpmPackagePathInfo.parse( "/keycloak-connect/-/keycloak-connect-3.4.1.tgz" );
+        assertTrue( ref.getName().equals( "keycloak-connect" ) );
+        assertTrue( ref.getVersion().toString().equals( "3.4.1" ) );
+    }
+
     @Test
     public void versionTest()
     {
@@ -62,7 +71,7 @@ public class NpmArtifactRefTest
     public void serializeTest() throws IOException, ClassNotFoundException
     {
         Version v = NpmVersionUtils.valueOf( "1.0.0-rc.1+build.1" );
-        NpmArtifactRef ref = new NpmArtifactRef( "test", v );
+        NpmPackageRef ref = new NpmPackageRef( "test", v );
 
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream( bos );
@@ -72,7 +81,7 @@ public class NpmArtifactRefTest
         byte[] bytes = bos.toByteArray();
 
         ObjectInputStream ois = new ObjectInputStream( new ByteArrayInputStream( bytes ) );
-        NpmArtifactRef ref2 = (NpmArtifactRef) ois.readObject();
+        NpmPackageRef ref2 = (NpmPackageRef) ois.readObject();
         ois.close();
 
         assertEquals( ref, ref2 );
