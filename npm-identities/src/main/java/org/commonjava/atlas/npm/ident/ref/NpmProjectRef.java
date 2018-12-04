@@ -22,13 +22,15 @@ import java.io.Serializable;
  */
 public class NpmProjectRef implements Serializable
 {
+    private static final long serialVersionUID = -1799733486053972932L;
+
     protected String name;
 
     public NpmProjectRef()
     {
     }
 
-    public NpmProjectRef( String name )
+    public NpmProjectRef( final String name )
     {
         this.name = name;
     }
@@ -38,13 +40,22 @@ public class NpmProjectRef implements Serializable
         return name;
     }
 
+    public NpmProjectRef asNpmProjectRef()
+    {
+        return NpmProjectRef.class.equals( getClass() ) ? this : new NpmProjectRef( getName() );
+    }
+
     @Override
-    public boolean equals( Object o )
+    public boolean equals( final Object o )
     {
         if ( this == o )
+        {
             return true;
+        }
         if ( o == null || getClass() != o.getClass() )
+        {
             return false;
+        }
 
         NpmProjectRef that = (NpmProjectRef) o;
 
