@@ -47,6 +47,18 @@ public class NpmPackageRefTest
     }
 
     @Test
+    public void scopedPathParseTest()
+    {
+        String path = "/@hawtio/core-dts/-/core-dts-3.3.2.tgz";
+
+        NpmPackagePathInfo info = NpmPackagePathInfo.parse( path );
+        assertTrue( info.getName().equals( "@hawtio/core-dts" ) );
+        assertTrue( info.getVersion().toString().equals( "3.3.2" ) );
+        assertTrue( info.getFile().equals( "core-dts-3.3.2.tgz" ) );
+        assertTrue( info.getFullPath().equals( path ) );
+    }
+
+    @Test
     public void versionTest()
     {
         Version v = NpmVersionUtils.valueOf( "1.0.0-rc.1+build.1" );
