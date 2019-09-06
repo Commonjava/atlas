@@ -30,13 +30,26 @@ public class NpmPackagePathInfo implements PathInfo
 {
     private static final String EXT_TGZ = ".tgz";
 
-    private static final String PACKAGE_PATH_REGEX = "/(.+)/-/(.+)\\" + EXT_TGZ;
+    private static final String PACKAGE_PATH_REGEX = "/((?:(.+)/)?(.+))/-/(.+)\\" + EXT_TGZ;
 
-    private static final int PACKAGE_NAME_GROUP = 1;
+    private static final int SCOPED_PACKAGE_NAME_GROUP = 1;
 
-    private static final int PACKAGE_NAME_AND_VERSION_GROUP = 2;
+    private static final int PACKAGE_SCOPE_GROUP = 2;
 
-    // e.g., /keycloak-connect/-/keycloak-connect-3.4.1.tgz
+    private static final int PACKAGE_NAME_GROUP = 3;
+
+    private static final int PACKAGE_NAME_AND_VERSION_GROUP = 4;
+
+
+    /**
+     * Parses an npm package path into fields. The path might be scoped or not. A package metadata path, e.g.
+     * &quot;/keycloak-connect&quot;, cannot be parsed by this method.
+     *
+     * @param path
+     *            parsed path starting with '/', e.g. /keycloak-connect/-/keycloak-connect-3.4.1.tgz or
+     *            /@hawtio/core-dts/-/core-dts-3.3.2.tgz
+     * @return parsed path into an NpmPackagePathInfo instance
+     */
     public static NpmPackagePathInfo parse( final String path )
     {
         final Matcher matcher = Pattern.compile( PACKAGE_PATH_REGEX ).matcher( path.replace( '\\', '/' ) );
@@ -45,13 +58,15 @@ public class NpmPackagePathInfo implements PathInfo
             return null;
         }
 
+        final String scopedName = matcher.group( SCOPED_PACKAGE_NAME_GROUP );
         final String name = matcher.group( PACKAGE_NAME_GROUP );
         final String nameAndVersion = matcher.group( PACKAGE_NAME_AND_VERSION_GROUP );
 
         final String version = nameAndVersion.substring( name.length() + 1 );
 
-        return new NpmPackagePathInfo( name, valueOf( version ), nameAndVersion + EXT_TGZ, path );
+        return new NpmPackagePathInfo( scopedName, valueOf( version ), nameAndVersion + EXT_TGZ, path );
     }
+
 
     private String name;
 
@@ -60,6 +75,7 @@ public class NpmPackagePathInfo implements PathInfo
     private String file;
 
     private String fullPath;
+
 
     public NpmPackagePathInfo( String name, Version version, String file, String fullPath )
     {
@@ -81,6 +97,9 @@ public class NpmPackagePathInfo implements PathInfo
         return fullPath;
     }
 
+    /**
+     * @return package name, can be scoped, e.g. &#64;hawtio/core-dts
+     */
     public String getName()
     {
         return name;
