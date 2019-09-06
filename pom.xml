@@ -31,47 +31,42 @@
   <packaging>pom</packaging>
 
   <name>Atlas :: Parent</name>
-  
+
   <scm>
     <connection>scm:git:https://github.com/Commonjava/atlas.git</connection>
     <developerConnection>scm:git:git@github.com:Commonjava/atlas.git</developerConnection>
     <url>http://github.com/Commonjava/atlas</url>
     <tag>HEAD</tag>
   </scm>
-  
+
   <properties>
     <projectOwner>Red Hat, Inc.</projectOwner>
     <projectEmail>nos-devel@redhat.com</projectEmail>
     <pmd.skip>true</pmd.skip>
     <enforceBestPractices>false</enforceBestPractices>
   </properties>
-  
+
   <dependencyManagement>
     <dependencies>
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-identities</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-relationships-api</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-bindings-jackson-identities</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-        <groupId>org.commonjava.atlas</groupId>
-        <artifactId>atlas-bindings-jackson-relationships</artifactId>
-        <version>0.17.3-SNAPSHOT</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>org.commonjava.atlas</groupId>
         <artifactId>atlas-npm-identities</artifactId>
-        <version>1.0.2-SNAPSHOT</version>
+        <version>${project.version}</version>
       </dependency>
       <dependency>
         <groupId>com.github.zafarkhaja</groupId>
@@ -106,7 +101,7 @@
       <artifactId>logback-classic</artifactId>
     </dependency>
   </dependencies>
-  
+
   <build>
     <pluginManagement>
       <plugins>
@@ -133,7 +128,7 @@
       </plugins>
     </pluginManagement>
   </build>
-  
+
   <modules>
     <module>identities</module>
     <module>npm-identities</module>
