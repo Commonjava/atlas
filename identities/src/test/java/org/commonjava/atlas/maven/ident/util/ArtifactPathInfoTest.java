@@ -49,4 +49,23 @@ public class ArtifactPathInfoTest
                                     .isSnapshot(), equalTo( false ) );
     }
 
+    @Test
+    public void matchNormalClassifier()
+    {
+        final String path = "/org/apache/commons/commons-lang3/3.0.0/commons-lang3-3.0.0-test.jar";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getClassifier(), equalTo( "test" ) );
+        assertThat( pathInfo.getType(), equalTo( "jar" ) );
+    }
+
+    @Test
+    public void matchClassifierWithDot()
+    {
+        final String path =
+                "/org/uberfire/showcase-distribution-wars/7.33.0.Final-redhat-00003/showcase-distribution-wars-7.33.0.Final-redhat-00003-wildfly8.1.war";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getClassifier(), equalTo( "wildfly8.1" ) );
+        assertThat( pathInfo.getType(), equalTo( "war" ) );
+    }
+
 }

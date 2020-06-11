@@ -26,15 +26,23 @@ import java.util.regex.Pattern;
 
 public class ArtifactPathInfo implements PathInfo
 {
+    private static final String GROUP_REGEX = "(([^/]+/)*[^/]+)"; // group 1 & 2
+
+    private static final String ARTIFACT_REGEX = "([^/]+)"; // group 3
+
+    private static final String VERSION_RAW_REGEX = "(([^/]+)(-SNAPSHOT)?)"; // group 4~6
 
     // regex developed at: http://fiddle.re/tvk5
     private static final String ARTIFACT_PATH_REGEX =
-        "\\/?(([^\\/]+\\/)*[^\\/]+)\\/([^\\/]+)\\/(([^\\/]+)(-SNAPSHOT)?)\\/(\\3-((\\4)|(\\5-"
-            + SnapshotUtils.RAW_REMOTE_SNAPSHOT_PART_PATTERN + "))(-([^.]+))?(\\.(.+)))";
+            "/?" + GROUP_REGEX + "/" + ARTIFACT_REGEX + "/" + VERSION_RAW_REGEX + "/(\\3-((\\4)|(\\5-"
+                    + SnapshotUtils.RAW_REMOTE_SNAPSHOT_PART_PATTERN + "))(-(.+))?(\\.(.+)))";
+            // RAW_REMOTE_SNAPSHOT_PART_PATTERN contains group 11 & 12
 
     private static final int GROUP_ID_GROUP = 1;
 
     private static final int ARTIFACT_ID_GROUP = 3;
+
+    private static final int VERSION_RAW_GROUP = 4;
 
     private static final int FILE_GROUP = 7;
 
@@ -129,12 +137,9 @@ public class ArtifactPathInfo implements PathInfo
         return isSnapshot;
     }
 
-    private SnapshotPart snapshotInfo;
-
     public synchronized SnapshotPart getSnapshotInfo()
     {
-        snapshotInfo = SnapshotUtils.extractSnapshotVersionPart( version );
-        return snapshotInfo;
+        return SnapshotUtils.extractSnapshotVersionPart(version);
     }
 
     public String getGroupId()
