@@ -54,6 +54,17 @@ public class ArtifactPathInfoTest
     {
         final String path = "/org/apache/commons/commons-lang3/3.0.0/commons-lang3-3.0.0-test.jar";
         ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "3.0.0" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "test" ) );
+        assertThat( pathInfo.getType(), equalTo( "jar" ) );
+    }
+
+    @Test
+    public void matchGAWithClassifier()
+    {
+        final String path = "/org/apache/commons/commons-lang3/3.0.0.GA/commons-lang3-3.0.0.GA-test.jar";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "3.0.0.GA" ) );
         assertThat( pathInfo.getClassifier(), equalTo( "test" ) );
         assertThat( pathInfo.getType(), equalTo( "jar" ) );
     }
