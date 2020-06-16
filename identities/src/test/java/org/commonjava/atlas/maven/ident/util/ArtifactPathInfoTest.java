@@ -18,7 +18,6 @@ package org.commonjava.atlas.maven.ident.util;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
 
-import org.commonjava.atlas.maven.ident.util.ArtifactPathInfo;
 import org.junit.Test;
 
 public class ArtifactPathInfoTest
@@ -47,6 +46,60 @@ public class ArtifactPathInfoTest
         final String path = "/path/to/unsigner-maven-plugin/0.2/unsigner-maven-plugin-0.2.jar";
         assertThat( ArtifactPathInfo.parse( path )
                                     .isSnapshot(), equalTo( false ) );
+    }
+
+    @Test
+    public void matchNormalClassifier()
+    {
+        String path = "/org/apache/commons/commons-lang3/3.0.0/commons-lang3-3.0.0-test.jar";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "3.0.0" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "test" ) );
+        assertThat( pathInfo.getType(), equalTo( "jar" ) );
+
+        path = "/org/apache/commons/commons-lang3/3.0.0/commons-lang3-3.0.0-test.tar.gz";
+        pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "3.0.0" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "test" ) );
+        assertThat( pathInfo.getType(), equalTo( "tar.gz" ) );
+    }
+
+    @Test
+    public void matchGAWithClassifier()
+    {
+        String path = "/org/apache/commons/commons-lang3/3.0.0.GA/commons-lang3-3.0.0.GA-test.jar";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "3.0.0.GA" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "test" ) );
+        assertThat( pathInfo.getType(), equalTo( "jar" ) );
+
+        path = "/org/apache/commons/commons-lang3/3.0.0.GA/commons-lang3-3.0.0.GA-test.tar.gz";
+        pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "3.0.0.GA" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "test" ) );
+        assertThat( pathInfo.getType(), equalTo( "tar.gz" ) );
+    }
+
+    @Test
+    public void matchClassifierWithDot()
+    {
+        String path =
+                "/org/uberfire/showcase-distribution-wars/7.33.0.Final-redhat-00003/showcase-distribution-wars-7.33.0.Final-redhat-00003-wildfly8.1.war";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getClassifier(), equalTo( "wildfly8.1" ) );
+        assertThat( pathInfo.getType(), equalTo( "war" ) );
+
+        path =
+                "/org/uberfire/showcase-distribution-wars/7.33.0.Final-redhat-00003/showcase-distribution-wars-7.33.0.Final-redhat-00003-wildfly8.2.3.0.tar.gz";
+        pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getClassifier(), equalTo( "wildfly8.2.3.0" ) );
+        assertThat( pathInfo.getType(), equalTo( "tar.gz" ) );
+
+        path =
+                "/org/uberfire/showcase-distribution-wars/7.33.0.Final-redhat-00003/showcase-distribution-wars-7.33.0.Final-redhat-00003-wildfly.8.2.3.0.tar.gz";
+        pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getClassifier(), equalTo( "wildfly.8.2.3.0" ) );
+        assertThat( pathInfo.getType(), equalTo( "tar.gz" ) );
     }
 
 }
