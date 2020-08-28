@@ -120,7 +120,7 @@ public class ArtifactPathInfo implements PathInfo
 
     private final boolean isSnapshot;
 
-    private final String releaseVersion; // snapshot major version
+    private final String releaseVersion;
 
     public ArtifactPathInfo( final String groupId, final String artifactId, final String version, final String file,
                              final String fullPath )
