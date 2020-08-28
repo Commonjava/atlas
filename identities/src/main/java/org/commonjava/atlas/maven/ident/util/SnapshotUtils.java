@@ -125,7 +125,7 @@ public class SnapshotUtils
         }
         else if ( version.endsWith( LOCAL_SNAPSHOT_VERSION_PART ) )
         {
-            part = new SnapshotPart( LOCAL_SNAPSHOT_VERSION_PART );
+            part = new SnapshotPart( version );
         }
 
         return part;

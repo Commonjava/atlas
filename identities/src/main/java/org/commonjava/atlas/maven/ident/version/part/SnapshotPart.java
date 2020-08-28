@@ -33,11 +33,14 @@ public class SnapshotPart
 
     private final String literal;
 
+    private final String majorVersion;
+
     public SnapshotPart( final Date timestamp, final int buildNumber, final String literal )
     {
         this.timestamp = timestamp;
         this.buildNumber = buildNumber;
         this.literal = literal;
+        this.majorVersion = calcMajorVersion( literal );
     }
 
     public SnapshotPart( final String literal )
@@ -55,6 +58,25 @@ public class SnapshotPart
         }
 
         this.literal = literal;
+        this.majorVersion = calcMajorVersion( literal );
+    }
+
+    private String calcMajorVersion( String literal )
+    {
+        if ( literal != null )
+        {
+            int index = literal.indexOf( "-" );
+            if ( index > 0 )
+            {
+                return literal.substring( 0, index );
+            }
+        }
+        return null;
+    }
+
+    public String getMajorVersion()
+    {
+        return majorVersion;
     }
 
     public String getLiteral()
