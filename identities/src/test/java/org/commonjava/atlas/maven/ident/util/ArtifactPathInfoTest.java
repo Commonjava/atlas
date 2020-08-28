@@ -17,8 +17,12 @@ package org.commonjava.atlas.maven.ident.util;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
+import org.commonjava.atlas.maven.ident.version.part.SnapshotPart;
 import org.junit.Test;
+
+import java.text.SimpleDateFormat;
 
 public class ArtifactPathInfoTest
 {
@@ -100,6 +104,20 @@ public class ArtifactPathInfoTest
         pathInfo = ArtifactPathInfo.parse( path );
         assertThat( pathInfo.getClassifier(), equalTo( "wildfly.8.2.3.0" ) );
         assertThat( pathInfo.getType(), equalTo( "tar.gz" ) );
+    }
+
+    @Test
+    public void testSnapshotPath()
+    {
+        final String path = "/org/commonjava/maven/galley/galley-transport-httpclient/0.10.4-SNAPSHOT/galley-transport-httpclient-0.10.4-20160229.212037-2.pom";
+        ArtifactPathInfo info = ArtifactPathInfo.parse( path );
+        SnapshotPart snap = info.getSnapshotInfo();
+        assertTrue( "0.10.4".equals( info.getReleaseVersion() ) );
+        assertTrue( snap.isRemoteSnapshot() );
+        assertTrue( "0.10.4-20160229.212037-2".equals( snap.getValue() ) );
+        assertTrue( "0.10.4-20160229.212037-2".equals( snap.getLiteral() ) );
+        assertTrue( snap.getBuildNumber() == 2 );
+        assertTrue( "20160229".equals( new SimpleDateFormat( "yyyyMMdd" ).format( snap.getTimestamp() ) ) );
     }
 
 }
