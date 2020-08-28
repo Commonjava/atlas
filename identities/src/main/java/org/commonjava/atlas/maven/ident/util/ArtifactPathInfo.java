@@ -120,7 +120,7 @@ public class ArtifactPathInfo implements PathInfo
 
     private final boolean isSnapshot;
 
-    private final String majorVersion; // snapshot major version
+    private final String releaseVersion; // snapshot major version
 
     public ArtifactPathInfo( final String groupId, final String artifactId, final String version, final String file,
                              final String fullPath )
@@ -139,10 +139,10 @@ public class ArtifactPathInfo implements PathInfo
         this.file = file;
         this.fullPath = fullPath;
         this.isSnapshot = SnapshotUtils.isSnapshotVersion( version );
-        this.majorVersion = calcMajorVersion( version );
+        this.releaseVersion = calcReleaseVersion( version );
     }
 
-    private String calcMajorVersion( String version )
+    private String calcReleaseVersion( String version )
     {
         int index = version.indexOf( "-" );
         if ( index > 0 )
@@ -152,9 +152,9 @@ public class ArtifactPathInfo implements PathInfo
         return version;
     }
 
-    public String getMajorVersion()
+    public String getReleaseVersion()
     {
-        return majorVersion;
+        return releaseVersion;
     }
 
     public boolean isSnapshot()
