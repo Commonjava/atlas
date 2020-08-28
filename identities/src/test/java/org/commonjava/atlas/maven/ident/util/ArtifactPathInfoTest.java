@@ -112,7 +112,7 @@ public class ArtifactPathInfoTest
         final String path = "/org/commonjava/maven/galley/galley-transport-httpclient/0.10.4-SNAPSHOT/galley-transport-httpclient-0.10.4-20160229.212037-2.pom";
         ArtifactPathInfo info = ArtifactPathInfo.parse( path );
         SnapshotPart snap = info.getSnapshotInfo();
-        assertTrue( "0.10.4".equals( snap.getMajorVersion() ) );
+        assertTrue( "0.10.4".equals( info.getMajorVersion() ) );
         assertTrue( snap.isRemoteSnapshot() );
         assertTrue( "0.10.4-20160229.212037-2".equals( snap.getValue() ) );
         assertTrue( "0.10.4-20160229.212037-2".equals( snap.getLiteral() ) );
