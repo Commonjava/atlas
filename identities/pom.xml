@@ -28,7 +28,14 @@
   <artifactId>atlas-identities</artifactId>
 
   <name>Atlas :: Maven Project-Graph :: Identities Model</name>
-  
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.commons</groupId>
+      <artifactId>commons-lang3</artifactId>
+    </dependency>
+  </dependencies>
+
   <build>
     <plugins>
       <plugin>

@@ -15,7 +15,7 @@
  */
 package org.commonjava.atlas.maven.graph.model;
 
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import java.util.ArrayList;
 import java.util.Arrays;
