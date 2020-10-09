@@ -15,7 +15,7 @@
  */
 package org.commonjava.atlas.maven.ident.ref;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Reference to a whole project (or module, in terms of Maven builds). This reference is not specific to a release of the project (see {@link SimpleProjectVersionRef}).

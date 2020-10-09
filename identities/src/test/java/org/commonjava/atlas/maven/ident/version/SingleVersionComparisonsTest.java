@@ -34,7 +34,7 @@ package org.commonjava.atlas.maven.ident.version;
  * under the License.
  */
 
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 import static org.junit.Assert.fail;
 
 import java.text.NumberFormat;

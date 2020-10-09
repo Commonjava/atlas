@@ -15,7 +15,7 @@
  */
 package org.commonjava.atlas.maven.ident.version;
 
-import static org.apache.commons.lang.StringUtils.join;
+import static org.apache.commons.lang3.StringUtils.join;
 
 import java.io.Serializable;
 import java.util.ArrayList;

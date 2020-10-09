@@ -15,13 +15,13 @@
  */
 package org.commonjava.atlas.maven.ident.ref;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.commonjava.atlas.maven.ident.util.VersionUtils;
 import org.commonjava.atlas.maven.ident.version.InvalidVersionSpecificationException;
 import org.commonjava.atlas.maven.ident.version.SingleVersion;
 import org.commonjava.atlas.maven.ident.version.VersionSpec;
 
-import static org.apache.commons.lang.StringUtils.isEmpty;
+import static org.apache.commons.lang3.StringUtils.isEmpty;
 
 /**
  * Reference to a particular release of a project (or module, in terms of Maven builds). A release may contain many artifacts (see {@link SimpleArtifactRef}).
