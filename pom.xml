@@ -77,7 +77,7 @@
       <dependency>
         <groupId>org.commonjava.boms</groupId>
         <artifactId>web-commons-bom</artifactId>
-        <version>24</version>
+        <version>27-SNAPSHOT</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
