@@ -18,7 +18,7 @@ package org.commonjava.atlas.maven.ident.version.part;
 public enum VersionPartSeparator
 {
 
-    BLANK( "" ), DASH( "-" ), UNDERSCORE( "_" ), DOT( "." );
+    BLANK( "" ), DASH( "-" ), UNDERSCORE( "_" ), DOT( "." ), PLUS("+");
 
     private String rendered;
 

@@ -72,4 +72,13 @@ public class VersionParserTest
         System.out.println( parsed );
     }
 
+    @Test
+    public void parseSingleVersionWithPlusSeparator()
+                    throws Exception
+    {
+        final String version = "9+181-r4173-1";
+        final VersionSpec parsed = new VersionParser( version ).parse();
+
+        System.out.println( parsed );
+    }
 }
