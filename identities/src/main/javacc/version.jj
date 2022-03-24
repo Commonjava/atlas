@@ -112,6 +112,7 @@ TOKEN:
 | <DASH: "-">
 | <USCORE: "_">
 | <DOT: ".">
+| <PLUS: "+">
 | <LSNAP: (["S","s"] ["N","n"] ["A","a"] ["P","p"] ["S","s"] ["H","h"] ["O","o"] ["T","t"]) >
 | <SNAPDATE: (<DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DOT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT> <DIGIT>) >
 | <STRING: (["A"-"Z", "a"-"z"])+ >
@@ -381,6 +382,8 @@ VersionPartSeparator sep = null;
   {sep = VersionPartSeparator.DOT;}
 | <DASH>
   {sep = VersionPartSeparator.DASH;}
+| <PLUS>
+  {sep = VersionPartSeparator.PLUS;}
 | <USCORE>
   {sep = VersionPartSeparator.UNDERSCORE;}
 )
