@@ -32,18 +32,12 @@ public class ArtifactPathInfo implements PathInfo
 
     private static final String VERSION_RAW_REGEX = "(([^/]+)(-SNAPSHOT)?)"; // group 4~6
 
-    // For classifier, if it contains dot, that means we cannot use a simple pattern which just defined by dot/non-dot way to
-    // tell, so we must define this strict way like: 1. Starts with several alphabet. 2. Following with several or non dot plus digits
-    // Here is one example: wildfly8.1.3
-    private static final String CLASSIFIER_REGEX = "(-([a-zA-Z]+\\d*(\\.\\d*)*))?"; // group 13~15
-
-    private static final String TYPE_REGEX = "(\\.(.+))"; // group 16~17
+    private static final String CLASSIFIER_AND_TYPE = "-?(.+)";
 
     // regex developed at: http://fiddle.re/tvk5
     private static final String ARTIFACT_PATH_REGEX =
             "/?" + GROUP_REGEX + "/" + ARTIFACT_REGEX + "/" + VERSION_RAW_REGEX + "/(\\3-((\\4)|(\\5-"
-                    + SnapshotUtils.RAW_REMOTE_SNAPSHOT_PART_PATTERN + "))" + CLASSIFIER_REGEX + TYPE_REGEX + ")";
-            // RAW_REMOTE_SNAPSHOT_PART_PATTERN contains group 11 & 12
+                    + SnapshotUtils.RAW_REMOTE_SNAPSHOT_PART_PATTERN + "))" + CLASSIFIER_AND_TYPE + ")";
 
     private static final int GROUP_ID_GROUP = 1;
 
@@ -55,15 +49,7 @@ public class ArtifactPathInfo implements PathInfo
 
     private static final int VERSION_GROUP = 8;
 
-    private static final int NON_REMOTE_SNAP_CLASSIFIER_GROUP = 12;
-
-    private static final int REMOTE_SNAP_CLASSIFIER_GROUP = 14;
-
-    private static final int NON_REMOTE_SNAP_TYPE_GROUP = 14;
-
-    private static final int REMOTE_SNAP_TYPE_GROUP = 17;
-
-    private static final int REMOTE_SNAPSHOT_GROUP_COUNT = 17;
+    private static final String TAR_GZ = "tar.gz";
 
     public static ArtifactPathInfo parse( final String path )
     {
@@ -80,23 +66,32 @@ public class ArtifactPathInfo implements PathInfo
         }
 
         final int groupCount = matcher.groupCount();
-
         final String g = matcher.group( GROUP_ID_GROUP )
                                 .replace( '/', '.' );
         final String a = matcher.group( ARTIFACT_ID_GROUP );
         final String v = matcher.group( VERSION_GROUP );
 
-        final String c;
-        final String t;
-        if ( groupCount == REMOTE_SNAPSHOT_GROUP_COUNT )
+        String c = "";
+        String t;
+
+        String left = matcher.group( groupCount );
+        
+        // The classifier can contain dots or hyphens, it is hard to separate it from type. e.g,
+        // wildfly8.1.3.jar, project-sources.tar.gz, etc. We don't have a very solid pattern to match the classifier.
+        // Here we use the best guess.
+        if ( left.endsWith( TAR_GZ ) )
         {
-            c = matcher.group( REMOTE_SNAP_CLASSIFIER_GROUP );
-            t = matcher.group( REMOTE_SNAP_TYPE_GROUP );
+            t = TAR_GZ;
         }
         else
         {
-            c = matcher.group( NON_REMOTE_SNAP_CLASSIFIER_GROUP );
-            t = matcher.group( NON_REMOTE_SNAP_TYPE_GROUP );
+            t = left.substring( left.lastIndexOf( "." ) + 1 ); // Otherwise, use the simple file ext as type
+        }
+        int extLen = t.length() + 1; // plus len of "."
+        int leftLen = left.length();
+        if ( leftLen > extLen )
+        {
+            c = left.substring( 0, leftLen - extLen );
         }
 
         final String f = matcher.group( FILE_GROUP );
