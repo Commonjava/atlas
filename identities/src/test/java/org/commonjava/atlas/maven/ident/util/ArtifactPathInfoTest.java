@@ -69,6 +69,16 @@ public class ArtifactPathInfoTest
     }
 
     @Test
+    public void matchNormalClassifier2()
+    {
+        String path = "/org/jboss/modules/jboss-modules/1.5.0.Final-temporary-redhat-00033/jboss-modules-1.5.0.Final-temporary-redhat-00033-project-sources.tar.gz";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "1.5.0.Final-temporary-redhat-00033" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "project-sources" ) );
+        assertThat( pathInfo.getType(), equalTo( "tar.gz" ) );
+    }
+
+    @Test
     public void matchGAWithClassifier()
     {
         String path = "/org/apache/commons/commons-lang3/3.0.0.GA/commons-lang3-3.0.0.GA-test.jar";
