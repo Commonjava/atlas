@@ -14,7 +14,7 @@ on:
 
 jobs:
   build:
-    name: Build with maven by ${{ github.actor }}
+    name: Build with maven
     runs-on: ubuntu-latest
     if: github.event.repository.owner.id == github.event.sender.id
     env:
