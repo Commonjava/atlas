@@ -4,7 +4,7 @@ on:
   watch:
     types: [started]
   pull_request:
-    types: [opened, reopened, edited]
+    types: [opened, reopened, edited, synchronize, ready_for_review]
   push:
     branches:
       - main
@@ -30,6 +30,15 @@ jobs:
 
     - uses: s4u/maven-settings-action@v2.8.0
       with:
+        sonatypeSnapshots: true
+
+    - name: Build the Maven verify phase
+      run: mvn -B -V clean verify -Prun-its -Pci
+
+
+    - uses: s4u/maven-settings-action@v2.8.0
+      if: ${{ github.event_name == 'push' }}
+      with:
         servers: |
           [{
               "id": "sonatype-nexus-snapshots",
@@ -37,8 +46,6 @@ jobs:
               "password": "${{ secrets.SONATYPE_BOT_TOKEN }}"
           }]
 
-    - name: Build the Maven verify phase
-      run: mvn -B -V clean verify -Prun-its -Pci
-
     - name: Deploy the artifact
+      if: ${{ github.event_name == 'push' }}
       run: mvn help:effective-settings -B -V clean deploy -e
