@@ -41,6 +41,7 @@
   </scm>
 
   <properties>
+    <javaVersion>11</javaVersion>
     <projectOwner>Red Hat, Inc.</projectOwner>
     <projectEmail>nos-devel@redhat.com</projectEmail>
     <pmd.skip>true</pmd.skip>
@@ -141,8 +142,8 @@
         <plugin>
           <artifactId>maven-compiler-plugin</artifactId>
           <configuration>
-            <source>1.6</source>
-            <target>1.6</target>
+            <source>${javaVersion}</source>
+            <target>${javaVersion}</target>
           </configuration>
         </plugin>
         <plugin>
