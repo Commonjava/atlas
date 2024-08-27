@@ -21,6 +21,9 @@ import org.commonjava.atlas.maven.ident.ref.SimpleArtifactRef;
 import org.commonjava.atlas.maven.ident.ref.SimpleProjectVersionRef;
 import org.commonjava.atlas.maven.ident.version.part.SnapshotPart;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -43,17 +46,15 @@ public class ArtifactPathInfo implements PathInfo
 
     private static final int ARTIFACT_ID_GROUP = 3;
 
-    private static final int VERSION_RAW_GROUP = 4;
-
     private static final int FILE_GROUP = 7;
 
     private static final int VERSION_GROUP = 8;
 
-    private static final String TAR_GZ = "tar.gz";
+    private static final Set<String> SPECIAL_TYPES = new HashSet<>( Arrays.asList( "tar.gz", "tar.bz2" ) );
 
     public static ArtifactPathInfo parse( final String path )
     {
-        if ( path == null || path.length() < 1 )
+        if ( path == null || path.isEmpty() )
         {
             return null;
         }
@@ -72,21 +73,25 @@ public class ArtifactPathInfo implements PathInfo
         final String v = matcher.group( VERSION_GROUP );
 
         String c = "";
-        String t;
+        String t = null;
 
         String left = matcher.group( groupCount );
         
         // The classifier can contain dots or hyphens, it is hard to separate it from type. e.g,
         // wildfly8.1.3.jar, project-sources.tar.gz, etc. We don't have a very solid pattern to match the classifier.
         // Here we use the best guess.
-        if ( left.endsWith( TAR_GZ ) )
-        {
-            t = TAR_GZ;
+        for ( String type : SPECIAL_TYPES ){
+            if ( left.endsWith( type ) )
+            {
+                t = type;
+                break;
+            }
         }
-        else
+        if ( t == null || t.isEmpty() )
         {
             t = left.substring( left.lastIndexOf( "." ) + 1 ); // Otherwise, use the simple file ext as type
         }
+
         int extLen = t.length() + 1; // plus len of "."
         int leftLen = left.length();
         if ( leftLen > extLen )
