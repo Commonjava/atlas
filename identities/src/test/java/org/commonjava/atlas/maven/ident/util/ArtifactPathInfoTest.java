@@ -80,24 +80,6 @@ public class ArtifactPathInfoTest
     }
 
     @Test
-    public void matchNormalClassifier3()
-    {
-        String path =
-                "/com/github/jomrazek/jomrazek-empty/1.0.1.redhat-00010/jomrazek-empty-1.0.1.redhat-00010-src.tar.bz2";
-        ArtifactPathInfo info = ArtifactPathInfo.parse( path );
-        assertThat( info.getVersion(), equalTo( "1.0.1.redhat-00010" ) );
-        assertThat( info.getClassifier(), equalTo( "src" ) );
-        assertThat( info.getType(), equalTo( "tar.bz2" ) );
-
-        path =
-                "/io/quarkus/platform/quarkus-google-cloud-services-bom-quarkus-platform-descriptor/2.13.7.Final-redhat-00001/quarkus-google-cloud-services-bom-quarkus-platform-descriptor-2.13.7.Final-redhat-00001-2.13.7.Final-redhat-00001.json";
-        info = ArtifactPathInfo.parse( path );
-        assertThat( info.getVersion(), equalTo( "2.13.7.Final-redhat-00001" ) );
-        assertThat( info.getClassifier(), equalTo( "2.13.7.Final-redhat-00001" ) );
-        assertThat( info.getType(), equalTo( "json" ) );
-    }
-
-    @Test
     public void matchGAWithClassifier()
     {
         String path = "/org/apache/commons/commons-lang3/3.0.0.GA/commons-lang3-3.0.0.GA-test.jar";
@@ -149,6 +131,69 @@ public class ArtifactPathInfoTest
         assertEquals( "20160229", new SimpleDateFormat( "yyyyMMdd" ).format( snap.getTimestamp() ) );
     }
 
+    @Test
+    public void matchSpecialTypes()
+    {
+        String path =
+                "/com/github/jomrazek/jomrazek-empty/1.0.1.redhat-00010/jomrazek-empty-1.0.1.redhat-00010-src.tar.bz2";
+        ArtifactPathInfo info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "1.0.1.redhat-00010" ) );
+        assertThat( info.getClassifier(), equalTo( "src" ) );
+        assertThat( info.getType(), equalTo( "tar.bz2" ) );
 
+        path =
+                "/io/quarkus/platform/quarkus-google-cloud-services-bom-quarkus-platform-descriptor/2.13.7.Final-redhat-00001/quarkus-google-cloud-services-bom-quarkus-platform-descriptor-2.13.7.Final-redhat-00001-2.13.7.Final-redhat-00001.json";
+        info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "2.13.7.Final-redhat-00001" ) );
+        assertThat( info.getClassifier(), equalTo( "2.13.7.Final-redhat-00001" ) );
+        assertThat( info.getType(), equalTo( "json" ) );
+
+        path =
+                "/org/apache/cxf/cxf-repository/3.2.7.fuse-750011-redhat-00001/cxf-repository-3.2.7.fuse-750011-redhat-00001.xml.gz";
+        info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "3.2.7.fuse-750011-redhat-00001" ) );
+        assertThat( info.getClassifier(), equalTo( "" ) );
+        assertThat( info.getType(), equalTo( "xml.gz" ) );
+    }
+
+    @Test
+    public void testChecksumTypes()
+    {
+        String path =
+                "/com/webauthn4j/webauthn4j-test/0.12.0.RELEASE-redhat-00002/webauthn4j-test-0.12.0.RELEASE-redhat-00002-sources.jar.md5";
+        ArtifactPathInfo info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "0.12.0.RELEASE-redhat-00002" ) );
+        assertThat( info.getClassifier(), equalTo( "sources" ) );
+        assertThat( info.getType(), equalTo( "jar.md5" ) );
+
+        path =
+                "com/github/jomrazek/jomrazek-empty/1.0.1.redhat-00010/jomrazek-empty-1.0.1.redhat-00010-src.tar.bz2.sha1";
+        info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "1.0.1.redhat-00010" ) );
+        assertThat( info.getClassifier(), equalTo( "src" ) );
+        assertThat( info.getType(), equalTo( "tar.bz2.sha1" ) );
+
+        path = "/org/apache/commons/commons-lang3/3.0.0.GA/commons-lang3-3.0.0.GA-test.tar.gz.sha128";
+        info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "3.0.0.GA" ) );
+        assertThat( info.getClassifier(), equalTo( "test" ) );
+        assertThat( info.getType(), equalTo( "tar.gz.sha128" ) );
+
+        path =
+                "/org/jboss/modules/jboss-modules/1.5.0.Final-temporary-redhat-00033/jboss-modules-1.5.0.Final-temporary-redhat-00033-project-sources.tar.gz.sha256";
+        ArtifactPathInfo pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getVersion(), equalTo( "1.5.0.Final-temporary-redhat-00033" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "project-sources" ) );
+        assertThat( pathInfo.getType(), equalTo( "tar.gz.sha256" ) );
+
+        path =
+                "/com/webauthn4j/webauthn4j-test/0.12.0.RELEASE-redhat-00002/webauthn4j-test-0.12.0.RELEASE-redhat-00002-sources.jar.sha512";
+        pathInfo = ArtifactPathInfo.parse( path );
+        assertThat( pathInfo.getGroupId(), equalTo( "com.webauthn4j" ) );
+        assertThat( pathInfo.getArtifactId(), equalTo( "webauthn4j-test" ) );
+        assertThat( pathInfo.getVersion(), equalTo( "0.12.0.RELEASE-redhat-00002" ) );
+        assertThat( pathInfo.getClassifier(), equalTo( "sources" ) );
+        assertThat( pathInfo.getType(), equalTo( "jar.sha512" ) );
+    }
 
 }

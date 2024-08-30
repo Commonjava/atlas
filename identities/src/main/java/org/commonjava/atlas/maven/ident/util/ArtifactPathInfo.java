@@ -50,7 +50,9 @@ public class ArtifactPathInfo implements PathInfo
 
     private static final int VERSION_GROUP = 8;
 
-    private static final Set<String> SPECIAL_TYPES = new HashSet<>( Arrays.asList( "tar.gz", "tar.bz2" ) );
+    private static final Set<String> SPECIAL_TYPES = new HashSet<>( Arrays.asList( "tar.gz", "tar.bz2", "xml.gz" ) );
+
+    private static final Set<String> CHECKSUM_TYPES = new HashSet<>( Arrays.asList( ".md5", ".sha1", ".sha128", ".sha256", ".sha384", ".sha512" ) );
 
     public static ArtifactPathInfo parse( final String path )
     {
@@ -76,11 +78,24 @@ public class ArtifactPathInfo implements PathInfo
         String t = null;
 
         String left = matcher.group( groupCount );
-        
+
+        // If the path is a checksum path, we should abandon the checksum type and analyze its real artifact.
+        String checksumType = null;
+        for ( String type : CHECKSUM_TYPES )
+        {
+            if ( left.endsWith( type ) )
+            {
+                left = left.substring( 0, left.length() - type.length() );
+                checksumType = type;
+                break;
+            }
+        }
+
         // The classifier can contain dots or hyphens, it is hard to separate it from type. e.g,
         // wildfly8.1.3.jar, project-sources.tar.gz, etc. We don't have a very solid pattern to match the classifier.
         // Here we use the best guess.
-        for ( String type : SPECIAL_TYPES ){
+        for ( String type : SPECIAL_TYPES )
+        {
             if ( left.endsWith( type ) )
             {
                 t = type;
@@ -92,6 +107,7 @@ public class ArtifactPathInfo implements PathInfo
             t = left.substring( left.lastIndexOf( "." ) + 1 ); // Otherwise, use the simple file ext as type
         }
 
+
         int extLen = t.length() + 1; // plus len of "."
         int leftLen = left.length();
         if ( leftLen > extLen )
@@ -100,6 +116,11 @@ public class ArtifactPathInfo implements PathInfo
         }
 
         final String f = matcher.group( FILE_GROUP );
+
+        if ( checksumType != null && CHECKSUM_TYPES.contains( checksumType ) )
+        {
+            t = t + checksumType;
+        }
 
         return new ArtifactPathInfo( g, a, v, c, t, f, path );
     }
@@ -274,16 +295,10 @@ public class ArtifactPathInfo implements PathInfo
         }
         if ( version == null )
         {
-            if ( other.version != null )
-            {
-                return false;
-            }
+            return other.version == null;
         }
-        else if ( !version.equals( other.version ) )
-        {
-            return false;
-        }
-        return true;
+        else
+            return version.equals( other.version );
     }
 
     public ProjectVersionRef getProjectId()
