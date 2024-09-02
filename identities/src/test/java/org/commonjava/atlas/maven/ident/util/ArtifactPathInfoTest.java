@@ -132,7 +132,7 @@ public class ArtifactPathInfoTest
     }
 
     @Test
-    public void matchSpecialTypes()
+    public void matchCompoundExtTypes1()
     {
         String path =
                 "/com/github/jomrazek/jomrazek-empty/1.0.1.redhat-00010/jomrazek-empty-1.0.1.redhat-00010-src.tar.bz2";
@@ -154,6 +154,41 @@ public class ArtifactPathInfoTest
         assertThat( info.getVersion(), equalTo( "3.2.7.fuse-750011-redhat-00001" ) );
         assertThat( info.getClassifier(), equalTo( "" ) );
         assertThat( info.getType(), equalTo( "xml.gz" ) );
+
+        path =
+                "/org/apache/commons/commons-compress/1.26.0.temporary-redhat-00002/commons-compress-1.26.0.temporary-redhat-00002.spdx.rdf.xml";
+        info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "1.26.0.temporary-redhat-00002" ) );
+        assertThat( info.getClassifier(), equalTo( "" ) );
+        assertThat( info.getType(), equalTo( "spdx.rdf.xml" ) );
+
+
+    }
+
+    @Test
+    public void matchCompoundExtTypes2(){
+        System.setProperty("atlas.compoext.types", "a.b.c, x.y.z");
+
+        String path =
+                "/com/example/example-artifact/1.0.0.redhat-00001/example-artifact-1.0.0.redhat-00001-x.y.z.tar";
+        ArtifactPathInfo info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "1.0.0.redhat-00001" ) );
+        assertThat( info.getClassifier(), equalTo( "x.y.z" ) );
+        assertThat( info.getType(), equalTo( "tar" ) );
+
+        path =
+                "/com/example/example-artifact/1.0.0.redhat-00001/example-artifact-1.0.0.redhat-00001.a.b.c";
+        info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "1.0.0.redhat-00001" ) );
+        assertThat( info.getClassifier(), equalTo( "" ) );
+        assertThat( info.getType(), equalTo( "a.b.c" ) );
+
+        path =
+                "/com/example/example-artifact/1.0.0.redhat-00001/example-artifact-1.0.0.redhat-00001-sources.a.b.c";
+        info = ArtifactPathInfo.parse( path );
+        assertThat( info.getVersion(), equalTo( "1.0.0.redhat-00001" ) );
+        assertThat( info.getClassifier(), equalTo( "sources" ) );
+        assertThat( info.getType(), equalTo( "a.b.c" ) );
     }
 
     @Test

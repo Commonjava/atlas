@@ -15,6 +15,7 @@
  */
 package org.commonjava.atlas.maven.ident.util;
 
+import org.apache.commons.lang3.StringUtils;
 import org.commonjava.atlas.maven.ident.ref.ArtifactRef;
 import org.commonjava.atlas.maven.ident.ref.ProjectVersionRef;
 import org.commonjava.atlas.maven.ident.ref.SimpleArtifactRef;
@@ -50,7 +51,13 @@ public class ArtifactPathInfo implements PathInfo
 
     private static final int VERSION_GROUP = 8;
 
-    private static final Set<String> SPECIAL_TYPES = new HashSet<>( Arrays.asList( "tar.gz", "tar.bz2", "xml.gz" ) );
+    // Note: this looks a little ugly, but it's also caused by the "classifier with dots" problem in maven artifacts.
+    //       So for the file types with more than one extension separated by dots, we should treat them as special types
+    //       here and extract them before extract the classifier.
+    private static final Set<String> DEFAULT_COMPOUND_EXTENSIONS_TYPES =
+            new HashSet<>( Arrays.asList( "tar.gz", "tar.bz2", "xml.gz", "spdx.rdf.xml" ) );
+
+    private static final String COMPOUND_EXTENSIONS_PROP = "atlas.compoext.types";
 
     private static final Set<String> CHECKSUM_TYPES = new HashSet<>( Arrays.asList( ".md5", ".sha1", ".sha128", ".sha256", ".sha384", ".sha512" ) );
 
@@ -94,7 +101,16 @@ public class ArtifactPathInfo implements PathInfo
         // The classifier can contain dots or hyphens, it is hard to separate it from type. e.g,
         // wildfly8.1.3.jar, project-sources.tar.gz, etc. We don't have a very solid pattern to match the classifier.
         // Here we use the best guess.
-        for ( String type : SPECIAL_TYPES )
+        final String typesFromSys = System.getProperty( COMPOUND_EXTENSIONS_PROP );
+        final Set<String> compoundedExtensions = new HashSet<>( DEFAULT_COMPOUND_EXTENSIONS_TYPES );
+        if ( StringUtils.isNotBlank( typesFromSys ) )
+        {
+            for ( final String type : typesFromSys.split( "," ) )
+            {
+                compoundedExtensions.add( type.trim() );
+            }
+        }
+        for ( String type : compoundedExtensions )
         {
             if ( left.endsWith( type ) )
             {
