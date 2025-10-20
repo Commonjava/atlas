@@ -27,7 +27,7 @@
 
   <groupId>org.commonjava.atlas</groupId>
   <artifactId>atlas-parent</artifactId>
-  <version>1.1.7-SNAPSHOT</version>
+  <version>1.1.7</version>
   <packaging>pom</packaging>
   <inceptionYear>2012-2022</inceptionYear>
 
@@ -37,7 +37,7 @@
     <connection>scm:git:https://github.com/commonjava/atlas</connection>
     <developerConnection>scm:git:https://github.com/commonjava/atlas</developerConnection>
     <url>https://github.com/Commonjava/atlas</url>
-    <tag>HEAD</tag>
+    <tag>atlas-parent-1.1.7</tag>
   </scm>
 
   <properties>
