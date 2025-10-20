@@ -57,7 +57,7 @@ jobs:
       with:
         servers: |
           [{
-              "id": "sonatype-nexus-snapshots",
+              "id": "central-portal-snapshots",
               "username": "${{ secrets.SONATYPE_BOT_USERNAME }}",
               "password": "${{ secrets.SONATYPE_BOT_TOKEN }}"
           }]
