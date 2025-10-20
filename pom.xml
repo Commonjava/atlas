@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.commonjava</groupId>
     <artifactId>commonjava</artifactId>
-    <version>17</version>
+    <version>21</version>
   </parent>
 
   <groupId>org.commonjava.atlas</groupId>
@@ -36,17 +36,16 @@
   <scm>
     <connection>scm:git:https://github.com/commonjava/atlas</connection>
     <developerConnection>scm:git:https://github.com/commonjava/atlas</developerConnection>
-    <url>http://github.com/Commonjava/atlas</url>
+    <url>https://github.com/Commonjava/atlas</url>
     <tag>HEAD</tag>
   </scm>
 
   <properties>
-    <javaVersion>11</javaVersion>
+    <javaVersion>1.8</javaVersion>
     <projectOwner>Red Hat, Inc.</projectOwner>
     <projectEmail>nos-devel@redhat.com</projectEmail>
     <pmd.skip>true</pmd.skip>
     <enforceBestPractices>false</enforceBestPractices>
-    <jacksonVerison>2.15.2</jacksonVerison>
   </properties>
 
   <dependencyManagement>
@@ -77,45 +76,11 @@
         <version>0.9.0</version>
       </dependency>
       <dependency>
-        <groupId>org.apache.commons</groupId>
-        <artifactId>commons-lang3</artifactId>
-        <version>3.7</version>
-      </dependency>
-      <dependency>
-        <groupId>commons-codec</groupId>
-        <artifactId>commons-codec</artifactId>
-        <version>1.15</version>
-      </dependency>
-      <dependency>
-        <groupId>org.slf4j</groupId>
-        <artifactId>slf4j-api</artifactId>
-        <version>2.0.7</version>
-      </dependency>
-      <dependency>
-        <groupId>ch.qos.logback</groupId>
-        <artifactId>logback-classic</artifactId>
-        <version>1.2.13</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-core</artifactId>
-        <version>${jacksonVerison}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-annotations</artifactId>
-        <version>${jacksonVerison}</version>
-      </dependency>
-      <dependency>
-        <groupId>com.fasterxml.jackson.core</groupId>
-        <artifactId>jackson-databind</artifactId>
-        <version>${jacksonVerison}</version>
-      </dependency>
-
-      <dependency>
-        <groupId>junit</groupId>
-        <artifactId>junit</artifactId>
-        <version>4.13.2</version>
+        <groupId>org.commonjava.boms</groupId>
+        <artifactId>web-commons-bom</artifactId>
+        <version>30</version>
+        <scope>import</scope>
+        <type>pom</type>
       </dependency>
     </dependencies>
   </dependencyManagement>
@@ -125,7 +90,6 @@
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-api</artifactId>
     </dependency>
-    
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
