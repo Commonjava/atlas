@@ -27,6 +27,8 @@
 
     <artifactId>atlas-npm-identities</artifactId>
 
+    <name>Atlas :: Maven Project-Graph :: NPM Identities Model</name>
+
     <dependencies>
         <dependency>
             <groupId>org.commonjava.atlas</groupId>
