@@ -123,6 +123,18 @@
             </execution>
           </executions>
         </plugin>
+        <plugin>
+          <artifactId>maven-javadoc-plugin</artifactId>
+          <version>${version.plugin.javadoc}</version>
+          <configuration>
+            <detectOfflineLinks>false</detectOfflineLinks>
+            <additionalOptions>-Xdoclint:none</additionalOptions>
+            <additionalJOption>-Xdoclint:none</additionalJOption>
+            <doclint>none</doclint>
+            <source>8</source>
+            <links></links>
+          </configuration>
+        </plugin>
       </plugins>
     </pluginManagement>
   </build>
