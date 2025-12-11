@@ -80,6 +80,15 @@ public class ArtifactPathInfo implements PathInfo
                                 .replace( '/', '.' );
         final String a = matcher.group( ARTIFACT_ID_GROUP );
         final String v = matcher.group( VERSION_GROUP );
+        final String f = matcher.group( FILE_GROUP );
+
+        // Validate that the filename follows standard Maven layout: {artifactId}-{version}-...
+        // This prevents mis-parsing paths that match the regex pattern but don't follow Maven conventions
+        String expectedPrefix = a + "-" + v;
+        if ( !f.startsWith( expectedPrefix ) || f.contains( "/" ) )
+        {
+            return null;
+        }
 
         String c = "";
         String t = null;
@@ -130,8 +139,6 @@ public class ArtifactPathInfo implements PathInfo
         {
             c = left.substring( 0, leftLen - extLen );
         }
-
-        final String f = matcher.group( FILE_GROUP );
 
         if ( checksumType != null && CHECKSUM_TYPES.contains( checksumType ) )
         {
