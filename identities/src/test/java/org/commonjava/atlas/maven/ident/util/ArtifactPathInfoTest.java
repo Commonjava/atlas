@@ -192,6 +192,15 @@ public class ArtifactPathInfoTest
     }
 
     @Test
+    public void testNonStandardRpmPathReturnsNull()
+    {
+        // RPM path where filename doesn't follow Maven naming convention
+        String path = "/org/jboss/pnc/rpm/org/hibernate/search/hibernate-search-integrationtest-jakarta-jb-eap-8.0-rhel-9/6.2.2.Final/eap8-hibernate-search-6.2.2-1.Final.1.el8.src.rpm";
+        ArtifactPathInfo info = ArtifactPathInfo.parse( path );
+        assertThat( info, equalTo( null ) );
+    }
+
+    @Test
     public void testChecksumTypes()
     {
         String path =
