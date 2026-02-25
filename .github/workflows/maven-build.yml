@@ -44,7 +44,7 @@ jobs:
         distribution: 'temurin'
         architecture: x64
 
-    - uses: s4u/maven-settings-action@v2.8.0
+    - uses: s4u/maven-settings-action@v4.0.0
       with:
         sonatypeSnapshots: true
 
@@ -52,7 +52,7 @@ jobs:
       run: mvn -B -V clean verify -Prun-its -Pci
 
 
-    - uses: s4u/maven-settings-action@v2.8.0
+    - uses: s4u/maven-settings-action@v4.0.0
       if: ${{ github.event_name == 'push' }}
       with:
         servers: |
