@@ -1,0 +1,37 @@
+name: Mend CLI scan for Maven
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "0 22 * * 0"
+
+permissions:
+  contents: read
+  actions: read
+  checks: write
+  pull-requests: write
+  security-events: write
+
+jobs:
+  build:
+    uses: project-ncl/shared-github-actions/.github/workflows/maven-ci.yml@646d9b629925d6405fb06ed1476aefd6b2cdca86 # v0.0.23
+    with:
+      java_version: "11"
+      build_command: "MAVEN_OPTS='-Xmx4096m -Xms2048m -XX:MaxMetaspaceSize=4096m -Xss8m' mvn -B -V clean verify -Prun-its -Pci"
+      upload_artifacts: true
+
+  call-mend-ci:
+    needs: build
+    uses: project-ncl/shared-github-actions/.github/workflows/mend-ci.yml@646d9b629925d6405fb06ed1476aefd6b2cdca86 # v0.0.23
+    with:
+      project_name: "Commonjava/atlas"
+      SCA: true
+      SAST: true
+    secrets:
+      MEND_URL: ${{ secrets.MEND_URL }}
+      MEND_USER_KEY: ${{ secrets.MEND_USER_KEY }}
+      MEND_EMAIL: ${{ secrets.MEND_EMAIL }}
+      MEND_ORGNAME: ${{ secrets.MEND_ORGNAME }}
+      MEND_PRODUCTNAME: ${{ secrets.MEND_PRODUCTNAME }}
