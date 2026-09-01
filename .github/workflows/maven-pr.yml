@@ -1,0 +1,16 @@
+name: Java CI with Maven
+
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    branches: ["*"]
+
+jobs:
+  call-maven-ci:
+    uses: project-ncl/shared-github-actions/.github/workflows/maven-ci.yml@646d9b629925d6405fb06ed1476aefd6b2cdca86 # v0.0.23
+    with:
+      java_version: "11"
+      build_command: "MAVEN_OPTS='-Xmx4096m -Xms2048m -XX:MaxMetaspaceSize=4096m -Xss8m' mvn -B -V clean verify -Prun-its -Pci"
+      upload_artifacts: true
