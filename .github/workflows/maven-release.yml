@@ -17,7 +17,6 @@ jobs:
     with:
       java_version: "11"
       ref_to_release: ${{ inputs.ref_to_release }}
-      jboss_parent_override: "-DaltSnapshotDeploymentRepository=central-publisher::https://central.sonatype.com/repository/maven-snapshots/"
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
