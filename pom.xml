@@ -22,7 +22,7 @@
   <parent>
     <groupId>org.commonjava</groupId>
     <artifactId>commonjava</artifactId>
-    <version>21</version>
+    <version>22</version>
   </parent>
 
   <groupId>org.commonjava.atlas</groupId>
@@ -78,7 +78,7 @@
       <dependency>
         <groupId>org.commonjava.boms</groupId>
         <artifactId>web-commons-bom</artifactId>
-        <version>34</version>
+        <version>35-SNAPSHOT</version>
         <scope>import</scope>
         <type>pom</type>
       </dependency>
@@ -145,4 +145,13 @@
     <module>relationships-api</module>
     <module>bindings</module>
   </modules>
+
+  <repositories>
+    <repository>
+      <id>sonatype-snapshots</id>
+      <url>https://central.sonatype.com/repository/maven-snapshots/</url>
+      <releases><enabled>false</enabled></releases>
+      <snapshots><enabled>true</enabled></snapshots>
+    </repository>
+  </repositories>
 </project>

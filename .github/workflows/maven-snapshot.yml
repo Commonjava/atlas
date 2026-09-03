@@ -13,7 +13,6 @@ jobs:
       java_version: "11"
       project_name: "Commonjava/atlas"
       snapshot_deploy_command: "mvn help:effective-settings -B -V clean deploy -e"
-      jboss_parent_override: "-DaltSnapshotDeploymentRepository=central-publisher::https://central.sonatype.com/repository/maven-snapshots/"
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_BOT_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_BOT_TOKEN }}
