@@ -20,6 +20,6 @@ jobs:
       release_command: 'mvn -B -V release:prepare release:perform -DlocalCheckout=true -DpushChanges=false'
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_BOT_USERNAME }}
-      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_BOT_PASSWORD }}
+      SONATYPE_PASSWORD: ${{ secrets.SONATYPE_BOT_TOKEN }}
       GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
       GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
