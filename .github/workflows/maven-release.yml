@@ -17,6 +17,7 @@ jobs:
     with:
       java_version: "11"
       ref_to_release: ${{ inputs.ref_to_release }}
+      release_command: 'mvn -B -V release:prepare release:perform -DlocalCheckout=true -DpushChanges=false'
     secrets:
       SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
       SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
